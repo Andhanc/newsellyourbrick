@@ -4,16 +4,15 @@ import { useTranslation } from 'react-i18next'
 import { useSession, useUser } from '@clerk/clerk-react'
 import {
   FiArrowUpRight,
-  FiBookmark,
   FiSearch,
   FiX,
 } from 'react-icons/fi'
+import { Sparkles } from 'lucide-react'
 import SiteChatDock from '../components/SiteChatDock'
-import DiscoverIntroBanners from '../components/DiscoverIntroBanners'
-import SectionInfoDrawer from '../components/SectionInfoDrawer'
 import { publicAsset } from '../utils/publicAsset'
 import { getMainScrollEl, scrollMainTo } from '../utils/mainScroll'
-import { COMPASS_PATH, CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
+import { wheelDeltaYInPixels } from '../utils/wheelDelta'
+import { COMPASS_PATH, CO_INVESTMENT_PATH, TEST_DRIVE_PATH } from '../utils/sectionRoutes'
 import {
   COMPASS_BANNER_SRC,
   COMPASS_PROMPT_DELAY_MS,
@@ -25,158 +24,87 @@ import {
   markCompassPrompted,
   readCompassState,
 } from '../utils/investmentCompass'
-import { showNotification } from '../utils/toastHelper'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
-import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { isSoftLaunchFeatureBlocked } from '../utils/softLaunchAccess'
 import { CLERK_DB_USER_SYNCED } from '../services/authService'
 import './MobileDiscoverPage.css'
 
 const Header = lazy(() => import('../components/Header'))
 const MobileDiscoverCatalog = lazy(() => import('./MobileDiscoverCatalog'))
-const StrategyRecommendationDrawer = lazy(() => import('../components/StrategyRecommendationDrawer'))
-const ProfileStrategyStories = lazy(() => import('../components/ProfileStrategyStories'))
+const MobileDiscoverTopListings = lazy(() => import('../components/MobileDiscoverTopListings'))
 const InvestmentCompassDrawer = lazy(() => import('../components/InvestmentCompassDrawer'))
 const InvestmentCompassPromoModal = lazy(() => import('../components/InvestmentCompassPromoModal'))
 
 const HERO_IMAGE = publicAsset('images/mobile-discover/welcome-summer.png')
 const WELCOME_HOUSE = publicAsset('images/mobile-discover/welcome-summer.png')
-const WELCOME_LOCK_IMAGE = publicAsset('images/property-detail/deposit-lock-gate-clay-3d-clean.png')
-const WELCOME_SHORTCUTS = [
-  { id: 'map', path: '/map' },
-  { id: 'deposit', path: '/deposit' },
-  { id: 'favorites', path: '/favorites' },
-]
-const welcomeShortcutAsset = (id) => publicAsset(`images/mobile-showcase/glass/${id}.webp`)
 
-const SALE_DESCRIPTION_TRIGGERS = {
-  ru: {
-    auction: 'рыночной',
-    buy_now: 'цена',
-    debts: 'Выгодные',
-    shares: 'порогом',
-  },
-  en: {
-    auction: 'market-driven',
-    buy_now: 'fixed',
-    debts: 'Discounted',
-    shares: 'entry',
-  },
-  pl: {
-    auction: 'rynkowej',
-    buy_now: 'Stała',
-    debts: 'lepszej',
-    shares: 'progiem',
-  },
-  fr: {
-    auction: 'marché',
-    buy_now: 'fixe',
-    debts: 'avantageux',
-    shares: 'faible',
-  },
-  sv: {
-    auction: 'marknadspris',
-    buy_now: 'Fast',
-    debts: 'bättre',
-    shares: 'insats',
-  },
-  de: {
-    auction: 'Marktpreis',
-    buy_now: 'Festpreis',
-    debts: 'Preisvorteil',
-    shares: 'Summe',
-  },
-  es: {
-    auction: 'mercado',
-    buy_now: 'fijo',
-    debts: 'descuento',
-    shares: 'capital',
-  },
-}
-
-function getDescriptionTrigger(language, cardId) {
-  const locale = String(language || 'en').toLowerCase().split('-')[0]
-  return (SALE_DESCRIPTION_TRIGGERS[locale] || SALE_DESCRIPTION_TRIGGERS.en)[cardId]
-}
-
-function renderHighlightedDescription(description, trigger) {
-  const start = description.toLocaleLowerCase().indexOf(trigger.toLocaleLowerCase())
-  if (start < 0) return description
-  const end = start + trigger.length
-
-  return (
-    <>
-      {description.slice(0, start)}
-      <span className="md-card__description-accent">{description.slice(start, end)}</span>
-      {description.slice(end)}
-    </>
-  )
-}
-
-function stripDescriptionPeriod(description) {
-  return description.replace(/[.。]+$/u, '')
-}
-
-function getSaleCards(t, language) {
+function getLaunchCards(t) {
+  const photo = (name) => publicAsset(`images/test-drive/property-${name}.png`)
+  const icon = (name) => publicAsset(`images/home-sale-formats/icons/${name}-3d.png`)
   return [
     {
-      id: 'auction',
-      title: t('auction'),
-      description: stripDescriptionPeriod(t('discoverPage_saleCardAuctionDesc')),
-      descriptionTrigger: getDescriptionTrigger(language, 'auction'),
-      image: publicAsset('images/home-sale-formats/summer-2026/sale-format-auction-summer.webp'),
-      imagePosition: '36% center',
-      to: '/auction?filter=auction',
-      theme: 'auction',
-      infoSection: 'auction',
-      iconSrc: publicAsset('images/home-sale-formats/icons/auction-3d.png'),
+      id: 'auction', iconSrc: icon('auction'), title: t('auction'), to: '/auction?filter=auction',
+      caption: t('discoverPage_shortcutAuction'),
+      photos: [photo('marbella'), photo('nice'), photo('paphos')],
     },
     {
-      id: 'buy_now',
-      title: t('buyNowSectionTitle'),
-      description: stripDescriptionPeriod(t('discoverPage_saleCardBuyNowDesc')),
-      descriptionTrigger: getDescriptionTrigger(language, 'buy_now'),
-      image: publicAsset('images/home-sale-formats/summer-2026/sale-format-buy-now-summer.webp'),
-      imagePosition: '42% center',
-      to: '/auction/buy-now',
-      theme: 'buy',
-      infoSection: 'buyNow',
-      iconSrc: publicAsset('images/home-sale-formats/icons/buy-now-3d.png'),
+      id: 'buy_now', iconSrc: icon('buy-now'), title: t('buyNowSectionTitle'), to: '/auction/buy-now',
+      caption: t('discoverPage_shortcutBuyNow'),
+      photos: [photo('sorrento'), photo('barcelona'), photo('santorini')],
     },
     {
-      id: 'debts',
-      title: t('debtsTitle'),
-      description: stripDescriptionPeriod(t('discoverPage_saleCardDebtsDesc')),
-      descriptionTrigger: getDescriptionTrigger(language, 'debts'),
-      image: publicAsset('images/home-sale-formats/summer-2026/sale-format-debts-summer.webp'),
-      imagePosition: '46% center',
-      to: '/debts',
-      theme: 'debts',
-      infoSection: 'debts',
-      iconSrc: publicAsset('images/home-sale-formats/icons/debts-3d.png'),
+      id: 'debts', iconSrc: icon('debts'), title: t('debtsTitle'), to: '/debts',
+      caption: t('discoverPage_shortcutDebts'),
+      photos: [photo('barcelona'), photo('paphos'), photo('nice')],
     },
     {
-      id: 'shares',
-      title: t('coInvestment'),
-      description: stripDescriptionPeriod(t('discoverPage_saleCardSharesDesc')),
-      descriptionTrigger: getDescriptionTrigger(language, 'shares'),
-      image: publicAsset('images/home-sale-formats/summer-2026/sale-format-shares-summer.webp'),
-      imagePosition: '42% center',
-      to: CO_INVESTMENT_PATH,
-      theme: 'shares',
-      infoSection: 'shares',
-      iconSrc: publicAsset('images/home-sale-formats/icons/shares-3d.png'),
+      id: 'shares', iconSrc: icon('shares'), title: t('coInvestment'), to: CO_INVESTMENT_PATH,
+      caption: t('discoverPage_shortcutShares'),
+      photos: [photo('santorini'), photo('marbella'), photo('sorrento')],
     },
     {
-      id: 'development',
-      title: t('develop.title'),
-      description: stripDescriptionPeriod(t('develop.cardDescription')),
-      descriptionTrigger: t('develop.cardAccent'),
-      image: publicAsset('images/home-sale-formats/summer-2026/sale-format-develop-summer.webp'),
-      imagePosition: '42% center',
-      to: '/development',
-      theme: 'develop',
-      infoSection: 'development',
-      iconSrc: publicAsset('images/home-sale-formats/icons/develop-3d.png'),
+      id: 'development', iconSrc: publicAsset('images/mobile-discover/development-3d.webp'), title: t('develop.title'), to: '/development',
+      caption: t('discoverPage_shortcutDevelop'),
+      photos: [publicAsset('images/development/costa-adeje-cover.png'), photo('santorini'), photo('marbella')],
+    },
+  ]
+}
+
+function getSaleCards(t) {
+  return [
+    {
+      id: 'map',
+      title: t('map'),
+      featureTitle: t('map'),
+      to: '/map',
+      iconSrc: publicAsset('images/mobile-discover/map-tiffany-pin.webp'),
+      artHeight: 480,
+    },
+    {
+      id: 'investor',
+      title: t('calculator'),
+      featureTitle: t('calculator'),
+      to: '/calculator',
+      iconSrc: publicAsset('images/mobile-discover/investor-calculator-tiffany.webp'),
+      artHeight: 320,
+      glass: true,
+    },
+    {
+      id: 'vip',
+      title: t('discoverPage_vipProperties'),
+      featureTitle: t('discoverPage_vipProperties'),
+      to: '/private-club',
+      iconSrc: publicAsset('images/mobile-discover/vip-house-tiffany.webp'),
+      artHeight: 439,
+      glass: true,
+    },
+    {
+      id: 'test_drive',
+      title: t('testDrive'),
+      featureTitle: t('testDriveLanding_heroTitle'),
+      to: TEST_DRIVE_PATH,
+      iconSrc: publicAsset('images/mobile-discover/test-drive-tiffany-luggage.webp'),
+      artHeight: 960,
     },
   ]
 }
@@ -198,7 +126,7 @@ function prefersReducedMotion() {
  * Intentional up → white flash → hero.
  */
 export default function MobileDiscoverPage() {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const { user, isLoaded: userLoaded } = useUser()
   const { session, isLoaded: sessionLoaded } = useSession()
   const authSessionId = session?.id || ''
@@ -206,31 +134,48 @@ export default function MobileDiscoverPage() {
   const navigate = useNavigate()
   const shellRef = useRef(null)
   const stageScrollRef = useRef(null)
-  const cardsRef = useRef(null)
+  const lotteryDialogRef = useRef(null)
+  const lotteryTriggerRef = useRef(null)
   const catalogSentinelRef = useRef(null)
   const busyRef = useRef(false)
   const screenRef = useRef('hero')
   const touchStartY = useRef(0)
+  const touchStartX = useRef(0)
   const wheelAcc = useRef(0)
   const timersRef = useRef([])
 
   const [screen, setScreen] = useState('hero') // hero | stage
   const [flashPhase, setFlashPhase] = useState('idle') // idle | cover | reveal
   const [stageEntered, setStageEntered] = useState(false)
+  const [isStageNavExpanded, setIsStageNavExpanded] = useState(false)
   const [isFooterNear, setIsFooterNear] = useState(false)
   const [catalogReady, setCatalogReady] = useState(false)
   const [welcomeQuery, setWelcomeQuery] = useState('')
-  const [activeSaleCard, setActiveSaleCard] = useState(0)
-  const [savedSaleCards, setSavedSaleCards] = useState(() => new Set())
-  const [recommendationDrawerOpen, setRecommendationDrawerOpen] = useState(false)
-  const [storiesOpenSignal, setStoriesOpenSignal] = useState(0)
+  const [activeLaunchCard, setActiveLaunchCard] = useState(0)
+  const [lotteryComingSoonOpen, setLotteryComingSoonOpen] = useState(false)
   const [compassDrawerOpen, setCompassDrawerOpen] = useState(false)
   const [compassOfferOpen, setCompassOfferOpen] = useState(false)
   const [compassBannerDismissed, setCompassBannerDismissed] = useState(false)
   const compassResultStrategy = readCompassState().result?.strategy || ''
   const compassOfferBlockedRef = useRef(false)
 
-  const saleCards = getSaleCards(t, i18n.language)
+  const saleCards = getSaleCards(t)
+  const launchCards = getLaunchCards(t)
+
+  useEffect(() => {
+    if (!lotteryComingSoonOpen) return undefined
+    const dialog = lotteryDialogRef.current
+    const stage = stageScrollRef.current
+    const previousOverflow = stage?.style.overflowY
+    if (stage) stage.style.overflowY = 'hidden'
+    dialog.showModal()
+    dialog.querySelector('.md-lottery-modal__confirm')?.focus()
+    return () => {
+      dialog.close()
+      if (stage) stage.style.overflowY = previousOverflow
+      lotteryTriggerRef.current?.focus({ preventScroll: true })
+    }
+  }, [lotteryComingSoonOpen])
 
   useEffect(() => {
     const refreshShortcutAccess = () => setShortcutsUnlocked(isSiteUserSignedIn(user, userLoaded))
@@ -245,14 +190,22 @@ export default function MobileDiscoverPage() {
     }
   }, [user, userLoaded])
 
-  const handleWelcomeShortcutClick = (event) => {
-    if (isSiteUserSignedIn(user, userLoaded)) return
+  const handleDiscoverSearch = (event) => {
     event.preventDefault()
-    requestOpenLoginModal({ wizard: true })
+    const query = welcomeQuery.trim()
+    navigate(query ? `/search-results?q=${encodeURIComponent(query)}` : '/search-results')
+  }
+
+  const openSearchAssistant = () => {
+    if (isSoftLaunchFeatureBlocked('aiAssistant')) {
+      navigate('/chat?assistant=1')
+      return
+    }
+    window.dispatchEvent(new CustomEvent('openAIChat'))
   }
 
   screenRef.current = screen
-  compassOfferBlockedRef.current = recommendationDrawerOpen || compassDrawerOpen
+  compassOfferBlockedRef.current = compassDrawerOpen
 
   const clearTimers = useCallback(() => {
     timersRef.current.forEach((id) => window.clearTimeout(id))
@@ -298,66 +251,6 @@ export default function MobileDiscoverPage() {
       metas.forEach((meta) => meta.setAttribute('content', STAGE_CHROME))
     }
   }, [screen])
-
-  useEffect(() => {
-    const scroller = cardsRef.current
-    if (!scroller || screen !== 'stage') return undefined
-
-    const syncActive = () => {
-      const cards = Array.from(scroller.querySelectorAll('.md-card'))
-      const midpoint = scroller.scrollLeft + scroller.clientWidth / 2
-      let closestIndex = 0
-      let closestDistance = Infinity
-
-      cards.forEach((card, index) => {
-        const distance = Math.abs(card.offsetLeft + card.offsetWidth / 2 - midpoint)
-        if (distance < closestDistance) {
-          closestDistance = distance
-          closestIndex = index
-        }
-      })
-      setActiveSaleCard(closestIndex)
-    }
-
-    syncActive()
-    scroller.addEventListener('scroll', syncActive, { passive: true })
-    window.addEventListener('resize', syncActive)
-    return () => {
-      scroller.removeEventListener('scroll', syncActive)
-      window.removeEventListener('resize', syncActive)
-    }
-  }, [screen, stageEntered])
-
-  const scrollToSaleCard = useCallback((index) => {
-    const scroller = cardsRef.current
-    const card = scroller?.querySelectorAll('.md-card')[index]
-    if (!scroller || !card) return
-    const left = card.offsetLeft - (scroller.clientWidth - card.offsetWidth) / 2
-    scroller.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
-    setActiveSaleCard(index)
-  }, [])
-
-  const toggleSavedSaleCard = useCallback((id, wasSaved) => {
-    setSavedSaleCards((current) => {
-      const next = new Set(current)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-
-    if (wasSaved) return
-
-    const savedMessage = String(i18n.language || 'ru').toLowerCase().startsWith('ru')
-      ? 'Добавлено в рекомендации'
-      : 'Added to recommendations'
-    showNotification(savedMessage, 'success', 2200)
-    setRecommendationDrawerOpen(true)
-  }, [i18n.language])
-
-  const watchRecommendationStories = useCallback(() => {
-    setRecommendationDrawerOpen(false)
-    later(() => setStoriesOpenSignal((value) => value + 1), 100)
-  }, [later])
 
   const openCompassDrawer = useCallback(() => {
     setCompassDrawerOpen(true)
@@ -464,6 +357,7 @@ export default function MobileDiscoverPage() {
 
       const current = screenRef.current
       const stageEl = stageScrollRef.current
+      const dy = wheelDeltaYInPixels(event, stageEl?.clientHeight || el.clientHeight)
 
       // On stage, allow inner scroll until edges
       if (current === 'stage' && stageEl) {
@@ -472,14 +366,17 @@ export default function MobileDiscoverPage() {
         const atBottom =
           !canScroll ||
           stageEl.scrollTop + stageEl.clientHeight >= stageEl.scrollHeight - 2
-        const goingUp = event.deltaY < 0
-        const goingDown = event.deltaY > 0
+        const goingUp = dy < 0
+        const goingDown = dy > 0
 
-        // Content can scroll — drive stage directly (card strip steals default wheel)
+        // Keep native, inertial scrolling. Only horizontal rails need their
+        // vertical wheel routed to the stage, since they can swallow it.
         if (canScroll && ((goingDown && !atBottom) || (goingUp && !atTop))) {
           wheelAcc.current = 0
-          stageEl.scrollTop += event.deltaY
-          event.preventDefault()
+          if (event.target.closest?.('.md-cards, .invest-showcase__scroller, .home-showcase__scroller')) {
+            stageEl.scrollTop += dy
+            event.preventDefault()
+          }
           return
         }
         if (goingDown && atBottom) {
@@ -489,19 +386,18 @@ export default function MobileDiscoverPage() {
         }
         if (goingUp && atTop) {
           event.preventDefault()
-          wheelAcc.current += event.deltaY
+          wheelAcc.current = Math.min(0, wheelAcc.current) + dy
           if (Math.abs(wheelAcc.current) >= WHEEL_THRESHOLD) goTo('hero')
           return
         }
       }
 
       event.preventDefault()
-      wheelAcc.current += event.deltaY
-
-      if (current === 'hero' && wheelAcc.current >= WHEEL_THRESHOLD) {
-        goTo('stage')
-      } else if (current === 'stage' && wheelAcc.current <= -WHEEL_THRESHOLD) {
-        goTo('hero')
+      if (current === 'hero') {
+        // Upward gestures on the first screen must not build a negative debt
+        // that makes the next downward gesture feel stuck.
+        wheelAcc.current = dy > 0 ? Math.max(0, wheelAcc.current) + dy : 0
+        if (wheelAcc.current >= WHEEL_THRESHOLD) goTo('stage')
       }
     }
 
@@ -534,6 +430,22 @@ export default function MobileDiscoverPage() {
     observer.observe(footer)
     return () => observer.disconnect()
   }, [screen])
+
+  useEffect(() => {
+    if (screen !== 'stage') {
+      setIsStageNavExpanded(false)
+      setActiveLaunchCard(0)
+      return undefined
+    }
+
+    const stage = stageScrollRef.current
+    if (!stage) return undefined
+    const updateNav = () => setIsStageNavExpanded(stage.scrollTop > 0)
+    updateNav()
+    stage.addEventListener('scroll', updateNav, { passive: true })
+    return () => stage.removeEventListener('scroll', updateNav)
+  }, [screen])
+
 
   useEffect(() => {
     if (screen !== 'stage') {
@@ -570,6 +482,7 @@ export default function MobileDiscoverPage() {
 
     const onStart = (event) => {
       touchStartY.current = event.touches[0]?.clientY ?? 0
+      touchStartX.current = event.touches[0]?.clientX ?? 0
     }
 
     const onEnd = (event) => {
@@ -577,6 +490,9 @@ export default function MobileDiscoverPage() {
       if (busyRef.current || flashPhase !== 'idle') return
       const endY = event.changedTouches[0]?.clientY ?? touchStartY.current
       const dy = touchStartY.current - endY
+      const dx = touchStartX.current - (event.changedTouches[0]?.clientX ?? touchStartX.current)
+      // Horizontal carousel swipes must not trigger the vertical screen transition.
+      if (Math.abs(dx) > Math.abs(dy)) return
       const current = screenRef.current
       const stageEl = stageScrollRef.current
 
@@ -659,160 +575,128 @@ export default function MobileDiscoverPage() {
           className={`md-stage${stageEntered ? ' is-ready' : ''}`}
           aria-label={t('discoverPage_saleFormatsAria')}
         >
-          <div className={`md-site-nav${stageEntered ? ' is-in' : ''}`}>
+          <div className={`md-site-nav${isStageNavExpanded ? ' is-expanded' : ' is-hidden'}`}>
             <Suspense fallback={null}>
               <Header />
             </Suspense>
           </div>
 
-          <div className="md-stage__sheet">
-            <DiscoverIntroBanners />
-
-            <div className="md-stage__intro">
-              <h2 className="md-stage__title">
-                {t('discoverPage_stageTitlePrefix')}{' '}
-                <span className="md-stage__title-accent">
-                  {t('discoverPage_stageTitleAccent')}
-                </span>{' '}
-                {t('discoverPage_stageTitleSuffix')}
-              </h2>
-              <p className="md-stage__subtitle">{t('discoverPage_stageSubtitle')}</p>
-            </div>
-
-            <div className="md-cards-wrap">
-              <div ref={cardsRef} className="md-cards" role="list">
-                {saleCards.map((card, index) => {
-                  const isSaved = savedSaleCards.has(card.id)
-                  return (
-                    <article
-                      key={card.id}
-                      className={`md-card md-card--${card.theme}`}
-                      role="listitem"
-                      style={{
-                        '--md-card-i': index,
-                        '--md-card-image-position': card.imagePosition,
-                      }}
-                      aria-label={card.title}
-                    >
-                      <div className="md-card__frame">
-                        <img
-                          className="md-card__image"
-                          src={card.image}
-                          alt=""
-                          width={1536}
-                          height={1024}
-                          loading={index === 0 ? 'eager' : 'lazy'}
-                          decoding="async"
-                          aria-hidden="true"
-                        />
-                        <span className="md-card__shade" aria-hidden="true" />
-                        <div className="md-card__visual" aria-hidden="true" />
-                        <div className="md-card__body">
-                          <div className="md-card__copy">
-                            <div className="md-card__heading">
-                              <img
-                                className="md-card__icon"
-                                src={card.iconSrc}
-                                alt=""
-                                width={512}
-                                height={512}
-                                loading={index === 0 ? 'eager' : 'lazy'}
-                                decoding="async"
-                                aria-hidden="true"
-                              />
-                              <h3 className="md-card__title">{card.title}</h3>
-                              <SectionInfoDrawer section={card.infoSection} placement="card" />
-                            </div>
-                          </div>
-                          <p className="md-card__description">
-                            {renderHighlightedDescription(card.description, card.descriptionTrigger)}
-                          </p>
-                          <div className="md-card__actions">
-                            <Link className="md-card__cta" to={card.to}>
-                              {t('aboutCorp_moreDetails')}
-                              <FiArrowUpRight aria-hidden="true" />
-                            </Link>
-                            <button
-                              type="button"
-                              className={`md-card__save${isSaved ? ' is-on' : ''}`}
-                              aria-label={
-                                isSaved ? t('auctionRemoveFavorite') : t('discoverPage_save')
-                              }
-                              aria-pressed={isSaved}
-                              onClick={() => toggleSavedSaleCard(card.id, isSaved)}
-                            >
-                              <FiBookmark aria-hidden="true" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </article>
-                  )
-                })}
-              </div>
-
-              <div
-                className="md-cards-dots"
-                role="tablist"
-                aria-label={t('discoverPage_saleFormatsDotsAria')}
-              >
-                {saleCards.map((card, index) => (
-                  <button
-                    key={card.id}
-                    type="button"
-                    role="tab"
-                    className={`md-cards-dot${activeSaleCard === index ? ' is-active' : ''}`}
-                    aria-label={card.title}
-                    aria-selected={activeSaleCard === index}
-                    onClick={() => scrollToSaleCard(index)}
-                  />
+          <div className="md-stage__launch">
+            <span className="md-launch__brand" role="img" aria-label="SellYouBrick">Sell<span className="md-brand__you">You</span>Brick</span>
+            <h2 className="md-launch__headline">
+              <span>{t('discoverPage_launchTitleLine1')}</span>
+              <span>{t('discoverPage_launchTitleLine2')}</span>
+            </h2>
+            <div
+              className="md-launch__slider"
+              onScroll={(event) => {
+                const rail = event.currentTarget
+                const maxScroll = rail.scrollWidth - rail.clientWidth
+                setActiveLaunchCard(maxScroll > 0 ? Math.round(Math.max(0, Math.min(1, rail.scrollLeft / maxScroll)) * (launchCards.length - 1)) : 0)
+              }}
+              role="region"
+              aria-label={t('discoverPage_rewardsFormats')}
+              aria-roledescription={t('discoverPage_sliderAria')}
+              tabIndex={0}
+            >
+              <div className="md-launch__cards" role="list">
+                {launchCards.map((card, index) => (
+                  <div className="md-launch__item" role="listitem" key={card.id}>
+                    <Link className={`md-launch__card${index === 0 ? ' md-launch__card--featured' : ''}`} to={card.to}>
+                      <span className="md-launch__card-heading">
+                        <img className="md-launch__section-icon" src={card.iconSrc} alt="" aria-hidden="true" width="28" height="28" decoding="async" />
+                        <strong className="md-launch__card-title">{card.title}</strong>
+                      </span>
+                      <span className="md-launch__card-caption">{card.caption}</span>
+                      <span className="md-launch__photos" aria-hidden="true">
+                        {card.photos.map((src) => (
+                          <img key={src} src={src} alt="" width="40" height="40" decoding="async" />
+                        ))}
+                      </span>
+                    </Link>
+                  </div>
                 ))}
               </div>
-
-              {!compassBannerDismissed ? (
-                <div className="md-stage__compass">
-                  <button
-                    type="button"
-                    className="md-stage__compass-hit"
-                    onClick={compassResultStrategy ? () => navigate(COMPASS_PATH) : openCompassDrawer}
-                    aria-label={
-                      compassResultStrategy
-                        ? t('compass_stageResult', { strategy: t(getStrategyTitleKey(compassResultStrategy)) })
-                        : t('compass_stageCta')
-                    }
-                  >
-                    <span className="md-stage__compass-copy">
-                      <strong>
-                        {compassResultStrategy ? t('compass_stageResultTitle') : t('compass_stageCtaTitle')}
-                      </strong>
-                      <span>
-                        {compassResultStrategy
-                          ? t('compass_stageResultLead', { strategy: t(getStrategyTitleKey(compassResultStrategy)) })
-                          : t('compass_stageCtaLead')}
-                      </span>
-                    </span>
-                    <img
-                      className="md-stage__compass-art"
-                      src={publicAsset(COMPASS_BANNER_SRC)}
-                      alt=""
-                      width="768"
-                      height="768"
-                      decoding="async"
-                      aria-hidden="true"
-                    />
-                  </button>
-                  <button
-                    type="button"
-                    className="md-stage__compass-close"
-                    onClick={() => setCompassBannerDismissed(true)}
-                    aria-label={t('compass_stageDismiss')}
-                  >
-                    <FiX aria-hidden="true" />
-                  </button>
-                </div>
-              ) : null}
-
             </div>
+            <div className="md-launch__dots" role="img" aria-label={t('discoverPage_sliderCount', { count: launchCards.length })}>
+              {launchCards.map((card, index) => (
+                <span key={card.id} className={`md-launch__dot${index === activeLaunchCard ? ' is-active' : ''}`} aria-hidden="true" />
+              ))}
+            </div>
+            <svg className="md-launch__wave" viewBox="0 0 736 80" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M0 60 C85 14 145 44 242 52 C304 60 331 0 376 8 C424 12 463 73 514 55 C607 22 663 12 736 70 L736 80 L0 80 Z" fill="white" />
+            </svg>
+          </div>
+
+          <div className="md-stage__sheet">
+            <form className="md-stage__search" onSubmit={handleDiscoverSearch} role="search">
+              <button type="submit" className="md-stage__search-submit" aria-label={t('search')}>
+                <FiSearch aria-hidden="true" />
+              </button>
+              <input
+                className="md-stage__search-input"
+                type="search"
+                value={welcomeQuery}
+                onChange={(event) => setWelcomeQuery(event.target.value)}
+                placeholder={t('discoverPage_searchAria')}
+                aria-label={t('discoverPage_searchAria')}
+              />
+              <button
+                type="button"
+                className="md-stage__search-ai"
+                onClick={openSearchAssistant}
+                aria-label={t('aiAssistant')}
+              >
+                <Sparkles aria-hidden="true" />
+                <span>AI</span>
+              </button>
+            </form>
+            {!compassBannerDismissed ? (
+              <div className="md-stage__compass">
+                <button
+                  type="button"
+                  className="md-stage__compass-hit"
+                  onClick={compassResultStrategy ? () => navigate(COMPASS_PATH) : openCompassDrawer}
+                  aria-label={
+                    compassResultStrategy
+                      ? t('compass_stageResult', { strategy: t(getStrategyTitleKey(compassResultStrategy)) })
+                      : t('compass_stageCta')
+                  }
+                >
+                  <span className="md-stage__compass-copy">
+                    <strong>
+                      {compassResultStrategy ? t('compass_stageResultTitle') : t('compass_stageCtaTitle')}
+                    </strong>
+                    <span>
+                      {compassResultStrategy
+                        ? t('compass_stageResultLead', { strategy: t(getStrategyTitleKey(compassResultStrategy)) })
+                        : t('compass_stageCtaLead')}
+                    </span>
+                  </span>
+                  <img
+                    className="md-stage__compass-art"
+                    src={publicAsset(COMPASS_BANNER_SRC)}
+                    alt=""
+                    width="768"
+                    height="768"
+                    decoding="async"
+                    aria-hidden="true"
+                  />
+                </button>
+                <button
+                  type="button"
+                  className="md-stage__compass-close"
+                  onClick={() => setCompassBannerDismissed(true)}
+                  aria-label={t('compass_stageDismiss')}
+                >
+                  <FiX aria-hidden="true" />
+                </button>
+              </div>
+            ) : null}
+
+            <Suspense fallback={null}>
+              <MobileDiscoverTopListings isSignedIn={shortcutsUnlocked} />
+            </Suspense>
 
             <div className="md-welcome__copy">
               <h2 className="md-welcome__title">{t('discoverPage_welcomeTitle')}</h2>
@@ -822,13 +706,14 @@ export default function MobileDiscoverPage() {
                 {t('discoverPage_welcomeLeadLine2')}
               </p>
             </div>
+
           </div>
 
           <div className="md-welcome-flow">
             <section className="md-welcome" aria-label={t('discoverPage_welcomeAria')}>
               <div
                 className="md-welcome__media"
-                style={{ backgroundImage: `url("${WELCOME_HOUSE}")` }}
+                style={{ backgroundImage: `url("${WELCOME_HOUSE}")`, '--md-welcome-photo': `url("${WELCOME_HOUSE}")` }}
               >
               <svg
                 className="md-welcome__curve"
@@ -839,66 +724,36 @@ export default function MobileDiscoverPage() {
                 <path d="M0 0 H100 V6 Q50 28 0 6 Z" fill="#ffffff" />
               </svg>
 
-              <div className="md-welcome__brand" aria-label="SellYourBrick">
-                <span className="md-welcome__brand-text">
-                  <span className="md-welcome__brand-word">Sell</span>
-                  <span className="md-welcome__brand-word md-welcome__brand-word--accent">Your</span>
-                  <span className="md-welcome__brand-word">Brick</span>
-                </span>
-              </div>
-
-              <div className="md-welcome__actions">
-                <form
-                  className="md-welcome__search"
-                  onSubmit={(event) => {
-                    event.preventDefault()
-                    const q = welcomeQuery.trim()
-                    navigate(q ? `/search-results?q=${encodeURIComponent(q)}` : '/search-results')
-                  }}
-                >
-                  <input
-                    className="md-welcome__search-input"
-                    type="search"
-                    value={welcomeQuery}
-                    onChange={(event) => setWelcomeQuery(event.target.value)}
-                    placeholder={t('discoverPage_searchPlaceholder')}
-                    aria-label={t('discoverPage_searchAria')}
-                  />
-                  <button
-                    type="submit"
-                    className="md-welcome__search-go"
-                    aria-label={t('search')}
-                  >
-                    <FiSearch aria-hidden />
+              <div className="md-welcome__carousel">
+                <div className="md-rewards">
+                  <span className="md-rewards__brand" role="img" aria-label="SellYouBrick">Sell<span className="md-brand__you">You</span>Brick</span>
+                  <button ref={lotteryTriggerRef} type="button" className="md-rewards__lottery" aria-haspopup="dialog" aria-controls="md-lottery-coming-soon" onClick={() => setLotteryComingSoonOpen(true)}>
+                    <img className="md-rewards__lottery-ticket" src={publicAsset('images/mobile-discover/lottery-tiffany-ticket.webp')} alt="" aria-hidden="true" width="160" height="160" loading="lazy" decoding="async" />
+                    <span className="md-rewards__lottery-copy">{t('discoverPage_lotteryText')}</span>
+                    <span className="md-rewards__lottery-cta">{t('discoverPage_lotteryAction')}</span>
                   </button>
-                </form>
-                <nav className="md-welcome__shortcuts" aria-label={t('mobileShowcase.quickActions')}>
-                  {WELCOME_SHORTCUTS.map((item) => (
-                    <Link
-                      key={item.id}
-                      className={`md-welcome__shortcut md-welcome__shortcut--${item.id}${shortcutsUnlocked ? '' : ' is-locked'}`}
-                      to={item.path}
-                      onClick={handleWelcomeShortcutClick}
-                      aria-label={shortcutsUnlocked ? undefined : `${t(`mobileShowcase.${item.id}.title`)} — ${t('logIn')}`}
-                    >
-                      <img
-                        src={welcomeShortcutAsset(item.id)}
-                        width="360"
-                        height="360"
-                        alt=""
-                        decoding="async"
-                      />
-                      <h3>{t(`mobileShowcase.${item.id}.title`)}</h3>
-                      {shortcutsUnlocked ? (
-                        <FiArrowUpRight className="md-welcome__shortcut-arrow" aria-hidden="true" />
-                      ) : (
-                        <span className="md-welcome__shortcut-lock" aria-hidden="true">
-                          <img src={WELCOME_LOCK_IMAGE} alt="" width="181" height="191" draggable="false" />
-                        </span>
-                      )}
-                    </Link>
-                  ))}
-                </nav>
+                  <div className="md-rewards__tiles" role="list" aria-label={t('discoverPage_rewardsFormats')}>
+                    {saleCards.map((card, index) => (
+                      <div className={`md-rewards__tile md-rewards__tile--${index + 1}`} role="listitem" key={card.id}>
+                        <Link className={`md-rewards__tile-link${card.featureTitle ? ` md-rewards__tile-link--feature md-rewards__tile-link--${card.id}` : ''}${card.glass ? ' md-rewards__tile-link--glass' : ''}`} to={card.to} aria-label={card.title}>
+                          {card.featureTitle ? (
+                            <>
+                              <strong className="md-rewards__feature-title">{card.featureTitle}</strong>
+                              <img className="md-rewards__feature-art" src={card.iconSrc} alt="" aria-hidden="true" width={card.glass ? 480 : 720} height={card.artHeight} loading="lazy" decoding="async" />
+                              <span className="md-rewards__feature-cta">{t('aboutCorp_moreDetails')}</span>
+                              <span className="md-rewards__feature-arrow" aria-hidden="true"><FiArrowUpRight /></span>
+                            </>
+                          ) : (
+                            <>
+                              <img src={card.iconSrc} alt="" aria-hidden="true" width="512" height="512" decoding="async" />
+                              <strong className="md-rewards__tile-title">{card.title}</strong>
+                            </>
+                          )}
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <svg
@@ -939,23 +794,37 @@ export default function MobileDiscoverPage() {
           onStart={startCompass}
         />
       ) : null}
-      {(recommendationDrawerOpen || storiesOpenSignal > 0) ? (
-        <>
-          <StrategyRecommendationDrawer
-            isOpen={recommendationDrawerOpen}
-            onClose={() => setRecommendationDrawerOpen(false)}
-            onWatch={watchRecommendationStories}
-          />
-          {storiesOpenSignal > 0 ? (
-            <ProfileStrategyStories
-              language={i18n.language}
-              showTrigger={false}
-              openSignal={storiesOpenSignal}
-            />
-          ) : null}
-        </>
-      ) : null}
     </Suspense>
+    <dialog
+      ref={lotteryDialogRef}
+      id="md-lottery-coming-soon"
+      className="md-lottery-modal"
+      aria-labelledby="md-lottery-coming-soon-title"
+      aria-describedby="md-lottery-coming-soon-description"
+      onCancel={(event) => { event.preventDefault(); setLotteryComingSoonOpen(false) }}
+      onClose={() => setLotteryComingSoonOpen(false)}
+      onKeyDown={(event) => {
+        if (event.key !== 'Tab') return
+        const buttons = event.currentTarget.querySelectorAll('button')
+        const first = buttons[0]
+        const last = buttons[buttons.length - 1]
+        if ((!event.shiftKey && document.activeElement === last) || (event.shiftKey && document.activeElement === first)) {
+          event.preventDefault()
+          ;(event.shiftKey ? last : first).focus()
+        }
+      }}
+      onClick={(event) => {
+        if (event.target !== event.currentTarget) return
+        const rect = event.currentTarget.getBoundingClientRect()
+        if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) setLotteryComingSoonOpen(false)
+      }}
+    >
+      <button type="button" className="md-lottery-modal__close" aria-label={t('close')} onClick={() => setLotteryComingSoonOpen(false)}><FiX aria-hidden="true" /></button>
+      <img className="md-lottery-modal__art" src={publicAsset('images/mobile-discover/lottery-tiffany-ticket.webp')} alt="" width="160" height="107" />
+      <h2 id="md-lottery-coming-soon-title">{t('discoverPage_lotteryComingSoonTitle')}</h2>
+      <p id="md-lottery-coming-soon-description">{t('discoverPage_lotteryComingSoonBody')}</p>
+      <button type="button" className="md-lottery-modal__confirm" onClick={() => setLotteryComingSoonOpen(false)}>{t('lottery_gotIt')}</button>
+    </dialog>
     </SiteChatDock>
   )
 }

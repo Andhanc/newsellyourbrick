@@ -1,0 +1,838 @@
+.piggy-page {
+  min-height: 100dvh;
+  padding: 0;
+  background: #f5f6f7;
+  color: #181b22;
+  font-family: var(--md-font, system-ui, sans-serif);
+}
+
+.piggy-page__shell {
+  position: relative;
+  box-sizing: border-box;
+  width: min(100%, 430px);
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: max(22px, env(safe-area-inset-top)) 18px calc(16px + env(safe-area-inset-bottom));
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 15% 40%, rgba(197, 255, 221, 0.88), transparent 40%),
+    radial-gradient(circle at 82% 18%, rgba(251, 210, 247, 0.76), transparent 42%),
+    linear-gradient(160deg, #fff7e9 0%, #fdfdf9 58%, #f3f7f2 100%);
+}
+
+.piggy-page__topbar {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  gap: 8px;
+}
+
+.piggy-page__topbar button {
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.84);
+  color: #378ee4;
+  cursor: pointer;
+}
+
+.piggy-page__topbar button svg {
+  width: 19px;
+  height: 19px;
+}
+
+.piggy-page__profile {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9rem;
+}
+
+.piggy-page__profile img,
+.piggy-page__profile > span {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  flex: 0 0 35px;
+  border-radius: 50%;
+  background: #d5eaf6;
+  color: #1572ad;
+  object-fit: cover;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.piggy-page__profile strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.piggy-page__overview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 17px;
+  text-align: center;
+}
+
+.piggy-page__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 17px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 3px 12px rgba(61, 87, 95, 0.06);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.piggy-page__badge svg {
+  width: 18px;
+  height: 18px;
+}
+
+.piggy-page__overview h1 {
+  margin: 10px 0 0;
+  font-size: clamp(2.15rem, 9.7vw, 2.7rem);
+  font-weight: 760;
+  letter-spacing: -0.055em;
+  line-height: 1;
+}
+
+.piggy-page__overview p {
+  margin: 5px 0 0;
+  color: #383d43;
+  font-size: 0.75rem;
+}
+
+.piggy-page__pig {
+  display: block;
+  width: min(75vw, 272px);
+  height: min(56vw, 205px);
+  margin: 4px auto 15px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.piggy-page__pig img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 14px rgba(157, 106, 37, 0.15));
+  transition: transform 220ms ease;
+}
+
+.piggy-page__pig:hover img {
+  transform: translateY(-5px) scale(1.035);
+}
+
+.piggy-page__pig.is-celebrating {
+  position: relative;
+  z-index: 1000;
+}
+
+.piggy-page__pig.is-celebrating img {
+  animation: piggy-hop 620ms ease-in-out 2;
+}
+
+.piggy-page__reward {
+  position: relative;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 94px;
+  gap: 10px;
+  padding: 12px 81px 12px 13px;
+  overflow: hidden;
+  border-radius: 17px;
+  background: #ff6575;
+  color: #fff;
+  box-shadow: 0 5px 12px rgba(234, 83, 105, 0.1);
+}
+
+.piggy-page__reward-art {
+  display: grid;
+  place-items: center;
+  flex: 0 0 58px;
+  width: 58px;
+  height: 58px;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.piggy-page__reward-art img {
+  width: 94%;
+  height: 94%;
+  object-fit: contain;
+}
+
+.piggy-page__reward-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  min-width: 0;
+}
+
+.piggy-page__reward-copy strong {
+  font-size: 0.91rem;
+  font-weight: 780;
+  line-height: 1.08;
+}
+
+.piggy-page__reward-copy button {
+  min-height: 29px;
+  padding: 0 15px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #079bfb, #6873f0);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.piggy-page__reward-pig {
+  position: absolute;
+  right: -4px;
+  bottom: -11px;
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+}
+
+.piggy-page__goals {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.piggy-page__goal {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  gap: 10px;
+  box-sizing: border-box;
+  min-height: 112px;
+  padding: 10px 11px;
+  border-radius: 17px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(55, 73, 85, 0.06);
+}
+
+.piggy-page__goal-image {
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border-radius: 10px;
+  background: #f1f2f3;
+}
+
+.piggy-page__goal-image img {
+  width: 95%;
+  height: 95%;
+  object-fit: contain;
+}
+
+.piggy-page__goal-image svg {
+  width: 28px;
+  height: 28px;
+  color: #6f91a5;
+}
+
+.piggy-page__goal-main {
+  min-width: 0;
+}
+
+.piggy-page__goal-values {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.piggy-page__goal-values strong {
+  font-size: 0.99rem;
+  font-weight: 780;
+}
+
+.piggy-page__goal-values span {
+  color: #93a2b0;
+  font-size: 0.65rem;
+}
+
+.piggy-page__progress {
+  height: 7px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #ddebf0;
+}
+
+.piggy-page__progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #168ff1;
+}
+
+.piggy-page__goal-main p {
+  margin: 6px 0 7px;
+  overflow: hidden;
+  font-size: 0.67rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.piggy-page__goal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.piggy-page__goal-actions button {
+  min-height: 28px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #078df0;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.piggy-page__goal-actions button + button {
+  background: #edf0f2;
+  color: #1888d9;
+}
+
+.piggy-page__goal-actions button:disabled {
+  color: #aeb8be;
+  cursor: not-allowed;
+}
+
+.piggy-page__add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 53px;
+  margin-top: 10px;
+  border: 0;
+  border-radius: 15px;
+  background: linear-gradient(105deg, #098bf0, #6b6cf4);
+  color: #fff;
+  box-shadow: 0 8px 17px rgba(75, 103, 229, 0.18);
+  font-size: 0.92rem;
+  font-weight: 680;
+  cursor: pointer;
+}
+
+.piggy-page__add svg {
+  width: 18px;
+  height: 18px;
+}
+
+.piggy-page__demo-note {
+  margin: 8px 0 0;
+  color: #79868a;
+  font-size: 0.62rem;
+  text-align: center;
+}
+
+.piggy-page button:focus-visible,
+.piggy-drawer button:focus-visible,
+.piggy-drawer input:focus-visible,
+.piggy-money button:focus-visible,
+.piggy-money input:focus-visible {
+  outline: 3px solid #1458a8;
+  outline-offset: 3px;
+}
+
+.piggy-page__celebration {
+  position: fixed;
+  z-index: 999;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.piggy-page__dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(14, 22, 34, 0.32);
+  animation: piggy-dim 2.2s ease-out both;
+}
+
+.piggy-page__celebration > img {
+  position: absolute;
+  top: -90px;
+  left: var(--coin-left);
+  width: var(--coin-size);
+  height: var(--coin-size);
+  object-fit: contain;
+  animation: piggy-coin-fall var(--coin-duration) cubic-bezier(0.25, 0.65, 0.43, 1) var(--coin-delay) both;
+}
+
+.piggy-drawer-root,
+.piggy-money-root {
+  position: fixed;
+  z-index: 1100;
+  inset: 0;
+}
+
+.piggy-drawer-root__backdrop,
+.piggy-money-root__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: rgba(18, 25, 38, 0.42);
+  cursor: pointer;
+}
+
+.piggy-drawer,
+.piggy-money {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  box-sizing: border-box;
+  width: min(100%, 430px);
+  margin: 0 auto;
+  overflow-y: auto;
+  border-radius: 28px 28px 0 0;
+  background: #fff;
+  box-shadow: 0 -18px 45px rgba(9, 27, 45, 0.16);
+}
+
+.piggy-drawer {
+  height: 80dvh;
+  padding: 11px 20px calc(25px + env(safe-area-inset-bottom));
+  animation: piggy-drawer-enter 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.piggy-drawer__handle {
+  width: 42px;
+  height: 5px;
+  margin: 0 auto 19px;
+  border-radius: 999px;
+  background: #dbe1e7;
+}
+
+.piggy-drawer__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.piggy-drawer__header span {
+  color: #83919a;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.piggy-drawer__header h2 {
+  margin: 5px 0 0;
+  font-size: 1.7rem;
+  letter-spacing: -0.045em;
+}
+
+.piggy-drawer__header button,
+.piggy-money__close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border: 0;
+  border-radius: 50%;
+  background: #eff2f5;
+  color: #283743;
+  cursor: pointer;
+}
+
+.piggy-drawer__lead {
+  margin: 10px 0 22px;
+  color: #677681;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.piggy-drawer h3 {
+  margin: 18px 0 10px;
+  font-size: 0.96rem;
+  letter-spacing: -0.015em;
+}
+
+.piggy-drawer__rewards {
+  margin-top: 6px;
+}
+
+.piggy-drawer__timeline {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  min-height: 120px;
+  margin: 0 -8px;
+}
+
+.piggy-drawer__timeline::before {
+  position: absolute;
+  top: 80px;
+  right: 8.3%;
+  left: 8.3%;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #59cbd5 0 18%, #c7edef 18% 100%);
+  content: '';
+}
+
+.piggy-drawer__reward-day {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  height: 120px;
+}
+
+.piggy-drawer__reward-day.is-next {
+  z-index: 2;
+}
+
+.piggy-drawer__reward-day.is-next::before {
+  position: absolute;
+  z-index: -1;
+  inset: -5px -2px -3px;
+  border-radius: 17px;
+  background: linear-gradient(180deg, #e9fbfb, #c9f1f3);
+  content: '';
+}
+
+.piggy-drawer__ticket {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 74px;
+}
+
+.piggy-drawer__ticket img {
+  position: absolute;
+  bottom: 3px;
+  left: 50%;
+  width: clamp(43px, 12.3vw, 52px);
+  max-width: none;
+  transform: translateX(-50%);
+}
+
+.piggy-drawer__ticket strong {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  color: #07525b;
+  font-size: 0.63rem;
+  font-weight: 800;
+  line-height: 1;
+  transform: translateX(-50%) rotate(-5deg);
+}
+
+.piggy-drawer__reward-day.is-next .piggy-drawer__ticket img {
+  bottom: 10px;
+  width: clamp(62px, 17vw, 69px);
+}
+
+.piggy-drawer__reward-day.is-next .piggy-drawer__ticket strong {
+  bottom: 30px;
+  font-size: 0.82rem;
+}
+
+.piggy-drawer__reward-day.is-claimed .piggy-drawer__ticket {
+  opacity: 0.63;
+}
+
+.piggy-drawer__reward-day.is-locked .piggy-drawer__ticket {
+  opacity: 0.72;
+}
+
+.piggy-drawer__reward-day:last-child .piggy-drawer__ticket,
+.piggy-drawer__reward-day:last-child .piggy-drawer__reward-label {
+  opacity: 0.38;
+}
+
+.piggy-drawer__reward-node {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e3eeee;
+  border-radius: 50%;
+  background: #fff;
+  color: #98aeb1;
+}
+
+.piggy-drawer__reward-node svg {
+  width: 9px;
+  height: 9px;
+  stroke-width: 3;
+}
+
+.piggy-drawer__reward-day.is-claimed .piggy-drawer__reward-node {
+  border-color: #5bcbd4;
+  background: #5bcbd4;
+  color: #fff;
+}
+
+.piggy-drawer__reward-day.is-next .piggy-drawer__reward-node {
+  border-color: #99dce1;
+  color: #6caab0;
+}
+
+.piggy-drawer__reward-label {
+  max-width: 100%;
+  margin-top: 5px;
+  overflow: hidden;
+  color: #6c797c;
+  font-size: clamp(0.56rem, 2.5vw, 0.72rem);
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.piggy-drawer__reward-day.is-next .piggy-drawer__reward-label {
+  color: #143f45;
+  font-weight: 800;
+}
+
+.piggy-drawer__earn {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 9px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(100deg, #59cbd5, #8bdce1);
+  color: #103e43;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.piggy-drawer__presets {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.piggy-drawer__presets button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 92px;
+  padding: 6px;
+  border: 1.5px solid #e5edf2;
+  border-radius: 14px;
+  background: #fafcfd;
+  color: #243140;
+  cursor: pointer;
+}
+
+.piggy-drawer__presets button.is-selected {
+  border-color: #59cbd5;
+  background: #e9fbfb;
+}
+
+.piggy-drawer__presets img,
+.piggy-drawer__presets svg {
+  width: 43px;
+  height: 43px;
+  object-fit: contain;
+}
+
+.piggy-drawer__presets span {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.7rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.piggy-drawer__form {
+  display: grid;
+  gap: 12px;
+  margin-top: 17px;
+}
+
+.piggy-drawer__form label,
+.piggy-money label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.79rem;
+  font-weight: 700;
+}
+
+.piggy-drawer__form input,
+.piggy-money input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 47px;
+  padding: 0 13px;
+  border: 1px solid #dce5eb;
+  border-radius: 12px;
+  background: #fff;
+  color: #1d2933;
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.piggy-drawer__amount {
+  position: relative;
+}
+
+.piggy-drawer__amount input {
+  padding-right: 35px;
+}
+
+.piggy-drawer__amount span {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  color: #718797;
+  font-size: 1rem;
+  transform: translateY(-50%);
+}
+
+.piggy-drawer__submit,
+.piggy-money > button[type='submit'] {
+  min-height: 50px;
+  margin-top: 5px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(100deg, #0a90f1, #6d6ff2);
+  color: #fff;
+  font-size: 0.94rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.piggy-drawer__submit {
+  background: linear-gradient(100deg, #59cbd5, #8bdce1);
+  color: #103e43;
+}
+
+.piggy-drawer button:focus-visible,
+.piggy-drawer input:focus-visible {
+  outline-color: #3aabb6;
+}
+
+.piggy-money {
+  display: grid;
+  gap: 13px;
+  padding: 25px 20px calc(24px + env(safe-area-inset-bottom));
+}
+
+.piggy-money__close {
+  justify-self: end;
+}
+
+.piggy-money h2 {
+  margin: -12px 0 0;
+  font-size: 1.5rem;
+}
+
+.piggy-money p {
+  margin: 0;
+  color: #687785;
+  font-size: 0.82rem;
+}
+
+.piggy-page__toast {
+  position: fixed;
+  z-index: 1200;
+  right: 16px;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  left: 16px;
+  width: fit-content;
+  max-width: 90vw;
+  margin: 0 auto;
+  padding: 12px 17px;
+  border-radius: 999px;
+  background: #223344;
+  color: #fff;
+  box-shadow: 0 10px 25px rgba(15, 28, 41, 0.25);
+  font-size: 0.82rem;
+}
+
+@keyframes piggy-hop {
+  0%, 100% { transform: translateY(0) scale(1); }
+  40% { transform: translateY(-12px) scale(1.07) rotate(-3deg); }
+  70% { transform: translateY(2px) scale(0.97) rotate(2deg); }
+}
+
+@keyframes piggy-dim {
+  0% { opacity: 0; }
+  14%, 70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes piggy-coin-fall {
+  0% { transform: translate3d(0, -30px, 0) rotate(-25deg); opacity: 0; }
+  12% { opacity: 1; }
+  100% { transform: translate3d(var(--coin-drift), 110dvh, 0) rotate(540deg); opacity: 0.95; }
+}
+
+@keyframes piggy-drawer-enter {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@media (min-width: 700px) {
+  .piggy-page__shell {
+    box-shadow: 0 15px 55px rgba(28, 52, 65, 0.15);
+  }
+}
+
+@media (max-height: 720px) {
+  .piggy-page__overview { margin-top: 10px; }
+  .piggy-page__pig { height: min(50vw, 175px); margin-bottom: 8px; }
+  .piggy-page__reward { min-height: 84px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .piggy-page__pig.is-celebrating img,
+  .piggy-page__celebration > img,
+  .piggy-page__dim,
+  .piggy-drawer {
+    animation-duration: 1ms;
+  }
+}

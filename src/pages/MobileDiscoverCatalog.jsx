@@ -12,6 +12,7 @@ import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { publicAsset } from '../utils/publicAsset'
+import { wheelDeltaYInPixels } from '../utils/wheelDelta'
 import { AppleIcon, GooglePlayIcon } from '../components/icons/ContactChannelIcons'
 import PropertyDetailAppBannerPhone from '../components/PropertyDetailAppBannerPhone'
 import './InvestorHomePage.css'
@@ -766,21 +767,23 @@ export default function MobileDiscoverCatalog() {
       // Horizontal trackpad motion belongs to the property rail, even mid-flip.
       if (Math.abs(event.deltaX) > Math.abs(event.deltaY) || event.shiftKey) return
 
+      const dy = wheelDeltaYInPixels(event, stage.clientHeight)
       const now = performance.now()
-      const mag = Math.abs(event.deltaY)
+      const mag = Math.abs(dy)
       const lastMag = Math.abs(lastWheelDelta)
       const reversed =
-        event.deltaY !== 0 &&
+        dy !== 0 &&
         lastWheelDelta !== 0 &&
-        Math.sign(event.deltaY) !== Math.sign(lastWheelDelta)
+        Math.sign(dy) !== Math.sign(lastWheelDelta)
       const tailOver =
         now - lastWheelAt >= WHEEL_FLICK_GAP ||
         reversed ||
         mag > lastMag + WHEEL_RISE ||
         mag <= WHEEL_TAIL
       lastWheelAt = now
-      lastWheelDelta = event.deltaY
+      lastWheelDelta = dy
       if (tailOver) flickSpent = false
+      if (reversed) wheelAcc.current = 0
       const sameFlick = !tailOver
 
       if (jumpingRef.current) {
@@ -799,9 +802,9 @@ export default function MobileDiscoverCatalog() {
       }
 
       if (inFreeTail()) {
-        if (event.deltaY < 0 && stage.scrollTop <= freeTailTop() + 24) {
+        if (dy < 0 && stage.scrollTop <= freeTailTop() + 24) {
           takeOverWheel(event)
-          wheelAcc.current += event.deltaY
+          wheelAcc.current += dy
           if (Math.abs(wheelAcc.current) >= CARD_GESTURE) {
             wheelAcc.current = 0
             flickSpent = true
@@ -814,9 +817,9 @@ export default function MobileDiscoverCatalog() {
       }
 
       if (inDebtsContinue()) {
-        if (event.deltaY < 0 && stage.scrollTop <= lastCardTop() + 56) {
+        if (dy < 0 && stage.scrollTop <= lastCardTop() + 56) {
           takeOverWheel(event)
-          wheelAcc.current += event.deltaY
+          wheelAcc.current += dy
           if (Math.abs(wheelAcc.current) >= CARD_GESTURE) {
             wheelAcc.current = 0
             flickSpent = true
@@ -844,7 +847,7 @@ export default function MobileDiscoverCatalog() {
 
       // Hard lock in flip zone — no native scroll between cards
       takeOverWheel(event)
-      wheelAcc.current += event.deltaY
+      wheelAcc.current += dy
       if (Math.abs(wheelAcc.current) < CARD_GESTURE) return
 
       const current = nearestFlipIndex()

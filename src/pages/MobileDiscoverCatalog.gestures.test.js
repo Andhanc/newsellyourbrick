@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import { wheelDeltaYInPixels } from '../utils/wheelDelta.js'
 
 const source = readFileSync(new URL('./MobileDiscoverCatalog.jsx', import.meta.url), 'utf8')
 const start = source.indexOf('  useEffect(() => {\n    const catalog = rootRef.current')
@@ -37,9 +38,9 @@ function setup() {
     matchMedia: () => ({ matches: false }),
   }
   let cleanup
-  new Function('useEffect', 'rootRef', 'jumpingRef', 'wheelAcc', 'loading', 'window', 'document', 'performance', 'ResizeObserver',
+  new Function('useEffect', 'rootRef', 'jumpingRef', 'wheelAcc', 'loading', 'window', 'document', 'performance', 'ResizeObserver', 'wheelDeltaYInPixels',
     constants + effect)((fn) => { cleanup = fn() }, { current: catalog }, { current: false }, { current: 0 },
-    false, win, { documentElement: { classList: { contains: () => false } } }, { now: () => time }, undefined)
+    false, win, { documentElement: { classList: { contains: () => false } } }, { now: () => time }, undefined, wheelDeltaYInPixels)
   return {
     stage,
     fire(name, x = 100, y = 100, extra = {}) {
@@ -91,6 +92,24 @@ test('horizontal wheel events remain native even during a vertical flip', () => 
   assert.equal(h.stage.scrollTop, 2600)
   h.fire('touchmove', 100, 40)
   assert.equal(h.frames, 0)
+  h.cleanup()
+})
+
+test('line-based wheel events advance a parked card', () => {
+  const h = setup()
+  for (let i = 0; i < 3; i++) h.fire('wheel', 0, 0, { deltaY: 3, deltaMode: 1 })
+  h.finishAnimation()
+  assert.equal(h.stage.scrollTop, 2600)
+  h.cleanup()
+})
+
+test('reversing wheel direction clears unfinished card intent', () => {
+  const h = setup()
+  h.fire('wheel', 0, 0, { deltaY: 90 })
+  h.fire('wheel', 0, 0, { deltaY: -90 })
+  h.fire('wheel', 0, 0, { deltaY: -20 })
+  h.finishAnimation()
+  assert.equal(h.stage.scrollTop, 1000)
   h.cleanup()
 })
 

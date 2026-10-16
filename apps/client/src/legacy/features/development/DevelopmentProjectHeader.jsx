@@ -22,7 +22,7 @@ export default function DevelopmentProjectHeader({ project }) {
   const name =
     user?.fullName || localUser?.name || localUser?.firstName || t('profile')
   const photo = user?.imageUrl || localUser?.picture
-  const title = project?.title || 'DEVELOP'
+  const title = project?.title || t('develop.title')
   const back = () => navigate('/development')
   useEffect(() => {
     const hero = document.querySelector('.dev-project-hero')

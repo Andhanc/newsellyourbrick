@@ -11,9 +11,9 @@ test('home discover page hosts the same AI plaque as auction', () => {
   assert.match(page, /wrapperClassName="md-discover-ai-floats"/)
 })
 
-test('home AI plaque reuses shared Home.css sizing without local overrides', () => {
+test('home AI plaque keeps the shared size and sits near the bottom edge', () => {
   assert.match(css, /\.md-discover-ai-floats\s*\{/)
-  assert.doesNotMatch(css, /\.md-discover-ai-floats\s*>\s*\.ai-button\s*\{/)
+  assert.match(css, /\.md-discover-ai-floats\s*>\s*\.ai-button\s*\{[^}]*--ai-fab-bottom:\s*calc\(20px \+ env\(safe-area-inset-bottom/)
   assert.match(homeCss, /\.ai-button\s*\{[^}]*--ai-fab-size:\s*56px/)
   assert.match(homeCss, /--ai-fab-bottom:\s*calc\(90px \+ env\(safe-area-inset-bottom/)
 })

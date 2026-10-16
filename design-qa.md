@@ -587,3 +587,274 @@ final result: passed
 - Catalogue now reuses AuctionPropertyCard and discoverAuctionCards styling, with 4:3 photo, capital dock, compact facts and primary CTA. Card height: 287px at 390px viewport, 260px at 319px; two columns and no horizontal overflow. Desktop photo capped at 260px, total card 425px.
 - Promo CTA is centered across the banner, 52px tall on mobile, using the shared `btn-tiffany-shine` animation. Center offset measured below 0.01px; link still opens the project stages.
 - Twelve affected parity/property tests pass, full build passes and diff whitespace check passes. No changes to other strategy cards.
+
+### Mobile welcome photo promo cards
+
+Historical iteration; replaced by the strategy carousel below.
+
+- References: the 626 × 716 welcome-photo screenshot and 396 × 336 bento-layout screenshot supplied in this task. Implementation: [390 × 844 browser capture](qa-artifacts/mobile-discover-promos-390.jpg).
+- Replaced the three locked shortcuts with five rounded, pale promo cards over the villa photo. The varied grid sizes, bold labels, and custom three-dimensional property illustrations follow the bento reference while keeping the existing search and photo.
+- Verified legible text, complete illustrations, tap targets, and no overlap from the floating AI button at 390 px. The promo cards navigate directly to Auction, Buy Now, Shares, Debts, and Map. A browser click on Map reached `/map`.
+- The local map canvas cannot initialize because `VITE_YANDEX_MAPS_API_KEY` is absent; its object list still renders. This is an environment limitation of the existing map route.
+- Web and legacy JSX/CSS/assets match; all seven locales include promo text. Related tests: 17 passed. Production build and `git diff --check` passed.
+
+### Mobile welcome photo strategy carousel — 2026-10-15
+
+- Current implementation: [390 × 844 browser capture](qa-artifacts/mobile-discover-slider-390.png). The white “Покупать недвижимость — легко!” heading and lead remain above the villa photo. The four strategy cards, section heading, and pagination dots are inside the photo. The photo logo, photo search, and promo bento tiles were removed; the white section's search remains.
+- In the in-app browser, checked 390 × 844 and 320 × 720 viewports. The four-card rail stays within the viewport without document-level horizontal overflow. The card copy, white “Подробнее” button, question control, and dots remain visible at 320 px.
+- Swiping the rail selected “Долги”; tapping the first dot selected “Аукцион”. Vertical scrolling continued from the photo into the catalogue. The floating AI button did not cover the carousel.
+- Web and legacy page files match. Unused promo images were removed. The shared search placeholder translation remains available to other search screens.
+
+---
+
+# Design QA — главная, блок способов покупки (2026-10-16)
+
+## Evidence
+
+- Source: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-599fcd7a-158c-4668-b7e3-be8a569b5a83.png`, 422 × 836 px.
+- Implementation: the home formats section in the Codex in-app browser at `http://localhost:4173/`, captured at 422 × 836 px and checked at 320 × 800 px. Source and implementation were displayed together in the same comparison view.
+- The existing villa background is intentionally retained from `/public/images/mobile-discover/welcome-summer.png`.
+
+## Findings
+
+- No actionable P0, P1, or P2 issues in the requested block. The reference's visual hierarchy, large white pill, alternating rounded-square/circle 2 × 2 tiles, and mobile spacing are present.
+- The fixed site navigation remains over the top of the section and can cover its small brand label at some scroll positions. This is existing app navigation outside the replaced block; the heading, button, and all four tiles remain visible and usable.
+
+## Fidelity and behavior
+
+- Typography: large centered white heading, dark text on white controls, white text on green circles; product copy replaces the reference's unrelated game and money text.
+- Spacing/layout: two equal columns, two rows, matching stagger-free checkerboard placement and large radii; the 320 px view has no clipped tile content.
+- Colors: white cards and green circles follow the reference; the villa photo remains the user's requested background.
+- Assets: existing local 3D strategy icons are sharp and correctly contained; no reference game artwork was reused.
+- Content: all four real strategies and their destination links remain available. The catalog button opens `/search-results`.
+- Interaction: the catalog link was clicked in the browser and reached its route. No browser console errors were observed.
+
+final result: passed
+
+## 2026-10-16 — SellYouBrick launch, Tiffany palette
+
+Source visual truth: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-d1738687-a550-4913-87e5-f20406e4fc50.png` (736 × 1308).
+Current-screen reference: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-41f2f67f-0fdc-4196-ad4a-a1076af00d3c.png`.
+Implementation: `tmp/discover-reference-qa/mobile-390.png` (390 × 844 pixels, 390 × 844 CSS viewport, density 1).
+State: Russian, main stage at scrollTop 0, first three launch cards visible, compass expanded.
+Full-view evidence: `tmp/discover-reference-qa/comparison.png`, reference normalized to 390 px wide without changing aspect ratio; implementation captured in the in-app browser.
+Focused evidence: `tmp/discover-reference-qa/comparison-detail.png`, paired card/wave/search crops.
+Additional viewports: `tmp/discover-reference-qa/mobile-320.png`, `tmp/discover-reference-qa/desktop-1280.png`.
+Restored live listing evidence: `tmp/discover-reference-qa/restored-properties.png`.
+
+**Findings and comparison history**
+- Initial P1: removing the earlier photo block left the catalog's negative overlap obscuring the compass. Restored the complete earlier lower layout and its associated overlap after the user's clarification; kept the new launch above it. Subsequent browser capture shows compass, the “Покупать недвижимость — легко!” block, and original photo composition in order.
+- Initial P1: listing sections were empty because the local API was stopped. Started the existing local server; approved properties endpoint returned success with 114 entries. Browser DOM and rendered evidence confirm auction, buy-now, shares and debts sections with real listings.
+- No remaining actionable P0/P1/P2 findings within the requested launch scope.
+
+**Required fidelity surfaces**
+- Typography: existing Montserrat retained; two-line headline follows the reference's hierarchy and position. Localized titles and captions wrap within cards at 320 and 390 px.
+- Layout: card row starts at y=248 on the 390 px viewport, matching the normalized reference's y=249. Three full cards visible, five destinations reachable by horizontal scrolling and keyboard focus. Code-drawn asymmetric wave separates the opening from the search.
+- Colors: intentional user-requested departure from purple to the established Tiffany/teal palette. First card white; remaining translucent teal cards use white text. Background is CSS, wave is SVG; no generated image is consumed.
+- Imagery: existing property photographs render as overlapping circular crops; all fifteen thumbnail elements loaded successfully. Existing compass artwork and lower photo are preserved.
+- Copy: SellYouBrick and “Хорошо быть дома” follow the user's branding/headline request. Eight new strings exist in all seven supported locales and corresponding legacy mirrors.
+
+**Interaction and regression verification**
+- Search submitted “Марбелья” to `/search-results?q=%D0%9C%D0%B0%D1%80%D0%B1%D0%B5%D0%BB%D1%8C%D1%8F`.
+- Keyboard Tab reaches the fifth carousel card and scrolls the rail to show it. Horizontal gestures are excluded from vertical screen transitions.
+- Header icons absent at opening; existing header reappears below the launch while browsing lower content.
+- Browser error log after local server startup: no errors in the inspected window.
+- 107 focused/regression tests passed, including stories, compass, property detail, buyer profile, role switch, investor flow, comparison picker, debt assets, carousel and mirror checks.
+- `npm run build` passed; `git diff --check` passed.
+- Physical-device touch/swipe behavior was not tested; browser keyboard scrolling and responsive rendering were verified.
+
+**Implementation Checklist**
+- [x] Preserve all lower blocks and the live listing catalog.
+- [x] Synchronize JSX, CSS and seven locale files with legacy mirrors.
+- [x] Verify responsive rendering, search and carousel reachability.
+- [x] Compare reference and implementation together at full and focused scales.
+
+final result: passed
+
+## Follow-up — restore original compass and photo curve
+
+User reference: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-8e058e14-e6af-4e27-9fd9-574153defe6d.png`.
+Evidence: `tmp/discover-reference-qa/compass-comparison.png` (source and browser capture normalized to 450 px wide); `tmp/discover-reference-qa/restored-compass.png`; `tmp/discover-reference-qa/restored-curve.png`.
+Restored the original compass CSS from the repository's HEAD: Tiffany background, diffuse highlight, white heading/body text, original compact proportions, right-hand compass and translucent white close button. Preserved current placement below search and existing click/dismiss behavior. Restored the existing white parabolic curve above the house photo; adjusted the brand spacing so white text remains below the curve while the headline and tiles keep their previous positions.
+Typography, spacing, colors, imagery and copy checked against the supplied compass reference. Both CSS mirrors synchronized. Sixteen focused tests passed; diff whitespace check passed. No actionable P0/P1/P2 findings.
+final result: passed
+
+## 2026-10-17 — top listings and final mobile refinements
+
+Requested changes: lighter Tiffany opening, five white pagination marks, grey search without click highlighting, up to five mixed real listings followed by a Tiffany catalog tile; then place the listing rail below the compass, add shared favorites, restore the AI FAB, show navigation on the first scroll, enlarge strategy cards and add existing section icons. Latest refinement lowers the AI FAB and restyles search as a grey capsule with a white search circle and a compact mint AI action.
+
+Evidence: `tmp/discover-reference-qa/top-comparison.png` (earlier source vs light opening); `top-under-compass.png` (listing rail and hearts); `polish-main.png` (larger cards/icons); `polish-like-active.png` (active favorite); `search-final-320.png` and `search-final-390.png` (latest search and lowered FAB). All paths are relative to the project root. Main browser checks used 390 × 844 CSS pixels at density 1; narrow checks used 320 × 740. Desktop layout was inspected at 1280 × 900 in `top-desktop.png`.
+
+**Findings and fixes**
+- P1: conditionally mounting Header delayed the guest login modal host until the launch had scrolled away. Header now remains mounted on the stage; only its visual bar is hidden at scrollTop 0. Its existing portal and login-event handler remain available to favorite actions. The visible bar appears at scrollTop > 0; browser check confirmed it visible after 25.5 px of scroll.
+- P1: the existing FAB visibility rule hid AI while search or either carousel was visible. It now stays available throughout the stage, retaining the existing hero/footer rules. Clicking it opened the real AI consultant drawer, which was closed after verification.
+- P2: the shared FAB sat 90 px above the lower edge. The discover page now overrides only its bottom offset to 20 px plus the safe area, preserving shared size and interactions. Computed bottom verified as 20 px in the browser.
+- P2: the new icon beside “Аукцион” caused a split word at 320 px. A narrow-screen icon size adjustment restores a single line; computed title height and line-height both 14.04 px after the fix.
+
+**Required fidelity surfaces**
+- Typography: existing Montserrat, stronger section hierarchy, compact localized strategy labels and two-line listing titles retained. Search uses restrained grey typography. At 320 px the full accessible search label remains available even when the placeholder is constrained by input width.
+- Layout: enlarged strategy cards, five white dots, original wave and photo curve retained. Search → original compass → mixed top listing rail → original welcome/photo/catalog order confirmed in browser DOM. No document overflow at 320 or 1280 px.
+- Colors: lighter Tiffany gradient, grey search (#f1f3f4), white search circle, mint AI action, white dots and Tiffany final catalog tile. Search border and shadow were identical before and after clicking the input.
+- Imagery: all five existing 3D section icons loaded. Listing images use the existing image fallback for missing API media; no generated assets are used. The flame is a library icon.
+- Copy/content: all new strings are present in ru/en/de/es/fr/pl/sv and mirrored locales. Listing selection alternates available format groups, deduplicates table/id identities, and caps listings at five. The sixth slot is the catalog action when five listings are available.
+
+**Interaction and regression checks**
+- Five listing cards, five independent favorite controls and one catalog tile confirmed.
+- Favorite toggled true with pink button/heart fill, then false; original favorite state restored after testing. Existing shared favorites API/context handles persistence.
+- Catalog tile navigated to `/search-results`.
+- Scrolling/focusing the fifth strategy updated the fifth pagination mark.
+- AI button opened the actual consultant drawer; no message was sent.
+- Search remains functional and its container has no click focus highlight.
+- 117 focused/regression tests passed, including Header touch, favorites, listing selection, carousels, compass, stories, buyer profile, role switch, property detail, investor flow, compare picker and debt assets.
+- Web/legacy JSX, CSS, component, utility, AI positioning test and seven locale mirrors match. Production build and `git diff --check` passed.
+- Physical iOS/Android touch and a signed-out Clerk session were not verified. The guest modal-host fix is covered by the always-mounted Header contract; logged-in favorites and actual AI interactions were exercised in the browser.
+
+final result: passed
+
+## Follow-up — Tiffany search icon
+
+Matched the supplied search-button reference with a solid #49cbd6 circle and white magnifier. Size, layout and search behavior retained; both CSS mirrors updated. Browser computed colors verified. Evidence: `tmp/discover-reference-qa/search-tiffany-icon.png`. Six focused/parity tests and whitespace check passed.
+final result: passed
+
+## Follow-up — headline copy
+
+Replaced “Хорошо быть дома” with “Легко найти своё”, keeping the two-line composition. Updated all seven locale pairs and legacy mirrors. Browser heading and capture verified: `tmp/discover-reference-qa/headline-find-yours.png`. Six relevant tests and `git diff --check` passed.
+final result: passed
+
+## 2026-10-17 — piggy bank page
+
+Reference: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-fe324ed0-693f-4c3b-b0c4-067ee91bbfd3.png`. Visual evidence: `tmp/piggy-bank-qa/comparison.png`, `page-382.png`, `page-320.png`, `celebration-382.png`, `drawer-382.png`.
+
+- The 382 × 726 render follows the reference's pastel gradient, centered total and pig, coral reward card, white savings goal card and blue gradient action. The reference includes native phone chrome and a photo avatar; this web route uses the signed-in avatar or an initial.
+- Generated transparent pig, bicycle, RC car and gold coin assets are stored in both public image trees. The pig interaction produced a 32% dim overlay and 19 falling coin particles in browser verification.
+- The Add goal drawer measured 0.800 of the viewport height at 382 × 726. Choosing a task filled its name and amount; submitting created a new goal card. At 320 × 700 there was no horizontal document overflow and the goal actions remained visible.
+- Web/legacy JSX, CSS, App routing, access list, all seven locale sections and all four image assets match. The route is `/piggy-bank`; balances and actions are a local demo with no money movement.
+- Production build and `git diff --check` passed. In a 80-test regression set, 79 passed; the sole failure is an existing `src/App.route-lazy.test.js` assertion about the home page's `ProfileStrategyStories` lazy import, which is unrelated to this new route.
+
+final result: passed with known unrelated regression-test failure
+
+## Follow-up — Tiffany task tickets in the piggy drawer
+
+References: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-ac11ac9a-ffed-4738-9841-4892eea3aa60.png` and Tiffany swatch `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-004b36d2-d98d-48c2-bcf3-ead41e39ba39.png`. Evidence: `tmp/piggy-bank-qa/tickets-drawer-382.png` and `tickets-drawer-320.png`.
+
+Replaced the three static task steps with six numbered 3D ticket stacks, a day-by-day progress line, claimed and locked markers, a highlighted tomorrow state, and a Tiffany bonus CTA. The button opens the existing `/bonuses` route. The active preset and goal submit button in the same drawer now use Tiffany accents. On 320 px, all six labels remain readable without clipping or horizontal overflow; the drawer still measures exactly 80% of viewport height. Web and legacy files, ticket asset and seven locale pairs are synchronized. 26 focused tests, production build and `git diff --check` passed.
+
+final result: passed
+
+## 2026-10-17 — illustrated Test-drive and Map feature cards
+
+User references: travel card (`codex-clipboard-2474caea-bcc8-48a7-8db7-a307de7b6e62.png`) and original lower Auction tile (`codex-clipboard-ed250d70-ba53-48aa-9290-1ccd7c352d29.png`). The user approved Test-drive and requested the same treatment for Map.
+
+Replaced only the lower feature-grid Shares and Auction tiles with Test-drive and Map. The top strategy rail, property sections, compass, search and other main-page blocks remain present. Both new cards use live localized titles, a white Details capsule, a diagonal arrow, a light rounded background and optimized transparent 3D illustrations. Tiffany suitcase/yellow hat and folded ivory map/Tiffany house pin are generated assets stored identically in both public trees. Existing locale keys cover all seven languages. The approved Test-drive layout is preserved through shared feature-card CSS.
+
+Evidence: `tmp/discover-reference-qa/map-feature-context.png`, `map-and-test-drive.png`, and `feature-comparison.png`. The last file compares the travel reference alongside the actual cards at the 383 × 827 browser viewport. Typography, spacing, rounded corners, Tiffany colors, image framing and live buttons were inspected together. Square card proportions preserve the established two-column grid. No actionable P0/P1/P2 findings.
+
+Interaction: Map tile opened `/map` and the real map-results UI with 80 objects. Test-drive previously opened `/test-drive`. Map, Buy now, Debts and Test-drive all remain links with accessible names. Build passed (13.86s); 17 main-page/listing tests passed; JSX/CSS/asset mirrors match; `git diff --check` passed.
+
+Known existing limitation: the unchanged TestDriveLandingPage.mobile.test.js expects the absent `testDriveLanding_heroMobileTitle` key in its page source; the earlier expanded Test-drive run had 16 passing tests and this one unrelated failure. No landing-page code was changed by these feature tiles.
+
+final result: passed with known unrelated landing-page test limitation
+
+## 2026-10-17 — lottery banner replacing the photo-section catalog button
+
+Reference: `codex-clipboard-2baea8d5-b20e-4515-80c1-4f4f1855b921.png`. Replaced only the large Catalog objects link above the feature grid with a compact light-grey lottery banner: generated Tiffany 3D ticket, localized two-line copy and a dark rounded View action. The complete banner is one accessible link to the existing `/lottery` page. Other catalog entry points and all surrounding blocks remain available.
+
+Evidence: `tmp/discover-reference-qa/lottery-banner-context.jpg`, `lottery-banner-320.jpg`, `lottery-banner-result.png`, and `lottery-banner-comparison.png`. Source and rendered banner were compared together: same icon/copy/action arrangement, soft grey background, rounded silhouette, dark action and compact typography. Tiffany ticket replaces the reference heart. At 320 px copy wraps to three lines without collisions or clipping; at 383 px it is two lines. The existing Map/Test-drive grid remains below.
+
+The banner click loaded the real Lottery page, including its heading, 3D scene and ticket action. This check only navigated to the page. Page JSX/CSS, all seven locale files and optimized ticket WebP match their legacy counterparts. Seventeen relevant tests passed; production build passed (14.38s); whitespace check passed. No actionable P0/P1/P2 findings.
+
+Built-in image_gen prompt and asset provenance: `tmp/discover-reference-qa/lottery-ticket-generation.json`; final asset: `public/images/mobile-discover/lottery-tiffany-ticket.webp`.
+
+final result: passed
+
+## 2026-10-17 — investor and VIP circles with light grey blur
+
+Replaced the lower Buy now/Debts shortcuts with Smart investor panel (`/calculator`) and VIP properties (`/private-club`). Reused existing transparent 3D chart and premium villa artwork, optimized as small WebP assets in both public trees. The top launch strategies and catalog sections are retained. VIP label is localized in all seven locale mirrors; investor title reuses the existing calculator key.
+
+The initial smoky circles were too dark for the user. Final treatment uses light translucent grey rgba(224,229,234,0.46), a subtle white highlight, actual 20px backdrop blur with reduced saturation, dark readable labels and a light inset edge. Round shapes remain. Evidence: `tmp/discover-reference-qa/glass-light-context.jpg`, `glass-light-320.jpg`, `glass-light-result.png`. Both 383px and 320px renders were visually checked; labels fit, icons load, grid and other features retain spacing. Computed backdrop filters and destination links were verified in the browser.
+
+Seventeen relevant tests passed for the content replacement; fourteen page tests passed after the light-grey adjustment. Production build passed before that CSS-only lightening (14.03s). Page/style/seven-locale/new-image parity and final whitespace check passed. No actionable P0/P1/P2 issues remain.
+
+final result: passed
+
+## 2026-10-17 — coordinated Tiffany artwork and rectangular feature grid
+
+Generated a glossy Tiffany/ivory calculator with growth bars for the investor panel and a stylized ivory house with Tiffany roof/diamond for VIP. The VIP image was edited to remove extraneous suitcase/map props. Both final transparent WebP assets are saved in the two public trees; full generation and cleanup prompts are in `tmp/discover-reference-qa/tiffany-feature-art-generation.json` (built-in image_gen).
+
+Following the user's latest direction, both cards now use the same rounded rectangular feature layout as Map and Test-drive: title above, large illustration, white Details capsule and diagonal arrow below. The accepted light grey background and 20px backdrop blur remain on the investor/VIP cards. Their existing `/calculator` and `/private-club` destinations remain unchanged.
+
+Evidence: `tmp/discover-reference-qa/rectangular-features-context.jpg`, `rectangular-features-320.jpg`, `rectangular-features-result.png`. All four cards were visually compared together at 383px and 320px. The new artwork matches the Tiffany resin/ivory materials of the suitcase and map; headings and live controls remain readable at both widths, with deliberate image cropping under the buttons consistent with the reference cards. No actionable P0/P1/P2 findings.
+
+Seventeen relevant tests passed; final production build passed (14.63s); JSX/CSS/image mirrors and `git diff --check` passed. No other main-page blocks were removed.
+
+final result: passed
+
+## Follow-up — remove the heading above the lottery
+
+Removed only the photo-section heading “Найдите свой дом удобным способом”, as requested. The SellYouBrick brand, lottery banner and all four illustrated feature cards remain. The lottery now follows the brand directly. Both JSX mirrors match; fourteen main-page tests and whitespace check passed. Browser verification: `tmp/discover-reference-qa/photo-without-heading.jpg` and `photo-without-heading-result.png`. No actionable P0/P1/P2 findings.
+
+final result: passed
+
+## Follow-up — emphasize You in both SellYouBrick wordmarks
+
+Wrapped only “You” in the same rounded translucent Tiffany capsule on the top launch wordmark and the photo-section wordmark. Wordmark spelling remains SellYouBrick, with its complete accessible name. Existing sizes and placements remain. Browser verified both locations; evidence: `tmp/discover-reference-qa/brand-you-top.jpg`, `brand-you-photo.jpg`, `brand-you-both.png`. Fourteen relevant tests passed; JSX/CSS mirrors and whitespace check passed. No actionable P0/P1/P2 findings.
+
+final result: passed
+
+## Follow-up — tighten the You capsule
+
+Reduced shared horizontal capsule padding from 0.24em to 0.16em and external spacing from 0.06em to 0.025em for both wordmarks. Browser checked the compact top wordmark: `tmp/discover-reference-qa/brand-you-tighter.png`. CSS mirrors and whitespace check passed.
+
+final result: passed
+
+## 2026-10-17 — stabilize the blurred feature-card edges
+
+The user reported a blinking right edge on the VIP card. The glass cards combined backdrop filtering, rounded clipping and hover translation inside a sticky photo section. Moved the blur to an independent, stationary pseudo-element that filters a fixed copy of the existing welcome photograph. The layer extends 24px beyond the crop to keep its filter edges outside the visible card. Investor/VIP links no longer translate on hover; title, illustration and buttons remain separate from the filter. The light grey treatment and rounded shape remain.
+
+Evidence: `tmp/discover-reference-qa/glass-edge-fixed.jpg` and `glass-edge-fixed.png`. Browser verification after scrolling down and back up showed a continuous grey card surface without the vertical edge strip. Computed link backdrop-filter is none, transition duration is 0s; the separate layer retains blur(20px) saturate(0.15) and the welcome image. Physical-device temporal flicker was not independently reproduced; the scrolling backdrop resampling and hover motion have been removed from this component.
+
+Seventeen relevant tests passed; both JSX/CSS mirrors and whitespace check passed. Final production build passed. No actionable P0/P1/P2 findings in the inspected browser view.
+
+final result: passed with physical-device temporal verification remaining
+
+## Follow-up — larger photo-section wordmark
+
+Increased only the SellYouBrick wordmark above the lottery from 1.35rem to responsive clamp(28px, 8vw, 36px), retaining the tightened You capsule. Verified visually in the browser; evidence: `tmp/discover-reference-qa/photo-brand-larger.png`. CSS mirrors and whitespace check passed.
+
+final result: passed
+
+## 2026-10-17 — Develop shortcut and reference-inspired glass finish
+
+Replaced only the fifth top-rail Test-drive shortcut with Development, retaining the lower Test-drive feature. The new shortcut points to `/development`, uses an existing Tiffany construction illustration optimized to a mirrored 128px WebP, and a project cover as the first circular thumbnail. A short localized caption was added to all seven locale pairs. The launch destination contract now expects `/development`; clicking the tile opened the existing development catalogue.
+
+The user's next reference replaces the flat grey investor/VIP background with glass: warm beige-to-grey/green tones, soft photographic variation, a light edge and subtle inner highlight. The separate static blurred photo layer remains, with no scrolling backdrop sampling or hover motion. Typography and the existing artwork/actions remain readable. Evidence: `tmp/discover-reference-qa/glass-reference-final.jpg`, `glass-reference-final.png`, `glass-reference-320.jpg`. Both 383px and 320px layouts were inspected alongside the user's glass reference.
+
+Russian `develop.title` and the section-info title now read “Девелоп”. Remaining hardcoded Development labels in the hero, catalogue, project-header fallback and Buyer Passport backlink use the existing translation key, so other languages retain their existing spelling. Browser checked the Russian development navigation/hero and top-rail text “Девелоп / От идеи до объекта”.
+
+Nineteen main-page/listing/development parity tests passed. All seven locale mirrors match; Russian title is Девелоп and English remains DEVELOP. Production build passed (16.92s), and whitespace check passed. No actionable P0/P1/P2 findings in the inspected views.
+
+final result: passed
+
+## 2026-10-17 — lottery banner opens an under-development modal
+
+Changed the lottery banner from a navigation link to a button opening a native modal dialog. It displays the existing Tiffany ticket, localized “В разработке” title, short launch-preparation copy, Close and Got it controls. The actual lottery route remains available independently. The banner appearance and all surrounding blocks are preserved.
+
+The dialog opens in the top layer, freezes the main stage scroll, initially focuses Got it, cycles Tab/Shift+Tab between the two controls, and returns focus to the banner on close. Browser tested Got it, Escape, backdrop close, focus return and stage overflow restoration. The page remains at `/`. No lottery participation action is performed.
+
+Evidence: `tmp/discover-reference-qa/lottery-coming-soon-modal.jpg`, `lottery-coming-soon-modal.png`, `lottery-coming-soon-modal-320.jpg`. Inspected at 383px and 320px; title, copy and controls fit without clipping. Modal strings exist in all seven locale pairs. Nineteen page/listing/development parity tests, production build (14.29s), JSX/CSS/locale parity and whitespace check passed. No actionable P0/P1/P2 findings.
+
+final result: passed
+
+## 2026-10-17 — synchronization with current origin/new-era
+
+Integrated upstream commit 600380c3 into `codex/new-era-discover-and-piggy-bank`, including all local product work and the Piggy Bank demo. Before rebasing, preserved 80 product files plus temporary QA artifacts in an external backup and local branch `codex/backup-new-era-ui-20261017` (snapshot 3ac512c8).
+
+Preservation audit found no missing product files and retained all 444 locally changed locale values. Initially 59 files matched the snapshot byte-for-byte and 21 incorporated upstream edits; this QA document then received this additional report. All 36 existing changed web/legacy source and asset pairs match. The three debt risk images remain identical to upstream. All Piggy Bank source/images and generated discover images retain their original hashes.
+
+Resolved locale conflicts semantically, retaining upstream assistant messages and the updated initial hero copy while preserving the requested Russian “Девелоп”. Removed an obsolete fifth lower strategy inserted by automatic merging: the approved lower grid remains Map/Investor/VIP/Test-drive, and Development remains in the five-card top rail. Added an executable factory regression for the four lower destinations. Updated the stale lazy-loading test to cover the current lazy listing sections; profile stories retain their independent tests.
+
+Validation: 180 focused frontend tests across 40 files passed, covering main carousels/gestures, favorites, compass, stories, SectionInfoDrawer, buyer profile, seller role switch, property detail, investor flow, compare picker, risk presentation, development and mirrors. Forty-five upstream assistant tests passed. Production build and whitespace check passed. One unrelated TestDriveLandingPage mobile-hierarchy test still fails on unmodified upstream; source/test hashes match origin/new-era, and the same failure was reproduced from pristine copies (2 of 3 tests pass there).
+
+Post-sync browser verification was unavailable because the browser URL policy rejected access to the current tab. No alternate browser access was attempted. Preservation was checked through source/asset hashes, semantic locale comparison, regression tests and production compilation; previous visual evidence remains in the local QA backup.
+
+final result: synchronization verified; known upstream test and browser-verification limitations documented
