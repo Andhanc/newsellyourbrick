@@ -185,15 +185,7 @@ const Hero = ({ staticMobileCards = false, auctionScene = false }) => {
             </div>
           </div>
         ) : null}
-        {auctionScene ? (
-          <header className="hero-auction-header">
-            <div className="section-info-heading-row">
-              <h1 className="hero-auction-header__title">{t('auction')}</h1>
-              <SectionInfoDrawer section="auction" placement="heading" />
-            </div>
-            <p className="hero-auction-header__lead">{t('auctionSectionSubtitle')}</p>
-          </header>
-        ) : null}
+        {!auctionScene ? (
         <div
           className={[
             'hero-features',
@@ -262,6 +254,7 @@ const Hero = ({ staticMobileCards = false, auctionScene = false }) => {
             )
           })}
         </div>
+        ) : null}
       </div>
       {auctionScene ? (
         <button

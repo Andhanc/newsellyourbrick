@@ -4,6 +4,11 @@
   align-items: center;
 }
 
+.otsb__glyph {
+  display: block;
+  overflow: visible;
+}
+
 .otsb__menu {
   position: fixed;
   top: 0;

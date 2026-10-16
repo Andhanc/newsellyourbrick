@@ -14,7 +14,7 @@ import './PropertyDetailDesktopGallery.css'
  *   getYouTubeEmbedUrl?: (url: string) => string
  *   getGoogleDriveEmbedUrl?: (url: string) => string
  *   reserved?: boolean
- *   reservedLabel?: string
+ *   reservedLabel?: import('react').ReactNode
  *   actions?: import('react').ReactNode
  *   badge?: string
  * }} props

@@ -397,6 +397,11 @@
   margin: 0 auto;
 }
 
+.assistant-welcome__grid--modes {
+  grid-template-columns: 1fr;
+  max-width: 400px;
+}
+
 .assistant-starter {
   position: relative;
   min-width: 0;
@@ -472,19 +477,23 @@
   height: 18px;
 }
 
-.assistant-starter--legal .assistant-starter__icon {
-  background: #fff7dc;
-  color: #a88000;
+.assistant-starter--match .assistant-starter__icon {
+  background: #edf8ee;
+  color: #27814b;
 }
 
-.assistant-starter--investment .assistant-starter__icon {
+.assistant-starter--platform .assistant-starter__icon {
+  background: #e9f9f7;
+  color: #0099a9;
+}
+
+.assistant-starter--about .assistant-starter__icon {
   background: #eef2ff;
   color: #4d64b8;
 }
 
-.assistant-starter--property .assistant-starter__icon {
-  background: #edf8ee;
-  color: #27814b;
+.assistant-welcome__grid--modes .assistant-starter {
+  min-height: 108px;
 }
 
 .assistant-starter strong {

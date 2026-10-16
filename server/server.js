@@ -5338,7 +5338,10 @@ app.post('/api/live-chat/sessions', async (req, res) => {
       session = await liveChatQueries.getSessionById(created.id);
       createdNew = true;
     } else if (waitMessage) {
-      const appended = await liveChatQueries.appendSystemNoticeIfNew(session.id, waitMessage);
+      const replaced = await liveChatQueries.replaceLegacyOpeningNotice(session.id, waitMessage);
+      const appended = replaced
+        ? false
+        : await liveChatQueries.appendSystemNoticeIfNew(session.id, waitMessage);
       if (appended) {
         createdNew = true;
       }

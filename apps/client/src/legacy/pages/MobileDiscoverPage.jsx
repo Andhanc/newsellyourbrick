@@ -166,6 +166,18 @@ function getSaleCards(t, language) {
       infoSection: 'shares',
       iconSrc: publicAsset('images/home-sale-formats/icons/shares-3d.png'),
     },
+    {
+      id: 'development',
+      title: t('develop.title'),
+      description: stripDescriptionPeriod(t('develop.cardDescription')),
+      descriptionTrigger: t('develop.cardAccent'),
+      image: publicAsset('images/home-sale-formats/summer-2026/sale-format-develop-summer.webp'),
+      imagePosition: '42% center',
+      to: '/development',
+      theme: 'develop',
+      infoSection: 'development',
+      iconSrc: publicAsset('images/home-sale-formats/icons/develop-3d.png'),
+    },
   ]
 }
 
@@ -607,8 +619,9 @@ export default function MobileDiscoverPage() {
 
           <div className="md-hero__copy">
             <h1 className="md-hero__title">
-              <span className="md-hero__title-line">{t('discoverPage_heroTitleLine1')}</span>
-              <span className="md-hero__title-line">{t('discoverPage_heroTitleLine2')}</span>
+              {t('discoverPage_heroTitleLine1')}
+              <br />
+              {t('discoverPage_heroTitleLine2')}
             </h1>
             <p className="md-hero__lead">{t('discoverPage_heroLead')}</p>
           </div>

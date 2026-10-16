@@ -74,7 +74,12 @@ test('SiteChatDock is FAB-only and dispatches openAIChat', () => {
 
 test('AI drawer keeps the reference welcome layout and becomes chat after the first message', () => {
   assert.match(aiPanel, /assistant-welcome__grid/)
+  assert.match(aiPanel, /assistant-welcome__grid--modes/)
   assert.match(aiPanel, /STARTERS\.map/)
+  assert.match(aiPanel, /mode: 'match'/)
+  assert.match(aiPanel, /mode: 'platform'/)
+  assert.match(aiPanel, /mode: 'about'/)
+  assert.match(aiPanel, /selectAssistantMode/)
   assert.match(aiPanel, /hasStarted/)
   assert.match(aiPanel, /type="file"/)
   assert.match(aiPanel, /renderPropertyCard/)
@@ -83,6 +88,7 @@ test('AI drawer keeps the reference welcome layout and becomes chat after the fi
   assert.match(aiPanel, /assistantGuestLimitCta/)
   assert.match(css, /height:\s*80dvh/)
   assert.match(css, /grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/)
+  assert.match(css, /assistant-welcome__grid--modes/)
   assert.match(css, /\.assistant-auth-prompt__btn/)
 })
 

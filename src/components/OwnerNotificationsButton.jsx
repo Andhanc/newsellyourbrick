@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Bell, DollarSign } from 'lucide-react'
+import { Bell, CalendarCheck, DollarSign } from 'lucide-react'
 import OwnerNotificationsDrawer from './OwnerNotificationsDrawer'
 import { useOwnerTestNavOptional } from '../context/OwnerTestNavigationContext'
 import useOwnerDismissedNotifications from '../hooks/useOwnerDismissedNotifications'
+import { fetchDedupe } from '../utils/fetchDedupe'
 import {
   CLERK_DB_USER_SYNCED,
   fetchOwnerProperties,
   getOwnerPropertiesUserId,
 } from '../utils/ownerPropertiesList'
+import {
+  OWNER_TEST_DRIVE_BOOKINGS_CHANGED,
+} from '../utils/ownerTestDriveList'
 import { OWNER_VIEWS, ownerTestHref } from '../utils/ownerTestNav'
 import { propertyBidsApiQuery } from '../utils/propertySourceTable'
 
@@ -31,6 +35,31 @@ function getRowPropertyTable(row) {
 
 function buildPropertyKey(propertyId, table) {
   return `${String(table || 'properties_apartments')}:${Number(propertyId)}`
+}
+
+function formatTestDriveDates(start, end, locale) {
+  try {
+    const startDate = new Date(`${start}T12:00:00`)
+    const endDate = new Date(`${end}T12:00:00`)
+    const opts = { day: 'numeric', month: 'short' }
+    const startLabel = startDate.toLocaleDateString(locale, opts).replace(/\.$/, '')
+    const endLabel = endDate.toLocaleDateString(locale, opts).replace(/\.$/, '')
+    return `${startLabel} — ${endLabel}`
+  } catch {
+    return [start, end].filter(Boolean).join(' — ')
+  }
+}
+
+async function fetchOwnerTestDriveRows(userId) {
+  if (!userId) return []
+  try {
+    const response = await fetchDedupe(`${API_BASE_URL}/test-drive-bookings/owner/${userId}`)
+    if (!response.ok) return []
+    const json = await response.json().catch(() => ({}))
+    return json.success && Array.isArray(json.data) ? json.data : []
+  } catch {
+    return []
+  }
 }
 
 function formatBidAmount(value, currency = 'USD') {
@@ -101,6 +130,7 @@ export default function OwnerNotificationsButton({
   const [open, setOpen] = useState(false)
   const [properties, setProperties] = useState([])
   const [bidRows, setBidRows] = useState([])
+  const [testDriveRows, setTestDriveRows] = useState([])
 
   const loadBidNotifications = useCallback(async () => {
     if (items) return
@@ -108,18 +138,24 @@ export default function OwnerNotificationsButton({
     if (!userId) {
       setProperties([])
       setBidRows([])
+      setTestDriveRows([])
       return
     }
 
     try {
-      const nextProperties = await fetchOwnerProperties(userId)
+      const [nextProperties, nextTestDriveRows] = await Promise.all([
+        fetchOwnerProperties(userId),
+        fetchOwnerTestDriveRows(userId),
+      ])
       const nextBidRows = await fetchOwnerBidRows(nextProperties)
       setProperties(nextProperties)
       setBidRows(nextBidRows)
+      setTestDriveRows(nextTestDriveRows)
     } catch (error) {
       console.warn('OwnerNotificationsButton: не удалось загрузить ставки', error)
       setProperties([])
       setBidRows([])
+      setTestDriveRows([])
     }
   }, [items])
 
@@ -127,8 +163,15 @@ export default function OwnerNotificationsButton({
     if (items || !open) return undefined
     loadBidNotifications()
     const onUserSynced = () => loadBidNotifications()
+    const onRefresh = () => loadBidNotifications()
     window.addEventListener(CLERK_DB_USER_SYNCED, onUserSynced)
-    return () => window.removeEventListener(CLERK_DB_USER_SYNCED, onUserSynced)
+    window.addEventListener('owner-notifications-refresh', onRefresh)
+    window.addEventListener(OWNER_TEST_DRIVE_BOOKINGS_CHANGED, onRefresh)
+    return () => {
+      window.removeEventListener(CLERK_DB_USER_SYNCED, onUserSynced)
+      window.removeEventListener('owner-notifications-refresh', onRefresh)
+      window.removeEventListener(OWNER_TEST_DRIVE_BOOKINGS_CHANGED, onRefresh)
+    }
   }, [items, open, loadBidNotifications])
 
   const fetchedItems = useMemo(() => {
@@ -136,37 +179,69 @@ export default function OwnerNotificationsButton({
       properties.map((property) => [buildPropertyKey(property.id, getRowPropertyTable(property)), property])
     )
 
-    return bidRows
-      .map((bid) => {
-        const table = bid.propertyTable || bid.property_table
-        const propertyId = bid.propertyId || bid.property_id
-        const property = propertyByKey.get(buildPropertyKey(propertyId, table))
-        const propertyTitle =
-          bid.propertyTitle || property?.title || t('ownerTest_notificationsPropertyFallback', { id: propertyId })
-        const propertyLocation = bid.propertyLocation || property?.location || ''
-        const buyerId = bid.user_id_number || bid.user_id
-        const openParams = { propertyId }
-        const createdAt = bid.created_at || bid.createdAt
-        const createdTs = parseTime(createdAt) || 0
-        const buyerPart = buyerId ? ` • ${t('ownerTest_notificationsBuyer', { id: buyerId })}` : ''
-        const locationPart = propertyLocation ? ` • ${propertyLocation}` : ''
+    const bidItems = bidRows.map((bid) => {
+      const table = bid.propertyTable || bid.property_table
+      const propertyId = bid.propertyId || bid.property_id
+      const property = propertyByKey.get(buildPropertyKey(propertyId, table))
+      const propertyTitle =
+        bid.propertyTitle || property?.title || t('ownerTest_notificationsPropertyFallback', { id: propertyId })
+      const propertyLocation = bid.propertyLocation || property?.location || ''
+      const buyerId = bid.user_id_number || bid.user_id
+      const openParams = { propertyId }
+      const createdAt = bid.created_at || bid.createdAt
+      const createdTs = parseTime(createdAt) || 0
+      const buyerPart = buyerId ? ` • ${t('ownerTest_notificationsBuyer', { id: buyerId })}` : ''
+      const locationPart = propertyLocation ? ` • ${propertyLocation}` : ''
 
-        return {
-          id: `bid-${bid.id || `${propertyId}-${createdTs}-${bid.bid_amount}`}`,
-          tone: 'teal',
-          icon: DollarSign,
-          title: t('ownerTest_notificationsNewBid'),
-          text: `${propertyTitle}${buyerPart}${locationPart}`,
-          time: formatRelativeTime(createdAt, t, i18n.language),
-          amount: formatBidAmount(bid.bid_amount, bid.propertyCurrency || property?.currency || 'USD'),
-          createdTs,
-          unread: true,
-          href: ownerTestHref(OWNER_VIEWS.PROPERTY_ANALYTICS, openParams),
-          onAction: nav?.goTo && propertyId ? () => nav.goTo(OWNER_VIEWS.PROPERTY_ANALYTICS, openParams) : null,
-        }
-      })
-      .sort((a, b) => b.createdTs - a.createdTs)
-  }, [bidRows, nav, properties, t, i18n.language])
+      return {
+        id: `bid-${bid.id || `${propertyId}-${createdTs}-${bid.bid_amount}`}`,
+        tone: 'teal',
+        icon: DollarSign,
+        title: t('ownerTest_notificationsNewBid'),
+        text: `${propertyTitle}${buyerPart}${locationPart}`,
+        time: formatRelativeTime(createdAt, t, i18n.language),
+        amount: formatBidAmount(bid.bid_amount, bid.propertyCurrency || property?.currency || 'USD'),
+        createdTs,
+        unread: true,
+        href: ownerTestHref(OWNER_VIEWS.PROPERTY_ANALYTICS, openParams),
+        onAction: nav?.goTo && propertyId ? () => nav.goTo(OWNER_VIEWS.PROPERTY_ANALYTICS, openParams) : null,
+      }
+    })
+
+    const testDriveItems = testDriveRows.map((booking) => {
+      const table = booking.property_table || 'properties_apartments'
+      const propertyId = booking.property_id
+      const property = propertyByKey.get(buildPropertyKey(propertyId, table))
+      const propertyTitle =
+        booking.property_title ||
+        property?.title ||
+        t('ownerTest_notificationsPropertyFallback', { id: propertyId })
+      const buyerName = String(booking.buyer_display || '').trim()
+      const buyerPart = buyerName
+        ? ` • ${buyerName}`
+        : booking.user_id
+          ? ` • ${t('ownerTest_notificationsBuyer', { id: booking.user_id })}`
+          : ''
+      const dates = formatTestDriveDates(booking.start_date, booking.end_date, i18n.language)
+      const createdAt = booking.created_at || booking.start_date
+      const createdTs = parseTime(createdAt) || 0
+
+      return {
+        id: `testdrive-${booking.id || `${propertyId}-${createdTs}`}`,
+        tone: 'teal',
+        icon: CalendarCheck,
+        title: t('ownerTest_notificationsNewTestDrive'),
+        text: `${propertyTitle}${buyerPart}${dates ? ` • ${dates}` : ''}`,
+        time: formatRelativeTime(createdAt, t, i18n.language),
+        createdTs,
+        unread: true,
+        href: ownerTestHref(OWNER_VIEWS.TEST_DRIVE),
+        onAction: nav?.goTo ? () => nav.goTo(OWNER_VIEWS.TEST_DRIVE) : null,
+      }
+    })
+
+    return [...bidItems, ...testDriveItems].sort((a, b) => b.createdTs - a.createdTs)
+  }, [bidRows, nav, properties, t, i18n.language, testDriveRows])
 
   const { dismiss, filterItems } = useOwnerDismissedNotifications()
   const resolvedItems = items ?? fetchedItems

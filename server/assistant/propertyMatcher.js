@@ -281,6 +281,91 @@ export function searchCatalog(properties, dialog, limit = 5) {
   }
 }
 
+/**
+ * Поиск объекта по названию, id, локации или адресу (режим «рассказать об объекте»).
+ * @param {Array} properties
+ * @param {string} query
+ * @param {number} [limit]
+ */
+export function findPropertiesByQuery(properties, query, limit = 5) {
+  const catalog = (Array.isArray(properties) ? properties : []).map(slimProperty).filter(Boolean)
+  const raw = String(query || '').trim()
+  const q = raw.toLowerCase()
+  if (!catalog.length || !q) {
+    return { ids: [], items: [], total: catalog.length, query: raw }
+  }
+
+  // Стартовый промпт режима «об объекте» без конкретного названия — не угадываем лот.
+  if (
+    q.length < 140 &&
+    /(?:расскаж|подробн|узнать\s+об\s+объект|tell\s+me\s+about|info\s+about\s+(?:a\s+)?propert|über\s+ein\s+objekt|sobre\s+(?:un\s+)?inmueble)/i.test(
+      q,
+    ) &&
+    !/\b\d{2,}\b/.test(q) &&
+    !/(?:квартир|вилл|дом|апартамент|apartment|villa|house|piso|costa|madrid|barcelona|tenerife|marbella|дубай|dubai)/i.test(
+      q,
+    )
+  ) {
+    return { ids: [], items: [], total: catalog.length, query: raw, needsName: true }
+  }
+
+  const idHits = []
+  const idMatch = q.match(/(?:^|[^\d])(?:id\s*[:=#]?\s*|№\s*|#\s*)?(\d{1,8})(?:[^\d]|$)/i)
+  if (idMatch) {
+    const wanted = Number(idMatch[1])
+    for (const item of catalog) {
+      if (Number(item.id) === wanted) idHits.push({ item, score: 100 })
+    }
+  }
+
+  const tokens = q
+    .split(/[\s,.;:!?/|«»"'()]+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 3)
+    .slice(0, 12)
+
+  const scored = catalog.map((item) => {
+    const title = String(item.title || '').toLowerCase()
+    const location = String(item.location || '').toLowerCase()
+    const address = String(item.address || '').toLowerCase()
+    const city = String(item.city || '').toLowerCase()
+    const country = String(item.country || '').toLowerCase()
+    const slug = String(item.slug || '').toLowerCase()
+    const hay = `${title} ${location} ${address} ${city} ${country} ${slug}`
+    let score = 0
+    if (title && q.includes(title) && title.length >= 4) score += 40
+    if (title && title.includes(q) && q.length >= 4) score += 35
+    if (slug && (q.includes(slug) || slug.includes(q))) score += 25
+    if (location && q.includes(location) && location.length >= 4) score += 18
+    for (const token of tokens) {
+      if (title.includes(token)) score += 8
+      if (location.includes(token) || city.includes(token)) score += 5
+      if (address.includes(token)) score += 3
+      if (hay.includes(token)) score += 1
+    }
+    return { item, score }
+  })
+
+  const pool = [...idHits, ...scored.filter((row) => row.score >= 8)]
+  const bestById = new Map()
+  for (const row of pool) {
+    const key = String(row.item.id)
+    const prev = bestById.get(key)
+    if (!prev || row.score > prev.score) bestById.set(key, row)
+  }
+  const picked = [...bestById.values()]
+    .sort((a, b) => b.score - a.score || Number(a.item.price || 0) - Number(b.item.price || 0))
+    .slice(0, Math.max(1, limit))
+
+  return {
+    ids: picked.map((row) => row.item.id),
+    items: picked.map((row) => row.item),
+    total: catalog.length,
+    query: raw,
+    needsName: picked.length === 0,
+  }
+}
+
 export function formatCatalogForPrompt(match, lang = 'ru') {
   if (!match?.items?.length) {
     return lang === 'en'

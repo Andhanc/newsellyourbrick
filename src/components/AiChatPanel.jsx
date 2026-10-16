@@ -23,7 +23,6 @@ import {
   FiShield,
   FiStar,
   FiTrash2,
-  FiTrendingUp,
   FiUser,
   FiX,
 } from 'react-icons/fi'
@@ -43,10 +42,9 @@ import { visibleAssistantButtons } from '../utils/siteAssistantHelpers'
 import { WhatsAppIcon, TelegramIcon } from './icons/ContactChannelIcons'
 
 const STARTERS = [
-  { id: 'site', Icon: FiCompass },
-  { id: 'property', Icon: FiHome },
-  { id: 'legal', Icon: FiShield },
-  { id: 'investment', Icon: FiTrendingUp },
+  { id: 'match', Icon: FiHome, mode: 'match' },
+  { id: 'platform', Icon: FiCompass, mode: 'platform' },
+  { id: 'about', Icon: FiMessageCircle, mode: 'about' },
 ]
 
 const ACTION_ICONS = {
@@ -475,13 +473,19 @@ export default function AiChatPanel({
               <div className="assistant-welcome__intro">
                 <h2 id="assistant-welcome-title">{t('assistantStartTitle')}</h2>
               </div>
-              <div className="assistant-welcome__grid">
-                {STARTERS.map(({ id, Icon }) => (
+              <div className="assistant-welcome__grid assistant-welcome__grid--modes">
+                {STARTERS.map(({ id, Icon, mode }) => (
                   <button
                     key={id}
                     type="button"
                     className={`assistant-starter assistant-starter--${id}`}
-                    onClick={() => chat.handleButtonClick(t(`assistantStarter_${id}Prompt`))}
+                    onClick={() => {
+                      if (typeof chat.selectAssistantMode === 'function') {
+                        chat.selectAssistantMode(mode, t(`assistantStarter_${id}Prompt`))
+                        return
+                      }
+                      chat.handleButtonClick(t(`assistantStarter_${id}Prompt`))
+                    }}
                     disabled={chat.isLoadingAI || chat.guestLimitReached}
                   >
                     <span className="assistant-starter__topline">

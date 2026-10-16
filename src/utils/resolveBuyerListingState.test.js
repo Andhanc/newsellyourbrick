@@ -96,3 +96,13 @@ test('sold and ended auctions stay out of favorites and comparison', async () =>
     false,
   )
 })
+
+test('isPropertyReservedByUser matches reserved_by against the viewer id', async () => {
+  const { isPropertyReservedByUser } = await import('./resolveBuyerListingState.js')
+  assert.equal(isPropertyReservedByUser({ reserved_by: 42 }, 42), true)
+  assert.equal(isPropertyReservedByUser({ reserved_by: '42' }, 42), true)
+  assert.equal(isPropertyReservedByUser({ reservedBy: 42 }, '42'), true)
+  assert.equal(isPropertyReservedByUser({ reserved_by: 42 }, 7), false)
+  assert.equal(isPropertyReservedByUser({ reserved_by: 42 }, null), false)
+  assert.equal(isPropertyReservedByUser({}, 42), false)
+})

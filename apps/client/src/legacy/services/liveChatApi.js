@@ -23,7 +23,7 @@ export async function ensureLiveChatSession({ assistantSessionId, userId, waitMe
   const storageKey = liveChatStorageKey(assistantSessionId);
   let token = typeof localStorage !== 'undefined' ? localStorage.getItem(storageKey) : null;
 
-  if (token) {
+  if (token && !waitMessage) {
     try {
       const res = await fetch(`${base}/live-chat/sessions/${encodeURIComponent(token)}/messages`);
       if (res.ok) {

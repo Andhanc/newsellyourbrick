@@ -7,9 +7,21 @@ import { postChatCompletions } from '../services/aiChatCompletion.js'
 import { DEFAULT_CONFIG, formatDialogPathForPrompt, getBotConfig } from './botConfig.js'
 import { formatCoreRulesForPrompt } from './botCoreRules.js'
 import { analyzeConversation, dialogToPreferences, formatCriteriaForPrompt, formatStageInstruction } from './dialogContext.js'
-import { evaluateIntentGate, formatIntentGateForPrompt, SCENARIOS } from './intentGate.js'
+import {
+  applyAssistantMode,
+  evaluateIntentGate,
+  formatIntentGateForPrompt,
+  normalizeAssistantMode,
+  SCENARIOS,
+} from './intentGate.js'
 import { getKnowledgeBaseForPrompt } from './knowledgeBase.js'
-import { formatCatalogForPrompt, searchCatalog, slimProperty } from './propertyMatcher.js'
+import { normalizeLocationText } from './catalogLocations.js'
+import {
+  findPropertiesByQuery,
+  formatCatalogForPrompt,
+  searchCatalog,
+  slimProperty,
+} from './propertyMatcher.js'
 import { formatAttachmentsForPrompt } from './fileAttachments.js'
 import { selectSpainLegalKnowledge } from './spainLegalKnowledge.js'
 import { getSpainLegalLiveContext } from './spainLegalLiveSources.js'
@@ -300,8 +312,17 @@ function deterministicCopy(dialog, gate, match, lang) {
     type: dialog.unavailablePropertyType
       ? `В городе ${dialog.cityLabel} нет объектов типа «${dialog.unavailablePropertyType}». Доступны: ${dialog.availablePropertyTypesLabel}. Какой тип Вам нужен?`
       : `Теперь выберите тип недвижимости. В городе ${dialog.cityLabel} доступны: ${dialog.availablePropertyTypesLabel}. Какой тип Вам нужен?`,
-    country: `Выберите страну. В Вашей категории сейчас есть объекты в странах: ${dialog.availableCountriesLabel}.`,
-    city: `Теперь выберите город в стране ${dialog.countryLabel}. Подходящие объекты есть в городах: ${dialog.availableCitiesLabel}.`,
+    country: `Чтобы я правильно мог вас проконсультировать, подскажите страну. Сейчас в каталоге есть: ${dialog.availableCountriesLabel}.`,
+    city: (() => {
+      const known = [
+        dialog.propertyTypeLabel,
+        dialog.rooms ? `${dialog.rooms} спален` : '',
+      ]
+        .filter(Boolean)
+        .join(', ')
+      const head = known ? `Понял запрос (${known}). ` : ''
+      return `${head}Чтобы я правильно мог вас проконсультировать, уточните город в стране ${dialog.countryLabel}. Сейчас есть варианты в: ${dialog.availableCitiesLabel}.`
+    })(),
     format: 'Какой формат удобнее: аукцион, купить сейчас или доли?',
     listings: match.items.length
       ? dialog.preferInvestmentVehicles
@@ -332,8 +353,17 @@ function deterministicCopy(dialog, gate, match, lang) {
     type: dialog.unavailablePropertyType
       ? `There are no “${dialog.unavailablePropertyType}” listings in ${dialog.cityLabel}. Available types: ${dialog.availablePropertyTypesLabel}. Which type do you need?`
       : `Now choose a property type. Available in ${dialog.cityLabel}: ${dialog.availablePropertyTypesLabel}. Which type do you need?`,
-    country: `Choose a country. Your category currently has listings in: ${dialog.availableCountriesLabel}.`,
-    city: `Now choose a city in ${dialog.countryLabel}. Matching listings are available in: ${dialog.availableCitiesLabel}.`,
+    country: `So I can advise you properly, which country should we look at? Available now: ${dialog.availableCountriesLabel}.`,
+    city: (() => {
+      const known = [
+        dialog.propertyTypeLabel,
+        dialog.rooms ? `${dialog.rooms} bedrooms` : '',
+      ]
+        .filter(Boolean)
+        .join(', ')
+      const head = known ? `Got it (${known}). ` : ''
+      return `${head}So I can advise you properly, which city in ${dialog.countryLabel} works best? Available: ${dialog.availableCitiesLabel}.`
+    })(),
     format: 'Which format works better: auction, buy now, or shares?',
     listings: match.items.length
       ? dialog.preferInvestmentVehicles
@@ -362,8 +392,17 @@ function deterministicCopy(dialog, gate, match, lang) {
     type: dialog.unavailablePropertyType
       ? `No hay inmuebles del tipo «${dialog.unavailablePropertyType}» en ${dialog.cityLabel}. Tipos disponibles: ${dialog.availablePropertyTypesLabel}. ¿Qué tipo necesita?`
       : `Ahora elija el tipo. En ${dialog.cityLabel} hay: ${dialog.availablePropertyTypesLabel}. ¿Qué tipo necesita?`,
-    country: `Elija el país. En su categoría hay inmuebles en: ${dialog.availableCountriesLabel}.`,
-    city: `Ahora elija una ciudad en ${dialog.countryLabel}. Hay inmuebles adecuados en: ${dialog.availableCitiesLabel}.`,
+    country: `Para asesorarle bien, indíqueme el país. Ahora hay inmuebles en: ${dialog.availableCountriesLabel}.`,
+    city: (() => {
+      const known = [
+        dialog.propertyTypeLabel,
+        dialog.rooms ? `${dialog.rooms} dormitorios` : '',
+      ]
+        .filter(Boolean)
+        .join(', ')
+      const head = known ? `Entendido (${known}). ` : ''
+      return `${head}Para asesorarle bien, ¿qué ciudad en ${dialog.countryLabel} prefiere? Hay opciones en: ${dialog.availableCitiesLabel}.`
+    })(),
     format: '¿Qué formato le encaja: subasta, compra ahora o participaciones?',
     listings: match.items.length
       ? dialog.preferInvestmentVehicles
@@ -388,8 +427,8 @@ function deterministicCopy(dialog, gate, match, lang) {
     budget: `In ${dialog.cityLabel} gibt es ${dialog.matchingLocationCount} passende Objekte. Welches Budget in Euro planen Sie?`,
     location: 'Wählen wir zuerst das Land und danach die Stadt.',
     type: `Wählen Sie jetzt den Immobilientyp. In ${dialog.cityLabel} verfügbar: ${dialog.availablePropertyTypesLabel}.`,
-    country: `Wählen Sie ein Land. Aktuell verfügbar: ${dialog.availableCountriesLabel}.`,
-    city: `Wählen Sie nun eine Stadt in ${dialog.countryLabel}. Verfügbar: ${dialog.availableCitiesLabel}.`,
+    country: `Damit ich Sie richtig beraten kann: Welches Land passt? Verfügbar: ${dialog.availableCountriesLabel}.`,
+    city: `Damit ich Sie richtig beraten kann: Welche Stadt in ${dialog.countryLabel}? Verfügbar: ${dialog.availableCitiesLabel}.`,
     format: 'Welches Format passt: Auktion, Sofortkauf oder Anteile?',
     listings: match.items.length ? 'Ich habe passende Objekte aus dem SellYourBrick-Katalog gefunden. Öffnen Sie eine Karte oder grenzen Sie die Suche weiter ein.' : 'Zu diesen Kriterien gibt es aktuell keine Treffer im Katalog.',
     platform: 'SellYourBrick bündelt Auktionen, Sofortkauf, Anteile, Test-Drive und Investment-Werkzeuge. Ich erkläre Ihnen, wo Sie welche Funktion finden.',
@@ -404,8 +443,8 @@ function deterministicCopy(dialog, gate, match, lang) {
     budget: `Il y a ${dialog.matchingLocationCount} biens adaptés à ${dialog.cityLabel}. Quel budget en euros envisagez-vous ?`,
     location: 'Choisissons d’abord le pays, puis la ville.',
     type: `Choisissez maintenant le type de bien. À ${dialog.cityLabel} : ${dialog.availablePropertyTypesLabel}.`,
-    country: `Choisissez un pays. Biens disponibles actuellement : ${dialog.availableCountriesLabel}.`,
-    city: `Choisissez maintenant une ville en ${dialog.countryLabel}. Disponibles : ${dialog.availableCitiesLabel}.`,
+    country: `Pour bien vous conseiller, quel pays souhaitez-vous ? Disponibles : ${dialog.availableCountriesLabel}.`,
+    city: `Pour bien vous conseiller, quelle ville en ${dialog.countryLabel} ? Disponibles : ${dialog.availableCitiesLabel}.`,
     format: 'Quel format préférez-vous : enchères, achat immédiat ou parts ?',
     listings: match.items.length ? 'J’ai trouvé des biens adaptés dans le catalogue SellYourBrick. Ouvrez une fiche ou précisez votre recherche.' : 'Aucun bien ne correspond actuellement à ces critères.',
     platform: 'SellYourBrick réunit enchères, achat immédiat, parts, test-drive et outils d’investissement. Je peux vous guider vers chaque service.',
@@ -420,8 +459,8 @@ function deterministicCopy(dialog, gate, match, lang) {
     budget: `W mieście ${dialog.cityLabel} są ${dialog.matchingLocationCount} pasujące oferty. Jaki budżet w euro rozważasz?`,
     location: 'Najpierw wybierzmy kraj, a potem miasto.',
     type: `Wybierz typ nieruchomości. W ${dialog.cityLabel} dostępne są: ${dialog.availablePropertyTypesLabel}.`,
-    country: `Wybierz kraj. Obecnie dostępne: ${dialog.availableCountriesLabel}.`,
-    city: `Wybierz miasto w kraju ${dialog.countryLabel}. Dostępne: ${dialog.availableCitiesLabel}.`,
+    country: `Żebym mógł dobrze doradzić, wskaż kraj. Dostępne: ${dialog.availableCountriesLabel}.`,
+    city: `Żebym mógł dobrze doradzić, wskaż miasto w kraju ${dialog.countryLabel}. Dostępne: ${dialog.availableCitiesLabel}.`,
     format: 'Który format wybierasz: aukcja, zakup od ręki czy udziały?',
     listings: match.items.length ? 'Znalazłem pasujące oferty w katalogu SellYourBrick. Otwórz kartę lub doprecyzuj wyszukiwanie.' : 'Obecnie brak ofert spełniających te kryteria.',
     platform: 'SellYourBrick łączy aukcje, zakup od ręki, udziały, test-drive i narzędzia inwestora. Pokażę, gdzie znaleźć każdą usługę.',
@@ -436,8 +475,8 @@ function deterministicCopy(dialog, gate, match, lang) {
     budget: `Det finns ${dialog.matchingLocationCount} passande objekt i ${dialog.cityLabel}. Vilken budget i euro planerar du?`,
     location: 'Vi väljer först land och sedan stad.',
     type: `Välj nu fastighetstyp. I ${dialog.cityLabel} finns: ${dialog.availablePropertyTypesLabel}.`,
-    country: `Välj land. Tillgängligt just nu: ${dialog.availableCountriesLabel}.`,
-    city: `Välj nu en stad i ${dialog.countryLabel}. Tillgängligt: ${dialog.availableCitiesLabel}.`,
+    country: `För att jag ska kunna råda dig rätt — vilket land? Tillgängligt: ${dialog.availableCountriesLabel}.`,
+    city: `För att jag ska kunna råda dig rätt — vilken stad i ${dialog.countryLabel}? Tillgängligt: ${dialog.availableCitiesLabel}.`,
     format: 'Vilket format passar: auktion, direktköp eller andelar?',
     listings: match.items.length ? 'Jag hittade passande objekt i SellYourBrick-katalogen. Öppna ett kort eller avgränsa sökningen.' : 'Det finns inga objekt som matchar kriterierna just nu.',
     platform: 'SellYourBrick samlar auktioner, direktköp, andelar, test-drive och investeringsverktyg. Jag visar var du hittar varje tjänst.',
@@ -455,6 +494,20 @@ function deterministicCopy(dialog, gate, match, lang) {
   if (gate.scenario === SCENARIOS.SPAIN_LEGAL) return deterministicSpainLegalCopy(gate.lastUserText, lang)
   if (gate.scenario === SCENARIOS.VISA_DOCS) return pack.visa
   if (gate.scenario === SCENARIOS.PLATFORM_HELP) return pack.platform
+  if (gate.scenario === SCENARIOS.PROPERTY_ABOUT) {
+    if (match?.needsName || !match?.items?.length) {
+      return lang === 'en'
+        ? 'Tell me the property name, id, or city from the catalog — I will explain everything we know about it.'
+        : lang === 'es'
+          ? 'Dígame el nombre, el id o la ciudad del inmueble del catálogo y le cuento todo lo que sabemos.'
+          : 'Назовите название, id или город объекта из каталога — расскажу всё, что о нём известно.'
+    }
+    return lang === 'en'
+      ? 'Here is what the catalog shows about this listing. Open the card for full details or ask a follow-up.'
+      : lang === 'es'
+        ? 'Esto es lo que muestra el catálogo sobre este inmueble. Abra la ficha o haga otra pregunta.'
+        : 'Вот что есть в каталоге по этому объекту. Откройте карточку для деталей или задайте уточняющий вопрос.'
+  }
   if (dialog.stage === 'SHOW_LISTINGS') return pack.listings
   if (dialog.stage === 'NEED_BUDGET') return pack.budget
   if (dialog.stage === 'NEED_LOCATION') return pack.location
@@ -468,17 +521,28 @@ function deterministicCopy(dialog, gate, match, lang) {
 
 function buildDeterministicReply(dialog, gate, match, lang, preferences, lastUser = '') {
   const navigation = sanitizeNavigation(navigationForScenario(gate, dialog, lastUser))
-  const mayRecommend = dialog.stage === 'SHOW_LISTINGS'
+  const isAbout = gate.scenario === SCENARIOS.PROPERTY_ABOUT
+  const mayRecommend =
+    dialog.stage === 'SHOW_LISTINGS' || (isAbout && match?.ids?.length > 0)
+  const aboutNav =
+    isAbout && match?.ids?.length
+      ? match.ids.slice(0, 3).map((id) => ({
+          path: `/property/${id}`,
+          label: lang === 'en' ? 'Open listing' : lang === 'es' ? 'Abrir ficha' : 'Открыть объект',
+        }))
+      : []
+  const mergedNav = sanitizeNavigation([...(navigation || []), ...aboutNav])
   return {
     text: deterministicCopy(dialog, gate, match, lang),
     buttons: null,
-    needsMoreInfo: dialog.stage !== 'SHOW_LISTINGS',
+    needsMoreInfo: isAbout ? !match?.ids?.length : dialog.stage !== 'SHOW_LISTINGS',
     recommendations: mayRecommend && match.ids.length ? match.ids : null,
-    navigation: navigation.length ? navigation : null,
+    navigation: mergedNav.length ? mergedNav : null,
     yieldEstimate: null,
     preferences: dialogToPreferences(dialog, preferences),
     stage: dialog.stage,
     scenario: gate.scenario,
+    assistantMode: gate.assistantMode || null,
   }
 }
 
@@ -584,9 +648,15 @@ ${JSON.stringify({ ...legalKnowledge, liveOfficialData: liveLegalData || [] }).s
 Не называй рекламную TIN без соответствующей TAE, срока, условий bonificación и даты проверки.`
     : ''
   const isPropertySearch = gate.scenario === SCENARIOS.PROPERTY_SEARCH
-  const catalogBlock =
-    isPropertySearch && dialog.stage === 'SHOW_LISTINGS'
-      ? formatCatalogForPrompt(match, lang)
+  const isPropertyAbout = gate.scenario === SCENARIOS.PROPERTY_ABOUT
+  const catalogBlock = isPropertySearch && dialog.stage === 'SHOW_LISTINGS'
+    ? formatCatalogForPrompt(match, lang)
+    : isPropertyAbout
+      ? match?.items?.length
+        ? `${formatCatalogForPrompt(match, lang)}
+
+**РЕЖИМ «ОБ ОБЪЕКТЕ»:** опирайся только на карточки выше. Расскажи максимум известных фактов. В recommendations — только эти id. В navigation добавь /property/:id.`
+        : 'КАТАЛОГ: по запросу объект не найден. Не выдумывай. Попроси название, id или город. recommendations = null.'
       : 'Не добавляй recommendations, если пользователь прямо сейчас не просит подобрать объекты.'
   const locationsBlock = `**ИЕРАРХИЯ ЛОКАЦИЙ КАТАЛОГА:**
 - Страны для выбранной цели: ${dialog.availableCountriesLabel}
@@ -600,12 +670,20 @@ ${JSON.stringify({ ...legalKnowledge, liveOfficialData: liveLegalData || [] }).s
 ${formatDialogPathForPrompt(config.dialogPath)}
 ${formatCoreRulesForPrompt(lang)}
 
+**ТОН ОТВЕТА:** как в обычном мессенджере (WhatsApp), без канцелярита и без фраз «Теперь выберите…». Сначала ответь по сути запроса клиента, потом мягко уточни один недостающий критерий. Страны и города в тексте — на языке ответа (Spain → Испания на русском). Если страна в каталоге одна — не спрашивай её.
+
 **ЭТАП ПОДБОРА:** ${dialog.stage}
 ${formatStageInstruction(dialog, lang)}
 ${formatCriteriaForPrompt(dialog)}
 
 ${locationsBlock}`
-    : `Ты — навигационный гид и продуктовый консультант SellYourBrick. Сам веди пользователя по сайту: объясняй, где находится нужный раздел, что на странице, какие шаги в интерфейсе и что нужно заранее (вход, Pro, VIP, депозит, верификация).
+    : isPropertyAbout
+      ? `Ты — консультант по конкретным объектам каталога SellYourBrick.
+Клиент выбрал режим «рассказать об объекте». Не веди воронку подбора (цель / страна / бюджет).
+Найди объект по названию, id или локации в блоке каталога и расскажи всё доступное: цена или текущая ставка, формат (аукцион / купить сейчас / доли / долг), локация, тип, площадь, комнаты, описание, особенности, доходность если есть.
+Если объектов несколько — кратко сравни и попроси уточнить. Если нет совпадений — честно скажи и попроси уточнение.
+Всегда предлагай открыть карточку через navigation /property/:id и recommendations.`
+      : `Ты — навигационный гид и продуктовый консультант SellYourBrick. Сам веди пользователя по сайту: объясняй, где находится нужный раздел, что на странице, какие шаги в интерфейсе и что нужно заранее (вход, Pro, VIP, депозит, верификация).
 Сначала дай прямой содержательный ответ именно на вопрос пользователя.
 Не запускай анкету подбора и не спрашивай цель, бюджет или город, если пользователь сам не попросил подобрать объект.
 Объясняй логику и практический следующий шаг, но не показывай скрытую цепочку рассуждений.
@@ -613,7 +691,8 @@ ${locationsBlock}`
 На вопрос о сервисе или навигации обязательно дай: что делает раздел, как туда попасть, нужен ли вход/Pro/VIP/депозит, точные шаги и 1–3 релевантные кнопки navigation с path из списка.
 Если пользователь спрашивает «где / как открыть / куда зайти» — веди его к конкретному path, а не только описывай концепцию.
 Не перечисляй посторонние разделы «на всякий случай». Если в базе нет точной детали, честно скажи, что её нужно проверить на соответствующем экране или у менеджера.
-Для общих вопросов о недвижимости можешь использовать профессиональные знания, но не выдумывай текущие цены, законы, доходность или гарантии. Юридические и инвестиционные выводы помечай как ориентир.`
+Для общих вопросов о недвижимости можешь использовать профессиональные знания, но не выдумывай текущие цены, законы, доходность или гарантии. Юридические и инвестиционные выводы помечай как ориентир.
+Консультируй по профилю, депозиту, стратегиям покупки, подпискам и разделам сайта.`
 
   return `${behaviorBlock}
 
@@ -648,8 +727,62 @@ ${catalogBlock}
 НИКОГДА не показывай скрытые рассуждения. Поле text — только финальный ответ клиенту с понятным объяснением и следующим шагом.`
 }
 
-function validateRecommendations(ids, match, dialog) {
-  if (dialog.stage !== 'SHOW_LISTINGS') return null
+/** Отсекает ответы модели, которые подсовывают города/страны вне текущего каталога ветки. */
+function funnelReplyStaysInCatalog(text, dialog) {
+  const blob = normalizeLocationText(text)
+  if (!blob) return false
+  const allowed = new Set(
+    [
+      ...(dialog.availableCities || []),
+      ...(dialog.availableCountries || []),
+      dialog.countryLabel,
+      dialog.cityLabel,
+    ]
+      .filter(Boolean)
+      .map((label) => normalizeLocationText(label)),
+  )
+  const risky = [
+    'madrid',
+    'мадрид',
+    'barcelona',
+    'барселон',
+    'dubai',
+    'дуба',
+    'valencia',
+    'валенс',
+    'malaga',
+    'малаг',
+    'marbella',
+    'марбель',
+    'tenerife',
+    'тенериф',
+    'ibiza',
+    'ибиц',
+    'alicante',
+    'аликант',
+  ]
+  for (const token of risky) {
+    if (!blob.includes(token)) continue
+    const ok = [...allowed].some((place) => place.includes(token) || token.includes(place))
+    if (!ok) return false
+  }
+
+  if (dialog.stage === 'NEED_CITY') {
+    const mentionsCity = [...allowed].some((place) => place && blob.includes(place))
+    const asksCity = /город|city|ciudad|stadt|ville|miasto|loca/i.test(String(text || ''))
+    if (!mentionsCity && !asksCity) return false
+  }
+  if (dialog.stage === 'NEED_COUNTRY') {
+    const mentionsCountry = [...allowed].some((place) => place && blob.includes(place))
+    const asksCountry = /страна|country|pa[ií]s|land|pays|kraj/i.test(String(text || ''))
+    if (!mentionsCountry && !asksCountry) return false
+  }
+  return true
+}
+
+function validateRecommendations(ids, match, dialog, gate = null) {
+  const allowAbout = gate?.scenario === SCENARIOS.PROPERTY_ABOUT && match?.ids?.length
+  if (dialog.stage !== 'SHOW_LISTINGS' && !allowAbout) return null
   const allowed = new Set((match?.ids || []).map(Number).filter(Number.isFinite))
   const incoming = (Array.isArray(ids) ? ids : [])
     .map((id) => Number(id))
@@ -666,6 +799,7 @@ export function buildAssistantContext({
   detectedLanguage,
   attachments = [],
   userContext = null,
+  assistantMode = null,
 }) {
   const history = normalizeHistory(messages)
   const lastUser = [...history].reverse().find((m) => m.sender === 'user')?.text || ''
@@ -678,9 +812,14 @@ export function buildAssistantContext({
   const lang = inputLanguage
   const catalog = (Array.isArray(properties) ? properties : []).map(slimProperty).filter(Boolean)
   const dialog = analyzeConversation(history, lang, preferences, { catalog })
-  const gate = evaluateIntentGate(history, lang)
+  const mode = normalizeAssistantMode(assistantMode ?? preferences?.assistantMode)
+  const gate = applyAssistantMode(evaluateIntentGate(history, lang), mode)
   const maySearch = gate.scenario === SCENARIOS.PROPERTY_SEARCH && dialog.stage === 'SHOW_LISTINGS'
-  const match = maySearch ? searchCatalog(catalog, dialog, 5) : { ids: [], items: [], total: catalog.length }
+  const match = maySearch
+    ? searchCatalog(catalog, dialog, 5)
+    : gate.scenario === SCENARIOS.PROPERTY_ABOUT
+      ? findPropertiesByQuery(catalog, lastUser, 5)
+      : { ids: [], items: [], total: catalog.length }
   const knowledge = getKnowledgeBaseForPrompt({
     query: lastUser,
     scenario: gate.scenario,
@@ -703,6 +842,7 @@ export function buildAssistantContext({
     knowledge,
     legalKnowledge,
     preferences,
+    assistantMode: mode,
     attachments: Array.isArray(attachments) ? attachments : [],
     userContext: sanitizeAssistantUserContext(userContext),
   }
@@ -824,43 +964,54 @@ export async function buildAssistantReply(input = {}) {
     const parsed = parseAssistantJson(raw)
     if (!parsed?.text) return fallback
 
-    const funnelStages = ['NEED_PURPOSE', 'NEED_COUNTRY', 'NEED_CITY', 'NEED_PROPERTY_TYPE', 'NEED_BUDGET', 'SHOW_LISTINGS']
-    const inPropertyFunnel =
-      ctx.gate.scenario === SCENARIOS.PROPERTY_SEARCH && funnelStages.includes(ctx.dialog.stage)
+    // Пока уточняем цель/страну/город или уже показываем карточки — без посторонних navigation.
+    const suppressNavigation =
+      ctx.gate.scenario === SCENARIOS.PROPERTY_SEARCH &&
+      ['NEED_PURPOSE', 'NEED_COUNTRY', 'NEED_CITY', 'SHOW_LISTINGS'].includes(ctx.dialog.stage)
     const modelNavigation = sanitizeNavigation(parsed.navigation || [])
-    const baseNavigation = inPropertyFunnel
+    const baseNavigation = suppressNavigation
       ? []
       : modelNavigation.length
         ? modelNavigation
         : sanitizeNavigation(navigationForScenario(ctx.gate, ctx.dialog, ctx.lastUser))
 
+    // Цель — всегда детерминированно. Страна/город — моделью, но только если она не выдумывает локации.
     const lockFunnelStage =
+      ctx.gate.scenario === SCENARIOS.PROPERTY_SEARCH && ctx.dialog.stage === 'NEED_PURPOSE'
+    const modelText = String(parsed.text || '').replace(/\*\*/g, '').trim()
+    const needsCatalogGuard =
       ctx.gate.scenario === SCENARIOS.PROPERTY_SEARCH &&
-      ['NEED_PURPOSE', 'NEED_COUNTRY', 'NEED_CITY', 'NEED_BUDGET'].includes(ctx.dialog.stage)
-
-    const replyText = lockFunnelStage
-      ? fallback.text
-      : String(parsed.text).replace(/\*\*/g, '').trim()
-    const navigation = inPropertyFunnel
+      ['NEED_COUNTRY', 'NEED_CITY', 'NEED_PROPERTY_TYPE', 'NEED_BUDGET'].includes(ctx.dialog.stage)
+    const replyText =
+      lockFunnelStage || (needsCatalogGuard && !funnelReplyStaysInCatalog(modelText, ctx.dialog))
+        ? fallback.text
+        : modelText
+    const navigation = suppressNavigation
       ? []
       : enrichNavigationWithMentionedSections(
           replyText,
           baseNavigation.length ? baseNavigation : fallback.navigation,
         )
 
+    const prefsOut = {
+      ...dialogToPreferences(ctx.dialog, ctx.preferences),
+      assistantMode: ctx.assistantMode || ctx.preferences?.assistantMode || null,
+    }
+
     return {
       text: replyText,
       buttons: null,
       needsMoreInfo: parsed.needsMoreInfo !== false,
-      recommendations: validateRecommendations(parsed.recommendations, ctx.match, ctx.dialog),
+      recommendations: validateRecommendations(parsed.recommendations, ctx.match, ctx.dialog, ctx.gate),
       navigation: navigation.length ? navigation : fallback.navigation,
       actions: buildContextualActions(ctx),
       languageSuggestion: buildLanguageSuggestion(ctx.siteLanguage, ctx.inputLanguage),
       sources: legalSourcesForResponse(ctx.legalKnowledge, liveLegalData),
       yieldEstimate: null,
-      preferences: dialogToPreferences(ctx.dialog, ctx.preferences),
+      preferences: prefsOut,
       stage: ctx.dialog.stage,
       scenario: ctx.gate.scenario,
+      assistantMode: ctx.assistantMode || null,
     }
   } catch (error) {
     console.warn('[assistant] LLM fallback:', error?.message || error)

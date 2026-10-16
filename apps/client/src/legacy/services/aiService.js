@@ -510,6 +510,7 @@ ${JSON.stringify(prefs, null, 0)}
         preferences: prefs,
         properties: slimPropertiesForAssistant(props),
         userContext: options.userContext,
+        assistantMode: options.assistantMode || prefs?.assistantMode || null,
       }),
       signal: controller.signal,
     })

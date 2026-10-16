@@ -52,7 +52,7 @@ test('section explainer trigger is monochrome and lives beside each section head
 
 test('section headings use their current translation keys and every explainer uses the Tiffany theme', () => {
   assert.match(hero, /<h1 className="hero-auction-mobile__title">\{t\('auction'\)\}<\/h1>/)
-  assert.match(hero, /<h1 className="hero-auction-header__title">\{t\('auction'\)\}<\/h1>/)
+  assert.doesNotMatch(hero, /hero-auction-header/)
   assert.match(shares, /\{t\('sharesPage_heroTitle'\)\}/)
   assert.match(debts, /\{t\('debtsTitle'\)\}/)
   assert.equal(testDrive.match(/<h1>\{t\('testDrive'\)\}<\/h1>/g)?.length, 2)

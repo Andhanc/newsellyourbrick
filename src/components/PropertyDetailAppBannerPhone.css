@@ -1,0 +1,416 @@
+/* Standalone iPhone mockup so the home app banner can reuse the auction UI
+   that already exists on the property-detail desktop banner. */
+
+.pd-v3-app-banner__phone-wrap {
+  position: relative;
+  pointer-events: none;
+}
+
+.pd-v3-app-banner__iphone {
+  position: relative;
+  width: 214px;
+  height: 438px;
+  font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  filter: drop-shadow(0 28px 42px rgba(15, 23, 42, 0.38));
+}
+
+.pd-v3-app-banner__iphone-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 3px;
+  border-radius: 44px;
+  background: linear-gradient(160deg, #5a5a5c 0%, #3a3a3c 28%, #1c1c1e 62%, #2a2a2c 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(0, 0, 0, 0.65);
+}
+
+.pd-v3-app-banner__iphone-btn {
+  position: absolute;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #6e6e70 0%, #3a3a3c 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 0 0 0.5px rgba(0, 0, 0, 0.55);
+  z-index: 2;
+}
+
+.pd-v3-app-banner__iphone-btn--silent {
+  left: -2px;
+  top: 92px;
+  width: 3px;
+  height: 18px;
+}
+
+.pd-v3-app-banner__iphone-btn--vol-up {
+  left: -2px;
+  top: 128px;
+  width: 3px;
+  height: 34px;
+}
+
+.pd-v3-app-banner__iphone-btn--vol-down {
+  left: -2px;
+  top: 172px;
+  width: 3px;
+  height: 34px;
+}
+
+.pd-v3-app-banner__iphone-btn--power {
+  right: -2px;
+  top: 148px;
+  width: 3px;
+  height: 56px;
+}
+
+.pd-v3-app-banner__iphone-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 41px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.pd-v3-app-banner__iphone-island {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  z-index: 4;
+  width: 72px;
+  height: 21px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: #000;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.pd-v3-app-banner__iphone-island-lens {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  width: 9px;
+  height: 9px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #3d3d40 0%, #0a0a0b 72%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.pd-v3-app-banner__iphone-status {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px 0;
+  height: 38px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.pd-v3-app-banner__iphone-status-icons {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pd-v3-app-banner__iphone-signal,
+.pd-v3-app-banner__iphone-wifi,
+.pd-v3-app-banner__iphone-battery {
+  display: inline-block;
+  background: #fff;
+  opacity: 0.95;
+}
+
+.pd-v3-app-banner__iphone-signal {
+  width: 12px;
+  height: 8px;
+  clip-path: polygon(0 100%, 20% 55%, 40% 75%, 60% 35%, 80% 55%, 100% 15%, 100% 100%);
+}
+
+.pd-v3-app-banner__iphone-wifi {
+  width: 10px;
+  height: 8px;
+  border-radius: 999px 999px 0 0;
+  border: 2px solid #fff;
+  border-bottom: none;
+  background: transparent;
+  transform: scale(0.85);
+}
+
+.pd-v3-app-banner__iphone-battery {
+  width: 18px;
+  height: 8px;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  border-radius: 2px;
+  position: relative;
+  background: transparent;
+}
+
+.pd-v3-app-banner__iphone-battery::before {
+  content: '';
+  position: absolute;
+  inset: 1px 3px 1px 1px;
+  border-radius: 1px;
+  background: #fff;
+}
+
+.pd-v3-app-banner__iphone-battery::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 50%;
+  width: 2px;
+  height: 4px;
+  transform: translateY(-50%);
+  border-radius: 0 1px 1px 0;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.pd-v3-app-banner__iphone-app {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 52px);
+  background: #f8fafc;
+}
+
+.pd-v3-app-banner__iphone-nav {
+  display: grid;
+  grid-template-columns: 16px 1fr 16px;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px 8px;
+  color: #0f172a;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.pd-v3-app-banner__iphone-nav span {
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pd-v3-app-banner__iphone-hero {
+  position: relative;
+  height: 92px;
+  margin: 0 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 3px;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.04) 0%, rgba(15, 23, 42, 0.78) 100%),
+    linear-gradient(135deg, #93c5fd 0%, #38bdf8 28%, #6fd4dc 58%, #6fd4dc 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.pd-v3-app-banner__iphone-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(255, 255, 255, 0.35) 0%, transparent 42%),
+    linear-gradient(180deg, transparent 35%, rgba(15, 23, 42, 0.55) 100%);
+  pointer-events: none;
+}
+
+.pd-v3-app-banner__iphone-badge {
+  position: relative;
+  z-index: 1;
+  align-self: flex-start;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(22, 163, 74, 0.92);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.pd-v3-app-banner__iphone-hero-title {
+  position: relative;
+  z-index: 1;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.pd-v3-app-banner__iphone-hero-location {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 8px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.pd-v3-app-banner__iphone-panel {
+  flex: 1 1 auto;
+  margin: 10px 10px 0;
+  padding: 12px 12px 14px;
+  border-radius: 16px 16px 0 0;
+  background: #fff;
+  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.pd-v3-app-banner__iphone-panel-label {
+  margin: 0 0 2px;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.pd-v3-app-banner__iphone-panel-value {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+}
+
+.pd-v3-app-banner__iphone-timer {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.pd-v3-app-banner__iphone-timer-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pd-v3-app-banner__iphone-flip {
+  position: relative;
+  width: 100%;
+  max-width: 38px;
+  height: 30px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #111827;
+  box-shadow:
+    0 2px 6px rgba(15, 23, 42, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.pd-v3-app-banner__iphone-flip-top,
+.pd-v3-app-banner__iphone-flip-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50%;
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #f8fafc;
+  letter-spacing: -0.02em;
+}
+
+.pd-v3-app-banner__iphone-flip-top {
+  background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+}
+
+.pd-v3-app-banner__iphone-flip-bottom {
+  background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+}
+
+.pd-v3-app-banner__iphone-flip-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.pd-v3-app-banner__iphone-timer-label {
+  font-size: 6px;
+  font-weight: 600;
+  line-height: 1.1;
+  text-align: center;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.pd-v3-app-banner__iphone-input {
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+  margin-bottom: 8px;
+  padding: 0 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #f8fafc;
+  font-size: 11px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.pd-v3-app-banner__iphone-cta {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #fff;
+  background: linear-gradient(135deg, rgba(78, 205, 214, 0.92) 0%, rgba(63, 135, 152, 0.92) 100%);
+  box-shadow:
+    0 4px 16px rgba(78, 205, 214, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.pd-v3-app-banner__iphone-home-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
+  z-index: 4;
+  width: 96px;
+  height: 4px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.28);
+}
+
+.pd-v3-app-banner__iphone-reflection {
+  position: absolute;
+  inset: 8px 12px auto auto;
+  width: 42%;
+  height: 36%;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, transparent 72%);
+  pointer-events: none;
+  transform: rotate(-18deg);
+}

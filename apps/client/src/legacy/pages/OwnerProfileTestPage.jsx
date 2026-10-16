@@ -317,7 +317,6 @@ export default function OwnerProfileTestPage() {
   const [appPreferences, setAppPreferences] = useState({
     language: 'ru',
     currency: 'eur',
-    timezone: 'minsk',
   })
   const [statsPeriod, setStatsPeriod] = useState('30d')
   const [ownerProperties, setOwnerProperties] = useState([])
@@ -1664,20 +1663,6 @@ export default function OwnerProfileTestPage() {
                         <option value="aed">AED (د.إ)</option>
                       </select>
                     </label>
-                    <label className="opr-field">
-                      <span className="opr-field__label">{t('ownerTest_ariaPeriod')}</span>
-                      <select
-                        className="opr-field__input opr-field__select"
-                        value={appPreferences.timezone}
-                        onChange={(e) =>
-                          setAppPreferences((prev) => ({ ...prev, timezone: e.target.value }))
-                        }
-                      >
-                        <option value="minsk">Europe/Minsk (UTC+3)</option>
-                        <option value="moscow">Europe/Moscow (UTC+3)</option>
-                        <option value="dubai">Asia/Dubai (UTC+4)</option>
-                      </select>
-                    </label>
                   </div>
                 </div>
 
@@ -2040,20 +2025,6 @@ export default function OwnerProfileTestPage() {
                         <option value="usd">USD ($)</option>
                         <option value="eur">EUR (€)</option>
                         <option value="aed">AED (د.إ)</option>
-                      </select>
-                    </label>
-                    <label className="opr-field">
-                      <span className="opr-field__label">{t('ownerTest_ariaPeriod')}</span>
-                      <select
-                        className="opr-field__input opr-field__select"
-                        value={appPreferences.timezone}
-                        onChange={(e) =>
-                          setAppPreferences((prev) => ({ ...prev, timezone: e.target.value }))
-                        }
-                      >
-                        <option value="minsk">Europe/Minsk (UTC+3)</option>
-                        <option value="moscow">Europe/Moscow (UTC+3)</option>
-                        <option value="dubai">Asia/Dubai (UTC+4)</option>
                       </select>
                     </label>
                   </div>

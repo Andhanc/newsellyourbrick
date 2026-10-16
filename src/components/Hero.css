@@ -113,14 +113,171 @@
 @media (min-width: 769px) {
   .hero--auction-scene {
     justify-content: center;
+    min-height: 100svh;
+    min-height: 100dvh;
     padding:
       calc(env(safe-area-inset-top, 0px) + 144px)
-      24px
-      calc(env(safe-area-inset-bottom, 0px) + 52px);
+      max(60px, calc((100vw - 1250px) / 2))
+      calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
   }
 
   .hero--auction-scene .hero-container {
-    justify-content: flex-start;
+    flex: 0 1 auto;
+    justify-content: center;
+    width: 100%;
+    max-width: min(1250px, calc(100vw - 120px));
+  }
+
+  .hero--auction-scene .hero-auction-header,
+  .hero--auction-scene .hero-features {
+    display: none;
+  }
+
+  .hero-auction-mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    max-width: 36rem;
+    margin: 0;
+    color: #ffffff;
+    text-align: left;
+  }
+
+  .hero-auction-mobile__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    max-width: 36rem;
+  }
+
+  .hero-auction-mobile__copy > .section-info-heading-row {
+    width: auto;
+    align-self: flex-start;
+    align-items: center;
+  }
+
+  .hero-auction-mobile__copy > .section-info-heading-row > .hero-auction-mobile__title {
+    flex: 0 1 auto;
+  }
+
+  .hero-auction-mobile__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 6px 12px;
+    border: 0;
+    border-radius: 999px;
+    background: #4ecdd6;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 780;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    box-shadow: 0 8px 20px rgba(78, 205, 214, 0.32);
+  }
+
+  .hero-auction-mobile__title,
+  .hero-auction-mobile h1 {
+    max-width: 16ch;
+    margin: 0;
+    color: #ffffff;
+    font-size: clamp(2.15rem, 5.4vw, 3.35rem);
+    font-weight: 830;
+    line-height: 1.02;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    text-wrap: balance;
+  }
+
+  .hero-auction-mobile__lead,
+  .hero-auction-mobile p {
+    max-width: 36rem;
+    margin: 14px 0 0;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 17px;
+    font-weight: 520;
+    line-height: 1.5;
+  }
+
+  .hero-auction-mobile__cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    width: min(100%, 22rem);
+    min-height: 56px;
+    margin-top: 22px;
+    padding: 0.35rem 0.4rem 0.35rem 1.2rem;
+    border: 0;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.96);
+    color: #0f172a;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-size: 0.95rem;
+    font-weight: 750;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    box-shadow:
+      0 14px 36px rgba(15, 23, 42, 0.2),
+      0 0 0 1px rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(14px) saturate(1.15);
+    -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  }
+
+  .hero-auction-mobile__cta-icon {
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #4ecdd6;
+    color: #ffffff;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 8px 18px rgba(78, 205, 214, 0.38);
+  }
+
+  .hero-auction-mobile__cta:active {
+    transform: scale(0.99);
+  }
+
+  .hero-auction-mobile__cta:focus-visible {
+    outline: 2px solid #4ecdd6;
+    outline-offset: 3px;
+  }
+
+  .hero-auction-scene__scroll {
+    position: absolute;
+    left: 50%;
+    bottom: calc(1.75rem + env(safe-area-inset-bottom, 0px));
+    z-index: 4;
+    display: grid;
+    place-items: center;
+    width: 50px;
+    height: 50px;
+    transform: translateX(-50%);
+    border: 0;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgba(8, 70, 80, 0.2);
+    cursor: pointer;
+    pointer-events: auto;
+    animation: hero-auction-scroll-bob 2s ease-in-out infinite;
+  }
+
+  .hero-auction-scene__scroll:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 3px;
+  }
+
+  .hero-auction-scene__scroll-arrow {
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid #111827;
+    margin-top: 2px;
   }
 }
 
@@ -957,7 +1114,9 @@
   .hero-features--static-mobile .hero-feature-card--static::after {
     animation: none;
   }
+}
 
+@media (prefers-reduced-motion: reduce) {
   .hero-auction-scene__scroll {
     animation: none;
   }

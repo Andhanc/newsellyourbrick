@@ -564,6 +564,7 @@ ${JSON.stringify(prefs, null, 0)}
         attachments: options.attachments,
         assistantSessionId: options.assistantSessionId,
         userContext: options.userContext,
+        assistantMode: options.assistantMode || prefs?.assistantMode || null,
       }),
       signal: controller.signal,
     })

@@ -1,12 +1,37 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { Bot, HelpCircle, MessageCircle } from 'lucide-react'
+import { Bot, MessageCircle } from 'lucide-react'
 import { openOwnerAiChat, openOwnerManagerChat } from '../utils/ownerCabinetChat'
 import './OwnerSupportButton.css'
 
 const MENU_GAP = 10
 const MENU_ESTIMATED_HEIGHT = 196
+
+function ChatGlyph({ size = 20 }) {
+  return (
+    <svg
+      className="otsb__glyph"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <g transform="translate(12 12) scale(1.26) translate(-12 -12)">
+        <path
+          d="M12 3.7c4.7 0 8.35 3.15 8.35 7.05 0 3.9-3.65 7.05-8.35 7.05-.78 0-1.53-.08-2.24-.22-1.05.78-2.48 1.36-4.22 1.58 1.02-1.12 1.42-2.42 1.5-3.32-1.9-1.18-3.14-3.02-3.14-5.09C4.65 6.85 7.3 3.7 12 3.7Z"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinejoin="round"
+        />
+        <circle cx="8.75" cy="10.75" r="1.12" fill="currentColor" />
+        <circle cx="12" cy="10.75" r="1.12" fill="currentColor" />
+        <circle cx="15.25" cy="10.75" r="1.12" fill="currentColor" />
+      </g>
+    </svg>
+  )
+}
 
 function computeMenuStyle(buttonEl, menuEl) {
   if (!buttonEl) return null
@@ -142,7 +167,7 @@ export default function OwnerSupportButton({ className = '', iconSize = 20 }) {
         aria-expanded={open}
         onClick={() => setOpen((prev) => !prev)}
       >
-        <HelpCircle size={iconSize} strokeWidth={2} />
+        <ChatGlyph size={iconSize} />
       </button>
 
       {menu ? createPortal(menu, document.body) : null}

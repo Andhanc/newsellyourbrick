@@ -1,7 +1,10 @@
 import { CLERK_DB_USER_SYNCED, getStoredNumericUserId } from '../services/authService'
 import { getCurrencySymbol } from './currency'
+import { fetchDedupe } from './fetchDedupe'
 import { formatMoneyFromMinorUnits } from './formatStripeMoney'
 import { getPropertyCardImage } from './propertyImage'
+
+export const OWNER_TEST_DRIVE_BOOKINGS_CHANGED = 'owner-test-drive-bookings-changed'
 
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
@@ -180,6 +183,34 @@ export function countOwnerTestDriveByTab(rows) {
   return counts
 }
 
+/** Test-drives that arrived on the owner's listings. */
+export function countIncomingOwnerTestDriveBookings(rows = []) {
+  return Array.isArray(rows) ? rows.length : 0
+}
+
+export function formatOwnerNavBadge(count) {
+  const value = Math.max(0, Number(count) || 0)
+  if (value <= 0) return undefined
+  return value > 99 ? '99+' : value
+}
+
+export async function fetchOwnerTestDriveNavBadgeCount(ownerUserId) {
+  if (!ownerUserId) return 0
+
+  const response = await fetchDedupe(`${API_BASE_URL}/test-drive-bookings/owner/${ownerUserId}`)
+  if (!response.ok) return 0
+
+  const result = await response.json().catch(() => ({}))
+  if (!result.success || !Array.isArray(result.data)) return 0
+
+  return countIncomingOwnerTestDriveBookings(result.data)
+}
+
+function notifyOwnerTestDriveBookingsChanged() {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent(OWNER_TEST_DRIVE_BOOKINGS_CHANGED))
+}
+
 export function getOwnerTestDriveUserId() {
   return getStoredNumericUserId()
 }
@@ -198,6 +229,7 @@ export async function respondOwnerTestDriveBooking(userId, bookingId, action, ow
   if (!response.ok || !json.success) {
     throw new Error(json.error || 'Не удалось выполнить действие')
   }
+  notifyOwnerTestDriveBookingsChanged()
   return json
 }
 
@@ -211,6 +243,7 @@ export async function cancelOwnerTestDriveBooking(userId, bookingId, reason) {
   if (!response.ok || !json.success) {
     throw new Error(json.error || 'Не удалось снять бронь')
   }
+  notifyOwnerTestDriveBookingsChanged()
   return json
 }
 

@@ -5,6 +5,7 @@ import { isCabinetPersonalQuery } from './userContext.js'
 
 export const SCENARIOS = {
   PROPERTY_SEARCH: 'property_search',
+  PROPERTY_ABOUT: 'property_about',
   PLATFORM_HELP: 'platform_help',
   AUCTION_HELP: 'auction_help',
   SHARES: 'shares',
@@ -13,6 +14,51 @@ export const SCENARIOS = {
   MANAGER_HANDOFF: 'manager_handoff',
   SUPPORT_OTHER: 'support_other',
   GENERAL: 'general',
+}
+
+/** Режимы выбора в начале диалога умного помощника. */
+export const ASSISTANT_MODES = {
+  MATCH: 'match',
+  PLATFORM: 'platform',
+  ABOUT: 'about',
+}
+
+export function normalizeAssistantMode(value) {
+  const mode = String(value || '').toLowerCase().trim()
+  if (mode === ASSISTANT_MODES.MATCH || mode === ASSISTANT_MODES.PLATFORM || mode === ASSISTANT_MODES.ABOUT) {
+    return mode
+  }
+  return null
+}
+
+/**
+ * Закрепляет сценарий под выбранный режим стартера.
+ * Эскалацию к менеджеру не перебиваем.
+ */
+export function applyAssistantMode(gate, assistantMode) {
+  const mode = normalizeAssistantMode(assistantMode)
+  if (!mode || !gate) return gate
+  if (gate.scenario === SCENARIOS.MANAGER_HANDOFF) {
+    return { ...gate, assistantMode: mode }
+  }
+  if (mode === ASSISTANT_MODES.MATCH) {
+    return { ...gate, scenario: SCENARIOS.PROPERTY_SEARCH, assistantMode: mode, forcedMode: true }
+  }
+  if (mode === ASSISTANT_MODES.ABOUT) {
+    return { ...gate, scenario: SCENARIOS.PROPERTY_ABOUT, assistantMode: mode, forcedMode: true }
+  }
+  // platform: оставляем узкие сценарии сайта (аукцион/доли/юридика), иначе — гид по платформе
+  if (
+    gate.scenario === SCENARIOS.AUCTION_HELP ||
+    gate.scenario === SCENARIOS.SHARES ||
+    gate.scenario === SCENARIOS.SPAIN_LEGAL ||
+    gate.scenario === SCENARIOS.VISA_DOCS ||
+    gate.scenario === SCENARIOS.SUPPORT_OTHER ||
+    gate.scenario === SCENARIOS.PLATFORM_HELP
+  ) {
+    return { ...gate, assistantMode: mode, forcedMode: true }
+  }
+  return { ...gate, scenario: SCENARIOS.PLATFORM_HELP, assistantMode: mode, forcedMode: true }
 }
 
 function wantsManagerHandoff(text) {
@@ -190,6 +236,12 @@ export function formatIntentGateForPrompt(gate) {
   if (gate.scenario === SCENARIOS.PROPERTY_SEARCH) {
     return `**ACTIVE SCENARIO: PROPERTY SEARCH**
 Держи воронку подбора по объектам SellYourBrick. Не переключайся на ипотеку/поддержку без явного запроса.`
+  }
+  if (gate.scenario === SCENARIOS.PROPERTY_ABOUT) {
+    return `**ACTIVE SCENARIO: PROPERTY ABOUT**
+Клиент хочет узнать всё об одном объекте из каталога. Не запускай воронку подбора (цель/бюджет/город).
+Если объект найден в блоке каталога — расскажи по фактам: цена/ставка, локация, тип, площадь, комнаты, формат сделки, описание, особенности. Добавь recommendations с этими id и navigation на /property/:id.
+Если совпадений нет или название неясное — попроси точное название, id или город и коротко уточни. Не выдумывай объекты.`
   }
   return ''
 }

@@ -28,10 +28,10 @@ PACK.ru = {
   discoverPage_saleSharesDesc:
     'Покупайте доли в премиальных объектах и инвестируйте с умом',
   discoverPage_welcomeAria: 'Добро пожаловать',
-  discoverPage_heroTitleLine1: 'Найдите дом',
-  discoverPage_heroTitleLine2: 'мечты легко',
+  discoverPage_heroTitleLine1: 'Инвестиционная',
+  discoverPage_heroTitleLine2: 'платформа недвижимости',
   discoverPage_heroLead:
-    'Теперь найти дом мечты можно быстро, просто и по выгодной цене',
+    'Находите объекты, сравнивайте возможности и выбирайте недвижимость под свои цели',
   discoverPage_goToNextScreen: 'Перейти дальше',
   discoverPage_saleFormatsAria: 'Форматы продажи',
   discoverPage_stageTitlePrefix: 'Четыре',
@@ -80,10 +80,10 @@ PACK.en = {
   discoverPage_saleSharesDesc:
     'Buy shares in premium properties and invest with confidence',
   discoverPage_welcomeAria: 'Welcome',
-  discoverPage_heroTitleLine1: 'Find Your Dream',
-  discoverPage_heroTitleLine2: 'Home Easily',
+  discoverPage_heroTitleLine1: 'Real estate investment',
+  discoverPage_heroTitleLine2: 'platform',
   discoverPage_heroLead:
-    'Now you can find your dream house easily and quickly at a low price',
+    'Find properties, compare opportunities, and choose real estate for your goals',
   discoverPage_goToNextScreen: 'Go to next screen',
   discoverPage_saleFormatsAria: 'Sale formats',
   discoverPage_stageTitlePrefix: 'Four',
@@ -131,10 +131,10 @@ PACK.de = {
   discoverPage_saleSharesDesc:
     'Kaufen Sie Anteile an Premium-Objekten und investieren Sie klug',
   discoverPage_welcomeAria: 'Willkommen',
-  discoverPage_heroTitleLine1: 'Finden Sie Ihr',
-  discoverPage_heroTitleLine2: 'Traumhaus leicht',
+  discoverPage_heroTitleLine1: 'Investmentplattform',
+  discoverPage_heroTitleLine2: 'für Immobilien',
   discoverPage_heroLead:
-    'Finden Sie Ihr Traumhaus jetzt einfach, schnell und zu einem günstigen Preis',
+    'Finden Sie Objekte, vergleichen Sie Chancen und wählen Sie Immobilien für Ihre Ziele',
   discoverPage_goToNextScreen: 'Zum nächsten Bildschirm',
   discoverPage_saleFormatsAria: 'Verkaufsformate',
   discoverPage_stageTitlePrefix: 'Vier',
@@ -184,10 +184,10 @@ PACK.es = {
   discoverPage_saleSharesDesc:
     'Compra participaciones en inmuebles premium e invierte con criterio',
   discoverPage_welcomeAria: 'Bienvenida',
-  discoverPage_heroTitleLine1: 'Encuentra tu',
-  discoverPage_heroTitleLine2: 'casa ideal',
+  discoverPage_heroTitleLine1: 'Plataforma de inversión',
+  discoverPage_heroTitleLine2: 'inmobiliaria',
   discoverPage_heroLead:
-    'Ahora puedes encontrar tu casa soñada de forma fácil, rápida y a buen precio',
+    'Encuentra inmuebles, compara oportunidades y elige bienes raíces según tus objetivos',
   discoverPage_goToNextScreen: 'Ir a la siguiente pantalla',
   discoverPage_saleFormatsAria: 'Formatos de venta',
   discoverPage_stageTitlePrefix: 'Cuatro',
@@ -237,10 +237,10 @@ PACK.fr = {
   discoverPage_saleSharesDesc:
     'Achetez des parts de biens premium et investissez avec discernement',
   discoverPage_welcomeAria: 'Bienvenue',
-  discoverPage_heroTitleLine1: 'Trouvez votre',
-  discoverPage_heroTitleLine2: 'maison de rêve',
+  discoverPage_heroTitleLine1: "Plateforme d'investissement",
+  discoverPage_heroTitleLine2: 'immobilier',
   discoverPage_heroLead:
-    'Trouvez dès maintenant votre maison de rêve facilement, rapidement et à bas prix',
+    "Trouvez des biens, comparez les opportunités et choisissez l'immobilier selon vos objectifs",
   discoverPage_goToNextScreen: 'Écran suivant',
   discoverPage_saleFormatsAria: 'Formats de vente',
   discoverPage_stageTitlePrefix: 'Quatre',
@@ -290,10 +290,10 @@ PACK.sv = {
   discoverPage_saleSharesDesc:
     'Köp andelar i premiumobjekt och investera smart',
   discoverPage_welcomeAria: 'Välkommen',
-  discoverPage_heroTitleLine1: 'Hitta ditt',
-  discoverPage_heroTitleLine2: 'drömhem enkelt',
+  discoverPage_heroTitleLine1: 'Investeringsplattform',
+  discoverPage_heroTitleLine2: 'för fastigheter',
   discoverPage_heroLead:
-    'Nu kan du hitta ditt drömhus enkelt, snabbt och till ett lågt pris',
+    'Hitta objekt, jämför möjligheter och välj fastigheter utifrån dina mål',
   discoverPage_goToNextScreen: 'Gå till nästa skärm',
   discoverPage_saleFormatsAria: 'Försäljningsformat',
   discoverPage_stageTitlePrefix: 'Fyra',

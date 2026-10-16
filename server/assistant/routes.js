@@ -18,6 +18,7 @@ export function registerAssistantRoutes(app) {
         attachments,
         assistantSessionId: body.assistantSessionId,
         userContext: body.userContext,
+        assistantMode: body.assistantMode || body.preferences?.assistantMode || null,
         properties: resolveAssistantCatalog(
           await loadLiveCatalog().catch((error) => {
             console.warn('[assistant] live catalog:', error?.message || error)

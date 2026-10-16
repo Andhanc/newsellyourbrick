@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard,
@@ -13,11 +13,58 @@ import {
   Menu,
   User,
 } from 'lucide-react'
+import {
+  CLERK_DB_USER_SYNCED,
+  OWNER_TEST_DRIVE_BOOKINGS_CHANGED,
+  fetchOwnerTestDriveNavBadgeCount,
+  formatOwnerNavBadge,
+  getOwnerTestDriveUserId,
+} from '../utils/ownerTestDriveList'
+
+function useOwnerTestDriveNavBadge() {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+
+    const load = async (userId) => {
+      const uid = userId || getOwnerTestDriveUserId()
+      if (!uid) {
+        if (!cancelled) setCount(0)
+        return
+      }
+      const next = await fetchOwnerTestDriveNavBadgeCount(uid)
+      if (!cancelled) setCount(next)
+    }
+
+    void load()
+
+    const onSync = (event) => {
+      void load(event?.detail?.userId)
+    }
+    const onChanged = () => {
+      void load()
+    }
+
+    window.addEventListener(CLERK_DB_USER_SYNCED, onSync)
+    window.addEventListener(OWNER_TEST_DRIVE_BOOKINGS_CHANGED, onChanged)
+    window.addEventListener('focus', onChanged)
+    return () => {
+      cancelled = true
+      window.removeEventListener(CLERK_DB_USER_SYNCED, onSync)
+      window.removeEventListener(OWNER_TEST_DRIVE_BOOKINGS_CHANGED, onChanged)
+      window.removeEventListener('focus', onChanged)
+    }
+  }, [])
+
+  return formatOwnerNavBadge(count)
+}
 
 /** Sidebar navigation for owner-test cabinet (desktop + mobile drawer). */
 export function useOwnerTestNavItems(options = {}) {
   const { t } = useTranslation()
   const { activeId, hrefMap = {} } = options
+  const testDriveBadge = useOwnerTestDriveNavBadge()
 
   return useMemo(
     () => [
@@ -41,6 +88,7 @@ export function useOwnerTestNavItems(options = {}) {
         icon: Car,
         active: activeId === 'testdrive',
         href: hrefMap.testdrive,
+        badge: testDriveBadge,
       },
       {
         id: 'subscriptions',
@@ -64,7 +112,7 @@ export function useOwnerTestNavItems(options = {}) {
         href: hrefMap.settings,
       },
     ],
-    [t, activeId, hrefMap]
+    [t, activeId, hrefMap, testDriveBadge]
   )
 }
 

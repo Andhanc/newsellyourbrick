@@ -488,6 +488,9 @@
 }
 
 .property-detail-gallery__reserved-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
   font-family: 'Montserrat', system-ui, sans-serif;
   font-size: clamp(1.25rem, 4vw, 2rem);
   font-weight: 800;
@@ -500,6 +503,18 @@
   background: rgba(71, 85, 105, 0.92);
   border: 2px solid rgba(148, 163, 184, 0.45);
   box-shadow: 0 12px 40px rgba(15, 23, 42, 0.28);
+}
+
+.property-detail-gallery__reserved-text--by-you {
+  background: rgba(13, 148, 136, 0.94);
+  border-color: rgba(153, 246, 228, 0.55);
+  box-shadow: 0 12px 40px rgba(15, 118, 110, 0.35);
+}
+
+.property-detail-gallery__reserved-icon {
+  flex-shrink: 0;
+  color: #fef08a;
+  filter: drop-shadow(0 1px 4px rgba(15, 23, 42, 0.35));
 }
 
 .property-detail-gallery__nav:disabled,

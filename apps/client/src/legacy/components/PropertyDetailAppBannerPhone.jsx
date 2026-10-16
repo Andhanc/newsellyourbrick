@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { FiBell, FiChevronLeft, FiMapPin } from 'react-icons/fi'
+import './PropertyDetailAppBannerPhone.css'
 
 const TIMER_VALUES = ['00', '14', '37', '12']
 

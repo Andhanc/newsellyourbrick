@@ -43,6 +43,7 @@ const EMPTY_ASSISTANT_PREFERENCES = {
   rooms: null,
   area: null,
   other: null,
+  assistantMode: null,
   managerContactRequested: false,
   managerContactPendingChoice: false,
   preferredContact: null,
@@ -472,6 +473,14 @@ export function useSiteAiChatDock({
     await handleChatSubmit(null, buttonText)
   }
 
+  const selectAssistantMode = async (mode, promptText) => {
+    const nextMode = ['match', 'platform', 'about'].includes(String(mode || '')) ? mode : null
+    if (nextMode) {
+      setUserPreferences((prev) => ({ ...prev, assistantMode: nextMode }))
+    }
+    await handleChatSubmit(null, promptText, { assistantMode: nextMode })
+  }
+
   const handleChatSubmit = async (e, buttonText = null, options = {}) => {
     if (e) e.preventDefault()
 
@@ -577,6 +586,9 @@ export function useSiteAiChatDock({
 
     const lowerMessage = userMessage.toLowerCase()
     const nextPreferences = { ...userPreferences }
+    if (options?.assistantMode) {
+      nextPreferences.assistantMode = options.assistantMode
+    }
 
     if (
       lowerMessage.includes('для себя') ||
@@ -739,6 +751,7 @@ export function useSiteAiChatDock({
           attachments: requestAttachments,
           assistantSessionId: getChatUserId,
           userContext,
+          assistantMode: nextPreferences.assistantMode || options?.assistantMode || null,
         },
       )
 
@@ -832,6 +845,7 @@ export function useSiteAiChatDock({
     handleChatInputChange,
     handleChatSubmit,
     handleButtonClick,
+    selectAssistantMode,
     handleFilesSelected,
     removePendingAttachment,
     clearChatHistory,

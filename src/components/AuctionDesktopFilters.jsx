@@ -70,6 +70,19 @@ function AuctionDesktopFilters({
     () => locationOptions.find((item) => item.key === country) || null,
     [locationOptions, country],
   )
+  const regionOptions = useMemo(() => {
+    const source = country
+      ? selectedCountry?.regions || []
+      : locationOptions.flatMap((item) => item.regions || [])
+    const seen = new Set()
+    const options = []
+    for (const item of source) {
+      if (!item?.key || seen.has(item.key)) continue
+      seen.add(item.key)
+      options.push(item)
+    }
+    return options.sort((a, b) => a.label.localeCompare(b.label, 'ru'))
+  }, [country, locationOptions, selectedCountry])
 
   const activeChips = useMemo(() => {
     const chips = []
@@ -107,7 +120,7 @@ function AuctionDesktopFilters({
     }
     if (city) {
       const cityLabel =
-        selectedCountry?.regions?.find((item) => item.key === city)?.label || city
+        regionOptions.find((item) => item.key === city)?.label || city
       chips.push({
         id: `city-${city}`,
         label: cityLabel,
@@ -155,7 +168,7 @@ function AuctionDesktopFilters({
     country,
     city,
     locationOptions,
-    selectedCountry,
+    regionOptions,
     setCountry,
     setCity,
     t,
@@ -272,10 +285,9 @@ function AuctionDesktopFilters({
                 className="auction-desktop-filters__input catalog-desktop-filters__select"
                 value={city}
                 onChange={(e) => setCity?.(e.target.value)}
-                disabled={!country}
               >
                 <option value="">{t('catalogFilterAll')}</option>
-                {(selectedCountry?.regions || []).map((item) => (
+                {regionOptions.map((item) => (
                   <option key={item.key} value={item.key}>
                     {item.label}
                   </option>

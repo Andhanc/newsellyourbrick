@@ -31,7 +31,7 @@ const TIFFANY_THEME = {
 }
 
 const SECTION_CONFIG = {
-  development: { iconSrc: publicAsset('images/home-sale-formats/icons/shares-3d.png'), ...TIFFANY_THEME },
+  development: { iconSrc: publicAsset('images/home-sale-formats/icons/develop-3d.png'), ...TIFFANY_THEME },
   auction: {
     iconSrc: publicAsset('images/home-sale-formats/icons/auction-3d.png'),
     ...TIFFANY_THEME,

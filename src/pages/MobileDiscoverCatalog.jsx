@@ -13,6 +13,7 @@ import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { publicAsset } from '../utils/publicAsset'
 import { AppleIcon, GooglePlayIcon } from '../components/icons/ContactChannelIcons'
+import PropertyDetailAppBannerPhone from '../components/PropertyDetailAppBannerPhone'
 import './InvestorHomePage.css'
 import '../styles/discoverAuctionCards.css'
 
@@ -206,12 +207,15 @@ function AppDownloadSection() {
       <div className="md-app-download__inner">
         <img
           className="md-app-download__art"
-          src={publicAsset('images/app-download/tiffany-chair-banner.webp')}
+          src={publicAsset('images/app-download/tiffany-phone-banner.webp')}
           alt=""
           loading="lazy"
-          width="1536"
-          height="1024"
+          width="1280"
+          height="720"
         />
+        <div className="md-app-download__phone">
+          <PropertyDetailAppBannerPhone />
+        </div>
         <div className="md-app-download__copy">
           <p className="md-app-download__kicker">{t('discoverPage_appKicker')}</p>
           <h2 id="md-app-download-title" className="md-app-download__title" aria-label="SellYourBrick">

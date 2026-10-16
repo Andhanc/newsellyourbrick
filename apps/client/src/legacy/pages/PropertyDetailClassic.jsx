@@ -32,6 +32,7 @@ import {
   FiTruck,
   FiBookOpen,
   FiUserCheck,
+  FiAward,
 } from 'react-icons/fi'
 import { IoLocationOutline } from 'react-icons/io5'
 import {
@@ -79,6 +80,7 @@ import { NotificationsBell } from '../context/SiteNotificationsContext'
 import { getCabinetProfilePath } from '../utils/cabinetRoutes'
 import '../components/ShareDetailPurchasePanel.css'
 import { propertyBlocksTestDrivePromo, propertyShowsTestDrive } from '../utils/propertyShowsTestDrive'
+import { isPropertyReservedByUser } from '../utils/resolveBuyerListingState'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
 import { hasAuctionBuyNowListingForm } from '../utils/hasBuyNowOption'
 import { navigateToWallet } from '../utils/walletNavigation'
@@ -217,6 +219,29 @@ const AMENITY_I18N_SPECIAL = {
   security: 'addPropertyAmenitiesSecurity',
   furniture: 'addPropertyAmenitiesBuiltInFurniture',
   security_24_7: 'addPropertyAmenitySecurity247',
+}
+
+function ReservedOverlayLabel({ byYou, t }) {
+  return (
+    <span
+      className={`property-detail-gallery__reserved-text${
+        byYou ? ' property-detail-gallery__reserved-text--by-you' : ''
+      }`}
+    >
+      {byYou ? (
+        <FiAward className="property-detail-gallery__reserved-icon" size={22} aria-hidden />
+      ) : null}
+      <span>{byYou ? t('objectReservedByYou') : t('objectReserved')}</span>
+    </span>
+  )
+}
+
+function ReservedGalleryBanner({ byYou, t }) {
+  return (
+    <div className="property-detail-gallery__reserved-banner" aria-hidden>
+      <ReservedOverlayLabel byYou={byYou} t={t} />
+    </div>
+  )
 }
 
 function resolveAmenityLabel(t, key) {
@@ -1015,6 +1040,7 @@ function PropertyDetailClassic({
         ...prev,
         is_reserved: true,
         reserved_until: prev.reserved_until || optimisticUntil,
+        reserved_by: getStoredNumericUserId() ?? prev.reserved_by,
       }))
 
       const fresh = await refetchPropertyAfterCheckout(currentId, currentLang)
@@ -3065,6 +3091,9 @@ function PropertyDetailClassic({
   const currentLeaderLabel = isCurrentUserLeadingCard
     ? t('propertyDetail_youAreAuctionLeader')
     : t('propertyDetailAuctionLeader')
+  const isReservedByViewer =
+    Boolean(isReservedActive) &&
+    isPropertyReservedByUser(displayProperty, currentUserNumericId)
 
   const auctionPropertyTypeLabel = useMemo(() => {
     const type = displayProperty?.property_type || displayProperty?.propertyType
@@ -5678,11 +5707,7 @@ function PropertyDetailClassic({
               />
             </button>
           )}
-          {isReservedActive && (
-            <div className="property-detail-gallery__reserved-banner" aria-hidden>
-              <span className="property-detail-gallery__reserved-text">{t('objectReserved')}</span>
-            </div>
-          )}
+          {isReservedActive && <ReservedGalleryBanner byYou={isReservedByViewer} t={t} />}
           {renderAuctionGalleryOverlayActions(
             'pd-v3-gallery__actions',
             'pd-v3-gallery__action-btn',
@@ -5838,11 +5863,7 @@ function PropertyDetailClassic({
                 className="property-detail-auction-hero__stage-img"
               />
             )}
-            {isReservedActive && (
-              <div className="property-detail-gallery__reserved-banner" aria-hidden>
-                <span className="property-detail-gallery__reserved-text">{t('objectReserved')}</span>
-              </div>
-            )}
+            {isReservedActive && <ReservedGalleryBanner byYou={isReservedByViewer} t={t} />}
             {renderHeroActions()}
             {renderHeroFooter()}
           </div>
@@ -5940,11 +5961,7 @@ function PropertyDetailClassic({
               className="property-detail-auction-hero__stage-img"
             />
           )}
-          {isReservedActive && (
-            <div className="property-detail-gallery__reserved-banner" aria-hidden>
-              <span className="property-detail-gallery__reserved-text">{t('objectReserved')}</span>
-            </div>
-          )}
+          {isReservedActive && <ReservedGalleryBanner byYou={isReservedByViewer} t={t} />}
           {priceAnimation && currentBid !== null && (
             <div className="property-detail-gallery__price-overlay">
               <div className="price-overlay__content">
@@ -7112,7 +7129,7 @@ function PropertyDetailClassic({
             getYouTubeEmbedUrl={getYouTubeEmbedUrl}
             getGoogleDriveEmbedUrl={getGoogleDriveEmbedUrl}
             reserved={isReservedActive}
-            reservedLabel={t('objectReserved')}
+            reservedLabel={<ReservedOverlayLabel byYou={isReservedByViewer} t={t} />}
           />
         }
         subtitle={pageSubtitle}
@@ -7418,11 +7435,7 @@ function PropertyDetailClassic({
                     </button>
                   )
                 )}
-                {isReservedActive && (
-                  <div className="property-detail-gallery__reserved-banner" aria-hidden>
-                    <span className="property-detail-gallery__reserved-text">{t('objectReserved')}</span>
-                  </div>
-                )}
+                {isReservedActive && <ReservedGalleryBanner byYou={isReservedByViewer} t={t} />}
                 {/* Анимация изменения цены поверх изображения */}
                 {priceAnimation && currentBid !== null && (
                   <div className="property-detail-gallery__price-overlay">

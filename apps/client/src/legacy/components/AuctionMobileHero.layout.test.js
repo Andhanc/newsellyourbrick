@@ -14,9 +14,18 @@ test('renders a dedicated photo-first mobile auction hero with a working catalog
   assert.match(heroCss, /\.hero--auction-scene__bg[\s\S]*object-fit:\s*cover/)
 })
 
+test('uses the photo-first auction intro on desktop, without the three feature cards', () => {
+  assert.match(heroJsx, /\{!auctionScene \? \(/)
+  assert.doesNotMatch(heroJsx, /hero-auction-header/)
+  assert.match(heroCss, /@media \(min-width:\s*769px\)[\s\S]*\.hero--auction-scene \.hero-features\s*\{[\s\S]*display:\s*none;/)
+  assert.match(heroCss, /@media \(min-width:\s*769px\)[\s\S]*\.hero-auction-mobile\s*\{[\s\S]*display:\s*flex;/)
+  assert.match(heroCss, /@media \(min-width:\s*769px\)[\s\S]*\.hero-auction-mobile__cta\s*\{[\s\S]*min-height:\s*56px;/)
+  assert.match(heroCss, /@media \(min-width:\s*769px\)[\s\S]*min-height:\s*100dvh;/)
+})
+
 test('removes the generic three feature cards from the phone auction composition', () => {
   assert.match(heroCss, /@media \(max-width:\s*768px\)[\s\S]*\.hero--auction-scene \.hero-auction-header,[\s\S]*\.hero--auction-scene \.hero-features\s*\{[\s\S]*display:\s*none;/)
-  assert.match(heroCss, /\.hero-auction-mobile__cta\s*\{[\s\S]*min-height:\s*48px;/)
+  assert.match(heroCss, /@media \(max-width:\s*768px\)[\s\S]*\.hero-auction-mobile__cta\s*\{[\s\S]*?min-height:\s*56px;/)
 })
 
 test('does not render a mobile auction breadcrumb block', () => {

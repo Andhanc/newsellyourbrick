@@ -17,6 +17,90 @@ const EXTRA_ALIASES = {
   'санкт-петербург': ['saint petersburg', 'petersburg', 'spb', 'петербург'],
 }
 
+/** Канонические подписи стран/городов для ответов бота по языку UI/диалога. */
+const PLACE_LABELS = {
+  испания: {
+    ru: 'Испания',
+    en: 'Spain',
+    es: 'España',
+    de: 'Spanien',
+    fr: 'Espagne',
+    pl: 'Hiszpania',
+    sv: 'Spanien',
+  },
+  беларусь: {
+    ru: 'Беларусь',
+    en: 'Belarus',
+    es: 'Bielorrusia',
+    de: 'Belarus',
+    fr: 'Biélorussie',
+    pl: 'Białoruś',
+    sv: 'Belarus',
+  },
+  россия: {
+    ru: 'Россия',
+    en: 'Russia',
+    es: 'Rusia',
+    de: 'Russland',
+    fr: 'Russie',
+    pl: 'Rosja',
+    sv: 'Ryssland',
+  },
+  дубай: {
+    ru: 'Дубай',
+    en: 'Dubai',
+    es: 'Dubái',
+    de: 'Dubai',
+    fr: 'Dubaï',
+    pl: 'Dubaj',
+    sv: 'Dubai',
+  },
+  минск: { ru: 'Минск', en: 'Minsk', es: 'Minsk', de: 'Minsk', fr: 'Minsk', pl: 'Mińsk', sv: 'Minsk' },
+  барселона: {
+    ru: 'Барселона',
+    en: 'Barcelona',
+    es: 'Barcelona',
+    de: 'Barcelona',
+    fr: 'Barcelone',
+    pl: 'Barcelona',
+    sv: 'Barcelona',
+  },
+  мадрид: { ru: 'Мадрид', en: 'Madrid', es: 'Madrid', de: 'Madrid', fr: 'Madrid', pl: 'Madryt', sv: 'Madrid' },
+  'санкт-петербург': {
+    ru: 'Санкт-Петербург',
+    en: 'Saint Petersburg',
+    es: 'San Petersburgo',
+    de: 'Sankt Petersburg',
+    fr: 'Saint-Pétersbourg',
+    pl: 'Sankt Petersburg',
+    sv: 'Sankt Petersburg',
+  },
+}
+
+function canonPlaceKey(label) {
+  const key = normalizeLocationText(label)
+  if (!key) return ''
+  for (const [canon, aliases] of Object.entries(EXTRA_ALIASES)) {
+    const group = [canon, ...aliases].map(normalizeLocationText)
+    if (group.includes(key)) return canon
+  }
+  return key
+}
+
+/**
+ * Локализует название страны/города для текста ответа.
+ * Неизвестные топонимы (Adeje и т.п.) оставляем как в каталоге.
+ */
+export function localizePlaceLabel(label, lang = 'ru') {
+  const trimmed = String(label || '').trim()
+  if (!trimmed) return ''
+  const code = String(lang || 'ru').toLowerCase().slice(0, 2)
+  const canon = canonPlaceKey(trimmed)
+  const pack = PLACE_LABELS[canon]
+  if (pack) return pack[code] || pack.en || pack.ru || trimmed
+  return trimmed
+}
+
 export function normalizeLocationText(value = '') {
   return String(value || '')
     .toLowerCase()
@@ -183,13 +267,13 @@ export function detectCatalogCity(text, index, countryKey, fallback = {}) {
 }
 
 export function formatCatalogCountries(index, lang = 'ru') {
-  const labels = (index?.countries || []).map((country) => country.label)
+  const labels = (index?.countries || []).map((country) => localizePlaceLabel(country.label, lang))
   if (labels.length) return labels.join(', ')
   return lang === 'en' ? 'no countries yet' : lang === 'es' ? 'aún no hay países' : 'пока нет стран'
 }
 
 export function formatCatalogCities(index, countryKey, lang = 'ru') {
-  const labels = citiesForCountry(index, countryKey).map((city) => city.label)
+  const labels = citiesForCountry(index, countryKey).map((city) => localizePlaceLabel(city.label, lang))
   if (labels.length) return labels.join(', ')
   return lang === 'en' ? 'no cities yet' : lang === 'es' ? 'aún no hay ciudades' : 'пока нет городов'
 }
@@ -279,7 +363,9 @@ export function itemMatchesCatalogLocation(item, pref) {
 }
 
 export function formatAvailableLocations(index, lang = 'ru') {
-  const labels = index?.buttonLabels?.length ? index.buttonLabels : index?.labels || []
+  const labels = (index?.buttonLabels?.length ? index.buttonLabels : index?.labels || []).map((label) =>
+    localizePlaceLabel(label, lang),
+  )
   if (!labels.length) {
     return lang === 'en' ? 'our current catalog' : lang === 'es' ? 'el catálogo actual' : 'текущий каталог'
   }

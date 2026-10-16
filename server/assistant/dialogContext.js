@@ -11,6 +11,7 @@ import {
   formatCatalogCities,
   formatCatalogCountries,
   indexCatalogLocations,
+  localizePlaceLabel,
   normalizeLocationText,
   parseLocationParts,
 } from './catalogLocations.js'
@@ -154,20 +155,30 @@ function wordToNumber(word) {
     одного: 1,
     один: 1,
     одна: 1,
+    одним: 1,
+    одной: 1,
     one: 1,
     un: 1,
     una: 1,
     двух: 2,
+    две: 2,
+    двумя: 2,
     two: 2,
     dos: 2,
     трёх: 3,
     трех: 3,
+    три: 3,
+    тремя: 3,
     three: 3,
     tres: 3,
     четырех: 4,
     четырёх: 4,
+    четыре: 4,
+    четырьмя: 4,
     four: 4,
     пяти: 5,
+    пять: 5,
+    пятью: 5,
     five: 5,
   }
   return map[String(word || '').toLowerCase()] ?? null
@@ -304,10 +315,30 @@ function resolveEffectiveBudget(history, allUserText, lastUser) {
 }
 
 function detectRooms(text) {
-  const match = String(text || '').match(/(\d+)\s*(?:комнат|к\.?\s*кв|room|bed)/i)
-  if (!match) return null
-  const rooms = parseInt(match[1], 10)
-  return Number.isFinite(rooms) && rooms > 0 ? rooms : null
+  const s = String(text || '')
+  const digit = s.match(
+    /(\d+)\s*(?:комнат|к\.?\s*кв|room|beds?|bedrooms?|спальн|habitacion|habitación|zimmer)/i,
+  )
+  if (digit) {
+    const rooms = parseInt(digit[1], 10)
+    if (Number.isFinite(rooms) && rooms > 0) return rooms
+  }
+  const worded = s.match(
+    /(?:с\s+)?(одного|один|одна|двух|две|трёх|трех|три|четырех|четырёх|четыре|пяти|пять|one|two|three|four|five|un|una|dos|tres)\s*(?:комнат|спальн|room|beds?|bedrooms?|habitacion|habitación|zimmer)/i,
+  )
+  if (worded) {
+    const rooms = wordToNumber(worded[1])
+    if (rooms != null && rooms > 0) return rooms
+  }
+  // «пятью спальнями» / «двумя комнатами»
+  const instrumental = s.match(
+    /(одним|одной|двумя|тремя|четырьмя|пятью)\s+(?:комнат|спальн)/i,
+  )
+  if (instrumental) {
+    const map = { одним: 1, одной: 1, двумя: 2, тремя: 3, четырьмя: 4, пятью: 5 }
+    return map[instrumental[1].toLowerCase()] || null
+  }
+  return null
 }
 
 export function analyzeConversation(history, lang = 'ru', preferences = {}, options = {}) {
@@ -350,13 +381,27 @@ export function analyzeConversation(history, lang = 'ru', preferences = {}, opti
     lastHasBudget
 
   const locationIndex = indexCatalogLocations(purposeCatalog)
-  const countryPref = resolveCountry(userMsgs, preferences, locationIndex)
+  let countryPref = resolveCountry(userMsgs, preferences, locationIndex)
+  // Одна страна в каталоге ветки — не спрашиваем, сразу переходим к городу.
+  if (!countryPref.hasCountry && locationIndex.countries.length === 1) {
+    const only = locationIndex.countries[0]
+    countryPref = {
+      hasCountry: true,
+      countryKey: only.key,
+      countryLabel: only.label,
+      inferredSole: true,
+    }
+  }
   const cityPref = countryPref.hasCountry
     ? resolveCity(userMsgs, preferences, locationIndex, countryPref.countryKey)
     : { hasCity: false, cityKey: null, cityLabel: '' }
-  const availableCountries = locationIndex.countries.map((country) => country.label)
+  const availableCountries = locationIndex.countries.map((country) =>
+    localizePlaceLabel(country.label, lang),
+  )
   const availableCities = countryPref.hasCountry
-    ? citiesForCountry(locationIndex, countryPref.countryKey).map((city) => city.label)
+    ? citiesForCountry(locationIndex, countryPref.countryKey).map((city) =>
+        localizePlaceLabel(city.label, lang),
+      )
     : []
   const locationCatalog = cityPref.hasCity
     ? purposeCatalog.filter((item) => {
@@ -459,10 +504,11 @@ export function analyzeConversation(history, lang = 'ru', preferences = {}, opti
     locationKind: cityPref.hasCity ? 'city' : countryPref.hasCountry ? 'country' : null,
     hasCountry: countryPref.hasCountry,
     countryKey: countryPref.countryKey || null,
-    countryLabel: countryPref.countryLabel || '',
+    countryLabel: localizePlaceLabel(countryPref.countryLabel || '', lang),
+    countryInferredSole: Boolean(countryPref.inferredSole),
     hasCity: cityPref.hasCity,
     cityKey: cityPref.cityKey || null,
-    cityLabel: cityPref.cityLabel || '',
+    cityLabel: localizePlaceLabel(cityPref.cityLabel || '', lang),
     unknownLocation: null,
     availableCountries,
     availableCountriesLabel: formatCatalogCountries(locationIndex, lang),
@@ -472,6 +518,7 @@ export function analyzeConversation(history, lang = 'ru', preferences = {}, opti
     availableLocationsLabel: countryPref.hasCountry
       ? formatCatalogCities(locationIndex, countryPref.countryKey, lang)
       : formatCatalogCountries(locationIndex, lang),
+    soleCountry: locationIndex.countries.length === 1,
     preferInvestmentVehicles,
     hasType: typePref.hasType,
     propertyTypes: typePref.types,
@@ -538,63 +585,97 @@ export function formatCriteriaForPrompt(dialog) {
   } else if (dialog.ignoreBudget) {
     bits.push('бюджет: любой')
   }
-  if (dialog.countryLabel) bits.push(`страна: ${dialog.countryLabel}`)
-  else if (dialog.availableCountriesLabel) bits.push(`страны каталога: ${dialog.availableCountriesLabel}`)
+  if (dialog.countryLabel) {
+    bits.push(
+      dialog.countryInferredSole || dialog.soleCountry
+        ? `страна: ${dialog.countryLabel} (единственная в каталоге — не спрашивай снова)`
+        : `страна: ${dialog.countryLabel}`,
+    )
+  } else if (dialog.availableCountriesLabel) bits.push(`страны каталога: ${dialog.availableCountriesLabel}`)
   if (dialog.cityLabel) bits.push(`город: ${dialog.cityLabel}`)
   else if (dialog.hasCountry) bits.push(`города в стране: ${dialog.availableCitiesLabel}`)
   if (dialog.preferInvestmentVehicles) bits.push('для инвестиций сразу доли и долги')
   if (dialog.propertyTypeLabel) bits.push(`тип: ${dialog.propertyTypeLabel}`)
   if (dialog.dealFormatLabel) bits.push(`формат: ${dialog.dealFormatLabel}`)
-  if (dialog.rooms) bits.push(`комнат: ${dialog.rooms}`)
+  if (dialog.rooms) bits.push(`комнат/спален: ${dialog.rooms}`)
   return bits.length ? `**СОБРАННЫЕ КРИТЕРИИ (не переспрашивай):** ${bits.join('; ')}` : ''
+}
+
+function knownRequestHint(dialog, lang = 'ru') {
+  const code = String(lang || 'ru').toLowerCase().slice(0, 2)
+  const bits = []
+  if (dialog.propertyTypeLabel) bits.push(dialog.propertyTypeLabel)
+  if (dialog.rooms) {
+    bits.push(
+      code === 'en'
+        ? `${dialog.rooms} bedrooms`
+        : code === 'es'
+          ? `${dialog.rooms} dormitorios`
+          : `${dialog.rooms} спален`,
+    )
+  }
+  if (!bits.length) return ''
+  if (code === 'en') return `The client already asked for: ${bits.join(', ')}. Acknowledge this briefly. `
+  if (code === 'es') return `El cliente ya pidió: ${bits.join(', ')}. Reconózcalo brevemente. `
+  return `Клиент уже просил: ${bits.join(', ')}. Коротко подтверди это. `
 }
 
 export function formatStageInstruction(dialog, lang = 'ru') {
   const code = String(lang || 'ru').toLowerCase().slice(0, 2)
+  const known = knownRequestHint(dialog, lang)
   const ru = {
     FIRST_CONTACT:
       'Поприветствуй коротко и спроси: инвестиции или недвижимость для себя. Объекты не предлагай.',
     NEED_PURPOSE:
-      'Спроси: инвестиции или недвижимость для себя. Объясни кратко: инвестиции — доли и долги; для себя — аукцион и купить сейчас.',
-    NEED_BUDGET: `В выбранном городе ${dialog.matchingLocationCount} объектов — спроси бюджет в евро, чтобы сузить выбор.`,
+      'Живым тоном (как в мессенджере) спроси: инвестиции или недвижимость для себя. Кратко: инвестиции — доли и долги; для себя — аукцион и купить сейчас. Не читай скрипт.',
+    NEED_BUDGET: `${known}В городе ${dialog.cityLabel || ''} сейчас ${dialog.matchingLocationCount} объектов. Чтобы я правильно мог вас проконсультировать, мягко спроси бюджет в евро.`,
     NEED_LOCATION: 'Следуй отдельным этапам выбора страны и города.',
-    NEED_PROPERTY_TYPE: `Спроси тип недвижимости и перечисли только доступные типы: ${dialog.availablePropertyTypesLabel || 'в текущем каталоге пока нет типов'}.`,
-    NEED_COUNTRY: `Спроси страну и перечисли только страны с непроданными объектами выбранной ветки: ${dialog.availableCountriesLabel}.`,
-    NEED_CITY: `Спроси город в стране ${dialog.countryLabel} и перечисли только города с подходящими объектами: ${dialog.availableCitiesLabel}.`,
+    NEED_PROPERTY_TYPE: `${known}Чтобы правильно проконсультировать, уточни тип и перечисли только доступные: ${dialog.availablePropertyTypesLabel || 'в текущем каталоге пока нет типов'}.`,
+    NEED_COUNTRY:
+      dialog.soleCountry || (dialog.availableCountries || []).length <= 1
+        ? `${known}В каталоге только одна страна — не спрашивай её. Переходи к городу.`
+        : `${known}Чтобы я правильно мог вас проконсультировать, спроси страну. Доступны: ${dialog.availableCountriesLabel}. Говори естественно, не как анкета.`,
+    NEED_CITY: `${known}Страна уже известна: ${dialog.countryLabel}${dialog.countryInferredSole ? ' (единственная в каталоге)' : ''}. Чтобы я правильно мог вас проконсультировать, мягко уточни город. Доступны: ${dialog.availableCitiesLabel}. Не пиши «Теперь выберите…» — отвечай как в обычном чате.`,
     NEED_FORMAT: 'Мягко уточни формат: аукцион, купить сейчас или доли. Не читай лекцию.',
     SHOW_LISTINGS: dialog.preferInvestmentVehicles
       ? 'Клиент ищет инвестиции — сразу дай 3–5 объектов из долей и долгов каталога. Не выдумывай локации и id. Если нужной локации нет — скажи об этом и покажи доли/долги из доступных мест.'
-      : 'Критерии готовы — дай 3–5 объектов из КАТАЛОГА в recommendations. Только локации, которые есть у нас. Не выдумывай id.',
+      : 'Критерии готовы — дай 3–5 объектов из КАТАЛОГА в recommendations. Кратко ответь по запросу клиента. Только наши локации и id.',
     OFFER_MANAGER_CALL:
       'Предложи связь с менеджером. Не подменяй это новой подборкой.',
-    REFINE: 'Уточни один недостающий критерий.',
+    REFINE: 'Уточни один недостающий критерий живым тоном.',
   }
   const en = {
     FIRST_CONTACT: 'Greet briefly and ask: investment or a home for yourself. No listings.',
-    NEED_PURPOSE: 'Ask: investment or a home for yourself. Explain the two catalog branches briefly.',
-    NEED_BUDGET: `There are ${dialog.matchingLocationCount} listings in the selected city. Ask the EUR budget to narrow them down.`,
+    NEED_PURPOSE: 'Ask naturally: investment or a home for yourself. Explain the two catalog branches briefly — no script tone.',
+    NEED_BUDGET: `${known}There are ${dialog.matchingLocationCount} listings in ${dialog.cityLabel || 'the selected city'}. Ask the EUR budget to advise properly.`,
     NEED_LOCATION: 'Use separate country and city stages.',
-    NEED_PROPERTY_TYPE: `Ask the property type and list only available types: ${dialog.availablePropertyTypesLabel || 'none in the current catalog'}.`,
-    NEED_COUNTRY: `Ask the country and list only countries with unsold listings in the selected branch: ${dialog.availableCountriesLabel}.`,
-    NEED_CITY: `Ask the city in ${dialog.countryLabel}; list only cities with matching listings: ${dialog.availableCitiesLabel}.`,
+    NEED_PROPERTY_TYPE: `${known}Ask the property type and list only available types: ${dialog.availablePropertyTypesLabel || 'none in the current catalog'}.`,
+    NEED_COUNTRY:
+      dialog.soleCountry || (dialog.availableCountries || []).length <= 1
+        ? `${known}Only one country is in the catalog — do not ask for it. Continue with the city.`
+        : `${known}Ask which country so you can advise properly. Available: ${dialog.availableCountriesLabel}. Sound like a chat, not a form.`,
+    NEED_CITY: `${known}Country is already ${dialog.countryLabel}. Ask which city so you can advise properly. Available: ${dialog.availableCitiesLabel}. Do not say “Now choose…”.`,
     NEED_FORMAT: 'Ask auction, buy now, or shares — briefly.',
     SHOW_LISTINGS:
-      'Criteria are ready — return 3–5 catalog ids in recommendations. 1–2 sentences in text.',
+      'Criteria are ready — return 3–5 catalog ids in recommendations. Answer the request in 1–2 natural sentences.',
     OFFER_MANAGER_CALL: 'Offer a manager. Do not replace it with a new shortlist.',
-    REFINE: 'Ask one missing criterion.',
+    REFINE: 'Ask one missing criterion naturally.',
   }
   const es = {
     FIRST_CONTACT: 'Saluda y pregunta: inversión o vivienda para uso propio. Sin fichas.',
-    NEED_PURPOSE: 'Pregunta: inversión o vivienda para uso propio. Explica brevemente las dos ramas.',
-    NEED_BUDGET: `Hay ${dialog.matchingLocationCount} inmuebles en la ciudad elegida. Pregunta el presupuesto en euros.`,
+    NEED_PURPOSE: 'Pregunta con tono natural: inversión o vivienda para uso propio. Explica brevemente las dos ramas.',
+    NEED_BUDGET: `${known}Hay ${dialog.matchingLocationCount} inmuebles en ${dialog.cityLabel || 'la ciudad'}. Pregunte el presupuesto en euros para asesorarle bien.`,
     NEED_LOCATION: 'Usa etapas separadas para país y ciudad.',
-    NEED_PROPERTY_TYPE: `Pregunta el tipo y muestra solo los disponibles: ${dialog.availablePropertyTypesLabel || 'ninguno en el catálogo actual'}.`,
-    NEED_COUNTRY: `Pregunta el país y muestra solo países con inmuebles no vendidos de la rama elegida: ${dialog.availableCountriesLabel}.`,
-    NEED_CITY: `Pregunta la ciudad en ${dialog.countryLabel} y muestra solo ciudades con inmuebles: ${dialog.availableCitiesLabel}.`,
+    NEED_PROPERTY_TYPE: `${known}Pregunta el tipo y muestra solo los disponibles: ${dialog.availablePropertyTypesLabel || 'ninguno en el catálogo actual'}.`,
+    NEED_COUNTRY:
+      dialog.soleCountry || (dialog.availableCountries || []).length <= 1
+        ? `${known}Solo hay un país en el catálogo — no lo pregunte. Pase a la ciudad.`
+        : `${known}Para asesorarle bien, pregunte el país. Disponibles: ${dialog.availableCountriesLabel}. Tono de chat, no de formulario.`,
+    NEED_CITY: `${known}El país ya es ${dialog.countryLabel}. Para asesorarle bien, pregunte la ciudad. Disponibles: ${dialog.availableCitiesLabel}. No diga “Ahora elija…”.`,
     NEED_FORMAT: 'Pregunta subasta, compra ahora o participaciones.',
-    SHOW_LISTINGS: 'Criterios listos — 3–5 id del catálogo en recommendations.',
+    SHOW_LISTINGS: 'Criterios listos — 3–5 id del catálogo en recommendations. Responda con naturalidad.',
     OFFER_MANAGER_CALL: 'Ofrece un gestor. No sustituyas con más fichas.',
-    REFINE: 'Pide un criterio que falte.',
+    REFINE: 'Pide un criterio que falte con tono natural.',
   }
   const pack = code === 'en' ? en : code === 'es' ? es : ru
   return pack[dialog.stage] || pack.REFINE

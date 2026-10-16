@@ -110,7 +110,7 @@ test('living search uses country then city without requiring property type', () 
   assert.deepEqual(ctx.match.ids, [])
 })
 
-test('investment asks country and suppresses unrelated navigation buttons', async () => {
+test('investment skips sole country and asks city without unrelated navigation', async () => {
   const reply = await buildAssistantReply({
     messages: [{ sender: 'user', text: 'хочу инвестировать' }],
     properties: [
@@ -141,9 +141,47 @@ test('investment asks country and suppresses unrelated navigation buttons', asyn
       }],
     }),
   })
+  // В инвестиционной ветке только Испания — страну не спрашиваем.
+  assert.equal(reply.stage, 'NEED_CITY')
+  assert.equal(reply.recommendations, null)
+  assert.match(reply.text, /Испания|город/i)
+  assert.doesNotMatch(reply.text, /\bSpain\b/)
+  assert.equal(reply.navigation, null)
+})
+
+test('investment asks country when several countries exist in the branch', async () => {
+  const reply = await buildAssistantReply({
+    messages: [{ sender: 'user', text: 'хочу инвестировать' }],
+    properties: [
+      {
+        id: 8,
+        title: 'Share studio',
+        location: 'Spain, Barcelona',
+        price: 70000,
+        is_shared_ownership: 1,
+      },
+      {
+        id: 9,
+        title: 'Debt apartment',
+        location: 'Беларусь, Минск',
+        price: 190000,
+        is_debt: 1,
+      },
+    ],
+    postChat: async () => ({
+      choices: [{
+        message: {
+          content: JSON.stringify({
+            text: 'Откройте test-drive',
+            navigation: [{ path: '/test-drive', label: 'Test-drive объектов' }],
+          }),
+        },
+      }],
+    }),
+  })
   assert.equal(reply.stage, 'NEED_COUNTRY')
   assert.equal(reply.recommendations, null)
-  assert.match(reply.text, /стран/)
+  assert.match(reply.text, /стран|Испания|Беларусь/i)
   assert.equal(reply.navigation, null)
 })
 
@@ -552,4 +590,118 @@ test('two favorites and cabinet facts are passed to the model prompt', async () 
   assert.match(prompt, /270000/)
   assert.match(reply.text, /два объекта/)
   assert.ok(reply.navigation?.some((item) => item.path === '/compare'))
+})
+
+test('assistant mode match forces property search funnel', () => {
+  const ctx = buildAssistantContext({
+    messages: [{ sender: 'user', text: 'Хочу подобрать объекты по вашему алгоритму подбора.' }],
+    properties: catalog,
+    assistantMode: 'match',
+  })
+  assert.equal(ctx.gate.scenario, SCENARIOS.PROPERTY_SEARCH)
+  assert.equal(ctx.assistantMode, 'match')
+  assert.equal(ctx.dialog.stage, 'NEED_PURPOSE')
+})
+
+test('assistant mode platform forces platform help and skips funnel', async () => {
+  const reply = await buildAssistantReply({
+    messages: [{ sender: 'user', text: 'Как пополнить депозит?' }],
+    properties: catalog,
+    assistantMode: 'platform',
+    postChat: async (payload) => {
+      assert.match(payload.messages[0].content, /навигационный гид|продуктовый консультант/)
+      assert.doesNotMatch(payload.messages[0].content, /ЭТАП ПОДБОРА/)
+      return {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              text: 'Откройте кошелёк и пополните депозит.',
+              navigation: [{ path: '/deposit', label: 'Депозит' }],
+              needsMoreInfo: false,
+            }),
+          },
+        }],
+      }
+    },
+  })
+  assert.equal(reply.scenario, SCENARIOS.PLATFORM_HELP)
+  assert.equal(reply.recommendations, null)
+  assert.equal(reply.navigation?.[0]?.path, '/deposit')
+})
+
+test('assistant mode about finds property by name and recommends it', async () => {
+  const reply = await buildAssistantReply({
+    messages: [{ sender: 'user', text: 'Расскажи про Costa apartment' }],
+    properties: catalog,
+    assistantMode: 'about',
+    postChat: async (payload) => {
+      assert.match(payload.messages[0].content, /PROPERTY ABOUT|ОБ ОБЪЕКТЕ|консультант по конкретным объектам/)
+      assert.match(payload.messages[0].content, /Costa apartment/)
+      return {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              text: 'Costa apartment — лот из каталога на Costa del Sol.',
+              recommendations: [7],
+              navigation: [{ path: '/property/7', label: 'Открыть объект' }],
+              needsMoreInfo: false,
+            }),
+          },
+        }],
+      }
+    },
+  })
+  assert.equal(reply.scenario, SCENARIOS.PROPERTY_ABOUT)
+  assert.deepEqual(reply.recommendations, [7])
+  assert.ok(reply.navigation?.some((item) => item.path === '/property/7'))
+})
+
+test('assistant mode about asks for a name when starter has no listing', async () => {
+  const reply = await buildAssistantReply({
+    messages: [{ sender: 'user', text: 'Хочу узнать подробности об объекте из каталога.' }],
+    properties: catalog,
+    assistantMode: 'about',
+    postChat: async () => {
+      throw new Error('llm disabled in test')
+    },
+  })
+  assert.equal(reply.scenario, SCENARIOS.PROPERTY_ABOUT)
+  assert.equal(reply.recommendations, null)
+  assert.match(reply.text, /назван|id|город|name|nombre/i)
+})
+
+test('city clarification localizes Spain and keeps a natural consult tone', async () => {
+  const spainCatalog = [
+    {
+      id: 71,
+      title: 'Villa Adeje',
+      location: 'Spain, Adeje',
+      price: 890000,
+      rooms: 5,
+      property_type: 'villa',
+      isAuction: true,
+    },
+    {
+      id: 72,
+      title: 'Villa San Miguel',
+      location: 'Spain, San Miguel de Abona',
+      price: 760000,
+      rooms: 5,
+      property_type: 'villa',
+      isAuction: true,
+    },
+  ]
+  const reply = await buildAssistantReply({
+    messages: [{ sender: 'user', text: 'для себя, пришли список вилл с пятью спальнями' }],
+    properties: spainCatalog,
+    assistantMode: 'match',
+    postChat: async () => {
+      throw new Error('llm disabled in test')
+    },
+  })
+  assert.equal(reply.stage, 'NEED_CITY')
+  assert.match(reply.text, /Испания/)
+  assert.doesNotMatch(reply.text, /\bSpain\b/)
+  assert.match(reply.text, /правильно мог вас проконсультировать|город/i)
+  assert.doesNotMatch(reply.text, /Теперь выберите/)
 })

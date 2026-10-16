@@ -94,6 +94,14 @@ function isReserved(property, nowMs) {
   return until == null || until > nowMs
 }
 
+/** Текущий пользователь — тот, кто забронировал объект. */
+export function isPropertyReservedByUser(property, userId) {
+  if (userId == null || userId === '') return false
+  const reservedBy = property?.reserved_by ?? property?.reservedBy
+  if (reservedBy == null || reservedBy === '') return false
+  return String(reservedBy) === String(userId)
+}
+
 function isUnavailable(property) {
   const status = String(property.status || property.status_key || '').toLowerCase()
   return (

@@ -52,7 +52,7 @@ test('after purpose asks country and does not require property type', () => {
     { catalog: hierarchicalCatalog },
   )
   assert.equal(dialog.stage, 'NEED_COUNTRY')
-  assert.deepEqual(dialog.availableCountries, ['Беларусь', 'Spain'])
+  assert.deepEqual(dialog.availableCountries, ['Беларусь', 'Испания'])
 })
 
 test('a property type supplied early is remembered for later selection', () => {
@@ -63,9 +63,28 @@ test('a property type supplied early is remembered for later selection', () => {
     { catalog: hierarchicalCatalog },
   )
   assert.equal(dialog.stage, 'NEED_COUNTRY')
-  assert.deepEqual(dialog.availableCountries, ['Беларусь', 'Spain'])
+  assert.deepEqual(dialog.availableCountries, ['Беларусь', 'Испания'])
   assert.equal(dialog.propertyTypeLabel, 'квартира')
   assert.equal(dialog.hasCity, false)
+})
+
+test('skips country step when catalog branch has only one country', () => {
+  const spainOnly = [
+    { id: 1, location: 'Spain, Adeje', property_type: 'villa', price: 500000, rooms: 5 },
+    { id: 2, location: 'Spain, San Miguel de Abona', property_type: 'villa', price: 480000, rooms: 5 },
+  ]
+  const dialog = analyzeConversation(
+    [{ sender: 'user', text: 'для себя, пришли список вилл с пятью спальнями' }],
+    'ru',
+    {},
+    { catalog: spainOnly },
+  )
+  assert.equal(dialog.stage, 'NEED_CITY')
+  assert.equal(dialog.countryLabel, 'Испания')
+  assert.equal(dialog.countryInferredSole, true)
+  assert.equal(dialog.rooms, 5)
+  assert.equal(dialog.propertyTypeLabel, 'вилла')
+  assert.deepEqual(dialog.availableCities, ['Adeje', 'San Miguel de Abona'])
 })
 
 test('after country asks only cities inside selected country', () => {

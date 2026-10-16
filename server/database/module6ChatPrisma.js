@@ -465,6 +465,17 @@ async function findSessionsForRegisteredUser(prisma, userId) {
   });
 }
 
+const LEGACY_LIVE_CHAT_WAIT_NOTICES = new Set([
+  'Подождите, скоро ответит менеджер.',
+  'Подождите, скоро ответит поддержка.',
+  'Please wait — support will reply shortly.',
+  'Bitte warten — der Support antwortet gleich.',
+  'Espere, el soporte responderá en breve.',
+  'Veuillez patienter — le support répondra sous peu.',
+  'Poczekaj — wsparcie wkrótce odpowie.',
+  'Vänta — supporten svarar strax.',
+]);
+
 export const liveChatQueries = {
   findLatestSessionByAssistantId: async (assistantSessionId) => {
         const asst = assistantSessionId && String(assistantSessionId).trim();
@@ -558,6 +569,26 @@ export const liveChatQueries = {
     }
   },
 
+  replaceLegacyOpeningNotice: async (sessionId, waitMessage) => {
+    const text = waitMessage && String(waitMessage).trim();
+    const sid = parseInt(sessionId, 10);
+    if (!text || !Number.isFinite(sid)) return false;
+    const prisma = getPrisma();
+    const first = await prisma.live_chat_messages.findFirst({
+      where: { session_id: sid, sender_role: 'system' },
+      orderBy: { id: 'asc' },
+      select: { id: true, body: true },
+    });
+    if (!first) return false;
+    const body = String(first.body || '').trim();
+    if (body === text || !LEGACY_LIVE_CHAT_WAIT_NOTICES.has(body)) return false;
+    await prisma.live_chat_messages.update({
+      where: { id: first.id },
+      data: { body: text.slice(0, 2000) },
+    });
+    return true;
+  },
+
   appendSystemNoticeIfNew: async (sessionId, waitMessage) => {
     const text = waitMessage && String(waitMessage).trim();
     const sid = parseInt(sessionId, 10);
@@ -587,7 +618,7 @@ export const liveChatQueries = {
       (asst && String(asst).replace(/^user_/, '').slice(0, 72)) || 'Гость';
     const body =
       (waitMessage && String(waitMessage).trim()) ||
-      'Подождите, скоро ответит менеджер.';
+      'Добрый день. Оставьте сообщение в службу поддержки. Как специалист освободится, он ответит вам. Ответ можно получить на почту, уведомлением в кабинете и пуш-уведомлением.';
     const session = await prisma.$transaction(async (tx) => {
       const s = await tx.live_chat_sessions.create({
         data: {

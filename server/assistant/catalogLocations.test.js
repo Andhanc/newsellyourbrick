@@ -5,7 +5,9 @@ import {
   detectCatalogCity,
   detectCatalogCountry,
   detectCatalogLocation,
+  formatCatalogCountries,
   indexCatalogLocations,
+  localizePlaceLabel,
   parseLocationParts,
 } from './catalogLocations.js'
 
@@ -72,4 +74,16 @@ test('does not treat Dubai or Madrid as available if they are not in the catalog
   const madrid = detectCatalogLocation('есть что-то в Мадриде?', index)
   assert.equal(madrid.hasLocation, false)
   assert.equal(madrid.unknownLabel, 'Мадрид')
+})
+
+test('localizes Spain to Russian in assistant-facing labels', () => {
+  assert.equal(localizePlaceLabel('Spain', 'ru'), 'Испания')
+  assert.equal(localizePlaceLabel('Spain', 'en'), 'Spain')
+  assert.equal(localizePlaceLabel('España', 'ru'), 'Испания')
+  const index = indexCatalogLocations([
+    { id: 1, location: 'Spain, Adeje' },
+    { id: 2, location: 'Spain, Barcelona' },
+  ])
+  assert.match(formatCatalogCountries(index, 'ru'), /Испания/)
+  assert.doesNotMatch(formatCatalogCountries(index, 'ru'), /Spain/)
 })
