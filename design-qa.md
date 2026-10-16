@@ -844,3 +844,17 @@ The dialog opens in the top layer, freezes the main stage scroll, initially focu
 Evidence: `tmp/discover-reference-qa/lottery-coming-soon-modal.jpg`, `lottery-coming-soon-modal.png`, `lottery-coming-soon-modal-320.jpg`. Inspected at 383px and 320px; title, copy and controls fit without clipping. Modal strings exist in all seven locale pairs. Nineteen page/listing/development parity tests, production build (14.29s), JSX/CSS/locale parity and whitespace check passed. No actionable P0/P1/P2 findings.
 
 final result: passed
+
+## 2026-10-17 — synchronization with current origin/new-era
+
+Integrated upstream commit 600380c3 into `codex/new-era-discover-and-piggy-bank`, including all local product work and the Piggy Bank demo. Before rebasing, preserved 80 product files plus temporary QA artifacts in an external backup and local branch `codex/backup-new-era-ui-20261017` (snapshot 3ac512c8).
+
+Preservation audit found no missing product files and retained all 444 locally changed locale values. Initially 59 files matched the snapshot byte-for-byte and 21 incorporated upstream edits; this QA document then received this additional report. All 36 existing changed web/legacy source and asset pairs match. The three debt risk images remain identical to upstream. All Piggy Bank source/images and generated discover images retain their original hashes.
+
+Resolved locale conflicts semantically, retaining upstream assistant messages and the updated initial hero copy while preserving the requested Russian “Девелоп”. Removed an obsolete fifth lower strategy inserted by automatic merging: the approved lower grid remains Map/Investor/VIP/Test-drive, and Development remains in the five-card top rail. Added an executable factory regression for the four lower destinations. Updated the stale lazy-loading test to cover the current lazy listing sections; profile stories retain their independent tests.
+
+Validation: 180 focused frontend tests across 40 files passed, covering main carousels/gestures, favorites, compass, stories, SectionInfoDrawer, buyer profile, seller role switch, property detail, investor flow, compare picker, risk presentation, development and mirrors. Forty-five upstream assistant tests passed. Production build and whitespace check passed. One unrelated TestDriveLandingPage mobile-hierarchy test still fails on unmodified upstream; source/test hashes match origin/new-era, and the same failure was reproduced from pristine copies (2 of 3 tests pass there).
+
+Post-sync browser verification was unavailable because the browser URL policy rejected access to the current tab. No alternate browser access was attempted. Preservation was checked through source/asset hashes, semantic locale comparison, regression tests and production compilation; previous visual evidence remains in the local QA backup.
+
+final result: synchronization verified; known upstream test and browser-verification limitations documented

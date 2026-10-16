@@ -115,10 +115,9 @@ test('checkout success helpers do not pull listing-prefill into the app shell', 
   assert.match(flow, /import\(['"]\.\/subscriptionCheckout['"]\)/)
 })
 
-test('discover below-fold catalog and stories stay lazy until the stage is shown', () => {
+test('discover listing sections stay lazy until the stage is shown', () => {
   assert.match(discover, /const MobileDiscoverCatalog = lazy\(\(\) => import\('\.\/MobileDiscoverCatalog'\)\)/)
-  assert.match(discover, /const ProfileStrategyStories = lazy\(\(\) => import\('\.\.\/components\/ProfileStrategyStories'\)\)/)
-  assert.match(discover, /showTrigger=\{false\}/)
+  assert.match(discover, /const MobileDiscoverTopListings = lazy\(\(\) => import\('\.\.\/components\/MobileDiscoverTopListings'\)\)/)
   assert.match(discover, /catalogSentinelRef/)
   assert.match(discover, /\{catalogReady \? \(/)
 })
