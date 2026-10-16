@@ -79,6 +79,7 @@ const TelegramAuthCallback = lazyWithRetry(() => import('./pages/TelegramAuthCal
 const AddProperty = lazyWithRetry(() => import('./pages/AddProperty'))
 const SellerListingCtaRedirect = lazyWithRetry(() => import('./pages/SellerListingCtaRedirect'))
 const Wallet = lazyWithRetry(() => import('./pages/Wallet'))
+const PiggyBankPage = lazyWithRetry(() => import('./pages/PiggyBankPage'))
 const AdminPanelPage = lazyWithRetry(() => import('./admin/AdminPanelPage'))
 const About = lazyWithRetry(() => import('./pages/About.tsx'))
 const News = lazyWithRetry(() => import('./pages/News'))
@@ -146,6 +147,7 @@ function AppLayoutFrame({ isBlocked, appLayoutRef, children }) {
   const calculatorSingleScroll = pathname === '/calculator'
   const newsArticleScroll = /^\/news\/[^/]+$/.test(pathname)
   const lotteryPage = pathname === '/lottery'
+  const piggyBankPage = pathname === '/piggy-bank'
   const mobileDiscoverHome = pathname === '/'
   const softLaunchUnavailable = shouldShowSoftLaunchUnavailable(pathname)
 
@@ -159,7 +161,9 @@ function AppLayoutFrame({ isBlocked, appLayoutRef, children }) {
         ? 'app-layout--news-article'
         : lotteryPage
           ? 'app-layout--lottery'
-        : ''
+          : piggyBankPage
+            ? 'app-layout--piggy-bank'
+            : ''
 
   return (
     <div
@@ -180,6 +184,7 @@ function AppChromeFooter() {
     shouldShowSoftLaunchUnavailable(pathname) ||
     pathname === '/' ||
     pathname === '/lottery' ||
+    pathname === '/piggy-bank' ||
     pathname === '/mobile-showcase' ||
     pathname === '/map' ||
     pathname === '/owner-test' ||
@@ -365,6 +370,7 @@ const NO_ZOOM_PATHS = new Set([
   '/main',
   '/profile',
   '/wallet',
+  '/piggy-bank',
   '/deposit',
   '/bonuses',
   '/favorites',
@@ -843,6 +849,7 @@ function App() {
                   </LazyPage>
                 }
               />
+              <Route path="/piggy-bank" element={<LazyPage><PiggyBankPage /></LazyPage>} />
               <Route path="/deposit" element={<DepositRedirect />} />
               <Route
                 path="/bonuses"

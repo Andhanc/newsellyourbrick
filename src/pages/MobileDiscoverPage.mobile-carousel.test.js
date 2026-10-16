@@ -1,66 +1,35 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import test from 'node:test'
 
 const jsx = readFileSync(new URL('./MobileDiscoverPage.jsx', import.meta.url), 'utf8')
 const css = readFileSync(new URL('./MobileDiscoverPage.css', import.meta.url), 'utf8')
 
-test('mobile home uses the restored swipe rail and generated card icons', () => {
-  assert.match(jsx, /const cardsRef = useRef\(null\)/)
-  assert.match(jsx, /className="md-cards-dots"/)
-  assert.match(jsx, /src=\{card\.iconSrc\}/)
-  assert.match(jsx, /className="md-card__icon"[\s\S]*className="md-card__title"/)
-  assert.match(jsx, /className="md-card__cta"/)
-  assert.match(jsx, /<SectionInfoDrawer section=\{card\.infoSection\} placement="card" \/>/)
-  assert.match(jsx, /infoSection: 'buyNow'/)
-  assert.match(jsx, /className=\{`md-card__save/)
-  assert.match(jsx, /className="md-card__image"/)
-  assert.match(jsx, /src=\{card\.image\}/)
-  assert.match(jsx, /sale-format-auction-summer\.webp/)
-  assert.match(jsx, /sale-format-buy-now-summer\.webp/)
-  assert.match(jsx, /sale-format-debts-summer\.webp/)
-  assert.match(jsx, /sale-format-shares-summer\.webp/)
-  assert.match(jsx, /sale-format-develop-summer\.webp/)
-  assert.match(jsx, /infoSection: 'development'/)
-  assert.match(jsx, /develop\.cardAccent/)
-  assert.match(css, /object-position: var\(--md-card-image-position, center\)/)
-  assert.match(css, /@media \(max-width: 767px\)/)
-  assert.match(css, /grid-auto-columns: clamp\(226px, 68vw, 262px\)/)
-  assert.match(css, /scroll-snap-type: x mandatory/)
-  assert.match(css, /aspect-ratio: 0\.84/)
-  assert.match(css, /\.md-cards-dot\.is-active[\s\S]*background: #4ecdd6/)
-  assert.match(jsx, /className="md-card__description-accent"/)
-  assert.match(jsx, /SALE_DESCRIPTION_TRIGGERS/)
-  assert.match(jsx, /stripDescriptionPeriod/)
-  assert.match(css, /\.md-card__description-accent[\s\S]*background: var\(--md-sky\)/)
-  assert.match(css, /\.md-card__description-accent[\s\S]*color: #ffffff/)
-  assert.match(css, /\.md-card__description\s*\{[\s\S]*height: 3\.48em/)
-  assert.match(css, /\.md-card \.md-card__cta[\s\S]*background-color: #ffffff !important/)
-  assert.match(css, /\.md-card \.md-card__cta[\s\S]*color: #122226 !important/)
-  assert.match(css, /\.md-card__save[\s\S]*border-radius: 13px/)
-  assert.match(jsx, /InvestmentCompassDrawer/)
-  assert.match(jsx, /InvestmentCompassPromoModal/)
-  assert.match(jsx, /className="md-cards-dots"[\s\S]*className="md-stage__compass"/)
-  assert.match(jsx, /className="md-stage__compass-art"/)
-  assert.match(jsx, /className="md-stage__compass-close"/)
-  assert.match(jsx, /compassBannerDismissed/)
-  assert.match(jsx, /COMPASS_BANNER_SRC/)
-  assert.match(css, /\.md-stage__compass[\s\S]*background: var\(--md-sky\)/)
-  assert.match(jsx, /COMPASS_PROMPT_DELAY_MS/)
-  assert.match(jsx, /getCompassOfferSessionId/)
+test('feature cards retain the four approved destinations after upstream strategy updates', () => {
+  const start = jsx.indexOf('function getSaleCards(t)')
+  const end = jsx.indexOf('const WHEEL_THRESHOLD', start)
+  const cards = new Function('t', 'publicAsset', 'TEST_DRIVE_PATH', `${jsx.slice(start, end)}; return getSaleCards(t)`)(key => key, path => path, '/test-drive')
+  assert.deepEqual(cards.map(card => card.id), ['map', 'investor', 'vip', 'test_drive'])
+  assert.deepEqual(cards.map(card => card.to), ['/map', '/calculator', '/private-club', '/test-drive'])
+  assert.ok(cards.every(card => card.featureTitle && card.iconSrc))
 })
 
-test('welcome photo keeps showcase shortcuts under the search field', () => {
-  assert.match(jsx, /className="md-welcome__shortcuts"/)
-  assert.match(jsx, /WELCOME_SHORTCUTS/)
-  assert.match(jsx, /mobile-showcase\/glass\/\$\{id\}\.webp/)
-  assert.match(jsx, /to=\{item\.path\}/)
-  assert.match(jsx, /mobileShowcase\.\$\{item\.id\}\.title/)
-  assert.match(css, /\.md-welcome__brand[\s\S]*top: 22%/)
-  assert.match(css, /\.md-welcome__actions[\s\S]*top: calc\(22% \+ 4\.9rem\)/)
-  assert.match(css, /\.md-welcome__shortcuts[\s\S]*grid-template-columns: repeat\(3/)
+test('launch offers five working destinations with existing property photography', () => {
+  for (const route of ["'/auction?filter=auction'", "'/auction/buy-now'", "'/debts'", 'CO_INVESTMENT_PATH', "'/development'"]) {
+    assert.ok(jsx.includes(`to: ${route}`), route)
+  }
+  for (const name of ['marbella', 'nice', 'paphos', 'sorrento', 'barcelona', 'santorini']) {
+    assert.ok(existsSync(new URL(`../../public/images/test-drive/property-${name}.png`, import.meta.url)), name)
+  }
+  assert.match(jsx, /launchCards\.map\(\(card, index\) =>[\s\S]*to=\{card\.to\}/)
+  assert.match(jsx, /card\.photos\.map/)
 })
 
-test('desktop layout includes all five deal models', () => {
-  assert.match(css, /@media \(min-width: 1024px\)[\s\S]*grid-template-columns: repeat\(5/)
+test('launch shows larger cards in a swipeable five-card rail, with a code wave and the search below', () => {
+  assert.match(css, /\.md-launch__slider\s*\{[^}]*overflow-x: auto;[^}]*scroll-snap-type: x mandatory/s)
+  assert.match(css, /\.md-launch__item\s*\{[^}]*flex: 0 0 calc\(\(100% - 16px\) \/ 2\.75\)/s)
+  assert.match(css, /\.md-launch__photos img\s*\{[^}]*border-radius: 50%/s)
+  assert.match(jsx, /SellYouBrick[\s\S]*md-launch__headline[\s\S]*md-launch__slider[\s\S]*md-launch__wave[\s\S]*md-stage__sheet[\s\S]*role="search"/)
+  assert.doesNotMatch(jsx, /SEARCH_BACKDROP/)
+  assert.match(jsx, /md-welcome__copy[\s\S]*md-welcome__media[\s\S]*md-rewards__tiles[\s\S]*<MobileDiscoverCatalog/)
 })

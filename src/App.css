@@ -103,7 +103,9 @@ html.site-nav-drawer-open .menu-dropdown__content--mega {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  /* Clip sideways overflow without creating a second vertical scroll container. */
   overflow-x: hidden;
+  overflow-x: clip;
   scrollbar-width: none; 
   -ms-overflow-style: none; 
   /*
@@ -185,6 +187,15 @@ body:has(.investment-calculator-page--ai-result) .app-footer-skeleton {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+}
+
+.app-layout.app-layout--piggy-bank,
+.app-layout.app-layout--piggy-bank .app-layout__content {
+  background: #f5f6f7;
+}
+
+.app-layout.app-layout--piggy-bank .app-layout__content {
+  padding: 0;
 }
 
 /* Выбранные маршруты (главная, аукцион, профиль и т.д.): без pinch и двойного тапа для зума */

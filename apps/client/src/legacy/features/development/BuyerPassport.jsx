@@ -61,7 +61,7 @@ export default function BuyerPassport() {
     <>
       <Header />
       <main className="dev-feature dev-page">
-        <Link to="/development">← DEVELOP</Link>
+        <Link to="/development">← {t('develop.title')}</Link>
         <header className="dev-hero">
           <span className="dev-eyebrow">SELL YOUR BRICK</span>
           <h1>Buyer Passport</h1>

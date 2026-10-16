@@ -46,6 +46,7 @@ const EXACT_ALLOWED = new Set([
   '/data',
   '/subscriptions',
   '/wallet',
+  '/piggy-bank',
   '/deposit',
   '/bonuses',
   '/favorites',

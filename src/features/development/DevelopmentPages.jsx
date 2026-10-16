@@ -107,7 +107,7 @@ function DevelopmentHero() {
       </div>
       <div className="buy-now-hero__content">
         <span className="buy-now-hero__eyebrow">
-          <Building2 size={14} /> DEVELOP
+          <Building2 size={14} /> {t('develop.title')}
         </span>
         <div className="section-info-heading-row">
           <h1 id="development-title">{t('develop.heading')}</h1>
@@ -196,7 +196,7 @@ export default function DevelopmentPages({ mine = false }) {
             <>
               <header className="dev-catalog-head">
                 <div>
-                  <span className="dev-eyebrow">DEVELOP</span>
+                  <span className="dev-eyebrow">{t('develop.title')}</span>
                   {mine ? (
                     <h1>{t('develop.myProjects')}</h1>
                   ) : (
