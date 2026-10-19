@@ -17901,13 +17901,25 @@ if (process.env.NODE_ENV === 'production') {
     // Раздаем статические файлы из dist (JS, CSS, изображения и т.д.)
     // Это должно быть ДО обработчика всех маршрутов
     app.use(express.static(distPath, {
-      // Не кэшируем index.html, но кэшируем остальные файлы
-      setHeaders: (res, path) => {
-        if (path.endsWith('index.html')) {
+      // Не кэшируем index.html / SW / manifest; остальное — долгий cache
+      setHeaders: (res, filePath) => {
+        const base = filePath.split(/[/\\]/).pop() || '';
+        if (
+          base === 'index.html' ||
+          base === 'sw.js' ||
+          base === 'manifest.webmanifest' ||
+          base === 'manifest.json'
+        ) {
           res.setHeader('Cache-Control', 'no-cache');
-        } else {
-          res.setHeader('Cache-Control', 'public, max-age=31536000');
+          if (base === 'sw.js') {
+            res.setHeader('Service-Worker-Allowed', '/');
+          }
+          if (base.endsWith('.webmanifest') || base === 'manifest.json') {
+            res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+          }
+          return;
         }
+        res.setHeader('Cache-Control', 'public, max-age=31536000');
       },
       // Если файл не найден, передаем управление следующему обработчику
       fallthrough: true

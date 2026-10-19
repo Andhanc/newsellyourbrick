@@ -12,6 +12,7 @@ import './styles/drawerDismiss.css'
 /* tiffany-shine подключается в конце App, чтобы перекрывать локальные fill-стили кнопок */
 import { i18nReady } from './i18n/config'
 import { getClerkPublishableKey, getGoogleClientId } from './utils/env'
+import { registerPwa } from './pwa/registerPwa'
 
 const CONFIG_FETCH_TIMEOUT_MS = 14_000
 
@@ -184,3 +185,5 @@ if (rootEl) {
     </React.StrictMode>,
   )
 }
+
+void registerPwa()
