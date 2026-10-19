@@ -30,3 +30,13 @@ test('index.html links manifest and iOS install meta', () => {
   assert.match(html, /apple-mobile-web-app-capable"\s+content="yes"/)
   assert.match(html, /apple-touch-icon"\s+href="\/icons\/apple-touch-icon\.png"/)
 })
+
+test('locale files include footer PWA download strings', () => {
+  for (const lang of ['ru', 'en', 'de', 'es', 'fr', 'pl', 'sv']) {
+    const data = JSON.parse(
+      readFileSync(join(root, `src/i18n/locales/mainPage/${lang}.json`), 'utf8'),
+    )
+    assert.ok(data.footerDownloadPwa, `${lang} missing footerDownloadPwa`)
+    assert.ok(data.footerPwaIosHint, `${lang} missing footerPwaIosHint`)
+  }
+})

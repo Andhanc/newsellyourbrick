@@ -7099,5 +7099,10 @@
   "assistantStarter_aboutTitle": "About a property",
   "assistantStarter_aboutDescription": "Name a listing — I will explain everything from the catalog",
   "assistantStarter_aboutPrompt": "I want details about a property from the catalog.",
-  "ownerTest_notificationsNewTestDrive": "Test drive booked"
+  "ownerTest_notificationsNewTestDrive": "Test drive booked",
+  "footerDownloadPwa": "Download app",
+  "footerPwaIosTitle": "Install on iPhone",
+  "footerPwaIosHint": "Tap Share, then Add to Home Screen — SellYourBrick will appear on your home screen.",
+  "footerPwaInstalled": "App is already installed",
+  "footerPwaUnavailable": "Open this site in Safari (iPhone) or Chrome (Android) to install the app."
 }

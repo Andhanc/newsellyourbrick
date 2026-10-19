@@ -7099,5 +7099,10 @@
   "assistantStarter_aboutTitle": "Über ein Objekt",
   "assistantStarter_aboutDescription": "Nennen Sie ein Objekt — ich erkläre alles aus dem Katalog",
   "assistantStarter_aboutPrompt": "Ich möchte Details zu einem Objekt aus dem Katalog erfahren.",
-  "ownerTest_notificationsNewTestDrive": "Probefahrt gebucht"
+  "ownerTest_notificationsNewTestDrive": "Probefahrt gebucht",
+  "footerDownloadPwa": "App herunterladen",
+  "footerPwaIosTitle": "Auf dem iPhone installieren",
+  "footerPwaIosHint": "Tippen Sie auf Teilen und dann auf „Zum Home-Bildschirm“ — SellYourBrick erscheint als App.",
+  "footerPwaInstalled": "App ist bereits installiert",
+  "footerPwaUnavailable": "Öffnen Sie die Seite in Safari (iPhone) oder Chrome (Android), um die App zu installieren."
 }

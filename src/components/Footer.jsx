@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
-import { Frown } from 'lucide-react'
 import { FiX, FiChevronDown, FiCheck } from 'react-icons/fi'
+import { requestPwaInstall } from '../pwa/pwaInstall'
 import { AppleIcon, InstagramIcon, TelegramIcon, WhatsAppIcon, YoutubeIcon } from './icons/ContactChannelIcons'
 import whatsappQR from '../../6019556644745841501.png'
 import './Footer.css'
@@ -38,7 +38,8 @@ const Footer = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, isLoaded: userLoaded } = useUser()
-  const [storeComingSoonOpen, setStoreComingSoonOpen] = useState(false)
+  const [pwaHelpOpen, setPwaHelpOpen] = useState(false)
+  const [pwaHelpMode, setPwaHelpMode] = useState('ios')
   const [isLanguageDrawerOpen, setIsLanguageDrawerOpen] = useState(false)
 
   const activeLangCode = (i18n.language || 'ru').split('-')[0]
@@ -63,17 +64,36 @@ const Footer = () => {
     scrollMainTo(0, 0, 'instant')
   }
 
-  const openStoreComingSoon = () => setStoreComingSoonOpen(true)
-  const closeStoreComingSoon = useCallback(() => setStoreComingSoonOpen(false), [])
+  const closePwaHelp = useCallback(() => setPwaHelpOpen(false), [])
+
+  const openPwaHelp = useCallback((mode) => {
+    setPwaHelpMode(mode)
+    setPwaHelpOpen(true)
+  }, [])
+
+  /** Same home-screen install flow for Google Play and App Store buttons. */
+  const handleStoreInstall = useCallback(async () => {
+    const result = await requestPwaInstall()
+    if (result.outcome === 'accepted' || result.outcome === 'dismissed') return
+    if (result.outcome === 'standalone') {
+      openPwaHelp('installed')
+      return
+    }
+    if (result.outcome === 'ios-manual') {
+      openPwaHelp('ios')
+      return
+    }
+    openPwaHelp('unavailable')
+  }, [openPwaHelp])
 
   useEffect(() => {
-    if (!storeComingSoonOpen) return
+    if (!pwaHelpOpen) return
     const onKey = (e) => {
-      if (e.key === 'Escape') closeStoreComingSoon()
+      if (e.key === 'Escape') closePwaHelp()
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [storeComingSoonOpen, closeStoreComingSoon])
+  }, [pwaHelpOpen, closePwaHelp])
 
   useEffect(() => {
     const openLanguageDrawer = () => setIsLanguageDrawerOpen(true)
@@ -278,7 +298,7 @@ const Footer = () => {
             <button
               type="button"
               className="footer__store-btn footer__store-btn--compact"
-              onClick={openStoreComingSoon}
+              onClick={handleStoreInstall}
               aria-label={t('downloadGooglePlay')}
             >
               <div className="footer__store-icon footer__store-icon--google">
@@ -297,7 +317,7 @@ const Footer = () => {
             <button
               type="button"
               className="footer__store-btn footer__store-btn--compact"
-              onClick={openStoreComingSoon}
+              onClick={handleStoreInstall}
               aria-label={`${t('downloadIn')} App Store`}
             >
               <div className="footer__store-icon">
@@ -335,32 +355,49 @@ const Footer = () => {
         </div>
       </div>
 
-      {storeComingSoonOpen && typeof document !== 'undefined'
+      {pwaHelpOpen && typeof document !== 'undefined'
         ? createPortal(
             <div
               className="footer-store-modal-overlay"
               role="presentation"
-              onClick={closeStoreComingSoon}
+              onClick={closePwaHelp}
             >
               <div
-                className="footer-store-modal"
+                className="footer-store-modal footer-store-modal--pwa"
                 role="dialog"
                 aria-modal="true"
-                aria-labelledby="footer-store-modal-title"
+                aria-labelledby="footer-pwa-modal-title"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
                   type="button"
                   className="footer-store-modal__close"
-                  onClick={closeStoreComingSoon}
+                  onClick={closePwaHelp}
                   aria-label={t('footerCloseModal')}
                 >
                   <FiX size={22} />
                 </button>
-                <Frown className="footer-store-modal__icon" aria-hidden />
-                <p id="footer-store-modal-title" className="footer-store-modal__title">
-                  {t('footerComingSoon')}
+                <img
+                  src="/icons/icon-192.png"
+                  alt=""
+                  width={64}
+                  height={64}
+                  className="footer-store-modal__pwa-icon"
+                />
+                <p id="footer-pwa-modal-title" className="footer-store-modal__title">
+                  {pwaHelpMode === 'installed'
+                    ? t('footerPwaInstalled')
+                    : pwaHelpMode === 'unavailable'
+                      ? t('footerDownloadPwa')
+                      : t('footerPwaIosTitle')}
                 </p>
+                {pwaHelpMode !== 'installed' ? (
+                  <p className="footer-store-modal__text">
+                    {pwaHelpMode === 'unavailable'
+                      ? t('footerPwaUnavailable')
+                      : t('footerPwaIosHint')}
+                  </p>
+                ) : null}
               </div>
             </div>,
             document.body,

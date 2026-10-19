@@ -1205,6 +1205,27 @@ body.admin-panel-active .footer .footer__upper {
   box-sizing: border-box;
 }
 
+.footer-store-modal--pwa {
+  max-width: 360px;
+}
+
+.footer-store-modal__pwa-icon {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 16px;
+  border-radius: 14px;
+  object-fit: cover;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12);
+}
+
+.footer-store-modal__text {
+  margin: 12px 0 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: #4b5563;
+}
+
 .footer-store-modal__close {
   position: absolute;
   top: 12px;

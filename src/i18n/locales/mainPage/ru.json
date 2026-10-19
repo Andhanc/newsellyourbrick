@@ -7099,5 +7099,10 @@
   "assistantStarter_aboutTitle": "Рассказать об объекте",
   "assistantStarter_aboutDescription": "Назовите объект — расскажу всё из каталога",
   "assistantStarter_aboutPrompt": "Хочу узнать подробности об объекте из каталога.",
-  "ownerTest_notificationsNewTestDrive": "Забронировали тест-драйв"
+  "ownerTest_notificationsNewTestDrive": "Забронировали тест-драйв",
+  "footerDownloadPwa": "Скачать приложение",
+  "footerPwaIosTitle": "Установка на iPhone",
+  "footerPwaIosHint": "Нажмите «Поделиться», затем «На экран Домой» — появится иконка SellYourBrick.",
+  "footerPwaInstalled": "Приложение уже установлено",
+  "footerPwaUnavailable": "Откройте сайт в Safari (iPhone) или Chrome (Android), чтобы установить приложение."
 }

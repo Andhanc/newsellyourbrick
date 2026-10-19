@@ -7099,5 +7099,10 @@
   "assistantStarter_aboutTitle": "Om ett objekt",
   "assistantStarter_aboutDescription": "Namnge ett objekt — jag berättar allt från katalogen",
   "assistantStarter_aboutPrompt": "Jag vill ha detaljer om ett objekt från katalogen.",
-  "ownerTest_notificationsNewTestDrive": "Provkörning bokad"
+  "ownerTest_notificationsNewTestDrive": "Provkörning bokad",
+  "footerDownloadPwa": "Ladda ner appen",
+  "footerPwaIosTitle": "Installera på iPhone",
+  "footerPwaIosHint": "Tryck på Dela och sedan Lägg till på hemskärmen — SellYourBrick visas som app.",
+  "footerPwaInstalled": "Appen är redan installerad",
+  "footerPwaUnavailable": "Öppna webbplatsen i Safari (iPhone) eller Chrome (Android) för att installera appen."
 }

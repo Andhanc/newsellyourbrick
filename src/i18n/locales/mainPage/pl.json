@@ -7099,5 +7099,10 @@
   "assistantStarter_aboutTitle": "O obiekcie",
   "assistantStarter_aboutDescription": "Podaj obiekt — opowiem wszystko z katalogu",
   "assistantStarter_aboutPrompt": "Chcę poznać szczegóły obiektu z katalogu.",
-  "ownerTest_notificationsNewTestDrive": "Zarezerwowano jazdę próbną"
+  "ownerTest_notificationsNewTestDrive": "Zarezerwowano jazdę próbną",
+  "footerDownloadPwa": "Pobierz aplikację",
+  "footerPwaIosTitle": "Instalacja na iPhonie",
+  "footerPwaIosHint": "Dotknij Udostępnij, a potem Do ekranu początkowego — SellYourBrick pojawi się na pulpicie.",
+  "footerPwaInstalled": "Aplikacja jest już zainstalowana",
+  "footerPwaUnavailable": "Otwórz stronę w Safari (iPhone) lub Chrome (Android), aby zainstalować aplikację."
 }
