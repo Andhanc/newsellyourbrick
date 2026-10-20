@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { FiX } from 'react-icons/fi'
 import { SiAndroid, SiApple } from 'react-icons/si'
 import Header from '../components/Header'
+import { requestPwaInstall } from '../pwa/pwaInstall'
 import { publicAsset } from '../utils/publicAsset'
 import './AppDownloadPage.css'
 
 const HERO_BG = publicAsset('images/app-download/hero-pastel.png')
 const LOCK_BG = publicAsset('images/app-download/lock-summer.png')
-const ANDROID_APK_URL = 'https://litter.catbox.moe/znl6kx.apk'
 
 const PROPERTIES = [
   {
@@ -53,6 +55,8 @@ export default function AppDownloadPage() {
   const [remain, setRemain] = useState(() =>
     Object.fromEntries(PROPERTIES.map((p) => [p.id, p.endsInMs]))
   )
+  const [pwaHelpOpen, setPwaHelpOpen] = useState(false)
+  const [pwaHelpMode, setPwaHelpMode] = useState('unavailable')
 
   useEffect(() => {
     const started = Date.now()
@@ -68,6 +72,30 @@ export default function AppDownloadPage() {
     const id = window.setInterval(tick, 1000)
     return () => window.clearInterval(id)
   }, [])
+
+  const closePwaHelp = useCallback(() => setPwaHelpOpen(false), [])
+
+  const handleAndroidInstall = useCallback(async () => {
+    const result = await requestPwaInstall()
+    if (result.outcome === 'accepted' || result.outcome === 'dismissed') return
+    if (result.outcome === 'standalone') {
+      setPwaHelpMode('installed')
+      setPwaHelpOpen(true)
+      return
+    }
+    // Android-only install prompt; iOS stays on the disabled "soon" button.
+    setPwaHelpMode('unavailable')
+    setPwaHelpOpen(true)
+  }, [])
+
+  useEffect(() => {
+    if (!pwaHelpOpen) return
+    const onKey = (e) => {
+      if (e.key === 'Escape') closePwaHelp()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [pwaHelpOpen, closePwaHelp])
 
   return (
     <div className="app-dl">
@@ -129,11 +157,10 @@ export default function AppDownloadPage() {
             <p className="app-dl__lead">{t('appDl_lead')}</p>
 
             <div className="app-dl__actions">
-              <a
+              <button
+                type="button"
                 className="app-dl__store app-dl__store--android"
-                href={ANDROID_APK_URL}
-                download
-                rel="noopener noreferrer"
+                onClick={handleAndroidInstall}
               >
                 <span className="app-dl__store-icon" aria-hidden>
                   <SiAndroid size={24} />
@@ -142,7 +169,7 @@ export default function AppDownloadPage() {
                   <small>{t('appDl_download')}</small>
                   <strong>Android</strong>
                 </span>
-              </a>
+              </button>
               <button type="button" className="app-dl__store app-dl__store--ios" disabled>
                 <span className="app-dl__store-icon" aria-hidden>
                   <SiApple size={24} />
@@ -156,6 +183,45 @@ export default function AppDownloadPage() {
           </div>
         </section>
       </main>
+
+      {pwaHelpOpen && typeof document !== 'undefined'
+        ? createPortal(
+            <div className="app-dl-pwa-overlay" role="presentation" onClick={closePwaHelp}>
+              <div
+                className="app-dl-pwa-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="app-dl-pwa-modal-title"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  className="app-dl-pwa-modal__close"
+                  onClick={closePwaHelp}
+                  aria-label={t('footerCloseModal')}
+                >
+                  <FiX size={22} />
+                </button>
+                <img
+                  src="/icons/icon-192.png"
+                  alt=""
+                  width={64}
+                  height={64}
+                  className="app-dl-pwa-modal__icon"
+                />
+                <p id="app-dl-pwa-modal-title" className="app-dl-pwa-modal__title">
+                  {pwaHelpMode === 'installed'
+                    ? t('footerPwaInstalled')
+                    : t('footerDownloadPwa')}
+                </p>
+                {pwaHelpMode !== 'installed' ? (
+                  <p className="app-dl-pwa-modal__text">{t('footerPwaUnavailable')}</p>
+                ) : null}
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   )
 }
