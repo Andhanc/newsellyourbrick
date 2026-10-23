@@ -33,6 +33,7 @@ import { DealAnalytics } from './DealRoom'
 import DevelopmentGallery from './DevelopmentGallery'
 import AuctionBidDrawer from '../../components/AuctionBidDrawer'
 import DevelopmentProjectHeader from './DevelopmentProjectHeader'
+import DevelopmentLoginGate from './DevelopmentLoginGate'
 import DevelopmentFundingOverview from './DevelopmentFundingOverview'
 import DevelopmentProjectResources from './DevelopmentProjectResources'
 import DevelopmentProjectJourney from './DevelopmentProjectJourney'
@@ -168,9 +169,12 @@ export default function DevelopmentPages({ mine = false }) {
       className={`buy-now-page dev-site${slug ? ' dev-site--project property-detail-page-new--auction-desktop-v3' : ''}`}
     >
       {slug ? (
-        <DevelopmentProjectHeader
-          project={data && !Array.isArray(data) ? data : null}
-        />
+        <>
+          <DevelopmentProjectHeader
+            project={data && !Array.isArray(data) ? data : null}
+          />
+          <DevelopmentLoginGate />
+        </>
       ) : (
         <Header />
       )}
@@ -369,7 +373,17 @@ function DevelopmentProject({ project: p, onChange }) {
                 </button>
               </form>
             )}
-            {nextStage && (
+            {nextStage === 'fundraising' && p.published ? (
+              <button
+                type="button"
+                className="dev-button"
+                disabled={busy}
+                onClick={() => act('/stage', { stage: nextStage })}
+              >
+                {t('develop.nextStage')}: {t(`develop.stage_${nextStage}`)}
+              </button>
+            ) : null}
+            {nextStage && nextStage !== 'fundraising' ? (
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
@@ -388,7 +402,7 @@ function DevelopmentProject({ project: p, onChange }) {
                   {t('develop.nextStage')}: {t(`develop.stage_${nextStage}`)}
                 </button>
               </form>
-            )}
+            ) : null}
             {p.stage === 'fundraising' && !p.funded && (
               <form
                 onSubmit={(e) => {

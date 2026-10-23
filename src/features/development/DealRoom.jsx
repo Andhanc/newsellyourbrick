@@ -118,7 +118,7 @@ export function DealAnalytics({ assetKey, currency = 'EUR' }) {
           ))}
           <h3>Buyer Passport</h3>
           {!data.buyers.length && <p>{t('develop.noSharedPassports')}</p>}
-          <div className="dev-card-grid">
+          <div className="dev-card-grid dev-card-grid--passports">
             {data.buyers.map((b) => (
               <article key={b.user_id} className="dev-buyer">
                 <h4>{b.name}</h4>

@@ -1596,8 +1596,11 @@ export default function OwnerAddPropertyTestPage() {
         listingMode={form.listingMode}
         listingErrors={listingErrors}
         onSelectListingMode={(modeId) => {
-          if (modeId === 'development') return
-          updateField('listingMode', modeId)
+          setForm((prev) => ({
+            ...prev,
+            listingMode: modeId,
+            ...(modeId === 'development' ? { testDrive: 'no', sellerGoal: 'partner' } : {}),
+          }))
           setListingErrors((prev) => {
             if (!prev.listingMode) return prev
             const next = { ...prev }

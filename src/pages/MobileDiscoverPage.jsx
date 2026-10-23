@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useSession, useUser } from '@clerk/clerk-react'
@@ -134,6 +134,8 @@ export default function MobileDiscoverPage() {
   const navigate = useNavigate()
   const shellRef = useRef(null)
   const stageScrollRef = useRef(null)
+  const launchSliderRef = useRef(null)
+  const launchScrollLeftRef = useRef(null)
   const lotteryDialogRef = useRef(null)
   const lotteryTriggerRef = useRef(null)
   const catalogSentinelRef = useRef(null)
@@ -161,6 +163,26 @@ export default function MobileDiscoverPage() {
 
   const saleCards = getSaleCards(t)
   const launchCards = getLaunchCards(t)
+
+  const scrollLaunchTo = useCallback((index) => {
+    const rail = launchSliderRef.current
+    if (!rail) return
+    const count = rail.querySelectorAll('.md-launch__item').length
+    const maxScroll = Math.max(0, rail.scrollWidth - rail.clientWidth)
+    const left = count <= 1 || maxScroll <= 0 ? 0 : (index / (count - 1)) * maxScroll
+    launchScrollLeftRef.current = left
+    rail.style.scrollSnapType = 'none'
+    rail.scrollLeft = left
+    setActiveLaunchCard(index)
+  }, [])
+
+  useLayoutEffect(() => {
+    const rail = launchSliderRef.current
+    const left = launchScrollLeftRef.current
+    if (!rail || left == null) return
+    rail.style.scrollSnapType = 'none'
+    if (Math.abs(rail.scrollLeft - left) > 1) rail.scrollLeft = left
+  }, [activeLaunchCard])
 
   useEffect(() => {
     if (!lotteryComingSoonOpen) return undefined
@@ -588,7 +610,12 @@ export default function MobileDiscoverPage() {
               <span>{t('discoverPage_launchTitleLine2')}</span>
             </h2>
             <div
+              ref={launchSliderRef}
               className="md-launch__slider"
+              onPointerDown={(event) => {
+                launchScrollLeftRef.current = null
+                if (event.currentTarget.style.scrollSnapType) event.currentTarget.style.scrollSnapType = ''
+              }}
               onScroll={(event) => {
                 const rail = event.currentTarget
                 const maxScroll = rail.scrollWidth - rail.clientWidth
@@ -618,9 +645,16 @@ export default function MobileDiscoverPage() {
                 ))}
               </div>
             </div>
-            <div className="md-launch__dots" role="img" aria-label={t('discoverPage_sliderCount', { count: launchCards.length })}>
+            <div className="md-launch__dots" role="group" aria-label={t('discoverPage_sliderCount', { count: launchCards.length })}>
               {launchCards.map((card, index) => (
-                <span key={card.id} className={`md-launch__dot${index === activeLaunchCard ? ' is-active' : ''}`} aria-hidden="true" />
+                <button
+                  key={card.id}
+                  type="button"
+                  className={`md-launch__dot${index === activeLaunchCard ? ' is-active' : ''}`}
+                  aria-label={card.title}
+                  aria-current={index === activeLaunchCard ? 'true' : undefined}
+                  onClick={() => scrollLaunchTo(index)}
+                />
               ))}
             </div>
             <svg className="md-launch__wave" viewBox="0 0 736 80" preserveAspectRatio="none" aria-hidden="true">

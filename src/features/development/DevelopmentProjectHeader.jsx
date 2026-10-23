@@ -42,6 +42,21 @@ export default function DevelopmentProjectHeader({ project }) {
     observer.observe(heading)
     return () => observer.disconnect()
   }, [project?.id])
+  const signedIn = isAuthenticated() || (isLoaded && user)
+  const openAccount = () => {
+    if (signedIn) navigate(getCabinetProfilePath())
+    else requestOpenLoginModal({ wizard: true })
+  }
+  const accountButton = (
+    <button
+      type="button"
+      className="property-detail-gallery__action-btn"
+      onClick={openAccount}
+      aria-label={signedIn ? t('profile') : t('loginButton')}
+    >
+      <FiUser size={20} />
+    </button>
+  )
   const share = async () => {
     const url = `${window.location.origin}/development/${encodeURIComponent(project.slug)}`
     try {
@@ -88,6 +103,7 @@ export default function DevelopmentProjectHeader({ project }) {
             </span>
           </div>
           <div className="property-detail-auction-mobile-header__actions">
+            {accountButton}
             {shareButton}
           </div>
         </div>
@@ -105,11 +121,7 @@ export default function DevelopmentProjectHeader({ project }) {
             <button
               type="button"
               className="pd-v3-topbar__profile"
-              onClick={() => {
-                if (isAuthenticated() || (isLoaded && user))
-                  navigate(getCabinetProfilePath())
-                else requestOpenLoginModal({ wizard: true })
-              }}
+              onClick={openAccount}
             >
               <span className="pd-v3-topbar__avatar" aria-hidden="true">
                 {photo ? (

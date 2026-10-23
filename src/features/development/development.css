@@ -118,6 +118,9 @@
 }
 /* Two projects per row, matching the other strategy catalogues. */
 .dev-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.dev-card-grid.dev-card-grid--passports {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+}
 .dev-listing-card { min-width: 0; container-type: inline-size; }
 .dev-listing-card a { text-decoration: none; }
 .dev-card-grid .dev-listing-card__media { max-height: 260px !important; }

@@ -92,8 +92,15 @@ test(
       assert.equal(p.published, false)
       assert.equal((await req(`/projects/${p.id}`, null)).status, 404)
       assert.equal((await req(`/projects/${p.id}/publish`, stranger, 'POST', {})).status, 404)
-      assert.equal((await req(`/projects/${p.id}/publish`, seller, 'POST', {})).status, 200)
+      const published = await req(`/projects/${p.id}/publish`, seller, 'POST', {})
+      assert.equal(published.status, 200)
+      assert.equal(published.data.published, true)
+      assert.equal(published.data.stage, 'fundraising')
       assert.equal((await req(`/projects/${p.id}`, null)).data.funded, 0)
+      assert.equal(
+        (await req('/projects', null)).data.some((item) => item.id === p.id),
+        true,
+      )
       assert.equal(
         (
           await req(`/projects/${p.id}/stage`, seller, 'POST', {
@@ -110,7 +117,7 @@ test(
             note: 'Funding opened',
           })
         ).status,
-        200,
+        409,
       )
       assert.equal(
         (await req(`/projects/${p.id}/interest`, buyer, 'POST', { amount: 10000 })).status,

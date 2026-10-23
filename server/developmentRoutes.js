@@ -48,11 +48,17 @@ async function userFor(req, required = true) {
   if ((!user || user.is_blocked) && required) throw fail(401, 'loginRequired')
   return user?.is_blocked ? null : user
 }
+function investorReady(project) {
+  return (
+    project.stage !== 'land' && !Object.keys(validateDevelopment(project.terms || {})).length
+  )
+}
 async function projectFor(id, user, owner = false, db = getPrisma()) {
   const p = await db.development_projects.findFirst({
     where: integer(id) ? { id: Number(id) } : { slug: String(id) },
   })
-  if (!p || (!p.published && p.owner_id !== user?.id)) throw fail(404, 'notFound')
+  const visible = p && p.published && investorReady(p)
+  if (!p || (!visible && p.owner_id !== user?.id)) throw fail(404, 'notFound')
   if (owner && p.owner_id !== user?.id) throw fail(403, 'forbidden')
   if (owner && !['seller', 'owner'].includes(user?.role)) throw fail(403, 'sellerRequired')
   return p
@@ -149,7 +155,8 @@ export function registerDevelopmentRoutes(app) {
         orderBy: { created_at: 'desc' },
         take: 100,
       })
-      res.json({ success: true, data: await Promise.all(rows.map((p) => summarizeProject(p))) })
+      const visible = user ? rows : rows.filter((p) => investorReady(p))
+      res.json({ success: true, data: await Promise.all(visible.map((p) => summarizeProject(p))) })
     }),
   )
   router.get(
@@ -299,9 +306,26 @@ export function registerDevelopmentRoutes(app) {
             update: { current_model: 'development', history, updated_at: new Date() },
           })
         }
+        const openingInvestors = p.stage === 'land'
         return db.development_projects.update({
           where: { id: p.id },
-          data: { published: true, updated_at: new Date() },
+          data: {
+            published: true,
+            ...(openingInvestors
+              ? {
+                  stage: 'fundraising',
+                  history: [
+                    ...p.history,
+                    {
+                      stage: 'fundraising',
+                      at: new Date().toISOString(),
+                      actor: user.id,
+                    },
+                  ],
+                }
+              : {}),
+            updated_at: new Date(),
+          },
         })
       })
       res.json({ success: true, data: await summarizeProject(result) })
@@ -319,8 +343,10 @@ export function registerDevelopmentRoutes(app) {
         const summary = await summarizeProject(p, db)
         if (next === 'construction' && summary.funded < Number(p.terms.requiredCapital))
           throw fail(409, 'fundingIncomplete')
+        if (next === 'fundraising' && !investorReady({ ...p, stage: 'fundraising' }))
+          throw fail(400, 'requiredFields')
         const note = text(req.body.note)
-        if (!note) throw fail(400, 'evidenceRequired')
+        if (next !== 'fundraising' && !note) throw fail(400, 'evidenceRequired')
         return db.development_projects.update({
           where: { id: p.id },
           data: {

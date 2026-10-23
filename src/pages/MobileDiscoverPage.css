@@ -4287,7 +4287,10 @@ body .md-site-nav.is-compact .new-header.new-header .new-header__container.new-h
 
 .md-launch__slider {
   box-sizing: border-box;
+  align-self: stretch;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   margin-top: 38px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
@@ -4496,29 +4499,53 @@ body .md-site-nav.is-compact .new-header.new-header .new-header__container.new-h
   }
 }
 
-/* Launch pagination counts all five cards without adding competing controls. */
 .md-launch__dots {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  height: 8px;
-  margin-top: 19px;
+  gap: 8px;
+  margin-top: 16px;
 }
 
 .md-launch__dot {
+  position: relative;
   display: block;
-  width: 6px;
-  height: 6px;
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
   border-radius: 999px;
+  appearance: none;
   background: #ffffff;
   opacity: 0.65;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   transition: width 160ms ease, opacity 160ms ease;
 }
 
+.md-launch__dot::before {
+  content: "";
+  position: absolute;
+  inset: -11px -6px;
+}
+
 .md-launch__dot.is-active {
-  width: 17px;
+  width: 22px;
   opacity: 1;
+}
+
+.md-launch__dot:hover {
+  opacity: 0.9;
+}
+
+.md-launch__dot.is-active:hover {
+  opacity: 1;
+}
+
+.md-launch__dot:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 4px;
 }
 
 .md-stage__search,

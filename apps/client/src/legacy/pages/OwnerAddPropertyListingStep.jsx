@@ -3,7 +3,6 @@ import { Lightbulb, Check } from 'lucide-react'
 import SectionInfoDrawer from '../components/SectionInfoDrawer'
 import OapWizardSidebarImage from '../components/OapWizardSidebarImage'
 import { OAP_LISTING_IMAGES } from './oapListingImages'
-import { showNotification } from '../utils/toastHelper'
 import './OwnerAddPropertyListingStep.css'
 
 const LISTING_MODE_META = {
@@ -65,34 +64,18 @@ function ListingModesList({ listingModes, listingMode, errors, onSelectMode }) {
           const meta = LISTING_MODE_META[mode.id] || LISTING_MODE_META.auction
           const tone = mode.tone || meta.tone
           const isActive = listingMode === mode.id
-          const isComingSoon = mode.id === 'development'
-
-          const handleSelect = () => {
-            if (isComingSoon) {
-              showNotification({
-                type: 'info',
-                title: t('oap_developmentComingSoonTitle'),
-                message: t('oap_developmentComingSoonDescription'),
-                duration: 5000,
-                dedupeKey: 'oap-development-coming-soon',
-              })
-              return
-            }
-            onSelectMode(mode.id)
-          }
 
           return (
             <div
               key={mode.id}
-              className={`oap-listing-step__mode-shell oap-listing-step__mode-shell--${tone}${isActive ? ' oap-listing-step__mode-shell--active' : ''}${isComingSoon ? ' oap-listing-step__mode-shell--coming-soon' : ''}`}
+              className={`oap-listing-step__mode-shell oap-listing-step__mode-shell--${tone}${isActive ? ' oap-listing-step__mode-shell--active' : ''}`}
             >
               <button
                 type="button"
                 role="radio"
                 aria-checked={isActive}
-                aria-disabled={isComingSoon}
                 className={`oap-listing-step__mode oap-listing-step__mode--illustrated oap-listing-step__mode--${tone}${isActive ? ' oap-listing-step__mode--active' : ''}`}
-                onClick={handleSelect}
+                onClick={() => onSelectMode(mode.id)}
               >
                 <span className="oap-listing-step__mode-visual" aria-hidden="true">
                   <img src={meta.image} alt="" width="128" height="128" loading="lazy" />
@@ -104,17 +87,12 @@ function ListingModesList({ listingModes, listingMode, errors, onSelectMode }) {
                 <span className="oap-listing-step__mode-mark" aria-hidden>
                   {isActive ? <Check size={12} strokeWidth={2.5} /> : null}
                 </span>
-                {isComingSoon ? (
-                  <span className="oap-listing-step__mode-coming-soon">
-                    {t('oap_developmentComingSoonBadge')}
-                  </span>
-                ) : null}
               </button>
               <button
                 type="button"
                 className={`oap-listing-step__mode-action${isActive ? ' oap-listing-step__mode-action--selected' : ''}`}
-                aria-label={`${t(isActive ? 'oap_saleFormatSelected' : 'oap_saleFormatChoose')}: ${mode.label}${isComingSoon ? `. ${t('oap_developmentComingSoonTitle')}` : ''}`}
-                onClick={handleSelect}
+                aria-label={`${t(isActive ? 'oap_saleFormatSelected' : 'oap_saleFormatChoose')}: ${mode.label}`}
+                onClick={() => onSelectMode(mode.id)}
               >
                 {isActive ? <Check size={14} strokeWidth={2.5} aria-hidden /> : null}
                 {t(isActive ? 'oap_saleFormatSelected' : 'oap_saleFormatChoose')}
