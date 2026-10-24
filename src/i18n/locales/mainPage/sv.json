@@ -1953,6 +1953,8 @@
   "propertyDetailCommercialType": "Kommersiell typ",
   "propertyDetailBusinessHours": "Öppettider",
   "propertyDetailRoomsLabel": "Rum",
+  "propertyDetailPortfolioUnitsLabel": "Lägenheter",
+  "propertyDetailFloorsRangeLabel": "Våningar",
   "propertyDetailFloorLabel": "Våning",
   "propertyDetailFloorOfTotal": "{{floor}} av {{total}}",
   "propertyDetailTotalFloorsShort": "Våningar i byggnaden",

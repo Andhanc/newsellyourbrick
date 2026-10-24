@@ -1,4 +1,5 @@
 import { isPropertyPresentation } from '../utils/propertyPresentation'
+import { getSharePortfolioFacts } from '../utils/sharePortfolioFacts'
 import { useState, useRef, useEffect, useMemo, useCallback, Fragment, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation, Trans } from 'react-i18next'
@@ -3275,9 +3276,12 @@ function PropertyDetailClassic({
           : '—'
       )
     } else {
+      const portfolio = getSharePortfolioFacts(displayProperty)
       pushItem(
-        t('propertyDetailRoomsLabel'),
-        displayProperty.rooms || displayProperty.beds || displayProperty.bedrooms || '—'
+        portfolio ? t('propertyDetailPortfolioUnitsLabel') : t('propertyDetailRoomsLabel'),
+        portfolio
+          ? portfolio.units
+          : displayProperty.rooms || displayProperty.beds || displayProperty.bedrooms || '—'
       )
       pushItem(
         t('addPropertyDetailsAreaLabel'),
@@ -3295,10 +3299,12 @@ function PropertyDetailClassic({
       }
       pushItem(t('addPropertyDetailsBathroomsShortLabel'), displayProperty.bathrooms || '—')
       pushItem(
-        t('propertyDetailFloorLabel'),
-        displayProperty.floor !== undefined && displayProperty.floor !== null
-          ? displayProperty.floor
-          : '—'
+        portfolio?.floorsLabel ? t('propertyDetailFloorsRangeLabel') : t('propertyDetailFloorLabel'),
+        portfolio?.floorsLabel
+          ? portfolio.floorsLabel
+          : displayProperty.floor !== undefined && displayProperty.floor !== null
+            ? displayProperty.floor
+            : '—'
       )
       pushItem(
         t('propertyDetailTotalFloorsShort'),
@@ -3756,6 +3762,14 @@ function PropertyDetailClassic({
     const area = displayProperty.area || displayProperty.sqft
     if (area) {
       push('area', t('propertyDetailSpecsArea'), `${area} ${t('propertyDetailAreaUnit')}`, Maximize2)
+    }
+
+    const portfolio = getSharePortfolioFacts(displayProperty)
+    if (portfolio) {
+      push('units', t('propertyDetailPortfolioUnitsLabel'), portfolio.units, Building2)
+      if (portfolio.floorsLabel) {
+        push('floorRange', t('propertyDetailFloorsRangeLabel'), portfolio.floorsLabel, Layers)
+      }
     }
 
     if (isHouseOrVilla) {

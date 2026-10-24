@@ -252,25 +252,67 @@ export default function MobileDiscoverPage() {
     }
   }, [clearTimers])
 
-  /* iOS Safari Liquid Glass: белый html/body даёт непрозрачную нижнюю полоску.
-   * На hero сэмплируем цвет газона + theme-color, чтобы панель была прозрачной над фото. */
+  /* iPhone Safari: сплошной theme-color / фон body рисует непрозрачные плашки.
+   * На герое включаем прозрачное стекло и сдвигаем документ на runway,
+   * чтобы под статус-баром было небо, а под тулбаром — фото. */
   useEffect(() => {
     const root = document.documentElement
     const metas = Array.from(document.querySelectorAll('meta[name="theme-color"]'))
-    const HERO_CHROME = '#748f1d'
     const STAGE_CHROME = '#ffffff'
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    const narrowQuery = window.matchMedia('(max-width: 1023px)')
+    let frame = 0
+    let stuckAt = -1
 
-    if (screen === 'hero') {
-      root.classList.add('md-hero-chrome')
-      metas.forEach((meta) => meta.setAttribute('content', HERO_CHROME))
-    } else {
-      root.classList.remove('md-hero-chrome')
-      metas.forEach((meta) => meta.setAttribute('content', STAGE_CHROME))
+    const readRunway = () => {
+      const value = Number.parseFloat(getComputedStyle(root).getPropertyValue('--md-safari-runway'))
+      return Number.isFinite(value) && value > 0 ? value : 64
     }
 
+    const paintTheme = (color) => {
+      metas.forEach((meta) => meta.setAttribute('content', color))
+    }
+
+    const apply = () => {
+      const immersive = screen === 'hero' && ios && narrowQuery.matches
+      window.cancelAnimationFrame(frame)
+      if (!immersive) {
+        root.classList.remove('md-hero-chrome')
+        paintTheme(STAGE_CHROME)
+        window.scrollTo(0, 0)
+        return
+      }
+      root.classList.add('md-hero-chrome')
+      paintTheme('transparent')
+      frame = window.requestAnimationFrame(() => {
+        window.scrollTo(0, readRunway())
+      })
+    }
+
+    const pinScroll = () => {
+      if (!root.classList.contains('md-hero-chrome')) return
+      const runway = readRunway()
+      if (Math.abs(window.scrollY - runway) <= 1) {
+        stuckAt = -1
+        return
+      }
+      if (stuckAt === window.scrollY) return
+      stuckAt = window.scrollY
+      window.scrollTo(0, runway)
+    }
+
+    apply()
+    narrowQuery.addEventListener('change', apply)
+    window.addEventListener('scroll', pinScroll, { passive: true })
+
     return () => {
+      window.cancelAnimationFrame(frame)
+      narrowQuery.removeEventListener('change', apply)
+      window.removeEventListener('scroll', pinScroll)
       root.classList.remove('md-hero-chrome')
-      metas.forEach((meta) => meta.setAttribute('content', STAGE_CHROME))
+      paintTheme(STAGE_CHROME)
+      window.scrollTo(0, 0)
     }
   }, [screen])
 
@@ -577,8 +619,8 @@ export default function MobileDiscoverPage() {
             <div className="md-hero__veil" />
           </div>
 
-          {/* Safari 26 сэмплирует fixed у нижнего края для tint нижней панели */}
-          <div className="md-hero__safari-tint" aria-hidden="true" />
+          <div className="md-hero__safari-clear md-hero__safari-clear--top" aria-hidden="true" />
+          <div className="md-hero__safari-clear" aria-hidden="true" />
 
           <button
             type="button"

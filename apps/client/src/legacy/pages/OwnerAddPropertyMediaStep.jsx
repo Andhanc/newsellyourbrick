@@ -4,7 +4,7 @@ import { Camera, Upload, Video, X, ImagePlus, Youtube, HardDrive, Plus, AlertTri
 import { getYouTubeVideoId, getGoogleDriveVideoId } from '../utils/oapVideoHelpers'
 
 const MAX_PHOTO_SIZE = 10 * 1024 * 1024
-const MAX_PHOTOS = 10
+const MAX_PHOTOS = 20
 const MAX_VIDEOS = 3
 const MAX_VIDEO_DURATION = 60
 

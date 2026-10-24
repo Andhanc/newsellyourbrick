@@ -1953,6 +1953,8 @@
   "propertyDetailCommercialType": "Type commercial",
   "propertyDetailBusinessHours": "Heures d'ouverture",
   "propertyDetailRoomsLabel": "Pièces",
+  "propertyDetailPortfolioUnitsLabel": "Appartements",
+  "propertyDetailFloorsRangeLabel": "Étages",
   "propertyDetailFloorLabel": "Étage",
   "propertyDetailFloorOfTotal": "{{floor}} sur {{total}}",
   "propertyDetailTotalFloorsShort": "Étages dans l'immeuble",

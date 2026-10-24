@@ -1953,6 +1953,8 @@
   "propertyDetailCommercialType": "Tipo comercial",
   "propertyDetailBusinessHours": "Horario",
   "propertyDetailRoomsLabel": "Habitaciones",
+  "propertyDetailPortfolioUnitsLabel": "Apartamentos",
+  "propertyDetailFloorsRangeLabel": "Plantas",
   "propertyDetailFloorLabel": "Piso",
   "propertyDetailFloorOfTotal": "{{floor}} de {{total}}",
   "propertyDetailTotalFloorsShort": "Pisos en el edificio",

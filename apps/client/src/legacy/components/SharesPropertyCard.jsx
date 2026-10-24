@@ -13,6 +13,7 @@ import {
 } from '../utils/sharesMarketplacePresentation'
 import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
 import { getShareBuyNowAvailability } from '../utils/shareBuyNow'
+import { getSharePortfolioFacts } from '../utils/sharePortfolioFacts'
 import './SharesPropertyCard.css'
 
 const CARD_IMAGE_FALLBACK = publicAsset('images/co-investment/co-investment-card-fallback.png')
@@ -61,10 +62,13 @@ function SharesPropertyCard({
       : '—'
 
   const cardSpecs = useMemo(() => {
+    const portfolio = getSharePortfolioFacts(cardShare)
     const areaValue = cardShare.area || cardShare.sqft
-    const roomsValue = cardShare.rooms || cardShare.beds || cardShare.bedrooms
-    const floorsValue =
-      cardShare.total_floors || cardShare.totalFloors || cardShare.floors || cardShare.floor
+    const roomsValue = portfolio?.units || cardShare.rooms || cardShare.beds || cardShare.bedrooms
+    const roomsLabel = portfolio ? t('propertyDetailPortfolioUnitsLabel') : t('propertyDetailRoomsLabel')
+    const floorsValue = portfolio
+      ? null
+      : cardShare.total_floors || cardShare.totalFloors || cardShare.floors || cardShare.floor
 
     const propertySpecs = [
       areaValue
@@ -80,7 +84,7 @@ function SharesPropertyCard({
             key: 'rooms',
             icon: <MdBed size={15} aria-hidden />,
             value: String(roomsValue),
-            label: t('propertyDetailRoomsLabel'),
+            label: roomsLabel,
           }
         : null,
       floorsValue

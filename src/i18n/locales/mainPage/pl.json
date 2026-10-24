@@ -2126,6 +2126,8 @@
   "propertyDetailCommercialType": "Commercial type",
   "propertyDetailBusinessHours": "Business hours",
   "propertyDetailRoomsLabel": "Rooms",
+  "propertyDetailPortfolioUnitsLabel": "Mieszkania",
+  "propertyDetailFloorsRangeLabel": "Piętra",
   "propertyDetailFloorLabel": "Floor",
   "propertyDetailFloorOfTotal": "{{floor}} of {{total}}",
   "propertyDetailTotalFloorsShort": "Floors in building",

@@ -1954,6 +1954,8 @@
   "propertyDetailCommercialType": "Gewerbetyp",
   "propertyDetailBusinessHours": "Geschäftszeiten",
   "propertyDetailRoomsLabel": "Zimmer",
+  "propertyDetailPortfolioUnitsLabel": "Wohnungen",
+  "propertyDetailFloorsRangeLabel": "Etagen",
   "propertyDetailFloorLabel": "Etage",
   "propertyDetailFloorOfTotal": "{{floor}} von {{total}}",
   "propertyDetailTotalFloorsShort": "Etagen im Gebäude",

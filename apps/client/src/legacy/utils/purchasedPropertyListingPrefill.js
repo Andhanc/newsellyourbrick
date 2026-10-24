@@ -50,7 +50,7 @@ export function buildPhotosFromProperty(property) {
   const urls = (Array.isArray(raw) ? raw : [])
     .map((item) => (typeof item === 'string' ? item : item?.url || item?.src || ''))
     .filter(Boolean)
-  return urls.slice(0, 10).map((url, index) => ({
+  return urls.slice(0, 20).map((url, index) => ({
     id: `purchased-photo-${index}-${Date.now()}`,
     preview: url,
     fromPurchased: true,

@@ -654,10 +654,10 @@ export default function OwnerAddPropertyTestPage() {
   const addPhotoLink = useCallback((photo) => {
     if (!photo?.preview) return false
     setPhotos((prev) => {
-      if (prev.length >= 10) return prev
+      if (prev.length >= 20) return prev
       return [...prev, photo]
     })
-    return photos.length < 10
+    return photos.length < 20
   }, [photos.length])
 
   const removePhoto = useCallback((id) => {

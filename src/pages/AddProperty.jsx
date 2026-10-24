@@ -1305,7 +1305,7 @@ const AddProperty = ({
 
   const handlePhotoUpload = (e) => {
     const files = Array.from(e.target.files)
-    const remainingSlots = 10 - photos.length
+    const remainingSlots = 20 - photos.length
     
     if (files.length > remainingSlots) {
       showNotification(`Можно загрузить максимум ${remainingSlots} фото`)
@@ -4724,7 +4724,7 @@ const AddProperty = ({
     const files = Array.from(e.dataTransfer.files)
     const imageFiles = files.filter(file => file.type.startsWith('image/'))
     if (imageFiles.length > 0) {
-      const remainingSlots = 10 - photos.length
+      const remainingSlots = 20 - photos.length
       if (imageFiles.length > remainingSlots) {
         showNotification(`Можно загрузить максимум ${remainingSlots} фото`)
         return
@@ -6316,7 +6316,7 @@ const AddProperty = ({
                     >
                       <div className="sp-card__collapsible-body">
                     <div className="single-page-add-flow__stats sp-stats">
-                      <span>Фото: {photos.length}/10</span>
+                      <span>Фото: {photos.length}/20</span>
                       <span>Видео: {videos.length}/3</span>
                     </div>
                     <div className="single-page-add-flow__upload-row sp-actions">
@@ -8869,7 +8869,7 @@ const AddProperty = ({
 
               {/* Кнопки для загрузки фото, видео и ссылок */}
               <div className="photos-additional-options">
-                {photos.length < 10 && (
+                {photos.length < 20 && (
                   <button
                     type="button"
                     className="photos-option-btn photos-option-btn--photo"
@@ -8877,7 +8877,7 @@ const AddProperty = ({
                   >
                     <FiUpload size={20} />
                     {t('addPropertyPhotosAddPhoto')}
-                    <span className="photos-option-count">{photos.length}/10</span>
+                    <span className="photos-option-count">{photos.length}/20</span>
                   </button>
                 )}
                 {videos.length < 3 && (

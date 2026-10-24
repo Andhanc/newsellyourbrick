@@ -2225,6 +2225,8 @@
   "propertyDetailCommercialType": "Commercial type",
   "propertyDetailBusinessHours": "Business hours",
   "propertyDetailRoomsLabel": "Rooms",
+  "propertyDetailPortfolioUnitsLabel": "Apartments",
+  "propertyDetailFloorsRangeLabel": "Floors",
   "propertyDetailFloorLabel": "Floor",
   "propertyDetailFloorOfTotal": "{{floor}} of {{total}}",
   "propertyDetailTotalFloorsShort": "Floors in building",

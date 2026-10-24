@@ -19,16 +19,72 @@
   background: #ffffff;
 }
 
-/* Hero: Safari/Chrome берут цвет нижней панели с html/body — совпадаем с газоном фото */
-html.md-hero-chrome,
-html.md-hero-chrome body,
+/* iPhone Safari Liquid Glass. Сплошной цвет на html/body и fixed-семплер
+   красят статус-бар и нижнюю панель непрозрачными полосами. На герое документ
+   чуть выше экрана и прокручен на runway: стекло компонует само небо и фото. */
+html.md-hero-chrome {
+  --md-safari-top: 64px;
+  --md-safari-bottom: 132px;
+  --md-safari-runway: var(--md-safari-top);
+  height: auto !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: scroll !important;
+  overscroll-behavior: none;
+  background-color: var(--md-sky, #4ecdd6) !important;
+}
+
+html.md-hero-chrome body {
+  height: auto !important;
+  max-height: none !important;
+  min-height: calc(100dvh + var(--md-safari-runway));
+  overflow: visible !important;
+  background-color: var(--md-sky, #4ecdd6) !important;
+}
+
 html.md-hero-chrome #root,
+html.md-hero-chrome #root > *,
 html.md-hero-chrome .app-root-fill,
 html.md-hero-chrome .app-shell,
 html.md-hero-chrome .app-layout,
 html.md-hero-chrome .app-layout--mobile-discover,
+html.md-hero-chrome .app-layout__content,
+html.md-hero-chrome .md-discover-ai-floats {
+  display: block !important;
+  flex: none !important;
+  height: auto !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  background-color: transparent !important;
+}
+
 html.md-hero-chrome .md {
-  background-color: var(--md-hero-chrome, #748f1d) !important;
+  height: 100dvh;
+  min-height: 100dvh;
+  margin-top: var(--md-safari-runway);
+  overflow: visible !important;
+  background: transparent !important;
+  touch-action: none;
+}
+
+html.md-hero-chrome .md-hero {
+  height: calc(100dvh + var(--md-safari-top) + var(--md-safari-bottom));
+  margin-top: calc(-1 * var(--md-safari-top));
+}
+
+html.md-hero-chrome .md-hero__copy {
+  padding-top: calc(clamp(5.25rem, 15vh, 7.5rem) + var(--md-safari-top));
+}
+
+html.md-hero-chrome .md-hero__visual {
+  top: calc(var(--md-safari-top) + 34dvh);
+  bottom: auto;
+  height: calc(66dvh + var(--md-safari-bottom));
+}
+
+html.md-hero-chrome .md-hero__scroll {
+  bottom: calc(1.25rem + var(--md-safe-bottom) + var(--md-safari-bottom));
 }
 
 .md {
@@ -40,7 +96,6 @@ html.md-hero-chrome .md {
   --md-ink-soft: #8b95a7;
   --md-ink-muted: #64748b;
   --md-white: #ffffff;
-  --md-hero-chrome: #748f1d;
   --md-radius-card: 26px;
   --md-radius-pill: 9999px;
   --md-safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -169,7 +224,6 @@ html.md-hero-chrome .md {
   position: absolute;
   left: 0;
   right: 0;
-  /* Bleed under iOS Safari bottom chrome so Liquid Glass samples the lawn */
   bottom: calc(-1 * (var(--md-safe-bottom) + 96px));
   z-index: 1;
   height: calc(66% + var(--md-safe-bottom) + 96px);
@@ -194,18 +248,22 @@ html.md-hero-chrome .md {
   );
 }
 
-/* Fixed sampler for Safari 26 toolbar tint (must be near bottom, ≥80% wide, ≥3px) */
-.md-hero__safari-tint {
+/* Пустые fixed-кромки: Safari 26 берёт tint с background-color у края.
+   Без заливки статус-бар и тулбар остаются стеклом, а не цветной плашкой. */
+.md-hero__safari-clear {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 0;
+  z-index: 2;
   width: 100%;
-  min-height: 12px;
-  height: max(12px, var(--md-safe-bottom));
+  height: 6px;
   pointer-events: none;
-  background-color: var(--md-hero-chrome, #748f1d);
+}
+
+.md-hero__safari-clear--top {
+  top: 0;
+  bottom: auto;
 }
 
 .md-hero__image {

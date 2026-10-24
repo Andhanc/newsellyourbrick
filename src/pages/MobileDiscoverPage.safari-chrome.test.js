@@ -13,22 +13,28 @@ const legacyCss = await readFile(
   'utf8',
 )
 
-test('hero screen drives Safari bottom chrome via md-hero-chrome + lawn tint', () => {
+test('hero keeps iPhone Safari chrome transparent instead of a solid lawn plate', () => {
   assert.match(page, /md-hero-chrome/)
-  assert.match(page, /md-hero__safari-tint/)
-  assert.match(page, /HERO_CHROME\s*=\s*'#748f1d'/)
+  assert.match(page, /md-hero__safari-clear/)
+  assert.match(page, /paintTheme\('transparent'\)/)
+  assert.doesNotMatch(page, /#748f1d/)
+  assert.doesNotMatch(page, /md-hero__safari-tint/)
   assert.match(css, /html\.md-hero-chrome/)
-  assert.match(css, /--md-hero-chrome:\s*#748f1d/)
-  assert.match(css, /\.md-hero__safari-tint\s*\{/)
-  assert.match(css, /position:\s*fixed/)
-  assert.match(css, /bottom:\s*calc\(-1 \* \(var\(--md-safe-bottom\) \+ 96px\)\)/)
+  assert.match(css, /--md-safari-runway:\s*var\(--md-safari-top\)/)
+  assert.match(css, /margin-top:\s*calc\(-1 \* var\(--md-safari-top\)\)/)
+  assert.match(css, /\.md-hero__safari-clear\s*\{/)
+  assert.doesNotMatch(css, /#748f1d/)
+  assert.doesNotMatch(css, /\.md-hero__safari-tint/)
 })
 
 test('web and legacy MobileDiscover Safari chrome stay in parity', () => {
-  for (const needle of ['md-hero-chrome', 'md-hero__safari-tint', "#748f1d"]) {
+  for (const needle of ['md-hero-chrome', 'md-hero__safari-clear', "paintTheme('transparent')"]) {
     assert.match(page, new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
     assert.match(legacyPage, new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
   }
+  assert.doesNotMatch(legacyPage, /#748f1d/)
   assert.match(legacyCss, /html\.md-hero-chrome/)
-  assert.match(legacyCss, /\.md-hero__safari-tint\s*\{/)
+  assert.match(legacyCss, /--md-safari-runway:\s*var\(--md-safari-top\)/)
+  assert.match(legacyCss, /\.md-hero__safari-clear\s*\{/)
+  assert.doesNotMatch(legacyCss, /#748f1d/)
 })

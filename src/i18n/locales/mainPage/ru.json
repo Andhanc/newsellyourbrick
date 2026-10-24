@@ -2237,6 +2237,8 @@
   "propertyDetailCommercialType": "Тип коммерческой",
   "propertyDetailBusinessHours": "Часы работы",
   "propertyDetailRoomsLabel": "Комнаты",
+  "propertyDetailPortfolioUnitsLabel": "Квартир",
+  "propertyDetailFloorsRangeLabel": "Этажи",
   "propertyDetailFloorLabel": "Этаж",
   "propertyDetailFloorOfTotal": "{{floor}} из {{total}}",
   "propertyDetailTotalFloorsShort": "Этажность",
