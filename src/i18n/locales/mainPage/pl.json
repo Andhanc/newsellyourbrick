@@ -1,4 +1,9 @@
 {
+  "recordingConsentTitle": "Analityczne pliki cookie",
+  "recordingConsentBody": "Za Twoją zgodą używamy Microsoft Clarity do nagrywania kliknięć i przewijania, aby ulepszać stronę. Tekst i pola formularzy są maskowane. Możesz zmienić wybór w stopce; wyłączenie nagrywania spowoduje odświeżenie strony.",
+  "recordingConsentSettings": "Ustawienia plików cookie",
+  "recordingConsentAccept": "Akceptuję",
+  "recordingConsentDecline": "Odrzucam",
   "discoverPage_bannerBuyTitle": "Twój dom, bez czekania",
   "discoverPage_bannerBuyDescription": "Masz już swój wybór? Kupuj po stałej cenie, bez licytacji.",
   "discoverPage_bannerBuyCta": "Wybierz dom",

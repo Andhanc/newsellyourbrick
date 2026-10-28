@@ -1,4 +1,9 @@
 {
+  "recordingConsentTitle": "Analyscookies",
+  "recordingConsentBody": "Med ditt samtycke använder vi Microsoft Clarity för att spela in klick och rullning och förbättra webbplatsen. Text och inmatningsfält maskeras. Du kan ändra ditt val längst ned på sidan; om du stänger av inspelningen laddas sidan om.",
+  "recordingConsentSettings": "Cookieinställningar",
+  "recordingConsentAccept": "Acceptera",
+  "recordingConsentDecline": "Avvisa",
   "discoverPage_bannerBuyTitle": "Ditt hem, utan väntan",
   "discoverPage_bannerBuyDescription": "Hittat rätt bostad? Köp till fast pris, utan budgivning.",
   "discoverPage_bannerBuyCta": "Välj bostad",

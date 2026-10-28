@@ -1,4 +1,9 @@
 {
+  "recordingConsentTitle": "Аналитические cookie",
+  "recordingConsentBody": "С вашего согласия мы используем Microsoft Clarity для записи кликов и прокрутки, чтобы улучшать сайт. Текст и поля ввода скрыты. Выбор можно изменить внизу страницы; отключение записи перезагрузит страницу.",
+  "recordingConsentSettings": "Настройки cookie",
+  "recordingConsentAccept": "Принять",
+  "recordingConsentDecline": "Отклонить",
   "discoverPage_bannerBuyTitle": "Дом без ожидания",
   "discoverPage_bannerBuyDescription": "Нашли свой вариант? Покупайте по фиксированной цене, без торгов.",
   "discoverPage_bannerBuyCta": "Выбрать дом",

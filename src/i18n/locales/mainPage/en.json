@@ -1,4 +1,9 @@
 {
+  "recordingConsentTitle": "Analytics cookies",
+  "recordingConsentBody": "With your consent, we use Microsoft Clarity to record clicks and scrolling to improve the site. Text and input fields are masked. You can change your choice in the footer; turning recording off reloads the page.",
+  "recordingConsentSettings": "Cookie settings",
+  "recordingConsentAccept": "Accept",
+  "recordingConsentDecline": "Decline",
   "discoverPage_bannerBuyTitle": "Your home, no waiting",
   "discoverPage_bannerBuyDescription": "Found the right place? Buy at a fixed price, without bidding.",
   "discoverPage_bannerBuyCta": "Find a home",

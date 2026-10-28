@@ -5,6 +5,7 @@ import ClerkAuthSync from './components/ClerkAuthSync'
 import ToastContainer from './components/ToastContainer'
 import VisitorHeartbeat from './components/VisitorHeartbeat'
 import YandexMetrikaHits from './components/YandexMetrikaHits'
+import SessionRecording from './components/SessionRecording'
 import UserCabinetSseBridge from './components/UserCabinetSseBridge'
 import BiometricLockGate from './components/BiometricLockGate'
 import DepositVerificationGate from './components/DepositVerificationGate'
@@ -636,6 +637,7 @@ function App() {
       <ReturningVisitorSiteTracking />
       <VisitorHeartbeat />
       <YandexMetrikaHits />
+      <SessionRecording />
       <SessionValidator onBlockedChange={setIsBlocked} />
       <UserCabinetSseBridge />
       <PrivateClubKickModalHost />

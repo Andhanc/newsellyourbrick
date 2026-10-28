@@ -1,4 +1,9 @@
 {
+  "recordingConsentTitle": "Analyse-Cookies",
+  "recordingConsentBody": "Mit Ihrer Zustimmung verwenden wir Microsoft Clarity, um Klicks und Scrollbewegungen aufzuzeichnen und die Website zu verbessern. Texte und Eingabefelder werden maskiert. Sie können Ihre Auswahl unten auf der Seite ändern; beim Deaktivieren wird die Seite neu geladen.",
+  "recordingConsentSettings": "Cookie-Einstellungen",
+  "recordingConsentAccept": "Akzeptieren",
+  "recordingConsentDecline": "Ablehnen",
   "discoverPage_bannerBuyTitle": "Ihr Zuhause wartet",
   "discoverPage_bannerBuyDescription": "Das Richtige gefunden? Kaufen Sie zum Festpreis, ohne Bieterverfahren.",
   "discoverPage_bannerBuyCta": "Haus finden",

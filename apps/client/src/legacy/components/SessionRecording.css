@@ -1,0 +1,15 @@
+.footer__recording-settings {
+  border: 0;
+  background: transparent;
+  padding: 8px 0;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.footer__recording-settings:focus-visible {
+  outline: 2px solid #0099a9;
+  outline-offset: 4px;
+}
