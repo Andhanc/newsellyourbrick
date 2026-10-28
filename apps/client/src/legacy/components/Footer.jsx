@@ -18,6 +18,7 @@ import { isSoftLaunchFeatureBlocked } from '../utils/softLaunchAccess'
 import { getCabinetBookingsPath, getCabinetHistoryPath, getCabinetProfilePath } from '../utils/cabinetRoutes'
 import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
+import { openRecordingSettings } from '../utils/sessionRecording'
 
 const WHATSAPP_HREF = 'https://wa.me/447700183959'
 const WHATSAPP_QR_HREF = 'https://wa.me/qr/6PUPSH7LX2FLE1'
@@ -349,6 +350,9 @@ const Footer = () => {
         </div>
 
         <div className="footer__legal">
+          <button type="button" className="footer__recording-settings" onClick={openRecordingSettings}>
+            {t('recordingConsentSettings')}
+          </button>
           <p className="footer__copyright">
             {t('footerCopyright', { year: new Date().getFullYear() })}
           </p>

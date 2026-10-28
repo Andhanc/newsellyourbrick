@@ -1,4 +1,9 @@
 {
+  "recordingConsentTitle": "Cookies analytiques",
+  "recordingConsentBody": "Avec votre accord, nous utilisons Microsoft Clarity pour enregistrer les clics et le défilement afin d’améliorer le site. Les textes et champs de saisie sont masqués. Vous pouvez modifier votre choix en bas de page ; la désactivation de l’enregistrement recharge la page.",
+  "recordingConsentSettings": "Paramètres des cookies",
+  "recordingConsentAccept": "Accepter",
+  "recordingConsentDecline": "Refuser",
   "discoverPage_bannerBuyTitle": "Chez vous, sans attendre",
   "discoverPage_bannerBuyDescription": "Le bien idéal est trouvé ? Achetez à prix fixe, sans enchères.",
   "discoverPage_bannerBuyCta": "Choisir un bien",

@@ -1,4 +1,9 @@
 {
+  "recordingConsentTitle": "Cookies de análisis",
+  "recordingConsentBody": "Con tu consentimiento, usamos Microsoft Clarity para grabar clics y desplazamientos y mejorar el sitio. El texto y los campos de entrada se ocultan. Puedes cambiar tu elección al pie de la página; al desactivar la grabación, la página se recargará.",
+  "recordingConsentSettings": "Configuración de cookies",
+  "recordingConsentAccept": "Aceptar",
+  "recordingConsentDecline": "Rechazar",
   "discoverPage_bannerBuyTitle": "Tu casa, sin esperar",
   "discoverPage_bannerBuyDescription": "¿Encontraste tu hogar? Compra a precio fijo, sin pujas.",
   "discoverPage_bannerBuyCta": "Elegir casa",
