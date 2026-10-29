@@ -9,7 +9,7 @@
 export const SOFT_LAUNCH_ENABLED = true
 
 /** When true, viewports at/above MOBILE_ONLY_MIN_DESKTOP_WIDTH see a desktop-unavailable page. */
-export const MOBILE_ONLY_ENABLED = false
+export const MOBILE_ONLY_ENABLED = true
 
 /** Match useIsMobile (768): desktop starts at this width. */
 export const MOBILE_ONLY_MIN_DESKTOP_WIDTH = 768
