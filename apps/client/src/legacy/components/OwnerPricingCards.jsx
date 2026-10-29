@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, Check, CreditCard } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import './OwnerPricingCards.css'
+import { getUiIntlLocale } from '../utils/uiIntlLocale'
 
 const YEARLY_DISCOUNT = 0.2
 const FREE_COMPARE_PRICE = 99
@@ -9,7 +10,7 @@ const FREE_COMPARE_PRICE = 99
 const PLAN_ORDER = ['standard', 'pro', 'institutional']
 
 function formatEuro(amount) {
-  return amount.toLocaleString('ru-RU')
+  return amount.toLocaleString(getUiIntlLocale())
 }
 
 function PlanPrice({ monthlyPrice, compareAtPrice, isYearly, perMonthSuffix, yearlyDiscount = YEARLY_DISCOUNT }) {

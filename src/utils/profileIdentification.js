@@ -30,12 +30,20 @@ export function isValidSpainDniNie(value) {
   return dniRegex.test(normalized) || nieRegex.test(normalized)
 }
 
-export function getIdentificationLabelByCountry(countryName) {
-  return isSpainCountry(countryName) ? 'DNI или NIE' : 'Идентификационный номер'
+/** i18n key for the identification field label. */
+export function getIdentificationLabelKeyByCountry(countryName) {
+  return isSpainCountry(countryName) ? 'buyerData_labelDniNie' : 'buyerData_labelIdNumber'
 }
 
-export const INVALID_SPAIN_DNI_NIE_MESSAGE =
-  'Для Испании укажите корректный DNI или NIE (например: 12345678Z или X1234567L).'
+/** @deprecated use getIdentificationLabelKeyByCountry + t() */
+export function getIdentificationLabelByCountry(countryName) {
+  return getIdentificationLabelKeyByCountry(countryName)
+}
+
+export const INVALID_SPAIN_DNI_NIE_MESSAGE_KEY = 'buyerData_invalidDniNie'
+
+/** @deprecated use INVALID_SPAIN_DNI_NIE_MESSAGE_KEY + t() */
+export const INVALID_SPAIN_DNI_NIE_MESSAGE = INVALID_SPAIN_DNI_NIE_MESSAGE_KEY
 
 export function normalizeIdentificationInput(value, countryName) {
   const raw = String(value || '')

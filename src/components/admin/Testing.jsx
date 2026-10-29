@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiSearch, FiClock, FiX } from 'react-icons/fi';
 import { getApiBaseUrlSync } from '../../utils/apiConfig';
 import './Testing.css';
@@ -9,6 +10,7 @@ const API_BASE_URL = getApiBaseUrlSync();
 console.log('🔧 Testing component - API_BASE_URL:', API_BASE_URL);
 
 const Testing = () => {
+  const { t, i18n } = useTranslation();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -18,6 +20,8 @@ const Testing = () => {
   const [timerSeconds, setTimerSeconds] = useState('');
   const [saving, setSaving] = useState(false);
   const [testProperties, setTestProperties] = useState([]);
+
+  const dateLocale = (i18n.language || 'ru').startsWith('ru') ? 'ru-RU' : (i18n.language || 'en');
 
   // Загрузка всех объявлений
   useEffect(() => {
@@ -52,7 +56,7 @@ const Testing = () => {
         setProperties(combined);
       } catch (e) {
         console.error('Ошибка при загрузке объявлений:', e);
-        setError('Не удалось загрузить объявления. Попробуйте обновить страницу.');
+        setError(t('admin_testing_loadError'));
       } finally {
         setLoading(false);
       }
@@ -60,7 +64,7 @@ const Testing = () => {
 
     loadProperties();
     loadTestProperties();
-  }, []);
+  }, [t]);
 
   // Загрузка объявлений с тестовыми таймерами
   const loadTestProperties = async () => {
@@ -121,7 +125,7 @@ const Testing = () => {
   // Сохранение тестового таймера
   const handleSaveTimer = async () => {
     if (!selectedProperty) {
-      alert('Выберите объявление');
+      alert('admin_testing_selectListing');
       return;
     }
 
@@ -129,12 +133,12 @@ const Testing = () => {
     const seconds = parseInt(timerSeconds) || 0;
 
     if (minutes === 0 && seconds === 0) {
-      alert('Укажите время таймера (минуты и/или секунды)');
+      alert('admin_testing_specifyTimer');
       return;
     }
 
     if (minutes < 0 || seconds < 0 || seconds >= 60) {
-      alert('Некорректное время: минуты должны быть >= 0, секунды от 0 до 59');
+      alert('admin_testing_invalidTime');
       return;
     }
 
@@ -170,19 +174,19 @@ const Testing = () => {
       console.log('📥 Данные ответа:', data);
 
       if (response.ok && data.success) {
-        alert('Тестовый таймер успешно установлен!');
+        alert('admin_testing_timerSet');
         setSelectedProperty(null);
         setTimerMinutes('');
         setTimerSeconds('');
         loadTestProperties();
       } else {
-        const errorMessage = data.error || data.message || 'Не удалось сохранить таймер';
+        const errorMessage = data.error || data.message || t('admin_testing_timerSaveFail');
         console.error('❌ Ошибка сохранения таймера:', errorMessage);
-        alert('Ошибка: ' + errorMessage);
+        alert(t('admin_errorPrefix') + errorMessage);
       }
     } catch (e) {
       console.error('❌ Ошибка при сохранении таймера:', e);
-      alert('Ошибка при сохранении таймера: ' + (e.message || 'Неизвестная ошибка'));
+      alert(t('admin_testing_timerSaveError', { message: e.message || t('admin_unknownError') }));
     } finally {
       setSaving(false);
     }
@@ -190,7 +194,7 @@ const Testing = () => {
 
   // Удаление тестового таймера
   const handleDeleteTimer = async (propertyId) => {
-    if (!confirm('Вы уверены, что хотите удалить тестовый таймер для этого объявления?')) {
+    if (!confirm(t('admin_testing_confirmDeleteTimer'))) {
       return;
     }
 
@@ -202,7 +206,7 @@ const Testing = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          alert('Тестовый таймер успешно удален!');
+          alert('admin_testing_timerDeleted');
           loadTestProperties();
           if (selectedProperty && selectedProperty.id === propertyId) {
             setSelectedProperty(null);
@@ -210,22 +214,22 @@ const Testing = () => {
             setTimerSeconds('');
           }
         } else {
-          alert('Ошибка: ' + (data.error || 'Не удалось удалить таймер'));
+          alert(t('admin_errorPrefix') + (data.error || t('admin_testing_timerDeleteFail')));
         }
       } else {
         const errorData = await response.json().catch(() => ({}));
-        alert('Ошибка: ' + (errorData.error || 'Не удалось удалить таймер'));
+        alert(t('admin_errorPrefix') + (errorData.error || t('admin_testing_timerDeleteFail')));
       }
     } catch (e) {
       console.error('Ошибка при удалении таймера:', e);
-      alert('Ошибка при удалении таймера');
+      alert('admin_testing_timerDeleteError');
     }
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleString('ru-RU', {
+    return date.toLocaleString(dateLocale, {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -237,8 +241,8 @@ const Testing = () => {
   return (
     <div className="testing-container">
       <div className="testing-header">
-        <h2>Тестирование аукционов</h2>
-        <p>Выберите объявление и установите тестовый таймер для отображения на странице аукциона</p>
+        <h2>{t('admin_testing_title')}</h2>
+        <p>{t('admin_testing_subtitle')}</p>
       </div>
 
       <div className="testing-content">
@@ -247,14 +251,14 @@ const Testing = () => {
             <FiSearch size={20} />
             <input
               type="text"
-              placeholder="Поиск по названию или локации..."
+              placeholder={t('admin_testing_searchPlaceholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 
           {loading ? (
-            <div className="testing-loading">Загрузка объявлений...</div>
+            <div className="testing-loading">{t('admin_testing_loadingListings')}</div>
           ) : error ? (
             <div className="testing-error">{error}</div>
           ) : (
@@ -268,12 +272,12 @@ const Testing = () => {
                     onClick={() => handleSelectProperty(property)}
                   >
                     <div className="testing-property-info">
-                      <h4>{property.title || property.name || 'Без названия'}</h4>
-                      <p>{property.location || 'Локация не указана'}</p>
+                      <h4>{property.title || property.name || t('admin_untitled')}</h4>
+                      <p>{property.location || t('admin_locationUnspecified')}</p>
                       {hasTestTimer && (
                         <div className="testing-timer-badge">
                           <FiClock size={14} />
-                          <span>Таймер установлен</span>
+                          <span>{t('admin_testing_timerSetBadge')}</span>
                         </div>
                       )}
                     </div>
@@ -288,7 +292,7 @@ const Testing = () => {
           {selectedProperty ? (
             <div className="testing-selected">
               <div className="testing-selected-header">
-                <h3>Выбранное объявление</h3>
+                <h3>{t('admin_testing_selectedListing')}</h3>
                 <button
                   className="testing-close-btn"
                   onClick={() => {
@@ -302,14 +306,14 @@ const Testing = () => {
               </div>
 
               <div className="testing-selected-info">
-                <h4>{selectedProperty.title || selectedProperty.name || 'Без названия'}</h4>
-                <p>{selectedProperty.location || 'Локация не указана'}</p>
+                <h4>{selectedProperty.title || selectedProperty.name || t('admin_untitled')}</h4>
+                <p>{selectedProperty.location || t('admin_locationUnspecified')}</p>
               </div>
 
               <div className="testing-timer-form">
                 <label>
                   <FiClock size={18} />
-                  Минуты
+                  {t('admin_testing_minutes')}
                 </label>
                 <input
                   type="number"
@@ -329,7 +333,7 @@ const Testing = () => {
               <div className="testing-timer-form">
                 <label>
                   <FiClock size={18} />
-                  Секунды
+                  {t('admin_testing_seconds')}
                 </label>
                 <input
                   type="number"
@@ -348,12 +352,12 @@ const Testing = () => {
 
               {(timerMinutes || timerSeconds) && (
                 <div className="testing-timer-preview">
-                  <p className="testing-timer-preview-label">Таймер закончится через:</p>
+                  <p className="testing-timer-preview-label">{t('admin_testing_timerEndsIn')}</p>
                   <p className="testing-timer-preview-value">
-                    {parseInt(timerMinutes) || 0} мин {parseInt(timerSeconds) || 0} сек
+                    {t('admin_testing_minSec', { min: parseInt(timerMinutes) || 0, sec: parseInt(timerSeconds) || 0 })}
                   </p>
                   <p className="testing-timer-preview-time">
-                    ({new Date(Date.now() + (parseInt(timerMinutes) || 0) * 60000 + (parseInt(timerSeconds) || 0) * 1000).toLocaleString('ru-RU')})
+                    ({new Date(Date.now() + (parseInt(timerMinutes) || 0) * 60000 + (parseInt(timerSeconds) || 0) * 1000).toLocaleString(dateLocale)})
                   </p>
                 </div>
               )}
@@ -363,13 +367,13 @@ const Testing = () => {
                 onClick={handleSaveTimer}
                 disabled={saving}
               >
-                {saving ? 'Сохранение...' : 'Установить тестовый таймер'}
+                {saving ? t('admin_saving') : t('admin_testing_setTimer')}
               </button>
             </div>
           ) : (
             <div className="testing-placeholder">
               <FiClock size={48} />
-              <p>Выберите объявление из списка для установки тестового таймера</p>
+              <p>{t('admin_testing_placeholder')}</p>
             </div>
           )}
         </div>
@@ -377,17 +381,17 @@ const Testing = () => {
 
       {testProperties.length > 0 && (
         <div className="testing-active-timers">
-          <h3>Активные тестовые таймеры</h3>
+          <h3>{t('admin_testing_activeTimers')}</h3>
           <div className="testing-timers-list">
             {testProperties
               .filter(p => p.test_timer_end_date)
               .map((property) => (
                 <div key={property.id} className="testing-timer-item">
                   <div className="testing-timer-item-info">
-                    <h4>{property.title || property.name || 'Без названия'}</h4>
-                    <p>{property.location || 'Локация не указана'}</p>
+                    <h4>{property.title || property.name || t('admin_untitled')}</h4>
+                    <p>{property.location || t('admin_locationUnspecified')}</p>
                     <span className="testing-timer-date">
-                      Окончание: {formatDate(property.test_timer_end_date)}
+                      {t('admin_testing_endsAt', { date: formatDate(property.test_timer_end_date) })}
                     </span>
                   </div>
                   <button
@@ -395,7 +399,7 @@ const Testing = () => {
                     onClick={() => handleDeleteTimer(property.id)}
                   >
                     <FiX size={18} />
-                    Удалить
+                    {t('admin_delete')}
                   </button>
                 </div>
               ))}
@@ -407,4 +411,3 @@ const Testing = () => {
 };
 
 export default Testing;
-

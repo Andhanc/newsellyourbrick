@@ -119,7 +119,7 @@ function BuyNowCompletedHistoryCard({
                 })
               }
             >
-              Продать объект
+              {t('buyerCabinet_sellProperty')}
             </button>
           ) : null}
         </div>

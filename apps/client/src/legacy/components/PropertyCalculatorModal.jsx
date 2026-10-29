@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
 import { FiX, FiHome, FiMapPin, FiDollarSign, FiLoader, FiLayers } from 'react-icons/fi'
 import { MdBed } from 'react-icons/md'
@@ -7,9 +8,9 @@ import axios from 'axios'
 import { mapListingToCalculatorData } from '../utils/propertyCalculatorMapping'
 import './PropertyCalculatorModal.css'
 
-const DEFAULT_CITIES = [
-  { value: 'barcelona', label: 'Барселона', region: 'Каталония' },
-  { value: 'madrid', label: 'Мадрид', region: 'Мадрид' }
+const DEFAULT_CITY_DEFS = [
+  { value: 'barcelona', labelKey: 'propertyCalcCityBarcelona', regionKey: 'propertyCalcRegionCatalonia' },
+  { value: 'madrid', labelKey: 'propertyCalcCityMadrid', regionKey: 'propertyCalcRegionMadrid' },
 ]
 
 const PropertyCalculatorModal = ({
@@ -21,6 +22,7 @@ const PropertyCalculatorModal = ({
   /** Встроенный режим шага мастера: без overlay/портала, карточка в потоке страницы */
   variant = 'modal'
 }) => {
+  const { t } = useTranslation()
   const isEmbedded = variant === 'embedded'
   const [formData, setFormData] = useState({
     area: '',
@@ -93,7 +95,15 @@ const PropertyCalculatorModal = ({
     }
   }, [isOpen, formData.city, calcOptions.cities])
 
-  const baseCitiesList = calcOptions.cities.length ? calcOptions.cities : DEFAULT_CITIES
+  const defaultCities = useMemo(
+    () => DEFAULT_CITY_DEFS.map((c) => ({
+      value: c.value,
+      label: t(c.labelKey),
+      region: t(c.regionKey),
+    })),
+    [t],
+  )
+  const baseCitiesList = calcOptions.cities.length ? calcOptions.cities : defaultCities
   const citiesList = useMemo(() => {
     if (!formData.city) return baseCitiesList
     const hasCity = baseCitiesList.some((c) => c.value === formData.city)
@@ -104,27 +114,33 @@ const PropertyCalculatorModal = ({
       {
         value: formData.city,
         label: fallbackLabel,
-        region: 'Текущая локация'
+        region: t('propertyCalcCurrentLocation'),
       },
       ...baseCitiesList
     ]
-  }, [baseCitiesList, formData.city, initialPropertyData?.city])
+  }, [baseCitiesList, formData.city, initialPropertyData?.city, t])
 
   const citiesByRegion = useMemo(() => {
     const m = {}
     for (const c of citiesList) {
-      const r = c.region || 'Другое'
+      const r = c.region || t('propertyCalcRegionOther')
       if (!m[r]) m[r] = []
       m[r].push(c)
     }
     return m
-  }, [citiesList])
+  }, [citiesList, t])
 
   const districtOptions = useMemo(() => {
     const raw = calcOptions.districtsByCity[formData.city]
-    if (raw && raw.length) return raw
-    return [{ value: 'all', label: 'Весь город' }]
-  }, [calcOptions.districtsByCity, formData.city])
+    if (raw && raw.length) {
+      return raw.map((d) => (
+        d.value === 'all' && (!d.label || d.label === 'Весь город' || d.label === 'Entire city')
+          ? { ...d, label: t('propertyCalcWholeCity') }
+          : d
+      ))
+    }
+    return [{ value: 'all', label: t('propertyCalcWholeCity') }]
+  }, [calcOptions.districtsByCity, formData.city, t])
 
   const skipRooms = formData.propertyType === 'land' || formData.propertyType === 'commercial'
 
@@ -144,9 +160,9 @@ const PropertyCalculatorModal = ({
         if (cancelled) return
         if (!response.data?.success) return
         const detectedDistrict = response.data?.data?.district || 'all'
-        const detectedLabel = response.data?.data?.districtLabel || 'Весь город'
+        const detectedLabel = response.data?.data?.districtLabel || t('propertyCalcWholeCity')
 
-        setDistrictHint(`Определен район: ${detectedLabel}`)
+        setDistrictHint(t('propertyCalcDistrictDetected', { label: detectedLabel }))
         setFormData((prev) => {
           if (!fieldsAreLocked && districtTouched) return prev
           if (!detectedDistrict) return prev
@@ -164,7 +180,7 @@ const PropertyCalculatorModal = ({
     return () => {
       cancelled = true
     }
-  }, [isOpen, formData.city, formData.street, initialPropertyData?.country, fieldsAreLocked, districtTouched])
+  }, [isOpen, formData.city, formData.street, initialPropertyData?.country, fieldsAreLocked, districtTouched, t])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -186,11 +202,11 @@ const PropertyCalculatorModal = ({
     e.preventDefault()
 
     if (!formData.area || !formData.city) {
-      setError('Укажите площадь и город')
+      setError(t('propertyCalcErrorAreaCity'))
       return
     }
     if (!skipRooms && formData.rooms === undefined) {
-      setError('Укажите количество комнат')
+      setError(t('propertyCalcErrorRooms'))
       return
     }
 
@@ -252,7 +268,7 @@ const PropertyCalculatorModal = ({
           }
         }
       } else {
-        setError(response.data.error || 'Ошибка при получении данных')
+        setError(response.data.error || t('propertyCalcErrorFetch'))
       }
     } catch (err) {
       console.error('Ошибка при парсинге:', err)
@@ -260,8 +276,8 @@ const PropertyCalculatorModal = ({
       setError(
         err.response?.data?.error ||
         (isTimeout
-          ? 'Расчет занял слишком много времени. Попробуйте еще раз или уточните параметры.'
-          : 'Ошибка при подключении к серверу. Попробуйте позже.')
+          ? t('propertyCalcErrorTimeout')
+          : t('propertyCalcErrorServer'))
       )
     } finally {
       setIsLoading(false)
@@ -301,7 +317,7 @@ const PropertyCalculatorModal = ({
   }
 
   const formatPrice = (price) => {
-    if (!price) return 'Не указано'
+    if (!price) return t('propertyCalcPriceNotSet')
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
       currency: 'EUR',
@@ -330,7 +346,7 @@ const PropertyCalculatorModal = ({
             type="button"
             className="property-calculator-modal__close"
             onClick={onClose}
-            aria-label="Закрыть"
+            aria-label={t('propertyCalcCloseAria')}
           >
             <FiX size={24} />
           </button>
@@ -342,12 +358,12 @@ const PropertyCalculatorModal = ({
               <FiDollarSign size={26} />
             </div>
             <div className="property-calculator-modal__header">
-              <p className="property-calculator-modal__eyebrow">Оценка рынка</p>
+              <p className="property-calculator-modal__eyebrow">{t('propertyCalcEyebrow')}</p>
               <h2 className="property-calculator-modal__title">
-                Калькулятор стоимости
+                {t('propertyCalcTitle')}
               </h2>
               <p className="property-calculator-modal__subtitle">
-                Тип жилья, город и район — ориентир по цене на основе похожих объявлений
+                {t('propertyCalcSubtitle')}
               </p>
             </div>
           </div>
@@ -357,9 +373,9 @@ const PropertyCalculatorModal = ({
               {isLoading ? (
                 <div className="property-calculator-loader">
                   <FiLoader className="property-calculator-loader__icon" size={48} />
-                  <h3 className="property-calculator-loader__title">Сбор похожих объявлений...</h3>
+                  <h3 className="property-calculator-loader__title">{t('propertyCalcLoadingTitle')}</h3>
                   <p className="property-calculator-loader__subtitle">
-                    Это может занять до минуты: запрашиваем похожие лоты и считаем устойчивую медиану.
+                    {t('propertyCalcLoadingText')}
                   </p>
                 </div>
               ) : (
@@ -373,13 +389,13 @@ const PropertyCalculatorModal = ({
                   <div className="property-calculator-form__panel">
                     <h3 className="property-calculator-form__panel-title">
                       <FiHome size={18} />
-                      Параметры объекта
+                      {t('propertyCalcParamsTitle')}
                     </h3>
                     <div className="property-calculator-form__panel-separator" />
                     <div className="property-calculator-form__field property-calculator-form__field--full">
                       <label className="property-calculator-form__label">
                         <FiLayers size={18} />
-                        Тип недвижимости
+                        {t('propertyCalcPropertyType')}
                       </label>
                       <select
                         name="propertyType"
@@ -388,12 +404,12 @@ const PropertyCalculatorModal = ({
                         className={`property-calculator-form__select ${fieldsAreLocked ? 'property-calculator-form__select--locked' : ''}`}
                         disabled={fieldsAreLocked}
                       >
-                        <option value="apartment">Квартира</option>
-                        <option value="apartamento">Апартаменты</option>
-                        <option value="house">Дом / таунхаус</option>
-                        <option value="villa">Вилла / шале</option>
-                        <option value="land">Земельный участок</option>
-                        <option value="commercial">Коммерческая недвижимость</option>
+                        <option value="apartment">{t('propertyCalcTypeApartment')}</option>
+                        <option value="apartamento">{t('propertyCalcTypeApartamento')}</option>
+                        <option value="house">{t('propertyCalcTypeHouse')}</option>
+                        <option value="villa">{t('propertyCalcTypeVilla')}</option>
+                        <option value="land">{t('propertyCalcTypeLand')}</option>
+                        <option value="commercial">{t('propertyCalcTypeCommercial')}</option>
                       </select>
                     </div>
 
@@ -401,7 +417,7 @@ const PropertyCalculatorModal = ({
                       <div className="property-calculator-form__field">
                         <label className="property-calculator-form__label">
                           <BiArea size={18} />
-                          Площадь, м²
+                          {t('propertyCalcAreaLabel')}
                         </label>
                         <input
                           type="number"
@@ -420,7 +436,7 @@ const PropertyCalculatorModal = ({
                         <div className="property-calculator-form__field">
                           <label className="property-calculator-form__label">
                             <MdBed size={18} />
-                            Комнат
+                            {t('propertyCalcRoomsLabel')}
                           </label>
                           <select
                             name="rooms"
@@ -430,7 +446,7 @@ const PropertyCalculatorModal = ({
                             required
                             disabled={fieldsAreLocked}
                           >
-                            <option value="studio">Студия</option>
+                            <option value="studio">{t('propertyCalcStudio')}</option>
                             <option value="1">1</option>
                             <option value="2">2</option>
                             <option value="3">3</option>
@@ -444,7 +460,7 @@ const PropertyCalculatorModal = ({
                     <div className="property-calculator-form__field property-calculator-form__field--full">
                       <label className="property-calculator-form__label">
                         <FiMapPin size={18} />
-                        Город
+                        {t('propertyCalcCityLabel')}
                       </label>
                       <select
                         name="city"
@@ -469,14 +485,14 @@ const PropertyCalculatorModal = ({
                     <div className="property-calculator-form__field property-calculator-form__field--full">
                       <label className="property-calculator-form__label">
                         <FiMapPin size={18} />
-                        Адрес объекта
+                        {t('propertyCalcAddressLabel')}
                       </label>
                       <input
                         type="text"
                         name="street"
                         value={formData.street || ''}
                         onChange={handleInputChange}
-                        placeholder="Улица, дом"
+                        placeholder={t('propertyCalcAddressPlaceholder')}
                         className="property-calculator-form__input"
                         readOnly={fieldsAreLocked}
                       />
@@ -485,7 +501,7 @@ const PropertyCalculatorModal = ({
                     <div className="property-calculator-form__field property-calculator-form__field--full">
                       <label className="property-calculator-form__label">
                         <FiMapPin size={18} />
-                        Район (опционально)
+                        {t('propertyCalcDistrictLabel')}
                       </label>
                       <select
                         name="district"
@@ -501,7 +517,7 @@ const PropertyCalculatorModal = ({
                       </select>
                       {(isDetectingDistrict || districtHint) && (
                         <div className="property-calculator-result__note" style={{ marginTop: '6px' }}>
-                          {isDetectingDistrict ? 'Определяем район по адресу...' : districtHint}
+                          {isDetectingDistrict ? t('propertyCalcDetectingDistrict') : districtHint}
                         </div>
                       )}
                     </div>
@@ -513,14 +529,14 @@ const PropertyCalculatorModal = ({
                       className="property-calculator-form__button property-calculator-form__button--secondary"
                       onClick={onClose}
                     >
-                      Отмена
+                      {t('propertyCalcCancel')}
                     </button>
                     <button
                       type="submit"
                       className="property-calculator-form__button property-calculator-form__button--liquid"
                       disabled={isLoading}
                     >
-                      {isLoading ? 'Поиск...' : 'Рассчитать стоимость'}
+                      {isLoading ? t('propertyCalcSearching') : t('propertyCalcCalculate')}
                     </button>
                   </div>
                 </form>
@@ -532,25 +548,24 @@ const PropertyCalculatorModal = ({
                 <div className="property-calculator-result__icon">
                   <FiDollarSign size={48} />
                 </div>
-                <h3 className="property-calculator-result__title">Рекомендуемая цена</h3>
+                <h3 className="property-calculator-result__title">{t('propertyCalcRecommendedTitle')}</h3>
                 <div className="property-calculator-result__price">
-                  {results.recommendedPrice ? formatPrice(results.recommendedPrice) : 'Не удалось определить'}
+                  {results.recommendedPrice ? formatPrice(results.recommendedPrice) : t('propertyCalcCouldNotDetermine')}
                 </div>
                 {results.recommendedPricePerSqm != null && (
                   <p className="property-calculator-result__note" style={{ marginTop: '8px' }}>
-                    Ориентир: {formatPrice(results.recommendedPricePerSqm)} / м²
+                    {t('propertyCalcPerSqmHint', { price: formatPrice(results.recommendedPricePerSqm) })}
                   </p>
                 )}
                 <div className="property-calculator-result__warning">
-                  Все расчёты носят ориентировочный характер и отражают текущую рыночную ситуацию.
-                  Финальную стоимость вы устанавливаете самостоятельно, опираясь на эту оценку.
+                  {t('propertyCalcDisclaimer')}
                 </div>
               </div>
 
               {results.similarProperties && results.similarProperties.length > 0 ? (
                 <div className="property-calculator-result__similar">
                   <h4 className="property-calculator-result__similar-title">
-                    Похожие объекты ({results.similarProperties.length})
+                    {t('propertyCalcSimilarTitle', { count: results.similarProperties.length })}
                   </h4>
                   <div className="property-calculator-result__similar-list">
                     {results.similarProperties.slice(0, 10).map((property, index) => {
@@ -583,8 +598,8 @@ const PropertyCalculatorModal = ({
                             {formatPrice(property.price)}
                           </div>
                           <div className="property-calculator-result__similar-details">
-                            {property.area && <span>{property.area} м²</span>}
-                            {property.rooms != null && <span>{property.rooms} комн.</span>}
+                            {property.area && <span>{t('propertyCalcAreaShort', { area: property.area })}</span>}
+                            {property.rooms != null && <span>{t('propertyCalcRoomsShort', { count: property.rooms })}</span>}
                           </div>
                           {sanitizeAddress(property.address) && (
                             <div className="property-calculator-result__similar-address">
@@ -600,10 +615,10 @@ const PropertyCalculatorModal = ({
               ) : (
                 <div className="property-calculator-result__no-results">
                   <p className="property-calculator-result__no-results-text">
-                    Не удалось найти достаточно похожих объявлений с указанными параметрами.
+                    {t('propertyCalcNoSimilarTitle')}
                   </p>
                   <p className="property-calculator-result__no-results-suggestion">
-                    Попробуйте «Весь город», соседний район или чуть измените площадь.
+                    {t('propertyCalcNoSimilarHint')}
                   </p>
                 </div>
               )}
@@ -614,7 +629,7 @@ const PropertyCalculatorModal = ({
                   className="property-calculator-form__button property-calculator-form__button--liquid"
                   onClick={handleReset}
                 >
-                  Новый расчет
+                  {t('propertyCalcNewCalc')}
                 </button>
                 {!isEmbedded && (
                   <button
@@ -622,7 +637,7 @@ const PropertyCalculatorModal = ({
                     className="property-calculator-form__button property-calculator-form__button--secondary"
                     onClick={onClose}
                   >
-                    Закрыть
+                    {t('propertyCalcClose')}
                   </button>
                 )}
               </div>

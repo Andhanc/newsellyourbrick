@@ -2,45 +2,57 @@ import { showToast } from '../components/ToastContainer'
 import { isStructuredToastEvent } from './toastModel'
 
 /**
- * Утилита для замены alert() на красивые toast-уведомления
- * Автоматически определяет тип уведомления по содержимому сообщения
+ * Replaces alert() with toast notifications.
+ * Infers toast type from message content when type is omitted.
  */
 export const showNotification = (messageOrEvent, type = null, duration = 4000) => {
   if (isStructuredToastEvent(messageOrEvent)) {
     return showToast(messageOrEvent)
   }
 
-  // Если тип не указан, определяем автоматически
   if (!type) {
     const messageLower = typeof messageOrEvent === 'string' ? messageOrEvent.toLowerCase() : ''
-    
-    // Успешные сообщения
+
     if (
+      messageLower.includes('success') ||
+      messageLower.includes('saved') ||
+      messageLower.includes('sent') ||
+      messageLower.includes('uploaded') ||
+      messageLower.includes('copied') ||
+      messageLower.includes('confirmed') ||
+      messageLower.includes('✅') ||
       messageLower.includes('успешно') ||
       messageLower.includes('сохранен') ||
       messageLower.includes('отправлен') ||
       messageLower.includes('загружен') ||
-      messageLower.includes('✅') ||
       messageLower.includes('скопирован') ||
       messageLower.includes('подтвержден')
     ) {
       type = 'success'
-    }
-    // Ошибки
-    else if (
+    } else if (
+      messageLower.includes('error') ||
+      messageLower.includes('failed') ||
+      messageLower.includes('not found') ||
+      messageLower.includes('unauthorized') ||
+      messageLower.includes('unavailable') ||
+      messageLower.includes('not supported') ||
+      messageLower.includes('exceeds') ||
+      messageLower.includes('❌') ||
       messageLower.includes('ошибка') ||
       messageLower.includes('не удалось') ||
       messageLower.includes('не найден') ||
       messageLower.includes('не авторизован') ||
-      messageLower.includes('❌') ||
       messageLower.includes('недоступн') ||
       messageLower.includes('не поддерживается') ||
       messageLower.includes('превышает')
     ) {
       type = 'error'
-    }
-    // Предупреждения
-    else if (
+    } else if (
+      messageLower.includes('please') ||
+      messageLower.includes('required') ||
+      messageLower.includes('maximum') ||
+      messageLower.includes('cannot') ||
+      messageLower.includes('temporarily') ||
       messageLower.includes('пожалуйста') ||
       messageLower.includes('необходимо') ||
       messageLower.includes('максимум') ||
@@ -48,9 +60,7 @@ export const showNotification = (messageOrEvent, type = null, duration = 4000) =
       messageLower.includes('временно')
     ) {
       type = 'warning'
-    }
-    // Информационные сообщения
-    else {
+    } else {
       type = 'info'
     }
   }
@@ -58,5 +68,4 @@ export const showNotification = (messageOrEvent, type = null, duration = 4000) =
   return showToast(messageOrEvent, type, duration)
 }
 
-// Экспортируем также прямую функцию для обратной совместимости
 export default showNotification

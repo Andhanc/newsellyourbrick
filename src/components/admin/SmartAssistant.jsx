@@ -1,13 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiMessageCircle, FiUser, FiPhone, FiMail, FiMapPin, FiHome, FiX, FiRefreshCw, FiHeadphones } from 'react-icons/fi';
 import { getApiBaseUrl } from '../../utils/apiConfig';
 import './SmartAssistant.css';
-
-const LEAD_TYPE_LABELS = {
-  hot: 'Горячий клиент',
-  warm: 'Тёплый клиент',
-  cold: 'Холодный клиент'
-};
 
 const LEAD_TYPE_CLASS = {
   hot: 'lead-type--hot',
@@ -15,19 +10,28 @@ const LEAD_TYPE_CLASS = {
   cold: 'lead-type--cold'
 };
 
-const PREFERRED_CONTACT_LABELS = {
-  phone: 'Телефон',
-  email: 'E-mail',
-  whatsapp: 'WhatsApp'
-};
-
 const SmartAssistant = () => {
+  const { t, i18n } = useTranslation();
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filterType, setFilterType] = useState('all');
   const [selectedLead, setSelectedLead] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  const dateLocale = (i18n.language || 'ru').startsWith('ru') ? 'ru-RU' : (i18n.language || 'en');
+
+  const leadTypeLabels = {
+    hot: t('admin_sa_hotLead'),
+    warm: t('admin_sa_warmLead'),
+    cold: t('admin_sa_coldLead')
+  };
+
+  const preferredContactLabels = {
+    phone: t('admin_phone'),
+    email: 'E-mail',
+    whatsapp: 'WhatsApp'
+  };
 
   const fetchLeads = async () => {
     try {
@@ -39,11 +43,11 @@ const SmartAssistant = () => {
       if (data.success && Array.isArray(data.data)) {
         setLeads(data.data);
       } else {
-        setError('Не удалось загрузить список лидов');
+        setError(t('admin_sa_loadLeadsFail'));
       }
     } catch (err) {
       console.error('SmartAssistant fetchLeads:', err);
-      setError('Ошибка при загрузке данных');
+      setError(t('admin_sa_loadDataError'));
     } finally {
       setLoading(false);
     }
@@ -80,7 +84,7 @@ const SmartAssistant = () => {
   const formatDate = (dateString) => {
     if (!dateString) return '—';
     try {
-      return new Date(dateString).toLocaleString('ru-RU', {
+      return new Date(dateString).toLocaleString(dateLocale, {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -107,64 +111,63 @@ const SmartAssistant = () => {
       <div className="smart-assistant-header">
         <h2 className="smart-assistant-title">
           <FiMessageCircle className="smart-assistant-title-icon" />
-          Умный помощник
+          {t('admin_sa_title')}
         </h2>
         <p className="smart-assistant-subtitle">
-          Клиенты с сайта и карточки с тем же телефоном: тип лида обновляется по диалогу на сайте и по ответам
-          в WhatsApp-боте (горячий / тёплый / холодный).
+          {t('admin_sa_subtitle')}
         </p>
         <div className="smart-assistant-filters">
           <button
             className={`filter-btn ${filterType === 'all' ? 'active' : ''}`}
             onClick={() => setFilterType('all')}
           >
-            Все
+            {t('admin_all')}
           </button>
           <button
             className={`filter-btn ${filterType === 'hot' ? 'active' : ''}`}
             onClick={() => setFilterType('hot')}
           >
-            Горячие
+            {t('admin_sa_hot')}
           </button>
           <button
             className={`filter-btn ${filterType === 'warm' ? 'active' : ''}`}
             onClick={() => setFilterType('warm')}
           >
-            Тёплые
+            {t('admin_sa_warm')}
           </button>
           <button
             className={`filter-btn ${filterType === 'cold' ? 'active' : ''}`}
             onClick={() => setFilterType('cold')}
           >
-            Холодные
+            {t('admin_sa_cold')}
           </button>
           <button
             className={`filter-btn ${filterType === 'manager' ? 'active' : ''}`}
             onClick={() => setFilterType('manager')}
           >
-            Заявка менеджеру
+            {t('admin_sa_managerRequest')}
           </button>
-          <button className="refresh-btn" onClick={fetchLeads} disabled={loading} title="Обновить">
+          <button className="refresh-btn" onClick={fetchLeads} disabled={loading} title={t('admin_sa_refresh')}>
             <FiRefreshCw size={18} />
-            Обновить
+            {t('admin_sa_refresh')}
           </button>
         </div>
       </div>
 
       {loading ? (
         <div className="smart-assistant-loading">
-          <p>Загрузка лидов...</p>
+          <p>{t('admin_sa_loadingLeads')}</p>
         </div>
       ) : error ? (
         <div className="smart-assistant-error">
           <p>{error}</p>
-          <button onClick={fetchLeads}>Попробовать снова</button>
+          <button onClick={fetchLeads}>{t('admin_tryAgain')}</button>
         </div>
       ) : filteredLeads.length === 0 ? (
         <div className="smart-assistant-empty">
           <FiMessageCircle size={48} />
-          <p>Нет лидов по выбранному фильтру</p>
-          <p className="smart-assistant-empty-hint">Клиенты появятся после общения с ботом на сайте</p>
+          <p>{t('admin_sa_noLeads')}</p>
+          <p className="smart-assistant-empty-hint">{t('admin_sa_emptyHint')}</p>
         </div>
       ) : (
         <div className="smart-assistant-grid">
@@ -180,23 +183,23 @@ const SmartAssistant = () => {
               <div className="smart-assistant-card__top">
                 <div className="smart-assistant-card__badges">
                   <span className={`lead-type-badge ${LEAD_TYPE_CLASS[lead.lead_type] || ''}`}>
-                    {LEAD_TYPE_LABELS[lead.lead_type] || lead.lead_type}
+                    {leadTypeLabels[lead.lead_type] || lead.lead_type}
                   </span>
                   {Number(lead.manager_contact_requested) === 1 && (
-                    <span className="smart-assistant-card__manager-badge" title="Заявка на связь с менеджером">
+                    <span className="smart-assistant-card__manager-badge" title={t('admin_sa_managerContactTitle')}>
                       <FiHeadphones size={14} aria-hidden />
-                      Менеджер
+                      {t('admin_sa_manager')}
                     </span>
                   )}
                 </div>
                 <span className="smart-assistant-card__date">{formatDate(lead.updated_at)}</span>
               </div>
               <p className="smart-assistant-card__summary">
-                {lead.summary || 'Нет выжимки'}
+                {lead.summary || t('admin_sa_noSummary')}
               </p>
-              {lead.preferred_contact && PREFERRED_CONTACT_LABELS[lead.preferred_contact] && (
+              {lead.preferred_contact && preferredContactLabels[lead.preferred_contact] && (
                 <p className="smart-assistant-card__contact-pref">
-                  Связь: {PREFERRED_CONTACT_LABELS[lead.preferred_contact]}
+                  {t('admin_sa_contactVia', { channel: preferredContactLabels[lead.preferred_contact] })}
                 </p>
               )}
               {(lead.country || lead.region || lead.property_type) && (
@@ -219,11 +222,11 @@ const SmartAssistant = () => {
 
       {!loading && !error && (
         <div className="smart-assistant-stats">
-          <span>Всего: {leads.length}</span>
-          <span>Горячих: {leads.filter((l) => l.lead_type === 'hot').length}</span>
-          <span>Тёплых: {leads.filter((l) => l.lead_type === 'warm').length}</span>
-          <span>Холодных: {leads.filter((l) => l.lead_type === 'cold').length}</span>
-          <span>Заявок менеджеру: {leads.filter((l) => Number(l.manager_contact_requested) === 1).length}</span>
+          <span>{t('admin_sa_total', { count: leads.length })}</span>
+          <span>{t('admin_sa_hotCount', { count: leads.filter((l) => l.lead_type === 'hot').length })}</span>
+          <span>{t('admin_sa_warmCount', { count: leads.filter((l) => l.lead_type === 'warm').length })}</span>
+          <span>{t('admin_sa_coldCount', { count: leads.filter((l) => l.lead_type === 'cold').length })}</span>
+          <span>{t('admin_sa_managerCount', { count: leads.filter((l) => Number(l.manager_contact_requested) === 1).length })}</span>
         </div>
       )}
 
@@ -236,24 +239,24 @@ const SmartAssistant = () => {
         >
           <div className="smart-assistant-modal" onClick={(e) => e.stopPropagation()}>
             <div className="smart-assistant-modal__header">
-              <h3>Карточка клиента</h3>
+              <h3>{t('admin_sa_clientCard')}</h3>
               <button
                 type="button"
                 className="smart-assistant-modal__close"
                 onClick={() => setSelectedLead(null)}
                 disabled={detailLoading}
-                aria-label="Закрыть"
+                aria-label={t('admin_close')}
               >
                 <FiX size={24} />
               </button>
             </div>
             {detailLoading ? (
-              <div className="smart-assistant-modal__loading">Загрузка...</div>
+              <div className="smart-assistant-modal__loading">{t('admin_loading')}</div>
             ) : selectedLead ? (
               <div className="smart-assistant-modal__body">
                 <div className="modal-section">
                   <span className={`lead-type-badge ${LEAD_TYPE_CLASS[selectedLead.lead_type] || ''}`}>
-                    {LEAD_TYPE_LABELS[selectedLead.lead_type] || selectedLead.lead_type}
+                    {leadTypeLabels[selectedLead.lead_type] || selectedLead.lead_type}
                   </span>
                   <p className="modal-summary">{selectedLead.summary || '—'}</p>
                 </div>
@@ -262,20 +265,22 @@ const SmartAssistant = () => {
                   <div className="modal-section modal-section--manager">
                     <h4>
                       <FiHeadphones size={18} style={{ verticalAlign: 'middle', marginRight: 8 }} />
-                      Связь с менеджером
+                      {t('admin_sa_managerContact')}
                     </h4>
                     <p className="modal-manager-hint">
-                      Клиент оставил заявку на связь с менеджером. Ответ в течение 24 часов
+                      {t('admin_sa_managerHint')}
                       {selectedLead.preferred_contact
-                        ? ` · удобный канал: ${PREFERRED_CONTACT_LABELS[selectedLead.preferred_contact] || selectedLead.preferred_contact}`
-                        : ' · способ связи можно уточнить в переписке ниже'}
+                        ? t('admin_sa_preferredChannel', {
+                            channel: preferredContactLabels[selectedLead.preferred_contact] || selectedLead.preferred_contact,
+                          })
+                        : t('admin_sa_clarifyContact')}
                       .
                     </p>
                   </div>
                 )}
 
                 <div className="modal-section">
-                  <h4>Контакты</h4>
+                  <h4>{t('admin_sa_contacts')}</h4>
                   <div className="modal-contacts">
                     {selectedLead.email ? (
                       <div className="modal-contact-item">
@@ -285,7 +290,7 @@ const SmartAssistant = () => {
                     ) : (
                       <div className="modal-contact-item modal-contact-item--empty">
                         <FiMail size={18} />
-                        <span>Почта не указана</span>
+                        <span>{t('admin_emailNotSpecified')}</span>
                       </div>
                     )}
                     {selectedLead.phone ? (
@@ -296,46 +301,46 @@ const SmartAssistant = () => {
                     ) : (
                       <div className="modal-contact-item modal-contact-item--empty">
                         <FiPhone size={18} />
-                        <span>Телефон не указан</span>
+                        <span>{t('admin_phoneNotSpecified')}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
                 <div className="modal-section">
-                  <h4>Информация для менеджера</h4>
+                  <h4>{t('admin_sa_managerInfo')}</h4>
                   <div className="modal-info-grid">
                     {selectedLead.country && (
                       <div className="modal-info-item">
                         <FiMapPin size={16} />
-                        <span className="label">Страна:</span>
+                        <span className="label">{t('admin_sa_countryLabel')}</span>
                         <span className="value">{selectedLead.country}</span>
                       </div>
                     )}
                     {selectedLead.region && (
                       <div className="modal-info-item">
                         <FiMapPin size={16} />
-                        <span className="label">Регион:</span>
+                        <span className="label">{t('admin_sa_regionLabel')}</span>
                         <span className="value">{selectedLead.region}</span>
                       </div>
                     )}
                     {selectedLead.property_type && (
                       <div className="modal-info-item">
                         <FiHome size={16} />
-                        <span className="label">Тип объекта:</span>
+                        <span className="label">{t('admin_sa_propertyTypeLabel')}</span>
                         <span className="value">{selectedLead.property_type}</span>
                       </div>
                     )}
                     {selectedLead.session_id && (
                       <div className="modal-info-item">
                         <FiUser size={16} />
-                        <span className="label">ID сессии:</span>
+                        <span className="label">{t('admin_sa_sessionIdLabel')}</span>
                         <span className="value value--mono">{selectedLead.session_id}</span>
                       </div>
                     )}
                     {(selectedLead.updated_at || selectedLead.created_at) && (
                       <div className="modal-info-item">
-                        <span className="label">Обновлено:</span>
+                        <span className="label">{t('admin_sa_updatedLabel')}</span>
                         <span className="value">{formatDate(selectedLead.updated_at || selectedLead.created_at)}</span>
                       </div>
                     )}
@@ -343,19 +348,19 @@ const SmartAssistant = () => {
                 </div>
 
                 <div className="modal-section">
-                  <h4>Выжимка диалога</h4>
+                  <h4>{t('admin_sa_dialogueSummary')}</h4>
                   <div className="modal-dialogue">
                     {getMessagesExcerpt(selectedLead.messages).map((msg, idx) => (
                       <div
                         key={msg.id || idx}
                         className={`dialogue-msg dialogue-msg--${msg.sender === 'user' ? 'user' : 'bot'}`}
                       >
-                        <span className="dialogue-msg__role">{msg.sender === 'user' ? 'Клиент' : 'Бот'}</span>
+                        <span className="dialogue-msg__role">{msg.sender === 'user' ? t('admin_sa_client') : t('admin_sa_bot')}</span>
                         <span className="dialogue-msg__text">{msg.text || '—'}</span>
                       </div>
                     ))}
                     {getMessagesExcerpt(selectedLead.messages).length === 0 && (
-                      <p className="modal-dialogue-empty">Нет сообщений</p>
+                      <p className="modal-dialogue-empty">{t('admin_sa_noMessages')}</p>
                     )}
                   </div>
                 </div>

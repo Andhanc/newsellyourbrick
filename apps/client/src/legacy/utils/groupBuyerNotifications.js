@@ -49,7 +49,7 @@ export function groupBuyerNotifications(notifications) {
     {
       key: 'all',
       labelKey: 'notifications',
-      label: 'Уведомления',
+      label: 'Notifications',
       items: sortBuyerNotifications(notifications),
     },
   ]

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
 import {
   getUserData,
@@ -26,6 +27,7 @@ import {
   normalizeSubscriptionPlanVisual,
   userHasVipAccess,
 } from '../utils/subscriptionTier'
+import { getUiIntlLocale } from '../utils/uiIntlLocale'
 
 export {
   effectiveDisplayTier,
@@ -92,7 +94,7 @@ function formatShortDate(iso) {
   if (!iso) return '—'
   const d = new Date(iso)
   if (!Number.isFinite(d.getTime())) return '—'
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+  return d.toLocaleDateString(getUiIntlLocale(), { day: 'numeric', month: 'short' })
 }
 
 function formatMoney(amount, currency = 'EUR') {
@@ -100,7 +102,7 @@ function formatMoney(amount, currency = 'EUR') {
   const n = Number(amount)
   const c = (currency || 'EUR').toString().toUpperCase()
   const sym = getCurrencySymbol(c)
-  return `${sym}${n.toLocaleString('ru-RU', { maximumFractionDigits: 0 })}`
+  return `${sym}${n.toLocaleString(getUiIntlLocale(), { maximumFractionDigits: 0 })}`
 }
 
 function rowInitials(title) {
@@ -174,7 +176,7 @@ function takeHistoryArray(json) {
 /**
  * Секции истории для дропбокса + плоский список для карточки «события».
  */
-function buildHistoryData(winners, reservations, shares, bidsRaw) {
+function buildHistoryData(winners, reservations, shares, bidsRaw, t) {
   const events = []
   const sectionAuction = []
   const sectionReserve = []
@@ -184,7 +186,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
   const wArr = Array.isArray(winners) ? winners : []
   for (const winner of wArr) {
     const prop = winner.property || {}
-    const t = prop.title || 'Выигрыш аукциона'
+    const title = prop.title || t('cabinetHistory_auctionWinFallback')
     const date = winner.won_at || winner.auction_end_date
     const sort = new Date(date || 0).getTime()
     const pid = winner.property_id ?? prop.id
@@ -197,15 +199,15 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     events.push({
       sort,
       id: `aw-${winner.id}`,
-      title: t,
+      title,
       details: `${formatMoney(winner.winning_bid_amount, winner.currency || prop.currency)} · ${formatShortDate(date)}`,
-      initials: rowInitials(t),
+      initials: rowInitials(title),
     })
     sectionAuction.push({
       id: `aw-${winner.id}`,
       propertyId: pid,
-      title: t,
-      subtitle: `Победа в аукционе`,
+      title,
+      subtitle: t('cabinetHistory_auctionWinSubtitle'),
       amount: formatMoney(winner.winning_bid_amount, winner.currency || prop.currency),
       purchaseDate: formatShortDate(date),
       imageSrc: img,
@@ -245,15 +247,15 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     events.push({
       sort,
       id: `rv-${row.id ?? row.dedupe_key}`,
-      title: `Резерв · ${title}`,
+      title: t('cabinetHistory_reserveTitle', { title }),
       details: `${formatMoney(paid, cur)} · ${formatShortDate(date)}`,
-      initials: 'РЗ',
+      initials: t('cabinetHistory_reserveInitials'),
     })
     sectionReserve.push({
       id: `rv-${row.id ?? row.dedupe_key}`,
       propertyId: pid,
       title,
-      subtitle: 'Купить сейчас',
+      subtitle: t('cabinetHistory_buyNowSubtitle'),
       amount: formatMoney(paid, cur),
       purchaseDate: formatShortDate(date),
       imageSrc: img,
@@ -269,7 +271,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
 
   const sArr = Array.isArray(shares) ? shares : []
   for (const row of sArr) {
-    const title = row.property_title || 'Покупка доли'
+    const title = row.property_title || t('cabinetHistory_sharePurchaseFallback')
     const date = row.purchase_date || row.paid_at || row.created_at
     const sort = new Date(date || 0).getTime()
     const cur = (row.currency || 'EUR').toString().toUpperCase()
@@ -277,7 +279,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
       row.total_paid != null
         ? formatMoney(row.total_paid, cur)
         : row.shares_count != null
-          ? `${row.shares_count} шт.`
+          ? t('cabinetHistory_sharesPcs', { count: row.shares_count })
           : '—'
     const img = sharePurchaseImageSrc(row.property_image)
     const pt = row.property_type || 'property'
@@ -290,15 +292,15 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     events.push({
       sort,
       id: `sp-${row.id}`,
-      title: `Доли · ${title}`,
+      title: t('cabinetHistory_sharesTitle', { title }),
       details: `${line} · ${formatShortDate(date)}`,
-      initials: 'ДЛ',
+      initials: t('cabinetHistory_sharesInitials'),
     })
     sectionShares.push({
       id: `sp-${row.id}`,
       propertyId: pid,
       title,
-      subtitle: row.shares_count != null ? `Куплено долей: ${row.shares_count}` : 'Покупка долей',
+      subtitle: row.shares_count != null ? t('cabinetHistory_sharesBought', { count: row.shares_count }) : t('cabinetHistory_sharesPurchase'),
       amount: line,
       purchaseDate: formatShortDate(date),
       imageSrc: img,
@@ -323,7 +325,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     const sorted = [...list].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     const latest = sorted[0]
     const prop = latest.property || {}
-    const title = latest.title || prop.title || `Объект #${pid}`
+    const title = latest.title || prop.title || t('cabinetHistory_propertyFallback', { id: pid })
     const sort = new Date(latest.created_at).getTime()
     const img = firstPhotoFromProperty(prop) || HISTORY_THUMB_PLACEHOLDER
     const href = getPropertyDetailPath(pid, { property: Object.keys(prop).length ? prop : { id: Number(pid) } })
@@ -332,14 +334,14 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     events.push({
       sort,
       id: `bid-${pid}`,
-      title: `Ставка · ${title}`,
+      title: t('cabinetHistory_bidTitle', { title }),
       details: `${formatMoney(latest.bid_amount, latest.currency)} · ${formatShortDate(latest.created_at)}`,
-      initials: 'СТ',
+      initials: t('cabinetHistory_bidInitials'),
     })
     sectionBids.push({
       id: `bid-${pid}`,
       title,
-      subtitle: 'Ставка в аукционе',
+      subtitle: t('cabinetHistory_bidSubtitle'),
       amount: formatMoney(latest.bid_amount, latest.currency),
       purchaseDate: formatShortDate(latest.created_at),
       imageSrc: img,
@@ -360,13 +362,13 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
 
   const historySections = []
   if (sectionAuction.length)
-    historySections.push({ key: 'auction', title: 'Аукцион', items: sectionAuction })
+    historySections.push({ key: 'auction', title: t('cabinetHistory_sectionAuction'), items: sectionAuction })
   if (sectionReserve.length)
-    historySections.push({ key: 'reserve', title: 'Резервы', items: sectionReserve })
+    historySections.push({ key: 'reserve', title: t('cabinetHistory_sectionReserves'), items: sectionReserve })
   if (sectionShares.length)
-    historySections.push({ key: 'shares', title: 'Доли', items: sectionShares })
+    historySections.push({ key: 'shares', title: t('cabinetHistory_sectionShares'), items: sectionShares })
   if (sectionBids.length)
-    historySections.push({ key: 'bids', title: 'Ставки', items: sectionBids })
+    historySections.push({ key: 'bids', title: t('cabinetHistory_sectionBids'), items: sectionBids })
 
   events.sort((a, b) => b.sort - a.sort)
   const recentRows = events.slice(0, 3).map(({ id, title, details, initials }) => ({
@@ -387,6 +389,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
  *   loadHistory — когда false, тяжёлый history fetch не стартует (герой не ждёт).
  */
 export function useCabinetOverviewData({ loadHistory = true } = {}) {
+  const { t, i18n } = useTranslation()
   const { user, isLoaded: userLoaded } = useUser()
   const [numericUserId, setNumericUserId] = useState(() => getStoredNumericUserId())
   const [publicIdDisplay, setPublicIdDisplay] = useState(null)
@@ -544,7 +547,8 @@ export function useCabinetOverviewData({ loadHistory = true } = {}) {
           winners,
           reservations,
           shares,
-          bids
+          bids,
+          t,
         )
         setHistoryCount(count)
         setRecentHistoryRows(recentRows)
@@ -564,7 +568,7 @@ export function useCabinetOverviewData({ loadHistory = true } = {}) {
     return () => {
       cancelled = true
     }
-  }, [numericUserId, userLoaded, historyRevision, loadHistory])
+  }, [numericUserId, userLoaded, historyRevision, loadHistory, t, i18n.language])
 
   useEffect(() => {
     const uid = numericUserId ?? getStoredNumericUserId()

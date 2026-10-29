@@ -19,7 +19,7 @@ export async function fetchLinkedRoles({ userId, email } = {}) {
     const response = await fetchDedupe(`${API_BASE_URL}/auth/linked-roles?${key}`)
     const data = await response.json().catch(() => ({}))
     if (!response.ok) {
-      throw new Error(data.error || 'Не удалось загрузить связанные кабинеты')
+      throw new Error(data.error || 'Could not load linked cabinets')
     }
     linkedRolesCache.set(key, { ts: Date.now(), promise: null, data })
     return data
@@ -37,7 +37,7 @@ export async function createLinkedRole({ userId, targetRole, password }) {
   })
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
-    const err = new Error(data.error || 'Не удалось создать кабинет')
+    const err = new Error(data.error || 'Could not create cabinet')
     err.status = data.status || null
     err.passwordValidation = data.passwordValidation || null
     throw err
@@ -54,7 +54,7 @@ export async function setLinkedRolePassword({ userId, password }) {
   })
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
-    const err = new Error(data.error || 'Не удалось сохранить пароль')
+    const err = new Error(data.error || 'Could not save password')
     err.status = data.status || null
     err.passwordValidation = data.passwordValidation || null
     throw err

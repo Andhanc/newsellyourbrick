@@ -4,29 +4,29 @@
  */
 
 export const SITE_ASSISTANT_NAV = [
-  { path: '/auction', label: 'Аукционы', aliases: ['аукцион', 'лоты', 'торги', 'auction', 'home', 'главн'] },
-  { path: '/auction/buy-now', label: 'Купить сейчас', aliases: ['купить сейчас', 'buy now', 'buy-now'] },
-  { path: '/map', label: 'Карта объектов', aliases: ['карта', 'карту', 'карты', 'map', 'на карте'] },
-  { path: '/co-investment', label: 'Доли (Shares)', aliases: ['доли', 'shares', 'share', 'соинвест', 'фракцион'] },
-  { path: '/shares', label: 'Доли (Shares)', aliases: ['/shares'] },
-  { path: '/calculator', label: 'Умная панель инвестора', aliases: ['калькулятор', 'инвестор', 'доходност', 'roi', 'yield', 'панель инвестора', 'умный инвестор'] },
-  { path: '/compare', label: 'Сравнение объектов', aliases: ['сравн', 'compare'] },
-  { path: '/test-drive', label: 'Test-drive объектов', aliases: ['тест-драйв', 'test-drive', 'testdrive'] },
-  { path: '/favorites', label: 'Избранное', aliases: ['избранн', 'favourites', 'favorites'] },
-  { path: '/news', label: 'Новости', aliases: ['новост', 'news'] },
-  { path: '/about', label: 'О платформе', aliases: ['о нас', 'о платформе', 'about', 'компания'] },
-  { path: '/buyer', label: 'Покупателям', aliases: ['покупател', 'buyer'] },
-  { path: '/seller', label: 'Продавцам', aliases: ['продав', 'seller'] },
-  { path: '/debts', label: 'Долги / Distressed', aliases: ['долг', 'debt', 'distressed'] },
-  { path: '/development', label: 'Development', aliases: ['development', 'девелоп', 'совместн развит'] },
-  { path: '/private-club', label: 'Private Club', aliases: ['private club', 'vip', 'клуб'] },
-  { path: '/subscriptions', label: 'Подписки', aliases: ['подписк', 'тариф', 'subscription', 'pro'] },
-  { path: '/wallet', label: 'Кошелёк и депозит', aliases: ['кошел', 'депозит', 'wallet', 'deposit', 'баланс'] },
-  { path: '/bonuses', label: 'Бонусы', aliases: ['бонус', 'промокод', 'реферал', 'bonus', 'promo'] },
-  { path: '/sections', label: 'Все сервисы', aliases: ['все сервис', 'разделы', 'карта сервис', 'sections', 'меню'] },
-  { path: '/chat', label: 'Чат с помощником', aliases: ['чат', 'chat', 'помощник'] },
-  { path: '/chat?manager=1', label: 'Поддержка', aliases: ['поддержк', 'support', 'техподдержк', 'менеджер'] },
-  { path: '/profile', label: 'Личный кабинет', aliases: ['кабинет', 'профиль', 'profile'] },
+  { path: '/auction', labelKey: 'auction', aliases: ['аукцион', 'аукционы', 'лоты', 'торги', 'auction', 'home', 'главн'] },
+  { path: '/auction/buy-now', labelKey: 'headerMegaBuyNow', aliases: ['купить сейчас', 'buy now', 'buy-now'] },
+  { path: '/map', labelKey: 'siteNavMapObjects', aliases: ['карта', 'карту', 'карты', 'map', 'на карте'] },
+  { path: '/co-investment', labelKey: 'shares', aliases: ['доли', 'shares', 'share', 'соинвест', 'фракцион'] },
+  { path: '/shares', labelKey: 'shares', aliases: ['/shares'] },
+  { path: '/calculator', labelKey: 'calculator', aliases: ['калькулятор', 'инвестор', 'доходност', 'roi', 'yield', 'панель инвестора', 'умный инвестор'] },
+  { path: '/compare', labelKey: 'footerCompareObjects', aliases: ['сравн', 'compare'] },
+  { path: '/test-drive', labelKey: 'testDrive', aliases: ['тест-драйв', 'test-drive', 'testdrive'] },
+  { path: '/favorites', labelKey: 'favorites', aliases: ['избранн', 'favourites', 'favorites'] },
+  { path: '/news', labelKey: 'news', aliases: ['новост', 'news'] },
+  { path: '/about', labelKey: 'siteNavAboutPlatform', aliases: ['о нас', 'о платформе', 'about', 'компания'] },
+  { path: '/buyer', labelKey: 'headerMegaForBuyerPage', aliases: ['покупател', 'buyer'] },
+  { path: '/seller', labelKey: 'headerMegaForSellerPage', aliases: ['продав', 'seller'] },
+  { path: '/debts', labelKey: 'debtsTitle', aliases: ['долг', 'debt', 'distressed'] },
+  { path: '/development', labelKey: 'develop.title', aliases: ['development', 'девелоп', 'совместн развит'] },
+  { path: '/private-club', labelKey: 'privateClubPageTitle', aliases: ['private club', 'vip', 'клуб'] },
+  { path: '/subscriptions', labelKey: 'subscriptions', aliases: ['подписк', 'тариф', 'subscription', 'pro'] },
+  { path: '/wallet', labelKey: 'siteNavWalletDeposit', aliases: ['кошел', 'депозит', 'wallet', 'deposit', 'баланс'] },
+  { path: '/bonuses', labelKey: 'bonuses', aliases: ['бонус', 'промокод', 'реферал', 'bonus', 'promo'] },
+  { path: '/sections', labelKey: 'siteNavAllServices', aliases: ['все сервис', 'разделы', 'карта сервис', 'sections', 'меню'] },
+  { path: '/chat', labelKey: 'siteNavAssistantChat', aliases: ['чат', 'chat', 'помощник'] },
+  { path: '/chat?manager=1', labelKey: 'chat', aliases: ['поддержк', 'support', 'техподдержк', 'менеджер'] },
+  { path: '/profile', labelKey: 'siteNavPersonalCabinet', aliases: ['кабинет', 'профиль', 'profile'] },
 ]
 
 const ALLOWED_PATHS = new Set(SITE_ASSISTANT_NAV.map((item) => item.path))
@@ -60,8 +60,35 @@ export function normalizeAssistantPath(path) {
 }
 
 /**
+ * Resolve a site-nav / assistant link label for display.
+ * Prefers i18n via labelKey (or catalog lookup by path); keeps raw label as fallback.
+ * @param {{ path?: string, labelKey?: string, label?: string, title?: string, text?: string }|string|null|undefined} item
+ * @param {(key: string) => string} [t]
+ */
+export function getSiteLinkLabel(item, t) {
+  if (item == null) return ''
+  if (typeof item === 'string') {
+    const fromCatalog = SITE_ASSISTANT_NAV.find((n) => n.path === normalizeAssistantPath(item))
+    if (fromCatalog?.labelKey && typeof t === 'function') {
+      const translated = t(fromCatalog.labelKey)
+      if (translated && translated !== fromCatalog.labelKey) return translated
+    }
+    return item
+  }
+  const labelKey =
+    item.labelKey || SITE_ASSISTANT_NAV.find((n) => n.path === normalizeAssistantPath(item.path))?.labelKey
+  if (labelKey && typeof t === 'function') {
+    const translated = t(labelKey)
+    if (translated && translated !== labelKey) return translated
+  }
+  const raw = item.label || item.title || item.text
+  if (raw) return String(raw).slice(0, 80)
+  return String(item.path || labelKey || '')
+}
+
+/**
  * @param {unknown} navigation
- * @returns {Array<{ path: string, label: string }>}
+ * @returns {Array<{ path: string, labelKey?: string, label?: string }>}
  */
 export function sanitizeNavigationLinks(navigation) {
   if (!Array.isArray(navigation)) return []
@@ -73,11 +100,15 @@ export function sanitizeNavigationLinks(navigation) {
     if (!isAllowedAssistantPath(path) || seen.has(path)) continue
     seen.add(path)
     const fromCatalog = SITE_ASSISTANT_NAV.find((n) => n.path === path)
-    const label =
-      (typeof item === 'object' && (item.label || item.title || item.text)) ||
-      fromCatalog?.label ||
-      path
-    out.push({ path, label: String(label).slice(0, 80) })
+    const explicitLabel =
+      typeof item === 'object' ? item.label || item.title || item.text : null
+    const labelKey =
+      (typeof item === 'object' && item.labelKey) || fromCatalog?.labelKey || undefined
+    const entry = { path }
+    if (labelKey) entry.labelKey = labelKey
+    if (explicitLabel) entry.label = String(explicitLabel).slice(0, 80)
+    else if (!labelKey) entry.label = path
+    out.push(entry)
     if (out.length >= 6) break
   }
   return out
@@ -86,7 +117,7 @@ export function sanitizeNavigationLinks(navigation) {
 /**
  * Эвристика: пользователь просит раздел сайта.
  * @param {string} userMessage
- * @returns {Array<{ path: string, label: string }>}
+ * @returns {Array<{ path: string, labelKey: string }>}
  */
 export function detectNavigationFromMessage(userMessage) {
   const t = String(userMessage || '').toLowerCase()
@@ -101,14 +132,14 @@ export function detectNavigationFromMessage(userMessage) {
 
   const matched = SITE_ASSISTANT_NAV.filter((item) => item.aliases.some((a) => t.includes(a)))
   if (matched.length) {
-    return matched.slice(0, 4).map(({ path, label }) => ({ path, label }))
+    return matched.slice(0, 4).map(({ path, labelKey }) => ({ path, labelKey }))
   }
 
   // Общий запрос «куда можно перейти / разделы сайта»
   if (/(раздел|страниц|навигац|что\s+есть\s+на\s+сайте|меню|все\s+сервис)/i.test(t)) {
     return SITE_ASSISTANT_NAV.filter((item) =>
       ['/sections', '/auction', '/map', '/calculator', '/co-investment', '/test-drive', '/about'].includes(item.path),
-    ).map(({ path, label }) => ({ path, label }))
+    ).map(({ path, labelKey }) => ({ path, labelKey }))
   }
 
   return []
@@ -150,8 +181,8 @@ export function estimateSimpleYield(input = {}) {
     yieldPercent,
     usedAssumedRent,
     note: usedAssumedRent
-      ? 'Ориентир по типичной арендной ставке региона. Не гарантия доходности.'
-      : 'Ориентировочная валовая доходность до налогов и расходов.',
+      ? 'aiYield_noteAssumedRent'
+      : 'aiYield_noteGross',
   }
 }
 
@@ -253,9 +284,22 @@ export function pickLocalRecommendations(preferences = {}, properties = [], limi
       }
 
       if (type) {
-        if (type.includes('квартир') && (name.includes('apart') || name.includes('квартир') || String(p.property_type || '').includes('apart'))) score += 3
-        if (type.includes('вилл') && (name.includes('villa') || name.includes('вилл'))) score += 3
-        if (type.includes('дом') && (name.includes('house') || name.includes('дом') || name.includes('town'))) score += 3
+        const apiType = String(p.property_type || '')
+        if (
+          (type.includes('квартир') || type === 'apartment' || type.includes('apart')) &&
+          (name.includes('apart') || name.includes('квартир') || apiType.includes('apart'))
+        ) {
+          score += 3
+        }
+        if ((type.includes('вилл') || type === 'villa') && (name.includes('villa') || name.includes('вилл'))) {
+          score += 3
+        }
+        if (
+          (type.includes('дом') || type === 'house') &&
+          (name.includes('house') || name.includes('дом') || name.includes('town'))
+        ) {
+          score += 3
+        }
       }
 
       if (Number.isFinite(rooms) && rooms > 0 && pRooms > 0) {
@@ -273,8 +317,11 @@ export function pickLocalRecommendations(preferences = {}, properties = [], limi
   return scored.slice(0, limit).map((row) => row.id)
 }
 
-export function buildSiteMapPromptBlock() {
-  return SITE_ASSISTANT_NAV.map((item) => `- ${item.path} — ${item.label}`).join('\n')
+/**
+ * @param {(key: string) => string} [t]
+ */
+export function buildSiteMapPromptBlock(t) {
+  return SITE_ASSISTANT_NAV.map((item) => `- ${item.path} — ${getSiteLinkLabel(item, t)}`).join('\n')
 }
 
 export function looksLikeLegacySpainDubaiWelcome(text = '') {
@@ -345,7 +392,7 @@ export function catalogPlaceLabels(properties = []) {
 
 /**
  * Гарантирует кнопку на Умную панель инвестора при вопросах про доход/инвестиции.
- * @param {Array<{ path: string, label: string }>} navigation
+ * @param {Array<{ path: string, labelKey?: string, label?: string }>} navigation
  * @param {{ purpose?: string|null }} preferences
  * @param {string} userMessage
  * @param {object|null} yieldEstimate
@@ -356,12 +403,15 @@ export function ensureInvestorPanelNavigation(navigation, preferences, userMessa
   const investIntent =
     Boolean(yieldEstimate) ||
     preferences?.purpose === 'инвестиции' ||
+    preferences?.purpose === 'investment' ||
     preferences?.purpose === 'под сдачу' ||
+    preferences?.purpose === 'for_rent' ||
+    preferences?.purpose === 'for_self' ||
     /(доход|инвест|аренда|roi|yield|окупаем|калькулятор|панель\s+инвестора)/i.test(lower)
 
   if (!investIntent) return list
   if (list.some((item) => item.path === '/calculator')) return list
-  return [{ path: '/calculator', label: 'Умная панель инвестора' }, ...list].slice(0, 6)
+  return [{ path: '/calculator', labelKey: 'calculator' }, ...list].slice(0, 6)
 }
 
 /** Язык ответа: только ru | en | es (по умолчанию ru). */
@@ -648,16 +698,16 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
       navMap: 'Mapa',
     },
   }
-  const t = copy[lang] || copy.ru
+  const t = copy[lang] || copy.en
   const placeLabels = catalogPlaceLabels(catalog)
   const placesText =
     placeLabels.length > 0
       ? placeLabels.join(', ')
-      : lang === 'en'
-        ? 'our current catalog'
+      : lang === 'ru'
+        ? 'текущий каталог'
         : lang === 'es'
           ? 'el catálogo actual'
-          : 'текущий каталог'
+          : 'our current catalog'
 
   let replyText = ''
   let buttons = null

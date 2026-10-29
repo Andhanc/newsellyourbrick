@@ -6,6 +6,7 @@ import {
   buildOwnerPropertyAnalytics,
   setOwnerPropertiesLiveCache,
 } from '../pages/ownerPropertiesTestData'
+import { getUiIntlLocale } from './uiIntlLocale'
 
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
@@ -16,13 +17,13 @@ function formatMoney(amount, currency = 'USD') {
   const num = Number(amount)
   if (!num || Number.isNaN(num)) return '—'
   const sym = getCurrencySymbol(currency)
-  return `${sym}${num.toLocaleString('ru-RU', { maximumFractionDigits: 0 })}`
+  return `${sym}${num.toLocaleString(getUiIntlLocale(), { maximumFractionDigits: 0 })}`
 }
 
 function formatViewsCount(value) {
   const num = Number(value)
   if (!num || Number.isNaN(num)) return '0'
-  return num.toLocaleString('ru-RU')
+  return num.toLocaleString(getUiIntlLocale())
 }
 
 function finiteNumber(value, fallback = 0) {
@@ -66,7 +67,8 @@ function resolveStatus(property) {
   const sharesSold = Number(property.shares_sold) || 0
   if (totalShares > 0 && sharesSold >= totalShares) {
     return {
-      status: 'Продан',
+      statusLabelKey: 'ownerPropStatus_sold',
+      status: 'ownerPropStatus_sold',
       statusKey: 'sold',
       filterKey: 'sold',
       moderationKey: 'approved',
@@ -78,7 +80,8 @@ function resolveStatus(property) {
     const until = new Date(reservedUntil).getTime()
     if (Number.isFinite(until) && until > Date.now()) {
       return {
-        status: 'Забронирован',
+        statusLabelKey: 'ownerPropStatus_booked',
+        status: 'ownerPropStatus_booked',
         statusKey: 'booked',
         filterKey: 'booked',
         moderationKey: 'approved',
@@ -87,7 +90,8 @@ function resolveStatus(property) {
   }
   if (property.is_reserved === true || property.is_reserved === 1) {
     return {
-      status: 'Забронирован',
+      statusLabelKey: 'ownerPropStatus_booked',
+      status: 'ownerPropStatus_booked',
       statusKey: 'booked',
       filterKey: 'booked',
       moderationKey: 'approved',
@@ -97,7 +101,8 @@ function resolveStatus(property) {
   const moderation = String(property.moderation_status || '').toLowerCase()
   if (moderation === 'approved' && property.has_pending_edit) {
     return {
-      status: 'На модерации',
+      statusLabelKey: 'ownerPropStatus_moderation',
+      status: 'ownerPropStatus_moderation',
       statusKey: 'active',
       filterKey: 'active',
       moderationKey: 'pending',
@@ -105,7 +110,8 @@ function resolveStatus(property) {
   }
   if (moderation === 'approved') {
     return {
-      status: 'Одобрен',
+      statusLabelKey: 'ownerPropStatus_approved',
+      status: 'ownerPropStatus_approved',
       statusKey: 'active',
       filterKey: 'active',
       moderationKey: 'approved',
@@ -113,7 +119,8 @@ function resolveStatus(property) {
   }
   if (moderation === 'rejected') {
     return {
-      status: 'Отклонён',
+      statusLabelKey: 'ownerPropStatus_rejected',
+      status: 'ownerPropStatus_rejected',
       statusKey: 'draft',
       filterKey: 'draft',
       moderationKey: 'rejected',
@@ -121,14 +128,16 @@ function resolveStatus(property) {
   }
   if (moderation === 'pending') {
     return {
-      status: 'На модерации',
+      statusLabelKey: 'ownerPropStatus_moderation',
+      status: 'ownerPropStatus_moderation',
       statusKey: 'draft',
       filterKey: 'draft',
       moderationKey: 'pending',
     }
   }
   return {
-    status: 'Черновик',
+    statusLabelKey: 'ownerPropStatus_draft',
+    status: 'ownerPropStatus_draft',
     statusKey: 'draft',
     filterKey: 'draft',
     moderationKey: 'draft',
@@ -228,7 +237,7 @@ export function sortOwnerPropertiesByNewest(rows) {
 
 export function mapApiPropertyToOwnerListRow(prop) {
   const listingType = mapListingType(prop)
-  const { status, statusKey, filterKey, moderationKey } = resolveStatus(prop)
+  const { status, statusLabelKey, statusKey, filterKey, moderationKey } = resolveStatus(prop)
   const currency = prop.currency || 'USD'
   const priceNum = Number(prop.price)
   const currentBidNum = resolveCurrentBid(prop, listingType)
@@ -251,10 +260,13 @@ export function mapApiPropertyToOwnerListRow(prop) {
     id: prop.id,
     rowKey: `${sourceTable}:${prop.id}`,
     displayId,
-    title: prop.title || prop.name || 'Без названия',
-    location: prop.location || prop.address || 'Не указано',
+    title: prop.title || prop.name || '',
+    titleFallbackKey: 'ownerPropertyFallback',
+    location: prop.location || prop.address || '',
+    locationFallbackKey: 'ownerSales_locationUnknown',
     image: getPropertyCardImage(prop, FALLBACK_IMAGE),
     status,
+    statusLabelKey: statusLabelKey || status,
     statusKey,
     filterKey,
     moderationKey,
@@ -276,7 +288,7 @@ export function mapApiPropertyToOwnerListRow(prop) {
     createdAtTs,
     updatedAtTs,
     date: createdAtTs
-      ? new Date(createdAtTs).toLocaleDateString('ru-RU', {
+      ? new Date(createdAtTs).toLocaleDateString(undefined, {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric',
@@ -301,7 +313,7 @@ export async function fetchOwnerProperties(userId) {
   const promise = (async () => {
     const response = await fetch(`${API_BASE_URL}/properties/user/${userId}`)
     if (!response.ok) {
-      throw new Error('Не удалось загрузить объекты')
+      throw new Error('ownerPropErr_loadFailed')
     }
 
     const result = await response.json()

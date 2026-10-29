@@ -107,7 +107,9 @@ export function resolvePageSeo(pathname, t) {
     const city = segments[1];
     const typePlural = segments[2] || null;
     const countryKey = matchCountryKey(country) || country;
-    const countryLabel = getCountryLabel(countryKey, country);
+    const locale =
+      (typeof t === 'function' && (t.lng || t?.i18n?.language)) || undefined;
+    const countryLabel = getCountryLabel(countryKey, country, locale);
     const cityLabel = getCanonicalRegionLabel(city, city);
     const typeLabel =
       typePlural && CATALOG_TYPE_I18N[typePlural] ? t(CATALOG_TYPE_I18N[typePlural]) : '';

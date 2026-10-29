@@ -107,14 +107,14 @@ export default function OwnerTestDriveRequestModal({
           ) : (
             <div className="owner-td-request-modal__comment-wrap">
               <label className="owner-td-request-modal__comment-label">
-                Комментарий для покупателя (время заезда, как забрать ключи и т.д.)
+                {t('ownerTestDriveDetailCommentLabel')}
               </label>
               <textarea
                 className="owner-td-request-modal__comment-input"
                 rows={4}
                 value={ownerComment}
                 onChange={(e) => setOwnerComment(e.target.value)}
-                placeholder="Например: Заезд с 15:00, ключи у консьержа, код домофона 1234."
+                placeholder={t('ownerTestDriveDetailCommentPlaceholder')}
               />
               <div className="owner-td-request-modal__comment-actions">
                 <button
@@ -123,7 +123,7 @@ export default function OwnerTestDriveRequestModal({
                   onClick={() => setShowApproveComment(false)}
                   disabled={responding}
                 >
-                  Назад
+                  {t('ownerTestDriveDetailBack')}
                 </button>
                 <button
                   type="button"
@@ -131,7 +131,7 @@ export default function OwnerTestDriveRequestModal({
                   onClick={() => onRespond('approve', ownerComment)}
                   disabled={responding || !ownerComment.trim()}
                 >
-                  {responding ? '…' : 'Подтвердить и отправить'}
+                  {responding ? '…' : t('ownerTestDriveDetailConfirmSend')}
                 </button>
               </div>
             </div>

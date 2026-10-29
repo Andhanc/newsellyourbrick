@@ -3,6 +3,7 @@ import { Link } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import { resolveMediaUrl } from '../api/client'
 import { colors, rounded } from '../theme/tokens'
+import { nativeT } from '../i18n/nativeStrings'
 
 export type CatalogProperty = {
   id: number | string
@@ -49,7 +50,7 @@ export function propertyPriceLabel(item: CatalogProperty) {
   return `${amount.toLocaleString('ru-RU')} ${currency}`
 }
 
-export function PropertyCard({ item }: { item: CatalogProperty }) {
+export function PropertyCard({ item, locale }: { item: CatalogProperty; locale?: string }) {
   const img = propertyImageUrl(item)
   return (
     <Link href={propertyHref(item) as any} asChild>
@@ -61,7 +62,7 @@ export function PropertyCard({ item }: { item: CatalogProperty }) {
         )}
         <View style={styles.body}>
           <Text style={styles.title} numberOfLines={2}>
-            {item.title || item.name || 'Объект'}
+            {item.title || item.name || nativeT('ownerPropertyFallback', locale)}
           </Text>
           <Text style={styles.loc} numberOfLines={1}>
             {item.location || '—'}

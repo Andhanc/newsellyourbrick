@@ -227,8 +227,8 @@ export function SiteNotificationsProvider({ children }) {
                 action: {
                   label:
                     propertyId != null
-                      ? t('notificationsOutbidCta', 'К торгам')
-                      : t('toastOpenNotifications', 'Открыть уведомления'),
+                      ? t('notificationsOutbidCta', 'Back to auction')
+                      : t('toastOpenNotifications', 'Open notifications'),
                   variant: 'link',
                   onClick: () => {
                     if (propertyId != null) {
@@ -244,12 +244,12 @@ export function SiteNotificationsProvider({ children }) {
           if (otherLiveNotifications.length > 0) {
             showToast({
               type: 'info',
-              title: t('toastNewNotification', 'У вас новое уведомление'),
+              title: t('toastNewNotification', 'You have a new notification'),
               message: '',
               duration: 4500,
               dedupeKey: 'notifications:new',
               action: {
-                label: t('toastOpenNotification', 'Открыть'),
+                label: t('toastOpenNotification', 'Open'),
                 onClick: () => setIsOpen(true),
               },
             })
@@ -260,7 +260,7 @@ export function SiteNotificationsProvider({ children }) {
         previousNotificationIds.current = currentNotificationIds
         setNotifications(notificationsList)
       } catch (e) {
-        console.error('SiteNotifications: ошибка загрузки', e)
+        console.error('SiteNotifications: load failed', e)
         setNotifications([])
       } finally {
         if (!cancelled) setNotificationsLoading(false)
@@ -483,7 +483,7 @@ export function SiteNotificationsProvider({ children }) {
           setNotifications(refreshed || [])
         }
       } catch (error) {
-        console.error('Ошибка при просмотре уведомления:', error)
+        console.error('SiteNotifications: mark viewed failed', error)
       }
     },
     [API_BASE_URL],
@@ -526,8 +526,8 @@ export function SiteNotificationsProvider({ children }) {
       console.error('SiteNotifications: mark all read', error)
       showToast({
         type: 'error',
-        title: 'Не удалось обновить уведомления',
-        message: t('networkErrorShort', 'Проверьте подключение и попробуйте снова.'),
+        title: t('notificationsMarkAllFailed', { defaultValue: 'Could not update notifications' }),
+        message: t('networkErrorShort', 'Check your connection and try again.'),
         dedupeKey: 'notifications:mark-all-error',
       })
     }
@@ -648,7 +648,7 @@ export function NotificationsBell({ variant = 'desktop' }) {
         data-site-notifications-bell
         aria-label={
           unreadCount > 0
-            ? t('notificationsNewCount', { count: unreadCount, defaultValue: '{{count}} новых' })
+            ? t('notificationsNewCount', { count: unreadCount, defaultValue: '{{count}} new' })
             : t('notifications')
         }
         aria-expanded={isOpen}
@@ -671,7 +671,7 @@ export function NotificationsBell({ variant = 'desktop' }) {
         data-site-notifications-bell
         aria-label={
           unreadCount > 0
-            ? t('notificationsNewCount', { count: unreadCount, defaultValue: '{{count}} новых' })
+            ? t('notificationsNewCount', { count: unreadCount, defaultValue: '{{count}} new' })
             : t('notifications')
         }
         aria-expanded={isOpen}
@@ -693,7 +693,7 @@ export function NotificationsBell({ variant = 'desktop' }) {
       data-site-notifications-bell
       aria-label={
         unreadCount > 0
-          ? t('notificationsNewCount', { count: unreadCount, defaultValue: '{{count}} новых' })
+          ? t('notificationsNewCount', { count: unreadCount, defaultValue: '{{count}} new' })
           : t('notifications')
       }
       aria-expanded={isOpen}

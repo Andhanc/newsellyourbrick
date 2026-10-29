@@ -6,9 +6,9 @@ const component = await readFile(new URL('./PurchasedPropertyHistoryCard.jsx', i
 const css = await readFile(new URL('./PurchasedPropertyHistoryCard.css', import.meta.url), 'utf8')
 
 test('renders a real purchased-property summary and one details action', () => {
-  assert.match(component, /Купить сейчас/)
-  assert.match(component, /Оплачено \{Math\.round\(item\.paymentPercent\)\}%/)
-  assert.match(component, /Подробнее/)
+  assert.match(component, /headerMegaBuyNow/)
+  assert.match(component, /purchasedHistoryPaidPercent/)
+  assert.match(component, /createSiteAd_learnMore/)
   assert.match(component, /role="progressbar"/)
   assert.match(component, /item\.imageSrc/)
   assert.match(component, /item\.location/)

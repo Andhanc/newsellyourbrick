@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiSend, FiPhone, FiMessageSquare, FiColumns, FiMenu } from 'react-icons/fi';
 import PhoneInput from '../PhoneInput';
 import { getApiBaseUrl } from '../../utils/apiConfig';
@@ -6,6 +7,7 @@ import CrmBoard from './CrmBoard';
 import './Clients.css';
 
 const ClientsWhatsApp = () => {
+  const { t } = useTranslation();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -27,18 +29,18 @@ const ClientsWhatsApp = () => {
 
   const handleSend = async () => {
     if (!phoneNumber.trim()) {
-      setError('Пожалуйста, введите номер телефона');
+      setError(t('admin_clients_phoneRequired'));
       return;
     }
 
     if (!message.trim()) {
-      setError('Пожалуйста, введите сообщение');
+      setError(t('admin_clients_messageRequired'));
       return;
     }
 
     const digits = phoneNumber.replace(/\D/g, '');
     if (!digits || digits.length < 10) {
-      setError('Пожалуйста, введите корректный номер телефона');
+      setError(t('admin_clients_phoneInvalid'));
       return;
     }
 
@@ -65,7 +67,7 @@ const ClientsWhatsApp = () => {
       if (response.ok && data.success) {
         setSendResult({
           success: true,
-          message: data.message || 'Сообщение успешно отправлено в WhatsApp',
+          message: data.message || t('admin_clients_sendOk'),
           contact: data.contact,
         });
 
@@ -77,24 +79,24 @@ const ClientsWhatsApp = () => {
             success: false,
             message:
               data.error ||
-              'WhatsApp сервис временно недоступен. Пожалуйста, подождите несколько секунд и попробуйте снова.',
+              t('admin_clients_waUnavailable'),
           });
-          setError(data.error || 'WhatsApp сервис недоступен');
+          setError(data.error || t('admin_clients_waDown'));
         } else {
           setSendResult({
             success: false,
-            message: data.error || 'Ошибка при отправке сообщения. Попробуйте еще раз.',
+            message: data.error || t('admin_clients_sendFail'),
           });
-          setError(data.error || 'Не удалось отправить сообщение');
+          setError(data.error || t('admin_clients_sendFailShort'));
         }
       }
     } catch (err) {
       console.error('Ошибка отправки сообщения через WhatsApp:', err);
       setSendResult({
         success: false,
-        message: 'Не удалось отправить сообщение. Проверьте подключение к серверу.',
+        message: t('admin_clients_sendFailCheck'),
       });
-      setError('Ошибка подключения к серверу');
+      setError(t('admin_clients_connectionError'));
     } finally {
       setSending(false);
     }
@@ -106,7 +108,7 @@ const ClientsWhatsApp = () => {
         <div className="form-group">
           <label className="form-label">
             <FiPhone className="label-icon" />
-            Номер телефона
+            {t('admin_nomer_telefona_4a276534')}
           </label>
           <PhoneInput
             value={phoneNumber}
@@ -118,18 +120,18 @@ const ClientsWhatsApp = () => {
         <div className="form-group">
           <label className="form-label">
             <FiMessageSquare className="label-icon" />
-            Сообщение
+            {t('admin_soobschenie_dc72346a')}
           </label>
           <textarea
             className="message-textarea"
-            placeholder="Введите текст сообщения для клиента..."
+            placeholder={t('admin_clients_messagePlaceholder')}
             value={message}
             onChange={handleMessageChange}
             rows={10}
             maxLength={1000}
           />
           <div className="message-counter">
-            {message.length} / 1000 символов
+            {message.length} / 1000 {t('admin_simvolov_7fbc31ec')}
           </div>
         </div>
 
@@ -144,7 +146,7 @@ const ClientsWhatsApp = () => {
             <p>{sendResult.message}</p>
             {sendResult.contact && sendResult.contact.name && (
               <p style={{ fontSize: '0.9rem', marginTop: '0.5rem', opacity: 0.8 }}>
-                Получатель: {sendResult.contact.name}
+                {t('admin_poluchatel_ae1b56fa')} {sendResult.contact.name}
               </p>
             )}
             {sendResult.warning && (
@@ -157,7 +159,7 @@ const ClientsWhatsApp = () => {
               onClick={() => setSendResult(null)}
               className="close-result-btn"
             >
-              Закрыть
+              {t('admin_close')}
             </button>
           </div>
         )}
@@ -172,12 +174,12 @@ const ClientsWhatsApp = () => {
             {sending ? (
               <>
                 <FiSend style={{ animation: 'spin 1s linear infinite' }} />
-                Отправка...
+                {t('admin_otpravka_9b476aa9')}
               </>
             ) : (
               <>
                 <FiSend />
-                Отправить
+                {t('admin_otpravit_76dcf737')}
               </>
             )}
           </button>
@@ -196,23 +198,22 @@ const Clients = ({ onOpenAdminNav }) => {
         <div className="clients-header-row">
           <h2 className="clients-title">
             <FiColumns className="clients-title-icon" />
-            Клиенты: CRM и мессенджеры
+            {t('admin_klienty__i_messendzhery_8b508de7')}
           </h2>
           {typeof onOpenAdminNav === 'function' && (
             <button
               type="button"
               className="clients-admin-nav-btn"
               onClick={onOpenAdminNav}
-              aria-label="Открыть меню разделов админки"
+              aria-label={t('admin_openAdminSectionsMenu')}
             >
               <FiMenu aria-hidden />
-              <span>Меню разделов</span>
+              <span>{t('admin_menyu_razdelov_7801f84e')}</span>
             </button>
           )}
         </div>
         <p className="clients-subtitle">
-          Все зарегистрированные пользователи подтягиваются в воронку автоматически (по одной карточке на
-          аккаунт). Воронка, касания и письма; отдельно — WhatsApp.
+          {t('admin_vse_zaregistrirovannye_polzovateli_p_4947103e')}
         </p>
       </div>
 
@@ -223,7 +224,7 @@ const Clients = ({ onOpenAdminNav }) => {
           onClick={() => setTab('crm')}
         >
           <FiColumns />
-          CRM воронка
+          {t('admin__voronka_14967c67')}
         </button>
         <button
           type="button"

@@ -150,7 +150,7 @@ const InvestmentCalculator = () => {
   const [capitalGainsTaxPct, setCapitalGainsTaxPct] = useState('19');
 
   // Переключение графиков
-  const [activeChart, setActiveChart] = useState('income-expenses'); // 'income-expenses' или 'property-value'
+  const [activeChart, setActiveChart] = useState('income-expenses'); // 'income-expenses' | 'property-value'
 
   // Мастер: 1 — объект, 2 — цель, 3 — результат
   const [wizardStep, setWizardStep] = useState(1);

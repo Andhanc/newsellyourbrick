@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiX, FiUpload, FiFile, FiCheck, FiCamera } from 'react-icons/fi';
 import { showNotification } from '../utils/toastHelper';
 import './VerificationDocumentsModal.css';
@@ -6,6 +7,7 @@ import './VerificationDocumentsModal.css';
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api';
 
 const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => {
+  const { t } = useTranslation();
   const [documents, setDocuments] = useState({
     passport: null,
     selfie: null,
@@ -33,23 +35,23 @@ const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => 
   const documentTypes = [
     {
       key: 'passport',
-      label: 'Фото паспорта',
+      label: t('verificationDocsPassportLabel'),
       ref: passportRef,
-      description: 'Загрузите фото или скан паспорта (разворот с фото)',
+      description: t('verificationDocsPassportDesc'),
       documentType: 'passport'
     },
     {
       key: 'selfie',
-      label: 'Ваше селфи',
+      label: t('verificationDocsSelfieLabel'),
       ref: selfieRef,
-      description: 'Загрузите ваше селфи',
+      description: t('verificationDocsSelfieDesc'),
       documentType: 'selfie'
     },
     {
       key: 'passportWithFace',
-      label: 'Селфи с паспортом рядом с лицом',
+      label: t('verificationDocsPassportFaceLabel'),
       ref: passportWithFaceRef,
-      description: 'Загрузите фото, где вы держите паспорт рядом с лицом (селфи с паспортом)',
+      description: t('verificationDocsPassportFaceDesc'),
       documentType: 'passport_with_face'
     }
   ];
@@ -61,7 +63,7 @@ const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => 
     if (file.size > 10 * 1024 * 1024) {
       setErrors(prev => ({
         ...prev,
-        [key]: 'Размер файла не должен превышать 10 МБ'
+        [key]: t('verificationDocsErrorFileSize')
       }));
       return;
     }
@@ -71,7 +73,7 @@ const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => 
     if (!validTypes.includes(file.type)) {
       setErrors(prev => ({
         ...prev,
-        [key]: 'Поддерживаются только изображения (JPG, PNG, WEBP) и PDF'
+        [key]: t('verificationDocsErrorFileType')
       }));
       return;
     }
@@ -86,7 +88,7 @@ const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => 
     if (!userId) {
       setErrors(prev => ({
         ...prev,
-        [key]: 'ID пользователя не найден. Пожалуйста, обновите страницу.'
+        [key]: t('verificationDocsErrorNoUserId')
       }));
       return;
     }
@@ -96,7 +98,7 @@ const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => 
     if (isNaN(numericUserId) || numericUserId <= 0) {
       setErrors(prev => ({
         ...prev,
-        [key]: 'Неверный формат ID пользователя. Ожидается положительное число'
+        [key]: t('verificationDocsErrorBadUserId')
       }));
       return;
     }
@@ -116,7 +118,7 @@ const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => 
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Ошибка загрузки документа');
+        throw new Error(errorData.error || t('verificationDocsErrorUpload'));
       }
 
       const data = await response.json();
@@ -131,13 +133,13 @@ const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => 
           [key]: true
         }));
       } else {
-        throw new Error(data.error || 'Ошибка загрузки документа');
+        throw new Error(data.error || t('verificationDocsErrorUpload'));
       }
     } catch (error) {
       console.error('Ошибка загрузки документа:', error);
       setErrors(prev => ({
         ...prev,
-        [key]: error.message || 'Не удалось загрузить документ'
+        [key]: error.message || t('verificationDocsErrorUploadFailed')
       }));
     } finally {
       setUploading(prev => ({ ...prev, [key]: false }));
@@ -164,7 +166,7 @@ const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => 
   const handleComplete = () => {
     const allUploaded = Object.values(uploaded).every(v => v === true);
     if (!allUploaded) {
-      showNotification('Пожалуйста, загрузите все необходимые документы');
+      showNotification(t('verificationDocsNeedAll'));
       return;
     }
     
@@ -187,10 +189,9 @@ const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => 
         </button>
         
         <div className="verification-documents-modal__content">
-          <h2 className="verification-documents-modal__title">Верификация документов</h2>
+          <h2 className="verification-documents-modal__title">{t('verificationDocsTitle')}</h2>
           <p className="verification-documents-modal__description">
-            Для завершения регистрации необходимо загрузить документы для верификации.
-            Документы будут проверены администратором в течение 24 часов.
+            {t('verificationDocsDescription')}
           </p>
           
           <div className="verification-documents-modal__list">
@@ -245,7 +246,7 @@ const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => 
                 {uploading[doc.key] && (
                   <div className="verification-documents-modal__upload-status">
                     <span className="spinner"></span>
-                    <span>Загрузка...</span>
+                    <span>{t('verificationDocsUploading')}</span>
                   </div>
                 )}
                 
@@ -254,7 +255,7 @@ const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => 
                     <div className="verification-documents-modal__file-details">
                       <p className="verification-documents-modal__file-name">{documents[doc.key]?.file?.name}</p>
                       <p className="verification-documents-modal__file-size">
-                        {(documents[doc.key]?.file?.size / 1024 / 1024).toFixed(2)} МБ
+                        {(documents[doc.key]?.file?.size / 1024 / 1024).toFixed(2)} {t('verificationDocsMb')}
                       </p>
                     </div>
                     <button
@@ -264,7 +265,7 @@ const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => 
                         handleRemove(doc.key);
                       }}
                     >
-                      Удалить
+                      {t('verificationDocsRemove')}
                     </button>
                   </div>
                 )}
@@ -272,7 +273,7 @@ const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => 
                 {!uploaded[doc.key] && !uploading[doc.key] && (
                   <div className="verification-documents-modal__upload-hint">
                     <FiUpload size={20} />
-                    <span>Нажмите на карточку, чтобы загрузить файл</span>
+                    <span>{t('verificationDocsClickToUpload')}</span>
                   </div>
                 )}
               </div>
@@ -289,7 +290,7 @@ const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => 
               />
             </div>
             <p className="verification-documents-modal__progress-text">
-              Загружено {uploadedCount} из {totalCount} документов
+              {t('verificationDocsProgress', { uploaded: uploadedCount, total: totalCount })}
             </p>
           </div>
           
@@ -299,7 +300,7 @@ const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => 
               onClick={handleComplete}
               disabled={uploadedCount < totalCount}
             >
-              Отправить на верификацию
+              {t('verificationDocsSubmit')}
             </button>
           </div>
         </div>

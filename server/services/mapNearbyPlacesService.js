@@ -50,11 +50,11 @@ out body center;
 }
 
 const DEFAULT_NAMES = {
-  schools: 'Учебное заведение',
-  transport: 'Остановка',
-  medical: 'Медицинское учреждение',
-  recreation: 'Зона отдыха',
-  shops: 'Магазин',
+  schools: 'Education',
+  transport: 'Transit stop',
+  medical: 'Healthcare',
+  recreation: 'Recreation',
+  shops: 'Shop',
 }
 
 const VALID_CATEGORIES = new Set(Object.keys(CATEGORY_QUERIES))
@@ -71,7 +71,7 @@ function getPlaceName(tags = {}, categoryId) {
     tags['name:be'] ||
     tags.operator ||
     DEFAULT_NAMES[categoryId] ||
-    'Объект'
+    'Property'
   )
 }
 

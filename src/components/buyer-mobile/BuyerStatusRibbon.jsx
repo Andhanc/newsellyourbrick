@@ -6,7 +6,7 @@ const PRESENTATION = Object.freeze({
   sold: { labelKey: 'auctionFinalStateSold', tone: 'sold', showCheck: true },
   'auction-ended': { labelKey: 'auctionFinalStateSold', tone: 'sold', showCheck: true },
   reserved: { labelKey: 'reserved', tone: 'reserved', showCheck: false },
-  unavailable: { labelKey: null, tone: 'unavailable', showCheck: false },
+  unavailable: { labelKey: 'buyerListing_unavailable', tone: 'unavailable', showCheck: false },
 })
 
 const VISIBLE_STATES = new Set(Object.keys(PRESENTATION))
@@ -16,7 +16,8 @@ export default function BuyerStatusRibbon({ listingState, className = '' }) {
   if (!listingState || !VISIBLE_STATES.has(listingState.state)) return null
 
   const presentation = PRESENTATION[listingState.state]
-  const label = presentation.labelKey ? t(presentation.labelKey) : listingState.label
+  const labelKey = presentation.labelKey || listingState.labelKey
+  const label = labelKey ? t(labelKey) : listingState.label
   const tone = presentation.tone
 
   return (

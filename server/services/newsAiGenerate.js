@@ -80,10 +80,10 @@ function simplifyUserPrompt(raw) {
 function parseNewsPayload(content) {
   const parsed = parseLooseJson(content)
   if (!parsed.title) {
-    throw new Error('Неполный ответ AI: нет title')
+    throw new Error('Incomplete AI response: missing title')
   }
   if (!Array.isArray(parsed.body) || !parsed.body.length) {
-    throw new Error('Неполный ответ AI: нет body')
+    throw new Error('Incomplete AI response: missing body')
   }
   return parsed
 }
@@ -254,7 +254,7 @@ async function generateOutlineThenBody(userPrompt) {
 export async function generateNewsDraftFromPrompt(prompt) {
   const userPrompt = simplifyUserPrompt(prompt)
   if (userPrompt.length < 8) {
-    throw new Error('Промпт слишком короткий — опишите тему подробнее')
+    throw new Error('Prompt is too short — describe the topic in more detail')
   }
 
   let parsed

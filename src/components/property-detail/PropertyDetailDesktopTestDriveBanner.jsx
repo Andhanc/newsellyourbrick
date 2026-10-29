@@ -168,7 +168,7 @@ const PropertyDetailDesktopTestDriveBanner = forwardRef(function PropertyDetailD
           {!paused && !loading && !canRequest ? (
             <p className="pdx-test-drive-banner__hint">
               {t('propertyDetailTestDriveDepositHint', {
-                defaultValue: 'Пополните депозит на платформе, чтобы забронировать тест-драйв.',
+                defaultValue: 'Top up your platform deposit to book a test drive.',
               })}
             </p>
           ) : null}

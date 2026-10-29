@@ -1,18 +1,21 @@
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { FiX } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 import { markSiteAdModalSeen } from '@/utils/siteAdPages'
 import { isExternalAdUrl } from '@/utils/siteAdIcons'
 import SiteAdIcon from './SiteAdIcon'
 import './SiteAdModal.css'
 
 export default function SiteAdModal({ ad, onClose }) {
+  const { t } = useTranslation()
   if (!ad || typeof document === 'undefined') return null
 
   const buttonUrl = String(ad.buttonUrl || '').trim()
   const showButton = Boolean(ad.buttonEnabled && buttonUrl)
   const external = showButton && isExternalAdUrl(buttonUrl)
-  const buttonLabel = String(ad.buttonLabel || 'Подробнее').trim() || 'Подробнее'
+  const defaultLabel = t('createSiteAd_learnMore')
+  const buttonLabel = String(ad.buttonLabel || defaultLabel).trim() || defaultLabel
 
   const handleClose = () => {
     markSiteAdModalSeen(ad.id)
@@ -42,7 +45,7 @@ export default function SiteAdModal({ ad, onClose }) {
     )
   ) : (
     <button type="button" className="site-ad-modal__cta" onClick={handleClose}>
-      Понятно
+      {t('depositInfoDrawer_gotIt')}
     </button>
   )
 
@@ -68,14 +71,14 @@ export default function SiteAdModal({ ad, onClose }) {
           type="button"
           className="site-ad-modal__close"
           onClick={handleClose}
-          aria-label="Закрыть"
+          aria-label={t('close')}
         >
           <FiX size={20} />
         </button>
 
         <div className="site-ad-modal__body">
           <div className="site-ad-modal__badge">
-            <span>Специальное предложение</span>
+            <span>{t('createSiteAd_previewBadge')}</span>
           </div>
 
           <h2 id={`site-ad-modal-title-${ad.id}`} className="site-ad-modal__title">

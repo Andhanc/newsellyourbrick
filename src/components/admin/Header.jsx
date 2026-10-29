@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiArrowLeft } from 'react-icons/fi';
 import './Header.css';
 
 const Header = ({ title, onLogout, onBack }) => {
+  const { t } = useTranslation();
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth <= 768 : false
   );
@@ -62,8 +64,8 @@ const Header = ({ title, onLogout, onBack }) => {
             <button 
               className="btn btn-back" 
               onClick={handleBack}
-              aria-label="Вернуться на главную"
-              title="Вернуться на главную"
+              aria-label={t('admin_backToHome')}
+              title={t('admin_backToHome')}
             >
               <FiArrowLeft size={20} />
             </button>
@@ -75,7 +77,7 @@ const Header = ({ title, onLogout, onBack }) => {
         {!isMobile && (
           <>
             <button className="btn btn-outline header-export-btn">
-              <i className="fas fa-download"></i> Экспорт в excel
+              <i className="fas fa-download"></i> {t('admin_eksport_v_excel_a22b4be5')}
             </button>
             <div className="user-avatar">AD</div>
           </>
@@ -84,7 +86,7 @@ const Header = ({ title, onLogout, onBack }) => {
           <button
             className="btn header-burger"
             type="button"
-            aria-label="Открыть меню"
+            aria-label={t('admin_openMenu')}
             onClick={handleBurgerClick}
           >
             <svg

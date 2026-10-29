@@ -8,11 +8,11 @@ const css = await readFile(new URL('./PurchasedPropertyDrawer.css', import.meta.
 test('contains accessible purchase details and both primary actions', () => {
   assert.match(component, /role="dialog"/)
   assert.match(component, /aria-modal="true"/)
-  assert.match(component, /Связаться с менеджером/)
-  assert.match(component, /Продать объект/)
+  assert.match(component, /purchaseDrawer_contactManager/)
+  assert.match(component, /purchaseDrawer_sellProperty/)
   assert.match(component, /disabled=\{!canSell\}/)
   assert.match(component, /item\.isDealCompleted/)
-  assert.match(component, /Осталось оплатить/)
+  assert.match(component, /purchaseDrawer_remaining/)
   assert.match(component, /event\.key === 'Escape'/)
   assert.match(component, /event\.key !== 'Tab'/)
   assert.match(component, /element\.inert = true/)
@@ -21,13 +21,13 @@ test('contains accessible purchase details and both primary actions', () => {
 })
 
 test('contains all six resale onboarding steps and seller CTA', () => {
-  assert.match(component, /Создайте аккаунт продавца/)
-  assert.match(component, /Подтвердите личность и контакты/)
-  assert.match(component, /Получите объект в кабинете/)
-  assert.match(component, /Проверьте карточку и документы/)
-  assert.match(component, /Выберите формат продажи/)
-  assert.match(component, /Отправьте на модерацию/)
-  assert.match(component, /Стать продавцом/)
+  assert.match(component, /purchaseDrawer_step1Title/)
+  assert.match(component, /purchaseDrawer_step2Title/)
+  assert.match(component, /purchaseDrawer_step3Title/)
+  assert.match(component, /purchaseDrawer_step4Title/)
+  assert.match(component, /purchaseDrawer_step5Title/)
+  assert.match(component, /purchaseDrawer_step6Title/)
+  assert.match(component, /purchaseDrawer_becomeSeller/)
 })
 
 test('uses a desktop right drawer and mobile bottom sheet', () => {

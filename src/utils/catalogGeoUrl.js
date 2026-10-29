@@ -4,6 +4,7 @@ import {
   getCanonicalRegionLabel,
   getCountryLabel,
 } from './propertySearchLocation.js'
+import { getLocalizedRegionLabel } from './localizeBuyerNotification.js'
 import { slugifyLatin } from './propertySlug.js'
 
 const CATALOG_TYPE_I18N = {
@@ -137,9 +138,12 @@ export function buildPropertyGeoBreadcrumbItems(property, t) {
   const citySlug = cityLabelToUrlSlug(city)
   if (!countrySlug || !citySlug) return []
 
-  const cityLabel = getCanonicalRegionLabel(citySlug, city)
+  const cityLabel = getLocalizedRegionLabel(citySlug, getCanonicalRegionLabel(citySlug, city), t)
   const countryKey = matchCountryKey(country) || countrySlug
-  const countryLabel = getCountryLabel(countryKey, country)
+  const locale =
+    (typeof t === 'function' && (t.lng || t?.i18n?.language)) ||
+    undefined
+  const countryLabel = getCountryLabel(countryKey, country, locale)
 
   /** @type {{ to: string, label: string }[]} */
   const items = [

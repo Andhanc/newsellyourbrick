@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { FiArrowRight } from 'react-icons/fi'
 import PropertyListingCard from '../PropertyListingCard'
 import { useVisibleRelatedListings } from '../../hooks/usePropertyRelatedListings'
 import './PropertyDetailDesktopRelatedSection.css'
 
 export default function PropertyDetailDesktopRelatedSection({ property }) {
+  const { t } = useTranslation()
   const { ref, items: related, loading, geo, enabled } = useVisibleRelatedListings(property, {
     limit: 4,
   })
@@ -21,14 +23,14 @@ export default function PropertyDetailDesktopRelatedSection({ property }) {
         <>
           <div className="pdx-related__head">
             <div className="pdx-related__copy">
-              <p className="pdx-related__eyebrow">Подборка для вас</p>
+              <p className="pdx-related__eyebrow">{t('pdxRelatedEyebrow')}</p>
               <h2 id="pdx-related-title" className="pdx-related__title">
-                Вам также могут понравиться
+                {t('pdxRelatedTitle')}
               </h2>
             </div>
             {geo?.typeCatalogPath ? (
               <Link to={geo.typeCatalogPath} className="pdx-related__all-link">
-                Смотреть все
+                {t('pdxRelatedViewAll')}
                 <FiArrowRight size={15} aria-hidden />
               </Link>
             ) : null}

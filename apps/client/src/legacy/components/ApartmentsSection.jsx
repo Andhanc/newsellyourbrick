@@ -15,7 +15,8 @@ import { formatPropertyPrice } from '../utils/currency'
 const apartmentsData = [
   {
     id: 1,
-    title: '2-комн. квартира, 58 м², 9/10 этаж',
+    titleKey: 'apartmentsDemoTitle',
+    titleParams: { rooms: 2, area: 58, floor: 9, floors: 10 },
     location: 'Costa Adeje, Tenerife',
     price: 8500372,
     currentBid: 8000000,
@@ -28,7 +29,8 @@ const apartmentsData = [
   },
   {
     id: 2,
-    title: '3-комн. квартира, 120 м², 5/10 этаж',
+    titleKey: 'apartmentsDemoTitle',
+    titleParams: { rooms: 3, area: 120, floor: 5, floors: 10 },
     location: 'Playa de las Américas, Tenerife',
     price: 25748010,
     currentBid: 24000000,
@@ -41,7 +43,8 @@ const apartmentsData = [
   },
   {
     id: 3,
-    title: '1-комн. квартира, 37 м², 6/9 этаж',
+    titleKey: 'apartmentsDemoTitle',
+    titleParams: { rooms: 1, area: 37, floor: 6, floors: 9 },
     location: 'Los Cristianos, Tenerife',
     price: 28078032,
     currentBid: 26000000,
@@ -54,7 +57,8 @@ const apartmentsData = [
   },
   {
     id: 4,
-    title: '2-комн. квартира, 95 м², 3/9 этаж',
+    titleKey: 'apartmentsDemoTitle',
+    titleParams: { rooms: 2, area: 95, floor: 3, floors: 9 },
     location: 'Puerto de la Cruz, Tenerife',
     price: 4441729,
     currentBid: 4200000,
@@ -67,7 +71,8 @@ const apartmentsData = [
   },
   {
     id: 5,
-    title: '2-комн. квартира, 110 м², 4/10 этаж',
+    titleKey: 'apartmentsDemoTitle',
+    titleParams: { rooms: 2, area: 110, floor: 4, floors: 10 },
     location: 'Santa Cruz de Tenerife, Tenerife',
     price: 12345678,
     currentBid: 11500000,
@@ -80,7 +85,8 @@ const apartmentsData = [
   },
   {
     id: 6,
-    title: '3-комн. квартира, 130 м², 7/12 этаж',
+    titleKey: 'apartmentsDemoTitle',
+    titleParams: { rooms: 3, area: 130, floor: 7, floors: 12 },
     location: 'La Laguna, Tenerife',
     price: 9876543,
     currentBid: 9500000,
@@ -145,11 +151,11 @@ function ApartmentsSection() {
   }
 
   const handleHeaderClick = () => {
-    navigate('/auction/bidding/apartments')
+    window.location.href = '/auction/bidding/apartments'
   }
 
   const handlePropertyClick = (propertyId) => {
-    navigate('/auction/bidding/apartments')
+    window.location.href = '/auction/bidding/apartments'
   }
 
   return (
@@ -160,14 +166,16 @@ function ApartmentsSection() {
           onClick={handleHeaderClick}
           style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
         >
-          <h2 style={{ margin: 0 }}>{t('apartmentsSection') || 'Аппартаменты'}</h2>
+          <h2 style={{ margin: 0 }}>{t('apartmentsSection')}</h2>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#111827' }}>
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </div>
         
         <div className="properties-grid">
-          {apartmentsData.map((apartment) => (
+          {apartmentsData.map((apartment) => {
+            const title = t(apartment.titleKey, apartment.titleParams)
+            return (
             <div key={apartment.id} className="property-card">
               <div 
                 className="property-link"
@@ -177,7 +185,7 @@ function ApartmentsSection() {
                 <div className="property-image-container">
                   <img 
                     src={apartment.images[0]} 
-                    alt={apartment.title}
+                    alt={title}
                     className="property-image"
                   />
                   {apartment.endTime && (
@@ -209,13 +217,13 @@ function ApartmentsSection() {
                   </div>
                 </div>
                 <div className="property-content">
-                  <h3 className="property-title">{apartment.title}</h3>
+                  <h3 className="property-title">{title}</h3>
                   <p className="property-location">{apartment.location}</p>
                   <div className="property-price">{formatPrice(apartment.price, apartment.currency)}</div>
                   {apartment.endTime ? (
                     apartment.currentBid && (
                       <div className="property-bid-info">
-                        <span className="bid-label">Текущая ставка:</span>
+                        <span className="bid-label">{t('currentBid')}</span>
                         <span className="bid-value">{formatPrice(apartment.currentBid, apartment.currency)}</span>
                       </div>
                     )
@@ -236,7 +244,7 @@ function ApartmentsSection() {
                       {apartment.sqft && (
                         <div className="spec-item">
                           <BiArea size={18} />
-                          <span>{apartment.sqft} м²</span>
+                          <span>{t('propertyAi_areaSqm', { area: apartment.sqft })}</span>
                         </div>
                       )}
                     </div>
@@ -244,7 +252,8 @@ function ApartmentsSection() {
                 </div>
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </section>

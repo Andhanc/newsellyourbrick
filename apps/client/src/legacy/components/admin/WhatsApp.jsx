@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiSearch, FiSend, FiUsers, FiFilter, FiCheck, FiX, FiRefreshCw } from 'react-icons/fi';
 import { getApiBaseUrl, getApiBaseUrlSync } from '../../utils/apiConfig';
 import './WhatsApp.css';
 
 // Функция для получения названия языка по коду
-const LEAD_TYPE_LABELS = {
-  hot: 'Горячий',
-  warm: 'Тёплый',
-  cold: 'Холодный'
+const LEAD_TYPE_LABEL_KEYS = {
+  hot: 'admin_sa_hot',
+  warm: 'admin_sa_warm',
+  cold: 'admin_sa_cold'
 };
 
 const LEAD_TYPE_CLASS = {
@@ -16,23 +17,31 @@ const LEAD_TYPE_CLASS = {
   cold: 'lead-type--cold'
 };
 
-const getLanguageName = (langCode) => {
-  const names = {
-    'ru': 'Русский',
-    'en': 'Английский',
-    'es': 'Испанский',
-    'de': 'Немецкий',
-    'fr': 'Французский',
-    'it': 'Итальянский',
-    'pt': 'Португальский',
-    'pl': 'Польский',
-    'tr': 'Турецкий',
-    'uk': 'Украинский'
+const getLanguageName = (langCode, t) => {
+  const keys = {
+    ru: 'admin_russian',
+    en: 'admin_english',
+    es: 'admin_spanish',
+    de: 'admin_german',
+    fr: 'admin_french',
+    it: 'admin_italian',
+    pt: 'admin_portuguese',
+    pl: 'admin_polish',
+    tr: 'admin_turkish',
+    uk: 'admin_ukrainian',
   };
-  return names[langCode] || langCode || 'Не указан';
+  const key = keys[langCode];
+  if (key) return t(key);
+  return langCode || t('admin_notSpecified');
 };
 
 const WhatsApp = () => {
+  const { t } = useTranslation();
+  const LEAD_TYPE_LABELS = {
+    hot: t(LEAD_TYPE_LABEL_KEYS.hot),
+    warm: t(LEAD_TYPE_LABEL_KEYS.warm),
+    cold: t(LEAD_TYPE_LABEL_KEYS.cold),
+  };
   const [message, setMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -122,10 +131,10 @@ const WhatsApp = () => {
       if (!response.ok) {
         let hint =
           response.status === 502 || response.status === 503
-            ? 'Backend недоступен. Запустите API: npm run server (порт 3000 или SERVER_PORT), либо npm run dev:all.'
+            ? t('admin_ackend_nedostupen_zapustite__d02706cd')
             : response.status === 404
-              ? 'Маршрут API не найден (404). Часто это vite preview без прокси — используйте npm run dev или npm run dev:all с запущенным server.'
-              : `Запрос статуса WhatsApp: HTTP ${response.status}`;
+              ? t('admin_marshrut__ne_nayden_24df4536')
+              : t('admin_zapros_statusa_hatspp__03530c70', { status: response.status });
         try {
           const errBody = await response.json();
           if (errBody?.error && typeof errBody.error === 'string') {
@@ -152,7 +161,7 @@ const WhatsApp = () => {
         setWhatsappStatus({
           ready: true,
           state: data.state || 'READY',
-          message: data.message || 'WhatsApp клиент готов к работе',
+          message: data.message || t('admin_hatspp_klient_gotov_k_3712c461'),
           hasQr: Boolean(data.hasQr),
           canRestartPairing: Boolean(data.canRestartPairing),
           pairingResetRequiresSecret: Boolean(data.pairingResetRequiresSecret),
@@ -164,7 +173,7 @@ const WhatsApp = () => {
         setWhatsappStatus({
           ready: false,
           state: data.state || 'NOT_READY',
-          message: data.message || 'WhatsApp клиент не готов',
+          message: data.message || t('admin_hatspp_klient_ne_gotov_ff6a7a6e'),
           hasQr: Boolean(data.hasQr),
           canRestartPairing: Boolean(data.canRestartPairing),
           pairingResetRequiresSecret: Boolean(data.pairingResetRequiresSecret),
@@ -191,7 +200,7 @@ const WhatsApp = () => {
   const handleRestartPairing = async () => {
     if (!whatsappStatus.canRestartPairing) return;
     if (whatsappStatus.pairingResetRequiresSecret && !pairingSecret.trim()) {
-      setPairingNotice({ type: 'error', text: 'Укажите секрет WA_PAIRING_RESET_SECRET в поле ниже.' });
+      setPairingNotice({ type: 'error', text: t('admin_ukazhite_sekret___17b6b9a8') });
       return;
     }
     setPairingResetBusy(true);
@@ -209,10 +218,10 @@ const WhatsApp = () => {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setPairingNotice({ type: 'error', text: data.error || `Ошибка ${res.status}` });
+        setPairingNotice({ type: 'error', text: data.error || t('admin_errorStatus_tmpl', { status: res.status }) });
         return;
       }
-      setPairingNotice({ type: 'success', text: data.message || 'Сессия сброшена, ждём новый QR…' });
+      setPairingNotice({ type: 'success', text: data.message || t('admin_sessiya_sbroshena_zhdem_novyy_6d02dd28') });
       setQrImageLoading(true);
       void checkWhatsAppStatus();
     } catch (err) {
@@ -233,11 +242,11 @@ const WhatsApp = () => {
       if (data.success) {
         setUsers(data.data || []);
       } else {
-        setError(data.error || 'Ошибка загрузки пользователей');
+        setError(data.error || t('admin_oshibka_zagruzki_polzovateley_221df448'));
       }
     } catch (err) {
       console.error('Ошибка загрузки WhatsApp пользователей:', err);
-      setError('Не удалось загрузить пользователей');
+      setError(t('admin_ne_udalos_zagruzit_polzovateley_fd1f6be1'));
     } finally {
       setLoading(false);
     }
@@ -345,7 +354,7 @@ const WhatsApp = () => {
       if (data.success) {
         setSendResult({
           success: true,
-          message: data.message || 'Рассылка успешно отправлена',
+          message: data.message || t('admin_rassylka_uspeshno_otpravlena_37f0bbb4'),
           results: data.results
         });
         // Очищаем выбранных пользователей и сообщение после успешной отправки
@@ -355,7 +364,7 @@ const WhatsApp = () => {
       } else {
         setSendResult({
           success: false,
-          message: data.error || 'Ошибка при отправке рассылки',
+          message: data.error || t('admin_oshibka_pri_otpravke_rassylki_9d690430'),
           results: data.results
         });
       }
@@ -363,7 +372,7 @@ const WhatsApp = () => {
       console.error('Ошибка отправки рассылки:', err);
       setSendResult({
         success: false,
-        message: 'Не удалось отправить рассылку. Проверьте подключение к серверу.'
+        message: t('admin_ne_udalos_otpravit_rassylku_3299ffc7')
       });
     } finally {
       setSending(false);
@@ -375,34 +384,34 @@ const WhatsApp = () => {
       <div className="whatsapp-header">
         <h2 className="whatsapp-title">
           <FiSend className="whatsapp-title-icon" />
-          WhatsApp Рассылка
+          {t('admin_hatspp_rassylka_5406edf2')}
         </h2>
         <p className="whatsapp-subtitle">
-          Подключите номер, с которого уходят рассылки (в том числе опросы тест-драйва): отсканируйте QR ниже.
+          {t('admin_podklyuchite_nomer_s_kotorogo_26a94973')}
         </p>
         {!whatsappStatus.ready && (
           <div className="whatsapp-status-warning">
             <div className="whatsapp-warning-top">
               <div>
-                <span style={{ color: '#ef4444', fontWeight: '600' }}>⚠️ WhatsApp не подключён к серверу</span>
+                <span style={{ color: '#ef4444', fontWeight: '600' }}>{t('admin_hatspp_ne_podklyuchen_k_ef4528b8')}</span>
                 <p style={{ margin: '6px 0 0 0', fontSize: '0.9rem', color: '#6b7280' }}>
                   {whatsappStatus.hasQr
-                    ? 'Откройте WhatsApp → Настройки → Связанные устройства → Привязать устройство и сразу наведите камеру на QR (код живёт ~20–40 секунд).'
+                    ? t('admin_otkroyte_hatspp_nastroyki_svyazann_abf140f9')
                     : whatsappStatus.message ||
-                      'Сервер запрашивает QR у WhatsApp Web… Это может занять до минуты после перезапуска backend.'}
+                      t('admin_server_zaprashivaet__u_dcf156c7')}
                 </p>
                 {whatsappStatus.waDiag && !whatsappStatus.ready && whatsappStatus.waDiag.lastQrAt && !whatsappStatus.waDiag.qrFresh ? (
                   <p style={{ margin: '8px 0 0 0', fontSize: '0.85rem', color: '#b45309' }}>
-                    Последний QR уже протух
+                    {t('admin_posledniy__uzhe_protuh_6f4be2a6')}
                     {typeof whatsappStatus.waDiag.qrAgeMs === 'number'
-                      ? ` (~${Math.round(whatsappStatus.waDiag.qrAgeMs / 1000)} с назад)`
+                      ? t('admin_sec_s_nazad_88c2d851', { sec: Math.round(whatsappStatus.waDiag.qrAgeMs / 1000) })
                       : ''}
-                    . Нажмите «Запросить новый QR» и сканируйте сразу, как появится картинка.
+                    {t('admin_nazhmite_zaprosit_novyy__81220350')}
                   </p>
                 ) : null}
                 {whatsappStatus.pairingResetRequiresSecret ? (
                   <label style={{ display: 'block', marginTop: '10px', fontSize: '0.85rem', color: '#374151' }}>
-                    Секрет сброса (WA_PAIRING_RESET_SECRET):
+                    {t('admin_sekret_sbrosa___b6ed3a99')}
                     <input
                       type="password"
                       value={pairingSecret}
@@ -417,7 +426,7 @@ const WhatsApp = () => {
                         border: '1px solid #d1d5db',
                         borderRadius: '6px',
                       }}
-                      placeholder="Только для сервера с переменной окружения"
+                      placeholder={t('admin_tolko_dlya_servera_s_e40e281c')}
                     />
                   </label>
                 ) : null}
@@ -446,19 +455,19 @@ const WhatsApp = () => {
                       fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
                     }}
                   >
-                    <strong style={{ fontFamily: 'inherit' }}>Диагностика WhatsApp Web (с сервера)</strong>
+                    <strong style={{ fontFamily: 'inherit' }}>{t('admin_diagnostika_hatspp_eb_s_e48e849a')}</strong>
                     {whatsappStatus.waDiag.lastError ? (
                       <div style={{ color: '#b91c1c', marginTop: '6px' }}>
-                        Ошибка: {whatsappStatus.waDiag.lastError}
+                        {t('admin_errorPrefix')}{whatsappStatus.waDiag.lastError}
                       </div>
                     ) : null}
                     <div style={{ marginTop: '6px' }}>
-                      Состояние: {whatsappStatus.waDiag.connectionState ?? '—'} · Попыток init:{' '}
-                      {whatsappStatus.waDiag.initAttempts ?? '—'} · Длина кода пары:{' '}
+                      {t('admin_wa_state_attempts', { state: whatsappStatus.waDiag.connectionState ?? '—' })}{' '}
+                      {t('admin_wa_init_pair_len', { n: whatsappStatus.waDiag.initAttempts ?? '—' })}{' '}
                       {whatsappStatus.waDiag.pairingCodeLength ?? 0}
                     </div>
                     <div style={{ marginTop: '4px' }}>
-                      Загрузка WA Web:{' '}
+                      {t('admin_zagruzka__eb_53b891a2')}{' '}
                       {typeof whatsappStatus.waDiag.loadingPercent === 'number'
                         ? `${whatsappStatus.waDiag.loadingPercent}%`
                         : '—'}
@@ -466,16 +475,16 @@ const WhatsApp = () => {
                         ? ` (${whatsappStatus.waDiag.loadingMessage})`
                         : ''}
                       {typeof whatsappStatus.waDiag.qrWaitMs === 'number'
-                        ? ` · ждём QR ~${Math.round(whatsappStatus.waDiag.qrWaitMs / 1000)} с`
+                        ? t('admin_zhdem__sec_s_4de50ca4', { sec: Math.round(whatsappStatus.waDiag.qrWaitMs / 1000) })
                         : ''}
                       {typeof whatsappStatus.waDiag.qrStuckMs === 'number'
-                        ? ` (автосброс с ~${Math.round(whatsappStatus.waDiag.qrStuckMs / 1000)} с)`
+                        ? t('admin_avtosbros_s_sec_s_dfaaea44', { sec: Math.round(whatsappStatus.waDiag.qrStuckMs / 1000) })
                         : ''}
                     </div>
                     {typeof whatsappStatus.waDiag.autoRecoverCount === 'number' &&
                     whatsappStatus.waDiag.autoRecoverCount > 0 ? (
                       <div style={{ marginTop: '4px', color: '#b45309' }}>
-                        Автосбросов сессии без QR: {whatsappStatus.waDiag.autoRecoverCount}
+                        {t('admin_wa_auto_recover', { n: whatsappStatus.waDiag.autoRecoverCount })}
                       </div>
                     ) : null}
                     <div style={{ marginTop: '4px' }}>
@@ -484,32 +493,31 @@ const WhatsApp = () => {
                         ? whatsappStatus.waDiag.chromeExecutable
                         : whatsappStatus.waDiag.puppeteerChannel
                           ? `channel "${whatsappStatus.waDiag.puppeteerChannel}"`
-                          : 'встроенный Chrome из кэша (при ошибке: npm run puppeteer:install)'}
+                          : t('admin_vstroennyy_hrome_iz_kesha_f8227e9a')}
                     </div>
                     <div style={{ marginTop: '4px' }}>
-                      Папка сессии (.wwebjs_auth):{' '}
-                      {whatsappStatus.waDiag.sessionFolderExists ? 'есть' : 'нет'} · Кэш версии WA:{' '}
+                      {t('admin_papka_sessii_wwebjs_auth_f2a2ab54')}{' '}
+                      {whatsappStatus.waDiag.sessionFolderExists ? t('admin_est_3d510503') : t('admin_net_ced07fd1')}  · {t('admin_kesh_versii__4e803749')}{' '}
                       {whatsappStatus.waDiag.remoteWebCache ?? '—'}
                     </div>
                     {whatsappStatus.waDiag.lastQrAt ? (
                       <div style={{ marginTop: '4px', color: whatsappStatus.waDiag.qrFresh ? '#007d8a' : '#b45309' }}>
-                        Последний QR на сервере:{' '}
+                        {t('admin_posledniy__na_servere_3ea40b77')}{' '}
                         {new Date(whatsappStatus.waDiag.lastQrAt).toLocaleString()}
                         {typeof whatsappStatus.waDiag.qrAgeMs === 'number'
-                          ? ` (возраст ~${Math.round(whatsappStatus.waDiag.qrAgeMs / 1000)} с`
+                          ? t('admin_vozrast_sec_s_177d3017', { sec: Math.round(whatsappStatus.waDiag.qrAgeMs / 1000) })
                           : ''}
                         {typeof whatsappStatus.waDiag.qrMaxAgeMs === 'number'
-                          ? `, лимит ${Math.round(whatsappStatus.waDiag.qrMaxAgeMs / 1000)} с)`
+                          ? t('admin_limit_sec_s_8b8f54ef', { sec: Math.round(whatsappStatus.waDiag.qrMaxAgeMs / 1000) })
                           : typeof whatsappStatus.waDiag.qrAgeMs === 'number'
                             ? ')'
                             : ''}
-                        {whatsappStatus.waDiag.qrFresh === false ? ' — протух' : ''}
+                        {whatsappStatus.waDiag.qrFresh === false ? t('admin_protuh_5ca07fbc') : ''}
                       </div>
                     ) : (
                       <div style={{ marginTop: '6px', color: '#92400e' }}>
-                        Событие QR ещё не приходило — обычно 30–90 с после старта Chrome. Сервер сам сбросит
-                        битую сессию, если QR не появится. Лог:{' '}
-                        <code style={{ fontSize: '0.85em' }}>npm run server</code>. При конфликте процессов:{' '}
+                        {t('admin_sobytie__esche_ne_6b6048c1')}{' '}
+                        <code style={{ fontSize: '0.85em' }}>npm run server</code> {t('admin_pri_konflikte_processov_b65d5375')}{' '}
                         <code style={{ fontSize: '0.85em' }}>WHATSAPP_SKIP_BOT_STATUS=1</code>.
                       </div>
                     )}
@@ -517,13 +525,13 @@ const WhatsApp = () => {
                 ) : null}
               </div>
               <div className="whatsapp-warning-actions">
-                <button type="button" onClick={handleRefreshQr} className="btn-qr-refresh" title="Обновить QR-код">
+                <button type="button" onClick={handleRefreshQr} className="btn-qr-refresh" title={t('admin_obnovit__kod_c4a9d293')}>
                   <FiRefreshCw />
-                  Обновить QR
+                  {t('admin_sa_refresh')} QR
                 </button>
-                <button type="button" onClick={() => void checkWhatsAppStatus()} className="btn-qr-refresh" title="Проверить статус">
+                <button type="button" onClick={() => void checkWhatsAppStatus()} className="btn-qr-refresh" title={t('admin_proverit_status_b8bcfbbb')}>
                   <FiRefreshCw />
-                  Проверить статус
+                  {t('admin_proverit_status_b8bcfbbb')}
                 </button>
                 {whatsappStatus.canRestartPairing ? (
                   <button
@@ -531,10 +539,10 @@ const WhatsApp = () => {
                     onClick={() => void handleRestartPairing()}
                     className="btn-qr-refresh"
                     disabled={pairingResetBusy}
-                    title="Сбросить сессию WhatsApp Web и запросить новый QR"
+                    title={t('admin_sbrosit_sessiyu_hatspp_eb_3dc1481b')}
                   >
                     <FiRefreshCw style={pairingResetBusy ? { animation: 'spin 1s linear infinite' } : undefined} />
-                    Запросить новый QR
+                    {t('admin_zaprosit_novyy__51a74c02')}
                   </button>
                 ) : null}
               </div>
@@ -545,18 +553,18 @@ const WhatsApp = () => {
                   <div className="whatsapp-qr-loading" role="status" aria-live="polite">
                     <div className="whatsapp-qr-spinner" aria-hidden />
                     <p className="whatsapp-qr-loading-text">
-                      Генерируем QR-код…
+                      {t('admin_generiruem__kod_c448c753')}
                       {typeof whatsappStatus.waDiag?.loadingPercent === 'number'
                         ? ` ${whatsappStatus.waDiag.loadingPercent}%`
                         : ''}
                     </p>
                     <span className="whatsapp-qr-loading-hint">
-                      Обычно 30–90 секунд (холодный старт Chrome). Страница обновляет статус каждые 2 с.
+                      {t('admin_obychno_30_90_sekund_889b9b97')}
                       {typeof whatsappStatus.waDiag?.qrWaitMs === 'number'
-                        ? ` Уже ждём ~${Math.round(whatsappStatus.waDiag.qrWaitMs / 1000)} с.`
+                        ? t('admin_uzhe_zhdem_sec_s_2ac9095f', { sec: Math.round(whatsappStatus.waDiag.qrWaitMs / 1000) })
                         : ''}
                       {whatsappStatus.canRestartPairing && !whatsappStatus.hasQr
-                        ? ' Если дольше ~2 минут — «Запросить новый QR».'
+                        ? t('admin_esli_dolshe_2_minut_96ecbc66')
                         : ''}
                     </span>
                   </div>
@@ -565,12 +573,12 @@ const WhatsApp = () => {
                     {qrImageLoading ? (
                       <div className="whatsapp-qr-loading whatsapp-qr-loading--overlay" role="status" aria-live="polite">
                         <div className="whatsapp-qr-spinner" aria-hidden />
-                        <p className="whatsapp-qr-loading-text">Загружаем QR…</p>
+                        <p className="whatsapp-qr-loading-text">{t('admin_zagruzhaem__cf461e89')}</p>
                       </div>
                     ) : null}
                     <img
                       src={`${String(getApiBaseUrlSync()).replace(/\/$/, '')}/whatsapp/qr?t=${qrTimestamp}`}
-                      alt="WhatsApp QR-код для привязки аккаунта рассылки"
+                      alt={t('admin_hatspp__kod_dlya_58f766ff')}
                       className={`whatsapp-qr-image ${qrImageLoading ? 'whatsapp-qr-image--hidden' : ''}`}
                       decoding="async"
                       onLoad={() => setQrImageLoading(false)}
@@ -583,25 +591,24 @@ const WhatsApp = () => {
               </div>
               {whatsappStatus.waDiag?.lastQrAt && whatsappStatus.hasQr ? (
                 <p className="whatsapp-qr-hint" style={{ color: '#007d8a' }}>
-                  QR готов — сканируйте сейчас.
+                  {t('admin__gotov_skaniruyte_seychas_bf34b31f')}
                   {typeof whatsappStatus.waDiag.qrAgeMs === 'number'
-                    ? ` Возраст: ~${Math.max(0, Math.round(whatsappStatus.waDiag.qrAgeMs / 1000))} с`
+                    ? t('admin_vozrast_sec_s_90967fc4', { sec: Math.max(0, Math.round(whatsappStatus.waDiag.qrAgeMs / 1000)) })
                     : ''}
                   {typeof whatsappStatus.waDiag.qrMaxAgeMs === 'number'
-                    ? ` (храним до ~${Math.round(whatsappStatus.waDiag.qrMaxAgeMs / 1000)} с).`
+                    ? t('admin_hranim_do_sec_s_305aa418', { sec: Math.round(whatsappStatus.waDiag.qrMaxAgeMs / 1000) })
                     : '.'}
                 </p>
               ) : null}
               <p className="whatsapp-qr-hint">
-                «Обновить QR» только перезагружает картинку. Если телефон пишет ошибку — код истёк:
-                «Запросить новый QR» и сканируйте сразу.
+                {t('admin_wa_refresh_qr_hint', { action: t('admin_zaprosit_novyy__51a74c02') })}
               </p>
             </div>
           </div>
         )}
         {whatsappStatus.ready && (
           <div className="whatsapp-status-success">
-            <span style={{ color: '#0099A9', fontWeight: '600' }}>✅ WhatsApp клиент готов</span>
+            <span style={{ color: '#0099A9', fontWeight: '600' }}>{t('admin_hatspp_klient_gotov_ed5e3d75')}</span>
           </div>
         )}
       </div>
@@ -612,34 +619,34 @@ const WhatsApp = () => {
           <div className="message-section">
             <label className="message-label">
               <FiSend className="label-icon" />
-              Сообщение для рассылки
+              {t('admin_soobschenie_dlya_rassylki_7365754b')}
             </label>
             <textarea
               className="message-textarea"
-              placeholder="Введите текст сообщения, которое будет отправлено выбранным пользователям..."
+              placeholder={t('admin_vvedite_tekst_soobscheniya_kotoroe_0fd34bc0')}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={12}
             />
             <div className="message-footer">
               <span className="message-counter">
-                {message.length} / 1000 символов
+                {message.length} / 1000 {t('admin_simvolov_7fbc31ec')}
               </span>
               <button 
                 className="btn-send" 
                 disabled={!message.trim() || selectedCount === 0 || sending || !whatsappStatus.ready}
                 onClick={handleSendBroadcast}
-                title={!whatsappStatus.ready ? 'WhatsApp клиент не готов. Проверьте статус выше.' : ''}
+                title={!whatsappStatus.ready ? t('admin_hatspp_klient_ne_gotov_641940b7') : ''}
               >
                 {sending ? (
                   <>
                     <FiRefreshCw style={{ animation: 'spin 1s linear infinite' }} />
-                    Отправка...
+                    {t('admin_otpravka_9b476aa9')}
                   </>
                 ) : (
                   <>
                     <FiSend />
-                    Отправить ({selectedCount})
+                    {t('admin_otpravit_e3c48319')}{selectedCount})
                   </>
                 )}
               </button>
@@ -649,8 +656,8 @@ const WhatsApp = () => {
                 <p>{sendResult.message}</p>
                 {sendResult.results && (
                   <p style={{ fontSize: '0.9rem', marginTop: '8px' }}>
-                    Отправлено: {sendResult.results.sent} из {sendResult.results.total}
-                    {sendResult.results.failed > 0 && `, Ошибок: ${sendResult.results.failed}`}
+                    {t('admin_otpravleno_sent_iz_total_9c95f654', { sent: sendResult.results.sent, total: sendResult.results.total })}
+                    {sendResult.results.failed > 0 && t('admin_oshibok_n_59f72501', { n: sendResult.results.failed })}
                   </p>
                 )}
                 <button 
@@ -665,7 +672,7 @@ const WhatsApp = () => {
                     fontSize: '0.85rem'
                   }}
                 >
-                  Закрыть
+                  {t('admin_close')}
                 </button>
               </div>
             )}
@@ -678,7 +685,7 @@ const WhatsApp = () => {
               </div>
               <div className="stat-info">
                 <div className="stat-value">{selectedCount}</div>
-                <div className="stat-label">Выбрано пользователей</div>
+                <div className="stat-label">{t('admin_vybrano_polzovateley_00b22e37')}</div>
               </div>
             </div>
             <div className="stat-card">
@@ -687,7 +694,7 @@ const WhatsApp = () => {
               </div>
               <div className="stat-info">
                 <div className="stat-value">{totalCount}</div>
-                <div className="stat-label">Всего в списке</div>
+                <div className="stat-label">{t('admin_vsego_v_spiske_601e57c4')}</div>
               </div>
             </div>
           </div>
@@ -697,12 +704,12 @@ const WhatsApp = () => {
         <div className="whatsapp-right">
           <div className="users-section">
             <div className="users-header">
-              <h3 className="users-title">Выбор получателей</h3>
+              <h3 className="users-title">{t('admin_vybor_poluchateley_6e57d5ff')}</h3>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <button 
                   className="btn-clear-selection" 
                   onClick={loadUsers}
-                  title="Обновить список"
+                  title={t('admin_obnovit_spisok_0cd9c0df')}
                   style={{ padding: '8px', background: '#f0f0f0', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                 >
                   <FiRefreshCw />
@@ -710,7 +717,7 @@ const WhatsApp = () => {
                 {selectedCount > 0 && (
                   <button className="btn-clear-selection" onClick={handleDeselectAll}>
                     <FiX />
-                    Снять выделение
+                    {t('admin_snyat_vydelenie_91471074')}
                   </button>
                 )}
               </div>
@@ -723,7 +730,7 @@ const WhatsApp = () => {
                 <input
                   type="text"
                   className="filter-input"
-                  placeholder="Поиск по имени, email или телефону..."
+                  placeholder={t('admin_poisk_po_imeni_email_8fc3fac5')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -738,26 +745,26 @@ const WhatsApp = () => {
                 <div className="filter-group">
                   <span className="filter-label">
                     <FiFilter />
-                    Роль:
+                    {t('admin_rol_86bc8f1a')}
                   </span>
                   <div className="filter-options">
                     <button
                       className={`filter-btn ${roleFilter === 'all' ? 'active' : ''}`}
                       onClick={() => setRoleFilter('all')}
                     >
-                      Все
+                      {t('admin_all')}
                     </button>
                     <button
                       className={`filter-btn ${roleFilter === 'buyer' ? 'active' : ''}`}
                       onClick={() => setRoleFilter('buyer')}
                     >
-                      Покупатели
+                      {t('admin_pokupateli_c6e3359b')}
                     </button>
                     <button
                       className={`filter-btn ${roleFilter === 'seller' ? 'active' : ''}`}
                       onClick={() => setRoleFilter('seller')}
                     >
-                      Продавцы
+                      {t('admin_prodavcy_013f28e0')}
                     </button>
                   </div>
                 </div>
@@ -765,32 +772,32 @@ const WhatsApp = () => {
                 <div className="filter-group">
                   <span className="filter-label">
                     <FiFilter />
-                    Статус:
+                    {t('admin_status_b90462b6')}
                   </span>
                   <div className="filter-options">
                     <button
                       className={`filter-btn ${statusFilter === 'all' ? 'active' : ''}`}
                       onClick={() => setStatusFilter('all')}
                     >
-                      Все
+                      {t('admin_all')}
                     </button>
                     <button
                       className={`filter-btn ${statusFilter === 'active' ? 'active' : ''}`}
                       onClick={() => setStatusFilter('active')}
                     >
-                      Активные
+                      {t('admin_aktivnye_6009f6cb')}
                     </button>
                     <button
                       className={`filter-btn ${statusFilter === 'pending' ? 'active' : ''}`}
                       onClick={() => setStatusFilter('pending')}
                     >
-                      Ожидают
+                      {t('admin_ozhidayut_9cf13148')}
                     </button>
                     <button
                       className={`filter-btn ${statusFilter === 'blocked' ? 'active' : ''}`}
                       onClick={() => setStatusFilter('blocked')}
                     >
-                      Заблокированы
+                      {t('admin_zablokirovany_862c58ba')}
                     </button>
                   </div>
                 </div>
@@ -806,7 +813,7 @@ const WhatsApp = () => {
                     checked={selectAll && filteredUsers.length > 0}
                     onChange={handleSelectAll}
                   />
-                  <span>Выбрать всех ({filteredUsers.length})</span>
+                  <span>{t('admin_vybrat_vseh_f12debc9')}{filteredUsers.length})</span>
                 </label>
               </div>
 
@@ -814,22 +821,22 @@ const WhatsApp = () => {
                 {loading ? (
                   <div className="users-empty">
                     <FiRefreshCw className="empty-icon" style={{ animation: 'spin 1s linear infinite' }} />
-                    <p>Загрузка пользователей...</p>
+                    <p>{t('admin_zagruzka_polzovateley_983713a1')}</p>
                   </div>
                 ) : error ? (
                   <div className="users-empty">
                     <FiUsers className="empty-icon" />
-                    <p>Ошибка загрузки</p>
+                    <p>{t('admin_loadError')}</p>
                     <span>{error}</span>
                     <button onClick={loadUsers} style={{ marginTop: '10px', padding: '8px 16px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-                      Попробовать снова
+                      {t('admin_tryAgain')}
                     </button>
                   </div>
                 ) : filteredUsers.length === 0 ? (
                   <div className="users-empty">
                     <FiUsers className="empty-icon" />
-                    <p>Пользователи не найдены</p>
-                    <span>Попробуйте изменить параметры фильтрации</span>
+                    <p>{t('admin_polzovateli_ne_naydeny_942d94c3')}</p>
+                    <span>{t('admin_poprobuyte_izmenit_parametry_filtrac_a88b2d1a')}</span>
                   </div>
                 ) : (
                   filteredUsers.map(user => {
@@ -865,7 +872,7 @@ const WhatsApp = () => {
                               {user.firstName} {user.lastName}
                               <span
                                 className={`lead-type-badge ${LEAD_TYPE_CLASS[user.leadType || 'cold'] || ''}`}
-                                title="Оценка по переписке в WhatsApp"
+                                title={t('admin_ocenka_po_perepiske_v_c77c2672')}
                               >
                                 {LEAD_TYPE_LABELS[user.leadType || 'cold'] || user.leadType}
                               </span>
@@ -873,7 +880,7 @@ const WhatsApp = () => {
                             {user.verified && (
                               <span className="verified-badge">
                                 <FiCheck />
-                                Верифицирован
+                                {t('admin_verificirovan_d027fb34')}
                               </span>
                             )}
                           </div>
@@ -884,23 +891,23 @@ const WhatsApp = () => {
                               </span>
                             )}
                             <span className="user-detail">
-                              <strong>Телефон:</strong> {user.phone || user.phoneFull || 'Не указан'}
+                              <strong>{t('admin_telefon_0e41c7c4')}</strong> {user.phone || user.phoneFull || t('admin_ne_ukazan_3b3c4f15')}
                             </span>
                             {user.country && (
                               <span className="user-detail">
-                                <strong>Страна:</strong> {user.country}
+                                <strong>{t('admin_sa_countryLabel')}</strong> {user.country}
                               </span>
                             )}
                             {user.language && (
                               <span className="user-detail">
-                                <strong>Язык:</strong> {getLanguageName(user.language)}
+                                <strong>{t('admin_yazyk_e1357f63')}</strong> {getLanguageName(user.language, t)}
                               </span>
                             )}
                             <span className={`user-role user-role--${user.role}`}>
-                              {user.role === 'buyer' ? 'Покупатель' : 'Продавец'}
+                              {user.role === 'buyer' ? t('admin_buyer') : t('admin_seller')}
                             </span>
                             <span className={`user-status user-status--${user.status}`}>
-                              {user.status === 'active' ? 'Активен' : user.status === 'pending' ? 'Ожидает' : 'Заблокирован'}
+                              {user.status === 'active' ? t('admin_aktiven_667904ef') : user.status === 'pending' ? t('admin_pending') : t('admin_zablokirovan_2c998bfc')}
                             </span>
                           </div>
                         </div>

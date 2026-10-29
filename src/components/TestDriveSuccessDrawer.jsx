@@ -1,18 +1,13 @@
 import { FiArrowRight, FiCalendar, FiClock, FiMessageCircle, FiStar } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 import BuyerSheetShell from './buyer-mobile/BuyerSheetShell'
 import './TestDriveSuccessDrawer.css'
 
-const CHANNEL_LABELS = {
-  telegram: 'Telegram',
-  whatsapp: 'WhatsApp',
-  email: 'почте',
-}
-
-function formatBookingDate(value) {
-  if (!value) return 'Дата уточняется'
+function formatBookingDate(value, t, locale) {
+  if (!value) return t('testDriveSuccess_dateTbd')
   const parsed = new Date(`${value}T12:00:00`)
   if (Number.isNaN(parsed.getTime())) return value
-  return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' }).format(parsed)
+  return new Intl.DateTimeFormat(locale || 'en', { day: 'numeric', month: 'short' }).format(parsed)
 }
 
 export default function TestDriveSuccessDrawer({
@@ -23,9 +18,18 @@ export default function TestDriveSuccessDrawer({
   onOpenBookings,
   onBackToProperty,
 }) {
-  const startLabel = formatBookingDate(booking?.start_date)
-  const endLabel = formatBookingDate(booking?.end_date)
-  const channelLabel = CHANNEL_LABELS[booking?.buyer_contact_channel] || 'выбранному каналу'
+  const { t, i18n } = useTranslation()
+  const startLabel = formatBookingDate(booking?.start_date, t, i18n.language)
+  const endLabel = formatBookingDate(booking?.end_date, t, i18n.language)
+  const channelKey = booking?.buyer_contact_channel
+  const channelLabel =
+    channelKey === 'telegram'
+      ? 'Telegram'
+      : channelKey === 'whatsapp'
+        ? 'WhatsApp'
+        : channelKey === 'email'
+          ? t('testDriveSuccess_channelEmail')
+          : t('testDriveSuccess_channelFallback')
 
   return (
     <BuyerSheetShell
@@ -34,16 +38,16 @@ export default function TestDriveSuccessDrawer({
       tone="detail"
       titleId="test-drive-success-title"
       describedBy="test-drive-success-description"
-      closeLabel="Закрыть подтверждение тест-драйва"
+      closeLabel={t('testDriveSuccess_closeAria')}
       className="test-drive-success"
       footer={(
         <div className="test-drive-success__actions">
           <button type="button" className="test-drive-success__primary" onClick={onOpenBookings}>
-            <span>Открыть мои бронирования</span>
+            <span>{t('testDriveSuccess_openBookings')}</span>
             <FiArrowRight size={18} aria-hidden />
           </button>
           <button type="button" className="test-drive-success__secondary" onClick={onBackToProperty}>
-            Вернуться к объекту
+            {t('testDriveSuccess_backToProperty')}
           </button>
         </div>
       )}
@@ -51,13 +55,13 @@ export default function TestDriveSuccessDrawer({
       <div className="test-drive-success__content">
         <p className="test-drive-success__eyebrow">
           <FiCalendar size={14} aria-hidden />
-          Оплата подтверждена
+          {t('testDriveSuccess_eyebrow')}
         </p>
         <h2 id="test-drive-success-title" className="test-drive-success__title">
-          Тест-драйв забронирован
+          {t('testDriveSuccess_title')}
         </h2>
         <p id="test-drive-success-description" className="test-drive-success__lead">
-          Бронирование сохранено. Даты, статус и инструкции всегда доступны в кабинете.
+          {t('testDriveSuccess_lead')}
         </p>
 
         <article className="test-drive-success__ticket">
@@ -66,18 +70,18 @@ export default function TestDriveSuccessDrawer({
             <span aria-hidden>—</span>
             <strong>{endLabel}</strong>
           </div>
-          <h3>{propertyTitle || 'Выбранный объект'}</h3>
-          {booking?.booking_id ? <p>Бронь #{booking.booking_id}</p> : null}
+          <h3>{propertyTitle || t('testDriveSuccess_defaultProperty')}</h3>
+          {booking?.booking_id ? <p>{t('testDriveSuccess_bookingId', { id: booking.booking_id })}</p> : null}
         </article>
 
-        <div className="test-drive-success__steps" aria-label="Что делать дальше">
+        <div className="test-drive-success__steps" aria-label={t('testDriveSuccess_stepsAria')}>
           <article>
             <span aria-hidden>
               <FiMessageCircle size={18} />
             </span>
             <div>
-              <strong>Ожидайте детали связи</strong>
-              <p>Контакт и инструкции придут в {channelLabel}.</p>
+              <strong>{t('testDriveSuccess_step1Title')}</strong>
+              <p>{t('testDriveSuccess_step1Text', { channel: channelLabel })}</p>
             </div>
           </article>
           <article>
@@ -85,8 +89,8 @@ export default function TestDriveSuccessDrawer({
               <FiClock size={18} />
             </span>
             <div>
-              <strong>Проверьте время заезда</strong>
-              <p>Перед поездкой откройте бронь и сверьте комментарий владельца.</p>
+              <strong>{t('testDriveSuccess_step2Title')}</strong>
+              <p>{t('testDriveSuccess_step2Text')}</p>
             </div>
           </article>
           <article>
@@ -94,8 +98,8 @@ export default function TestDriveSuccessDrawer({
               <FiStar size={18} />
             </span>
             <div>
-              <strong>Пройдите короткий опрос</strong>
-              <p>В уведомлениях появилась ссылка — расскажите, что понравилось, и оцените объект.</p>
+              <strong>{t('testDriveSuccess_step3Title')}</strong>
+              <p>{t('testDriveSuccess_step3Text')}</p>
             </div>
           </article>
         </div>

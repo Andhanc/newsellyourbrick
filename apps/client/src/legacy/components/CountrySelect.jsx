@@ -1,42 +1,36 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { countries } from '../data/countries';
+import {
+  getLocalizedCountryName,
+  normalizeCountryLocale,
+} from '../utils/localizeCountryName';
 import './CountrySelect.css';
 
 export { countries };
 
-const CountrySelect = ({ value, onChange, placeholder = 'Выберите страну', className = '' }) => {
+const CountrySelect = ({ value, onChange, placeholder, className = '' }) => {
   const { i18n, t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef(null);
   const inputRef = useRef(null);
+  const resolvedPlaceholder = placeholder ?? t('modalSelectCountry');
 
-  const locale = useMemo(() => {
-    const lang = (i18n.language || 'ru').split('-')[0];
-    return ['ru', 'en', 'de', 'es', 'fr', 'pl', 'sv'].includes(lang) ? lang : 'en';
-  }, [i18n.language]);
-
-  const displayNames = useMemo(
-    () => new Intl.DisplayNames(locale, { type: 'region' }),
-    [locale]
+  const locale = useMemo(
+    () => normalizeCountryLocale(i18n.language || 'en'),
+    [i18n.language]
   );
 
-  const getCountryName = (code) => {
-    try {
-      return displayNames.of(code) ?? code;
-    } catch {
-      return countries.find(c => c.code === code)?.name ?? code;
-    }
-  };
+  const getCountryName = (code) => getLocalizedCountryName(code, locale);
 
-  // Синхронизация при выборе снаружи / после onChange родителя
+  // Sync when parent changes selection
   useEffect(() => {
     setIsOpen(false);
     setSearchQuery('');
   }, [value]);
 
-  // Закрываем выпадающий список при клике вне компонента
+  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
@@ -53,17 +47,17 @@ const CountrySelect = ({ value, onChange, placeholder = 'Выберите стр
     }
   }, [isOpen]);
 
-  // Фильтруем страны по запросу поиска (по локализованному имени и коду)
+  // Filter by localized name or country code
   const filteredCountries = countries.filter(country => {
     const name = getCountryName(country.code);
     const q = searchQuery.toLowerCase();
     return name.toLowerCase().includes(q) || country.code.toLowerCase().includes(q);
   });
 
-  // Получаем выбранную страну (value — название на русском или код для обратной совместимости)
+  // Selected country (value may be Russian name or ISO code for backward compatibility)
   const selectedCountry = countries.find(c => c.name === value || c.code === value);
 
-  // Обработка выбора страны (передаём родителю русское название для совместимости с API)
+  // Pass Russian storage name to parent for API compatibility
   const handleSelect = (country, event) => {
     event?.preventDefault?.();
     event?.stopPropagation?.();
@@ -72,11 +66,9 @@ const CountrySelect = ({ value, onChange, placeholder = 'Выберите стр
     onChange(country.name);
   };
 
-  // Обработка открытия/закрытия
   const handleToggle = () => {
     setIsOpen(!isOpen);
     if (!isOpen) {
-      // Фокусируемся на главное поле при открытии
       setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
@@ -105,7 +97,7 @@ const CountrySelect = ({ value, onChange, placeholder = 'Выберите стр
             ref={inputRef}
             type="text"
             className="country-select__input"
-            placeholder={placeholder}
+            placeholder={resolvedPlaceholder}
             value={
               isOpen
                 ? searchQuery

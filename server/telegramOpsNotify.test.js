@@ -23,7 +23,7 @@ test('buildKycPendingMessage includes user and doc', () => {
     documentType: 'passport',
     documentId: 7,
   });
-  assert.match(text, /KYC на проверке/);
+  assert.match(text, /KYC pending review/);
   assert.match(text, /#42/);
   assert.match(text, /Иван &lt;Test&gt;/);
   assert.match(text, /passport/);
@@ -38,9 +38,9 @@ test('buildPropertyPendingMessage includes auction flag', () => {
     is_auction: 1,
     user_id: 3,
   });
-  assert.match(text, /Объект на модерации/);
+  assert.match(text, /Listing pending moderation/);
   assert.match(text, /#10/);
-  assert.match(text, /Аукцион: да/);
+  assert.match(text, /Auction: yes/);
   assert.match(text, /#3/);
 });
 
@@ -53,7 +53,7 @@ test('buildPurchaseRequestMessage includes price and buyer', () => {
     buyerName: 'Anna',
     buyerPhone: '+34111',
   });
-  assert.match(text, /Запрос на покупку/);
+  assert.match(text, /Purchase request/);
   assert.match(text, /#99/);
   assert.match(text, /150/);
   assert.match(text, /Anna/);
@@ -68,7 +68,7 @@ test('buildBidMessage includes bidder and amount', () => {
     userId: 8,
     userName: 'Bob',
   });
-  assert.match(text, /Ставка/);
+  assert.match(text, /Bid/);
   assert.match(text, /#5/);
   assert.match(text, /12/);
   assert.match(text, /#8/);
@@ -83,7 +83,7 @@ test('buildAuctionWonMessage and reservation paid', () => {
     userId: 2,
     depositDueDate: '2030-01-01T00:00:00.000Z',
   });
-  assert.match(won, /Победа в аукционе/);
+  assert.match(won, /Auction won/);
   assert.match(won, /#2/);
 
   const paid = buildReservationPaidMessage({
@@ -92,7 +92,7 @@ test('buildAuctionWonMessage and reservation paid', () => {
     buyerId: 33,
     sellerId: 44,
   });
-  assert.match(paid, /Резерв оплачен/);
+  assert.match(paid, /Reservation paid/);
   assert.match(paid, /#11/);
 });
 
@@ -100,20 +100,20 @@ test('buildLiveChatMessage includes from, when and message', () => {
   const text = buildLiveChatMessage({
     sessionId: 12,
     userId: 53,
-    text: 'Нужна помощь с <аукционом>',
+    text: 'Need help with <auction>',
     createdAt: '2026-09-18T00:15:00+03:00',
     clientFirstName: 'Иван',
     clientLastName: 'Петров',
     clientEmail: 'ivan@example.com',
     clientPhone: '+34111',
   });
-  assert.match(text, /Новое сообщение в поддержку/);
-  assert.match(text, /От: Иван Петров \(#53\)/);
+  assert.match(text, /New support chat message/);
+  assert.match(text, /From: Иван Петров \(#53\)/);
   assert.match(text, /Email: ivan@example.com/);
-  assert.match(text, /Телефон: \+34111/);
-  assert.match(text, /Когда: 18 сентября 2026 г\. в 00:15/);
-  assert.match(text, /Сообщение: Нужна помощь с &lt;аукционом&gt;/);
-  assert.doesNotMatch(text, /Сессия #/);
+  assert.match(text, /Phone: \+34111/);
+  assert.match(text, /When: 18 September 2026 at 00:15/);
+  assert.match(text, /Message: Need help with &lt;auction&gt;/);
+  assert.doesNotMatch(text, /Session #/);
 });
 
 test('buildLiveChatMessage truncates long preview and labels guest', () => {
@@ -123,9 +123,9 @@ test('buildLiveChatMessage truncates long preview and labels guest', () => {
     text: long,
     createdAt: '2026-09-18T00:15:00+03:00',
   });
-  assert.match(text, /От: гость/);
-  assert.match(text, /Когда:/);
-  assert.match(text, /Сообщение:/);
+  assert.match(text, /From: guest/);
+  assert.match(text, /When:/);
+  assert.match(text, /Message:/);
   assert.ok(text.includes('…'));
   assert.ok(!text.includes('a'.repeat(810)));
 });

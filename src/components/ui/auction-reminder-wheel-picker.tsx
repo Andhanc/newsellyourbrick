@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import {
   motion,
   useMotionValue,
@@ -458,6 +459,7 @@ export const AuctionReminderWheelPicker = React.forwardRef<
     ref,
   ) => {
     const config = sizeConfig[size];
+    const { t } = useTranslation();
     const loc = locale || (typeof navigator !== "undefined" ? navigator.language : "ru-RU");
 
     const monthSlots = React.useMemo(
@@ -557,7 +559,7 @@ export const AuctionReminderWheelPicker = React.forwardRef<
     if (!monthSlots.length) {
       return (
         <div ref={ref} className={cn("arm-wheel-empty", className)} {...props}>
-          Нет доступных дат в допустимом диапазоне
+          {t("auctionReminderNoDatesInRange")}
         </div>
       );
     }
@@ -574,7 +576,7 @@ export const AuctionReminderWheelPicker = React.forwardRef<
         )}
         style={{ perspective: "1000px" }}
         role="group"
-        aria-label="Дата и время напоминания"
+        aria-label={t("auctionReminderWheelAria")}
         {...props}
       >
         <WheelColumn
@@ -589,7 +591,7 @@ export const AuctionReminderWheelPicker = React.forwardRef<
           visibleItems={visibleItems}
           disabled={disabled}
           className="w-14"
-          ariaLabel="День"
+          ariaLabel={t("auctionReminderWheelDay")}
         />
         <WheelColumn
           items={monthSlots.map((m) => m.label)}
@@ -604,7 +606,7 @@ export const AuctionReminderWheelPicker = React.forwardRef<
           visibleItems={visibleItems}
           disabled={disabled}
           className="w-36 min-w-[9rem]"
-          ariaLabel="Месяц"
+          ariaLabel={t("auctionReminderWheelMonth")}
         />
         <WheelColumn
           items={timeLabels}
@@ -617,7 +619,7 @@ export const AuctionReminderWheelPicker = React.forwardRef<
           visibleItems={visibleItems}
           disabled={disabled}
           className="w-20"
-          ariaLabel="Время"
+          ariaLabel={t("auctionReminderWheelTime")}
         />
       </div>
     );

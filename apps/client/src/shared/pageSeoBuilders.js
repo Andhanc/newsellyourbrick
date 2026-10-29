@@ -182,7 +182,11 @@ export function buildNewsArticlePageSeo(article, t) {
 export function buildCatalogPageSeo(params, t) {
   const country = String(params.country || '').toLowerCase();
   const countryKey = matchCountryKey(country) || country;
-  const countryLabel = getCountryLabel(countryKey, country);
+  const locale =
+    params.locale ||
+    (typeof t === 'function' && (t.lng || t?.i18n?.language)) ||
+    undefined;
+  const countryLabel = getCountryLabel(countryKey, country, locale);
   const cityLabel = params.cityLabel || getCanonicalRegionLabel(params.city, params.city);
   const typePlural = params.typePlural ? String(params.typePlural).toLowerCase() : null;
   const sale = String(params.sale || 'all').toLowerCase();

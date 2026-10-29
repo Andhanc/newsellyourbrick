@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
 import {
   ArrowLeft,
@@ -18,14 +19,7 @@ import { assignSheetPanelRef, useBottomSheetDrag } from '../hooks/useBottomSheet
 import { formatPurchaseDate, formatPurchaseMoney } from './PurchasedPropertyHistoryCard'
 import './PurchasedPropertyDrawer.css'
 
-const SALE_STEPS = [
-  { icon: Store, title: 'Создайте аккаунт продавца', text: 'Активируйте кабинет продавца с теми же контактными данными.' },
-  { icon: UserRoundCheck, title: 'Подтвердите личность и контакты', text: 'Пройдите проверку профиля — это защищает участников сделки.' },
-  { icon: BadgeCheck, title: 'Получите объект в кабинете', text: 'Мы подготовим черновик на основе уже купленного объекта.' },
-  { icon: FileCheck2, title: 'Проверьте карточку и документы', text: 'Актуализируйте фотографии, описание и документы собственности.' },
-  { icon: Store, title: 'Выберите формат продажи', text: 'Укажите цену и решите: аукцион, фиксированная цена или долевая модель.' },
-  { icon: ShieldCheck, title: 'Отправьте на модерацию', text: 'После проверки объект появится в каталоге и станет доступен покупателям.' },
-]
+const SALE_STEP_ICONS = [Store, UserRoundCheck, BadgeCheck, FileCheck2, Store, ShieldCheck]
 
 export default function PurchasedPropertyDrawer({
   item,
@@ -36,6 +30,15 @@ export default function PurchasedPropertyDrawer({
   onSell,
   onBecomeSeller,
 }) {
+  const { t } = useTranslation()
+  const saleSteps = [
+    { icon: SALE_STEP_ICONS[0], title: t('purchaseDrawer_step1Title'), text: t('purchaseDrawer_step1Text') },
+    { icon: SALE_STEP_ICONS[1], title: t('purchaseDrawer_step2Title'), text: t('purchaseDrawer_step2Text') },
+    { icon: SALE_STEP_ICONS[2], title: t('purchaseDrawer_step3Title'), text: t('purchaseDrawer_step3Text') },
+    { icon: SALE_STEP_ICONS[3], title: t('purchaseDrawer_step4Title'), text: t('purchaseDrawer_step4Text') },
+    { icon: SALE_STEP_ICONS[4], title: t('purchaseDrawer_step5Title'), text: t('purchaseDrawer_step5Text') },
+    { icon: SALE_STEP_ICONS[5], title: t('purchaseDrawer_step6Title'), text: t('purchaseDrawer_step6Text') },
+  ]
   const closeButtonRef = useRef(null)
   const overlayRef = useRef(null)
   const bodyRef = useRef(null)
@@ -136,13 +139,13 @@ export default function PurchasedPropertyDrawer({
       >
         <header className="purchase-drawer__header">
           {isSellView ? (
-            <button type="button" className="purchase-drawer__icon-button" onClick={onBack} aria-label="Вернуться к деталям покупки">
+            <button type="button" className="purchase-drawer__icon-button" onClick={onBack} aria-label={t('purchaseDrawer_backAria')}>
               <ArrowLeft size={21} aria-hidden />
             </button>
           ) : (
-            <span className="purchase-drawer__eyebrow">Ваш объект</span>
+            <span className="purchase-drawer__eyebrow">{t('purchaseDrawer_yourProperty')}</span>
           )}
-          <button ref={closeButtonRef} type="button" className="purchase-drawer__icon-button" onClick={onClose} aria-label="Закрыть">
+          <button ref={closeButtonRef} type="button" className="purchase-drawer__icon-button" onClick={onClose} aria-label={t('purchaseDrawer_closeAria')}>
             <X size={21} aria-hidden />
           </button>
         </header>
@@ -152,14 +155,14 @@ export default function PurchasedPropertyDrawer({
             <div className="purchase-drawer__intro">
               <span className="purchase-drawer__intro-icon"><Store size={22} aria-hidden /></span>
               <div>
-                <p className="purchase-drawer__kicker">Следующий шаг</p>
-                <h2 id="purchase-drawer-title">Продайте объект через кабинет</h2>
-                <p>Вся информация об объекте уже у нас. Вам останется активировать роль продавца и подготовить публикацию.</p>
+                <p className="purchase-drawer__kicker">{t('purchaseDrawer_nextStep')}</p>
+                <h2 id="purchase-drawer-title">{t('purchaseDrawer_sellViaCabinetTitle')}</h2>
+                <p>{t('purchaseDrawer_sellViaCabinetText')}</p>
               </div>
             </div>
 
             <ol className="purchase-drawer__steps">
-              {SALE_STEPS.map(({ icon: Icon, title, text }, index) => (
+              {saleSteps.map(({ icon: Icon, title, text }, index) => (
                 <li key={title}>
                   <span className="purchase-drawer__step-number">{index + 1}</span>
                   <span className="purchase-drawer__step-icon"><Icon size={18} aria-hidden /></span>
@@ -173,7 +176,7 @@ export default function PurchasedPropertyDrawer({
 
             <div className="purchase-drawer__sticky-actions">
               <button type="button" className="purchase-drawer__primary" onClick={onBecomeSeller}>
-                Стать продавцом
+                {t('purchaseDrawer_becomeSeller')}
                 <ArrowRight size={18} aria-hidden />
               </button>
             </div>
@@ -182,7 +185,7 @@ export default function PurchasedPropertyDrawer({
           <div ref={bodyRef} className="purchase-drawer__body">
             <div className="purchase-drawer__property-media">
               <img src={item.imageSrc} alt={item.title} />
-              <span><Check size={15} aria-hidden /> Резерв подтверждён</span>
+              <span><Check size={15} aria-hidden /> {t('purchaseDrawer_reserveConfirmed')}</span>
             </div>
 
             <div className="purchase-drawer__property-heading">
@@ -190,43 +193,43 @@ export default function PurchasedPropertyDrawer({
               {item.location ? <p><MapPin size={16} aria-hidden />{item.location}</p> : null}
             </div>
 
-            <section className="purchase-drawer__payment" aria-label="Состояние оплаты">
+            <section className="purchase-drawer__payment" aria-label={t('purchaseDrawer_paymentStatusAria')}>
               <div className="purchase-drawer__payment-top">
                 <div>
-                  <span>Оплачено</span>
+                  <span>{t('purchaseDrawer_paid')}</span>
                   <strong>{formatPurchaseMoney(item.paidAmount, item.currency)}</strong>
                 </div>
                 <span className="purchase-drawer__percent">{percent}%</span>
               </div>
-              <p>из {formatPurchaseMoney(item.totalAmount, item.currency)}</p>
+              <p>{t('purchaseDrawer_ofTotal', { amount: formatPurchaseMoney(item.totalAmount, item.currency) })}</p>
               <div className="purchase-drawer__progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={percent}>
                 <span style={{ width: `${percent}%` }} />
               </div>
               <div className="purchase-drawer__remaining">
-                <span>Осталось оплатить</span>
+                <span>{t('purchaseDrawer_remaining')}</span>
                 <strong>{formatPurchaseMoney(item.remainingAmount, item.currency)}</strong>
               </div>
             </section>
 
             <div className="purchase-drawer__meta">
-              <div><CalendarDays size={18} aria-hidden /><span>Дата платежа<strong>{formatPurchaseDate(item.purchaseDateRaw)}</strong></span></div>
-              <div><ShieldCheck size={18} aria-hidden /><span>Формат сделки<strong>Резерв 10% · Купить сейчас</strong></span></div>
+              <div><CalendarDays size={18} aria-hidden /><span>{t('purchaseDrawer_paymentDate')}<strong>{formatPurchaseDate(item.purchaseDateRaw)}</strong></span></div>
+              <div><ShieldCheck size={18} aria-hidden /><span>{t('purchaseDrawer_dealFormat')}<strong>{t('purchaseDrawer_dealFormatValue')}</strong></span></div>
             </div>
 
             <section className="purchase-drawer__rules">
-              <h3>Что происходит дальше</h3>
+              <h3>{t('purchaseDrawer_whatNextTitle')}</h3>
               <ul>
-                <li>Внесённые 10% закрепляют резерв объекта за вами.</li>
-                <li>Менеджер согласует документы, сроки и следующий платёж.</li>
-                <li>Условия сделки определяются подписанным соглашением и правилами платформы.</li>
-                <li>Для повторной продажи потребуется подтверждённый кабинет продавца.</li>
+                <li>{t('purchaseDrawer_rule1')}</li>
+                <li>{t('purchaseDrawer_rule2')}</li>
+                <li>{t('purchaseDrawer_rule3')}</li>
+                <li>{t('purchaseDrawer_rule4')}</li>
               </ul>
             </section>
 
             <div className="purchase-drawer__actions">
               <button type="button" className="purchase-drawer__secondary" onClick={onContactManager}>
                 <Headphones size={18} aria-hidden />
-                Связаться с менеджером
+                {t('purchaseDrawer_contactManager')}
               </button>
               <button
                 type="button"
@@ -236,15 +239,15 @@ export default function PurchasedPropertyDrawer({
                 title={
                   canSell
                     ? undefined
-                    : 'Продать объект можно после того, как администратор завершит сделку «Купить сейчас».'
+                    : t('purchaseDrawer_sellLockedTitle')
                 }
               >
-                Продать объект
+                {t('purchaseDrawer_sellProperty')}
                 <ArrowRight size={18} aria-hidden />
               </button>
               {canSell ? null : (
                 <p className="purchase-drawer__sell-hint">
-                  Продать объект станет доступно, когда администратор нажмёт «Завершить» в заявке.
+                  {t('purchaseDrawer_sellLockedHint')}
                 </p>
               )}
             </div>

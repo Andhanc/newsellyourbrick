@@ -1205,7 +1205,7 @@ export const propertyQueries = {
       if (row && (row.property_type === 'apartment' || row.property_type === 'commercial')) {
         return apartmentQueries.updateModerationStatus(nid, status, reviewedBy, rejectionReason, debtSeverity);
       }
-      throw new Error(`Объявление с ID ${id} не найдено в таблице квартир/коммерции`);
+      throw new Error(`Listing with ID ${id} was not found in the apartments/commercial table`);
     }
     if (hint === 'house' || hint === 'villa') {
       const row = await prisma.properties_houses.findUnique({
@@ -1215,7 +1215,7 @@ export const propertyQueries = {
       if (row && (row.property_type === 'house' || row.property_type === 'villa')) {
         return houseQueries.updateModerationStatus(nid, status, reviewedBy, rejectionReason, debtSeverity);
       }
-      throw new Error(`Объявление с ID ${id} не найдено в таблице домов`);
+      throw new Error(`Listing with ID ${id} was not found in the houses table`);
     }
 
     let propertyInHouses = null;
@@ -1291,7 +1291,7 @@ export const propertyQueries = {
       });
       return { changes: 1 };
     }
-    throw new Error(`Объявление с ID ${id} не найдено ни в одной таблице`);
+    throw new Error(`Listing with ID ${id} was not found in any table`);
   },
 
   delete: async (id) => {
@@ -1313,14 +1313,14 @@ export const propertyQueries = {
       await prisma.properties.delete({ where: { id: nid } });
       return { changes: 1 };
     } catch (e) {
-      throw new Error(`Объявление с ID ${id} не найдено ни в одной таблице`);
+      throw new Error(`Listing with ID ${id} was not found in any table`);
     }
   },
 
   update: async (id, propertyData) => {
         const property = await propertyQueries.getById(id);
     if (!property) {
-      throw new Error(`Объявление с ID ${id} не найдено`);
+      throw new Error(`Listing with ID ${id} was not found`);
     }
     if (property.property_type === 'apartment' || property.property_type === 'commercial') {
       return apartmentQueries.update(id, propertyData);
@@ -1328,7 +1328,7 @@ export const propertyQueries = {
     if (property.property_type === 'house' || property.property_type === 'villa') {
       return houseQueries.update(id, propertyData);
     }
-    throw new Error(`Неизвестный тип объявления: ${property.property_type}`);
+    throw new Error(`Unknown listing type: ${property.property_type}`);
   },
 
   getUserProperties: async (userId) => {
@@ -1355,7 +1355,7 @@ export const propertyQueries = {
   reserve: async (id, userId, purchaseRequestId, propertyType = null) => {
         const property = await propertyQueries.getById(id, propertyType);
     if (!property) {
-      throw new Error(`Объект с ID ${id} не найден`);
+      throw new Error(`Property with ID ${id} was not found`);
     }
     const sourceTable = property.source_table;
     const isApartmentsTable = sourceTable === 'apartments' || sourceTable === 'properties_apartments';
@@ -1367,24 +1367,24 @@ export const propertyQueries = {
       if (property.property_type === 'house' || property.property_type === 'villa') {
         return houseQueries.reserve(id, userId, purchaseRequestId);
       }
-      throw new Error(`Неизвестный тип объекта: ${property.property_type}`);
+      throw new Error(`Unknown property type: ${property.property_type}`);
     }
     if (isApartmentsTable) return apartmentQueries.reserve(id, userId, purchaseRequestId);
     if (isHousesTable) return houseQueries.reserve(id, userId, purchaseRequestId);
-    throw new Error(`Неизвестный тип объекта: source_table=${sourceTable}`);
+    throw new Error(`Unknown property type: source_table=${sourceTable}`);
   },
 
   unreserve: async (id) => {
         const property = await propertyQueries.getById(id);
     if (!property) {
-      throw new Error('Объект не найден');
+      throw new Error('Property not found');
     }
     const sourceTable = property.source_table;
     const isApartmentsTable = sourceTable === 'apartments' || sourceTable === 'properties_apartments';
     const isHousesTable = sourceTable === 'houses' || sourceTable === 'properties_houses';
     if (isApartmentsTable) return apartmentQueries.unreserve(id);
     if (isHousesTable) return houseQueries.unreserve(id);
-    throw new Error('Неизвестный тип объекта');
+    throw new Error('Unknown property type');
   },
 
   /**
@@ -1393,11 +1393,11 @@ export const propertyQueries = {
   markBuyNowSaleComplete: async (id, winnerUserId) => {
         const property = await propertyQueries.getById(id);
     if (!property) {
-      throw new Error('Объект не найден');
+      throw new Error('Property not found');
     }
     const winId = Number(winnerUserId);
     if (!Number.isFinite(winId)) {
-      throw new Error('Некорректный покупатель');
+      throw new Error('Invalid buyer');
     }
     const prisma = getPrisma();
     const completedAt = new Date().toISOString();
@@ -1429,7 +1429,7 @@ export const propertyQueries = {
       await prisma.properties_houses.update({ where: { id: nid }, data });
       return { ok: true };
     }
-    throw new Error('Неизвестный тип объекта');
+    throw new Error('Unknown property type');
   },
 
   isReserved: async (id, propertyType = null) => {

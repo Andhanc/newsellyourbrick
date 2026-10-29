@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ArrowRight, Building2, Check, ImagePlus, MapPin, ShieldCheck, Sparkles, X } from 'lucide-react'
 import { useOwnerTestNav } from '../context/OwnerTestNavigationContext'
 import {
@@ -13,19 +14,19 @@ import { assignSheetPanelRef, sheetHandleDragProps, useBottomSheetDrag } from '.
 import { OWNER_VIEWS } from '../utils/ownerTestNav'
 import './SellerPurchasedPropertyArrivalDrawer.css'
 
-const TYPE_LABELS = {
-  apartment: 'Квартира',
-  apartments: 'Апартаменты',
-  house: 'Дом',
-  villa: 'Вилла',
-  commercial: 'Коммерческая недвижимость',
-  land: 'Земельный участок',
+const TYPE_LABEL_KEYS = {
+  apartment: 'sellerArrivalTypeApartment',
+  apartments: 'sellerArrivalTypeApartments',
+  house: 'sellerArrivalTypeHouse',
+  villa: 'sellerArrivalTypeVilla',
+  commercial: 'sellerArrivalTypeCommercial',
+  land: 'sellerArrivalTypeLand',
 }
 
-const TRANSFER_ITEMS = [
-  { icon: Check, title: 'Уже перенесли', text: 'Название, адрес, характеристики и доступные фотографии.' },
-  { icon: ImagePlus, title: 'Нужно проверить', text: 'Актуальность фото, описание и особенности объекта.' },
-  { icon: ShieldCheck, title: 'Нужно добавить', text: 'Документы, условия и выбранный формат продажи.' },
+const TRANSFER_ITEM_DEFS = [
+  { icon: Check, titleKey: 'sellerArrivalTransferMovedTitle', textKey: 'sellerArrivalTransferMovedText' },
+  { icon: ImagePlus, titleKey: 'sellerArrivalTransferCheckTitle', textKey: 'sellerArrivalTransferCheckText' },
+  { icon: ShieldCheck, titleKey: 'sellerArrivalTransferAddTitle', textKey: 'sellerArrivalTransferAddText' },
 ]
 
 function PropertyArtwork() {
@@ -43,6 +44,7 @@ function PropertyArtwork() {
 }
 
 export default function SellerPurchasedPropertyArrivalDrawer() {
+  const { t } = useTranslation()
   const { goTo } = useOwnerTestNav()
   const titleId = useId()
   const drawerRef = useRef(null)
@@ -133,12 +135,13 @@ export default function SellerPurchasedPropertyArrivalDrawer() {
       setItem(null)
       goTo(OWNER_VIEWS.ADD_PROPERTY)
     } catch {
-      setError('Не удалось подготовить черновик. Проверьте соединение и попробуйте ещё раз.')
+      setError(t('sellerArrivalErrorDraft'))
       setLoading(false)
     }
   }
 
-  const typeLabel = TYPE_LABELS[String(item.property_type || '').toLowerCase()] || 'Недвижимость'
+  const typeKey = TYPE_LABEL_KEYS[String(item.property_type || '').toLowerCase()]
+  const typeLabel = typeKey ? t(typeKey) : t('sellerArrivalTypeFallback')
 
   return (
     <div
@@ -158,8 +161,8 @@ export default function SellerPurchasedPropertyArrivalDrawer() {
       >
         <span className="seller-arrival__grabber" aria-hidden="true" {...sheetHandleDragProps(sheetDrag)} />
         <header className="seller-arrival__header">
-          <span className="seller-arrival__eyebrow"><Sparkles size={14} aria-hidden /> Новый объект</span>
-          <button ref={closeRef} type="button" className="seller-arrival__close" onClick={dismiss} disabled={loading} aria-label="Закрыть">
+          <span className="seller-arrival__eyebrow"><Sparkles size={14} aria-hidden /> {t('sellerArrivalEyebrow')}</span>
+          <button ref={closeRef} type="button" className="seller-arrival__close" onClick={dismiss} disabled={loading} aria-label={t('sellerArrivalCloseAria')}>
             <X size={20} aria-hidden />
           </button>
         </header>
@@ -167,34 +170,34 @@ export default function SellerPurchasedPropertyArrivalDrawer() {
         <div className="seller-arrival__scroll">
           <section className="seller-arrival__intro">
             <span className="seller-arrival__intro-icon"><Building2 size={22} aria-hidden /></span>
-            <h2 id={titleId}>У вас есть объект!</h2>
-            <p>Покупка уже связана с кабинетом продавца. Мы подготовим карточку — вам не придётся заполнять всё заново.</p>
+            <h2 id={titleId}>{t('sellerArrivalTitle')}</h2>
+            <p>{t('sellerArrivalLead')}</p>
           </section>
 
           <article className="seller-arrival__property">
             <div className="seller-arrival__media">
               {item.image ? <img src={item.image} alt="" /> : <PropertyArtwork />}
-              <span className="seller-arrival__status"><Check size={13} aria-hidden /> Данные найдены</span>
+              <span className="seller-arrival__status"><Check size={13} aria-hidden /> {t('sellerArrivalDataFound')}</span>
             </div>
             <div className="seller-arrival__property-copy">
               <span>{typeLabel}</span>
-              <h3>{item.title || 'Ваш купленный объект'}</h3>
+              <h3>{item.title || t('sellerArrivalTitleFallback')}</h3>
               {item.location ? <p><MapPin size={14} aria-hidden /> {item.location}</p> : null}
             </div>
           </article>
 
-          <section className="seller-arrival__transfer" aria-label="Что будет перенесено">
-            {TRANSFER_ITEMS.map(({ icon: Icon, title, text }) => (
-              <div key={title} className="seller-arrival__transfer-item">
+          <section className="seller-arrival__transfer" aria-label={t('sellerArrivalTransferAria')}>
+            {TRANSFER_ITEM_DEFS.map(({ icon: Icon, titleKey, textKey }) => (
+              <div key={titleKey} className="seller-arrival__transfer-item">
                 <span><Icon size={17} aria-hidden /></span>
-                <div><strong>{title}</strong><p>{text}</p></div>
+                <div><strong>{t(titleKey)}</strong><p>{t(textKey)}</p></div>
               </div>
             ))}
           </section>
 
           <div className="seller-arrival__note">
             <Sparkles size={17} aria-hidden />
-            <p><strong>Черновик остаётся приватным.</strong> Объект появится в каталоге только после вашего подтверждения и модерации.</p>
+            <p><strong>{t('sellerArrivalNoteStrong')}</strong> {t('sellerArrivalNoteRest')}</p>
           </div>
         </div>
 
@@ -202,10 +205,10 @@ export default function SellerPurchasedPropertyArrivalDrawer() {
           {error ? <p className="seller-arrival__error" role="alert">{error}</p> : null}
           <button type="button" className="seller-arrival__primary" onClick={startListing} disabled={loading}>
             {loading ? <span className="seller-arrival__spinner" aria-hidden /> : null}
-            {loading ? 'Готовим черновик…' : 'Дозаполнить объект'}
+            {loading ? t('sellerArrivalPreparing') : t('sellerArrivalPrimaryCta')}
             {!loading ? <ArrowRight size={19} aria-hidden /> : null}
           </button>
-          <button type="button" className="seller-arrival__later" onClick={dismiss} disabled={loading}>Вернуться к этому позже</button>
+          <button type="button" className="seller-arrival__later" onClick={dismiss} disabled={loading}>{t('sellerArrivalLater')}</button>
         </footer>
       </aside>
     </div>

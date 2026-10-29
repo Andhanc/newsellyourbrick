@@ -9,21 +9,21 @@ import './FeatureUnavailablePage.css'
 const PAGE_BG = publicAsset('images/mobile-discover/welcome-summer.png')
 
 const SECTION_FALLBACK = {
-  title: 'Временно в разработке | Sellyourbrick',
-  description: 'Этот раздел временно в разработке. Скоро откроем — загляните на главную.',
+  title: 'Temporarily in development | Sellyourbrick',
+  description: 'This section is temporarily in development. Check back soon — or return to the home page.',
   eyebrow: 'SellYourBrick',
-  heading: 'Временно в разработке',
-  body: 'Этот раздел ещё готовится к запуску. Пока можно вернуться на главную и пользоваться открытыми разделами.',
-  linksLabel: 'Куда перейти',
-  backHome: 'На главную',
+  heading: 'Temporarily in development',
+  body: 'This section is still being prepared for launch. For now you can return home and use the open sections.',
+  linksLabel: 'Where to go',
+  backHome: 'Back to home',
 }
 
 const DESKTOP_FALLBACK = {
-  title: 'Мобильная версия | Sellyourbrick',
-  description: 'Десктопная версия временно в разработке. Откройте сайт на телефоне.',
+  title: 'Mobile version | Sellyourbrick',
+  description: 'The desktop version is temporarily in development. Open the site on your phone.',
   eyebrow: 'SellYourBrick',
-  heading: 'Пока только на телефоне',
-  body: 'Десктопная версия ещё в разработке. Откройте SellYourBrick на смартфоне — мобильная версия уже доступна.',
+  heading: 'Phone only for now',
+  body: 'The desktop version is still in development. Open SellYourBrick on your smartphone — the mobile version is already available.',
 }
 
 export default function FeatureUnavailablePage({ variant = 'section' }) {

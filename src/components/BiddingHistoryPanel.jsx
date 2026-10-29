@@ -7,6 +7,7 @@ import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import './BiddingHistoryModal.css'
 import { getCurrencySymbol } from '../utils/currency'
 import { propertyBidsApiQuery, resolvePropertySourceTable } from '../utils/propertySourceTable'
+import { getUiIntlLocale } from '../utils/uiIntlLocale'
 
 let API_BASE_URL = getApiBaseUrlSync()
 
@@ -110,7 +111,7 @@ export default function BiddingHistoryPanel({
   const formatPrice = (price) => {
     const num = Number(price)
     if (!num || Number.isNaN(num)) return '—'
-    return `${getCurrencySymbol(property?.currency)}${num.toLocaleString('ru-RU')}`
+    return `${getCurrencySymbol(property?.currency)}${num.toLocaleString(getUiIntlLocale())}`
   }
 
   return (

@@ -411,7 +411,7 @@ export const userQueries = {
   getCountryStats: async () => {
     const prisma = getPrisma();
     const rows = await prisma.$queryRaw`
-      SELECT COALESCE(country, 'Не указано') as country, COUNT(*)::int as count
+      SELECT COALESCE(country, 'Not specified') as country, COUNT(*)::int as count
       FROM users
       GROUP BY country
       ORDER BY count DESC
@@ -458,10 +458,10 @@ export const documentQueries = {
         ? parseInt(documentData.user_id, 10)
         : documentData.user_id;
     if (!userId || Number.isNaN(userId) || userId <= 0) {
-      throw new Error(`Неверный user_id: ${documentData.user_id}. Ожидается положительное число.`);
+      throw new Error(`Invalid user_id: ${documentData.user_id}. A positive number is expected.`);
     }
     const u = await prisma.users.findUnique({ where: { id: userId }, select: { id: true } });
-    if (!u) throw new Error(`Пользователь с ID ${userId} не найден в базе данных.`);
+    if (!u) throw new Error(`User with ID ${userId} was not found in the database.`);
     const doc = await prisma.documents.create({
       data: {
         user_id: userId,

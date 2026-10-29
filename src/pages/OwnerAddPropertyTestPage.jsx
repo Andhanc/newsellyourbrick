@@ -61,6 +61,7 @@ import { notifyBonusSubmissionsChanged } from '../utils/bonusSubmissionsSync'
 import {
   startListingPublicationCheckout,
   confirmListingPublicationFeeSession,
+  translateBillingError,
 } from '../utils/subscriptionCheckout'
 import { publishOapProperty } from '../utils/oapPublishProperty'
 import { resolveCanPublishWithoutSellerPhotoKyc } from '../utils/sellerPublishKyc'
@@ -780,7 +781,7 @@ export default function OwnerAddPropertyTestPage() {
       if (result.error === 'profile_incomplete') {
         showNotification(
           t('oap_publishProfileIncomplete', {
-            fields: result.missingProfileFields.join(', '),
+            fields: result.missingProfileFields.map((k) => t(k)).join(', '),
           }),
         )
         if (goTo) {
@@ -790,7 +791,14 @@ export default function OwnerAddPropertyTestPage() {
         }
         return false
       }
-      showNotification(snapshot.form.listingMode === 'development' ? t(`develop.${result.error}`, { defaultValue: result.error || t('oap_publishSubmitError') }) : result.error || t('oap_publishSubmitError'))
+      showNotification(snapshot.form.listingMode === 'development'
+        ? t(`develop.${result.error}`, { defaultValue: result.error || t('oap_publishSubmitError') })
+        : t(result.error || 'oap_publishSubmitError', {
+            defaultValue: result.error || t('oap_publishSubmitError'),
+            status: String(result.error || '').startsWith('addPropertyErr_photoUpload:')
+              ? String(result.error).split(':')[1]
+              : undefined,
+          }))
       return false
     }
 
@@ -907,7 +915,7 @@ export default function OwnerAddPropertyTestPage() {
         returnPath: '/owner-test/add-property',
       })
       if (!result.ok) {
-        showNotification(result.error || t('oap_publishPaymentError'), 'error')
+        showNotification(translateBillingError(result.error, t, 'oap_publishPaymentError'), 'error')
       }
     } catch (e) {
       showNotification(e?.message || t('oap_publishPaymentStartError'), 'error')

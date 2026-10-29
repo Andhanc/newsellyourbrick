@@ -1,5 +1,5 @@
 import i18n from '../i18n/config'
-import { getIdentificationLabelByCountry } from './profileIdentification'
+import { getIdentificationLabelKeyByCountry } from './profileIdentification'
 
 const LOCALE_MAP = {
   ru: 'ru-RU',
@@ -7,6 +7,7 @@ const LOCALE_MAP = {
   de: 'de-DE',
   es: 'es-ES',
   fr: 'fr-FR',
+  pl: 'pl-PL',
   sv: 'sv-SE',
 }
 
@@ -33,8 +34,8 @@ export const OWNER_PROFILE_FIELD_I18N_KEYS = {
 
 export function getOwnerProfileFieldLabel(key, country) {
   if (key === 'identificationNumber') {
-    const raw = getIdentificationLabelByCountry(country)
-    if (raw === 'DNI или NIE') return ownerTestT('ownerTest_idLabelSpain')
+    const labelKey = getIdentificationLabelKeyByCountry(country)
+    if (labelKey === 'buyerData_labelDniNie') return ownerTestT('ownerTest_idLabelSpain')
     return ownerTestT('ownerTest_idLabelDefault')
   }
   const i18nKey = OWNER_PROFILE_FIELD_I18N_KEYS[key]

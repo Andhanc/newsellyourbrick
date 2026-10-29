@@ -466,8 +466,8 @@ async function findSessionsForRegisteredUser(prisma, userId) {
 }
 
 const LEGACY_LIVE_CHAT_WAIT_NOTICES = new Set([
-  'Подождите, скоро ответит менеджер.',
-  'Подождите, скоро ответит поддержка.',
+  'Please wait — a manager will reply soon.',
+  'Please wait — support will reply soon.',
   'Please wait — support will reply shortly.',
   'Bitte warten — der Support antwortet gleich.',
   'Espere, el soporte responderá en breve.',
@@ -615,10 +615,10 @@ export const liveChatQueries = {
         : null) ||
       (assistantSessionId ? String(assistantSessionId).trim() : null);
     const label =
-      (asst && String(asst).replace(/^user_/, '').slice(0, 72)) || 'Гость';
+      (asst && String(asst).replace(/^user_/, '').slice(0, 72)) || 'Guest';
     const body =
       (waitMessage && String(waitMessage).trim()) ||
-      'Добрый день. Оставьте сообщение в службу поддержки. Как специалист освободится, он ответит вам. Ответ можно получить на почту, уведомлением в кабинете и пуш-уведомлением.';
+      'Hello. Leave a message for support. When a specialist is available, they will reply. You can get the reply by email, in-cabinet notification, and push.';
     const session = await prisma.$transaction(async (tx) => {
       const s = await tx.live_chat_sessions.create({
         data: {
@@ -792,5 +792,144 @@ export const liveChatQueries = {
     `;
     const row = Array.isArray(rows) && rows[0] ? rows[0] : null;
     return Number(row?.count || 0);
+  },
+
+  /**
+   * Справочник пользователей для админ-поддержки: поиск + привязка существующей live-сессии.
+   */
+  listUsersDirectoryForAdmin: async ({ q = '', limit = 100, offset = 0 } = {}) => {
+    const prisma = getPrisma();
+    const take = Math.min(Math.max(Number(limit) || 100, 1), 300);
+    const skip = Math.max(Number(offset) || 0, 0);
+    const query = String(q || '').trim();
+    const numericId = Number(query);
+    const where = query
+      ? {
+          OR: [
+            { email: { contains: query, mode: 'insensitive' } },
+            { first_name: { contains: query, mode: 'insensitive' } },
+            { last_name: { contains: query, mode: 'insensitive' } },
+            { phone_number: { contains: query } },
+            ...(Number.isFinite(numericId) && numericId > 0 ? [{ id: numericId }] : []),
+          ],
+        }
+      : {};
+
+    const [rows, total] = await Promise.all([
+      prisma.users.findMany({
+        where,
+        orderBy: { id: 'desc' },
+        take,
+        skip,
+        select: {
+          id: true,
+          first_name: true,
+          last_name: true,
+          email: true,
+          phone_number: true,
+          user_photo: true,
+          telegram_photo_url: true,
+          role: true,
+          vip_until: true,
+          created_at: true,
+          stripe_subscription_state: {
+            select: { plan_key: true, status: true },
+          },
+        },
+      }),
+      prisma.users.count({ where }),
+    ]);
+
+    const ids = rows.map((r) => r.id);
+    const sessions = ids.length
+      ? await prisma.live_chat_sessions.findMany({
+          where: { user_id: { in: ids } },
+          select: { id: true, user_id: true, updated_at: true },
+          orderBy: { updated_at: 'desc' },
+        })
+      : [];
+    const sessionByUser = new Map();
+    for (const s of sessions) {
+      const uid = Number(s.user_id);
+      if (!sessionByUser.has(uid)) sessionByUser.set(uid, s);
+    }
+
+    const inactiveSubStatuses = new Set(['canceled', 'unpaid', 'incomplete_expired', 'incomplete']);
+    const now = Date.now();
+
+    return {
+      total,
+      users: rows.map((u) => {
+        const vipUntilMs = u.vip_until ? new Date(u.vip_until).getTime() : 0;
+        const sub = u.stripe_subscription_state;
+        const st = sub?.status ? String(sub.status).toLowerCase() : '';
+        const pk = sub?.plan_key ? String(sub.plan_key).toLowerCase() : '';
+        const stripeVip = pk === 'vip' && st !== '' && !inactiveSubStatuses.has(st);
+        const session = sessionByUser.get(Number(u.id));
+        return {
+          id: u.id,
+          first_name: u.first_name,
+          last_name: u.last_name,
+          email: u.email,
+          phone_number: u.phone_number,
+          user_photo: u.user_photo,
+          telegram_photo_url: u.telegram_photo_url,
+          role: u.role,
+          vip_club_active: Boolean((vipUntilMs && vipUntilMs > now) || stripeVip),
+          session_id: session?.id || null,
+          session_updated_at:
+            session?.updated_at instanceof Date
+              ? session.updated_at.toISOString()
+              : session?.updated_at || null,
+          created_at:
+            u.created_at instanceof Date ? u.created_at.toISOString() : u.created_at,
+        };
+      }),
+    };
+  },
+
+  /**
+   * Создать или вернуть диалог с пользователем (чтобы админ мог написать первым).
+   * @returns {{ session: object, created: boolean, managerMessage: object|null }|null}
+   */
+  ensureSessionForUser: async (userId, { waitMessage = null, initialManagerText = null } = {}) => {
+    const uid = Number(userId);
+    if (!Number.isFinite(uid) || uid <= 0) return null;
+
+    const prisma = getPrisma();
+    const user = await prisma.users.findUnique({
+      where: { id: uid },
+      select: { id: true },
+    });
+    if (!user) return null;
+
+    let created = false;
+    let session = await liveChatQueries.mergeSessionsForUser(uid);
+    if (!session) {
+      const notice =
+        (waitMessage && String(waitMessage).trim()) ||
+        'Support started the conversation. You can reply in this chat.';
+      const createdRow = await liveChatQueries.createSession({
+        userId: uid,
+        assistantSessionId: canonicalLiveChatAssistantId(uid),
+        waitMessage: notice,
+      });
+      session = await liveChatQueries.getSessionById(createdRow.id);
+      created = true;
+    }
+
+    let managerMessage = null;
+    const managerText = initialManagerText && String(initialManagerText).trim();
+    if (managerText) {
+      const msgId = await liveChatQueries.addMessage(session.id, 'manager', managerText);
+      managerMessage = msgId ? await liveChatQueries.getMessageRow(session.id, msgId) : null;
+    }
+
+    const listRow = await liveChatQueries.getSessionListRowById(session.id);
+    return {
+      session: listRow,
+      created,
+      managerMessage,
+    };
   },
 };

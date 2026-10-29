@@ -11,7 +11,7 @@ export async function requestInvestorAiAnalysis(payload, { signal } = {}) {
 
   const data = await response.json().catch(() => ({}))
   if (!response.ok || !data?.success || !data?.analysis) {
-    throw new Error(data?.detail || `Не удалось выполнить AI-анализ (${response.status})`)
+    throw new Error(data?.detail || `AI analysis failed (${response.status})`)
   }
   return data.analysis
 }

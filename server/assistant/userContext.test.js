@@ -59,7 +59,7 @@ test('comparison readiness lets the model compare two favorites', () => {
 })
 
 test('prompt treats unauthenticated personal data as unavailable', () => {
-  assert.match(formatUserContextForPrompt({ authenticated: false }), /не авторизован/)
+  assert.match(formatUserContextForPrompt({ authenticated: false }), /not signed in/i)
 })
 
 test('cabinet personal questions are detected and not treated as property search', () => {
@@ -104,13 +104,15 @@ test('cabinet snapshot reply reports wallet and bookings from context', () => {
 })
 
 test('owned properties get cabinet analytics links sorted by nearest auction', () => {
+  const soon = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+  const later = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
   const reply = buildCabinetSnapshotReply({
     authenticated: true,
     ownedProperties: {
       count: 2,
       items: [
-        { id: 10, title: 'Later Auction', auctionEndDate: '2026-12-20T12:00:00.000Z' },
-        { id: 11, title: 'Soon Auction', auctionEndDate: '2026-10-10T12:00:00.000Z' },
+        { id: 10, title: 'Later Auction', auctionEndDate: later },
+        { id: 11, title: 'Soon Auction', auctionEndDate: soon },
       ],
     },
     favorites: { count: 0, items: [] },

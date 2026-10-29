@@ -128,3 +128,4 @@ maestro/reports/*.xml
 # Private project documents and local demo credentials
 server/private-development/
 output/development/demo-access.json
+docs/object-intake/talaia-raw/sheets_token.json

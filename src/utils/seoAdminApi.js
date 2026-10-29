@@ -23,7 +23,7 @@ function apiPath(suffix) {
 export async function fetchSeoMeta() {
   const r = await fetch(apiPath('/meta'), { headers: adminContextHeader() });
   const j = await r.json();
-  if (!j.success) throw new Error(j.error || 'Ошибка загрузки');
+  if (!j.success) throw new Error(j.error || 'seoAdminErr_load');
   return j.data;
 }
 
@@ -31,7 +31,7 @@ export async function fetchSeoPages(params = {}) {
   const qs = new URLSearchParams(params).toString();
   const r = await fetch(apiPath(`/pages?${qs}`), { headers: adminContextHeader() });
   const j = await r.json();
-  if (!j.success) throw new Error(j.error || 'Ошибка загрузки страниц');
+  if (!j.success) throw new Error(j.error || 'seoAdminErr_loadPages');
   return j;
 }
 
@@ -39,7 +39,7 @@ export async function fetchSeoPage(path) {
   const clean = String(path || '').replace(/^\//, '');
   const r = await fetch(apiPath(`/pages/${clean}`), { headers: adminContextHeader() });
   const j = await r.json();
-  if (!j.success) throw new Error(j.error || 'Страница не найдена');
+  if (!j.success) throw new Error(j.error || 'seoAdminErr_pageNotFound');
   return j.data;
 }
 
@@ -51,21 +51,21 @@ export async function saveSeoPage(path, payload) {
     body: JSON.stringify(payload),
   });
   const j = await r.json();
-  if (!j.success) throw new Error(j.error || 'Ошибка сохранения');
+  if (!j.success) throw new Error(j.error || 'seoAdminErr_save');
   return j.data;
 }
 
 export async function fetchSeoChecks() {
   const r = await fetch(apiPath('/checks'), { headers: adminContextHeader() });
   const j = await r.json();
-  if (!j.success) throw new Error(j.error || 'Ошибка проверок');
+  if (!j.success) throw new Error(j.error || 'seoAdminErr_checks');
   return j.data;
 }
 
 export async function fetchSeoTemplates() {
   const r = await fetch(apiPath('/templates'), { headers: adminContextHeader() });
   const j = await r.json();
-  if (!j.success) throw new Error(j.error || 'Ошибка шаблонов');
+  if (!j.success) throw new Error(j.error || 'seoAdminErr_templates');
   return j.data;
 }
 
@@ -76,14 +76,14 @@ export async function saveSeoTemplate(pageType, payload) {
     body: JSON.stringify(payload),
   });
   const j = await r.json();
-  if (!j.success) throw new Error(j.error || 'Ошибка сохранения шаблона');
+  if (!j.success) throw new Error(j.error || 'seoAdminErr_saveTemplate');
   return j.data;
 }
 
 export async function fetchSeoRedirects() {
   const r = await fetch(apiPath('/redirects'), { headers: adminContextHeader() });
   const j = await r.json();
-  if (!j.success) throw new Error(j.error || 'Ошибка редиректов');
+  if (!j.success) throw new Error(j.error || 'seoAdminErr_redirects');
   return j.data;
 }
 
@@ -94,7 +94,7 @@ export async function createSeoRedirect(payload) {
     body: JSON.stringify(payload),
   });
   const j = await r.json();
-  if (!j.success) throw new Error(j.error || 'Ошибка создания');
+  if (!j.success) throw new Error(j.error || 'seoAdminErr_create');
   return j.data;
 }
 
@@ -104,14 +104,14 @@ export async function deleteSeoRedirect(id) {
     headers: adminContextHeader(),
   });
   const j = await r.json();
-  if (!j.success) throw new Error(j.error || 'Ошибка удаления');
+  if (!j.success) throw new Error(j.error || 'seoAdminErr_delete');
 }
 
 export async function fetchSeoHistory(path) {
   const clean = String(path || '').replace(/^\//, '');
   const r = await fetch(apiPath(`/history/${clean}`), { headers: adminContextHeader() });
   const j = await r.json();
-  if (!j.success) throw new Error(j.error || 'Ошибка истории');
+  if (!j.success) throw new Error(j.error || 'seoAdminErr_history');
   return j.data;
 }
 
@@ -121,7 +121,7 @@ export async function rollbackSeoHistory(id) {
     headers: adminContextHeader(),
   });
   const j = await r.json();
-  if (!j.success) throw new Error(j.error || 'Ошибка отката');
+  if (!j.success) throw new Error(j.error || 'seoAdminErr_rollback');
   return j.data;
 }
 
@@ -137,7 +137,7 @@ export async function importSeoCsv(csv) {
     body: JSON.stringify({ csv }),
   });
   const j = await r.json();
-  if (!j.success) throw new Error(j.error || 'Ошибка импорта');
+  if (!j.success) throw new Error(j.error || 'seoAdminErr_import');
   return j.data;
 }
 
@@ -147,6 +147,6 @@ export async function refreshSitemap() {
     headers: adminContextHeader(),
   });
   const j = await r.json();
-  if (!j.success) throw new Error(j.error || 'Ошибка');
+  if (!j.success) throw new Error(j.error || 'seoAdminErr_generic');
   return j;
 }

@@ -1,6 +1,6 @@
 /**
- * В dev один раз проверяет /health. Если бэкенд не поднят — подсказка в консоль.
- * Не влияет на production.
+ * In dev, checks /health once. If the backend is down — logs a console hint.
+ * No effect in production.
  */
 let ran = false
 
@@ -10,13 +10,17 @@ export function runDevBackendHintOnce() {
   fetch('/health', { method: 'GET' })
     .then((r) => {
       if (!r.ok) {
-        console.warn('[Dev] GET /health:', r.status, '— проверьте, что API запущен на порту из vite proxy (обычно 3000).')
+        console.warn(
+          '[Dev] GET /health:',
+          r.status,
+          '— check that the API is running on the vite proxy port (usually 3000).',
+        )
       }
     })
     .catch(() => {
       console.warn(
-        '[Dev] Бэкенд не отвечает (Failed to fetch). Запустите в отдельном терминале: npm run server\n' +
-          '   Или фронт и API вместе: npm run dev:all'
+        '[Dev] Backend is not responding (Failed to fetch). Start it in a separate terminal: npm run server\n' +
+          '   Or run frontend + API together: npm run dev:all',
       )
     })
 }

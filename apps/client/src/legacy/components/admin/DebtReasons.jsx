@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
 import { getApiBaseUrlSync } from '../../utils/apiConfig';
 import './DebtReasons.css';
@@ -6,6 +7,7 @@ import './DebtReasons.css';
 const API_BASE_URL = getApiBaseUrlSync();
 
 const DebtReasons = () => {
+  const { t } = useTranslation();
   const [reasons, setReasons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -54,7 +56,7 @@ const DebtReasons = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Удалить эту причину долга? Она может использоваться в объявлениях.')) return;
+    if (!window.confirm(t('admin_udalit_etu_prichinu_dolga_80837164'))) return;
     try {
       const response = await fetch(`${API_BASE_URL}/admin/debt-reasons/${id}`, { method: 'DELETE' });
       if (response.ok) {
@@ -64,18 +66,18 @@ const DebtReasons = () => {
         }
       } else {
         const err = await response.json();
-        alert(err.error || 'Ошибка при удалении');
+        alert(err.error || t('admin_oshibka_pri_udalenii_746c5012'));
       }
     } catch (error) {
       console.error(error);
-      alert('Ошибка при удалении');
+      alert(t('admin_oshibka_pri_udalenii_746c5012'));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title_ru?.trim()) {
-      alert('Укажите название причины долга');
+      alert(t('admin_ukazhite_nazvanie_prichiny_dolga_e438bd76'));
       return;
     }
     try {
@@ -107,41 +109,41 @@ const DebtReasons = () => {
         }
       } else {
         const err = await response.json();
-        alert(err.error || 'Ошибка при сохранении');
+        alert(err.error || t('admin_oshibka_pri_sohranenii_9ed7753c'));
       }
     } catch (error) {
       console.error(error);
-      alert('Ошибка при сохранении');
+      alert(t('admin_oshibka_pri_sohranenii_9ed7753c'));
     }
   };
 
   if (loading) {
-    return <div className="debt-reasons-loading">Загрузка...</div>;
+    return <div className="debt-reasons-loading">{t('admin_loading')}</div>;
   }
 
   return (
     <div className="debt-reasons">
       <div className="debt-reasons-header">
-        <h2>Причины долга</h2>
+        <h2>{t('admin_prichiny_dolga_d84b8063')}</h2>
         <p className="debt-reasons-desc">
-          Список причин (видов долга), которые продавец может выбрать при добавлении объекта «Долги». Порядок отображения задаётся полем «Порядок».
+          {t('admin_spisok_prichin_vidov_dolga_117a0f59')}
         </p>
         <button type="button" className="btn btn-primary debt-reasons-create" onClick={handleCreate}>
-          <FaPlus /> Добавить причину
+          <FaPlus /> {t('admin_dobavit_prichinu_6ade0f0d')}
         </button>
       </div>
 
       <div className="debt-reasons-list">
         {reasons.length === 0 ? (
-          <div className="debt-reasons-empty">Нет причин долга. Добавьте первую.</div>
+          <div className="debt-reasons-empty">{t('admin_net_prichin_dolga_dobavte_be74639e')}</div>
         ) : (
           <table className="debt-reasons-table">
             <thead>
               <tr>
-                <th>Порядок</th>
-                <th>Название</th>
-                <th>Код</th>
-                <th>Действия</th>
+                <th>{t('admin_poryadok_f6f1e527')}</th>
+                <th>{t('admin_title')}</th>
+                <th>{t('admin_kod_67088374')}</th>
+                <th>{t('admin_deystviya_9978ac34')}</th>
               </tr>
             </thead>
             <tbody>
@@ -151,10 +153,10 @@ const DebtReasons = () => {
                   <td>{r.title_ru}</td>
                   <td>{r.code || '—'}</td>
                   <td>
-                    <button type="button" className="btn btn-icon btn-edit" onClick={() => handleEdit(r)} title="Редактировать">
+                    <button type="button" className="btn btn-icon btn-edit" onClick={() => handleEdit(r)} title={t('admin_edit')}>
                       <FaEdit />
                     </button>
-                    <button type="button" className="btn btn-icon btn-delete" onClick={() => handleDelete(r.id)} title="Удалить">
+                    <button type="button" className="btn btn-icon btn-delete" onClick={() => handleDelete(r.id)} title={t('admin_delete')}>
                       <FaTrash />
                     </button>
                   </td>
@@ -169,33 +171,33 @@ const DebtReasons = () => {
         <div className="modal-overlay debt-reasons-modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content debt-reasons-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{editingItem ? 'Редактировать причину долга' : 'Добавить причину долга'}</h3>
+              <h3>{editingItem ? t('admin_redaktirovat_prichinu_dolga_b57bc21c') : t('admin_dobavit_prichinu_dolga_04d9c341')}</h3>
               <button type="button" className="modal-close" onClick={() => setShowModal(false)}>
                 <FaTimes />
               </button>
             </div>
             <form onSubmit={handleSubmit} className="debt-reasons-form">
               <div className="form-group">
-                <label>Название (рус) *</label>
+                <label>{t('admin_nazvanie_rus_83866e10')}</label>
                 <input
                   type="text"
                   value={formData.title_ru}
                   onChange={(e) => setFormData({ ...formData, title_ru: e.target.value })}
-                  placeholder="Например: Долги по коммунальным услугам"
+                  placeholder={t('admin_debtReasonNamePlaceholder')}
                   required
                 />
               </div>
               <div className="form-group">
-                <label>Код (латиница, для связи с формой)</label>
+                <label>{t('admin_kod_latinica_dlya_svyazi_4b10db5d')}</label>
                 <input
                   type="text"
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                  placeholder="Например: utilities"
+                  placeholder={t('admin_debtReasonCodePlaceholder')}
                 />
               </div>
               <div className="form-group">
-                <label>Порядок отображения</label>
+                <label>{t('admin_poryadok_otobrazheniya_db7b5744')}</label>
                 <input
                   type="number"
                   min={0}
@@ -205,10 +207,10 @@ const DebtReasons = () => {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                  Отмена
+                  {t('admin_otmena_0ec753be')}
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  <FaSave /> {editingItem ? 'Сохранить' : 'Добавить'}
+                  <FaSave /> {editingItem ? t('admin_save') : t('admin_dobavit_559a87f7')}
                 </button>
               </div>
             </form>

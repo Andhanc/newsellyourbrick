@@ -32,6 +32,7 @@ import {
   FiLock,
 } from 'react-icons/fi'
 import { Building2, Building, Warehouse } from 'lucide-react'
+import { getUiIntlLocale } from '../utils/uiIntlLocale'
 
 const ADD_PROPERTY_NAME_PLACEHOLDER_I18N_KEYS = {
   apartment: 'addPropertyNamePlaceholderApartment',
@@ -41,173 +42,166 @@ const ADD_PROPERTY_NAME_PLACEHOLDER_I18N_KEYS = {
 }
 
 const PROPERTY_TYPE_OPTIONS = [
-  { id: 'house', backendType: 'house', title: 'Дом', description: 'Частный дом, таунхаус или коттедж', icon: 'house' },
-  { id: 'villa', backendType: 'villa', title: 'Вилла', description: 'Премиальная загородная недвижимость', icon: 'villa' },
-  { id: 'apartments', backendType: 'apartment', title: 'Аппартаменты', description: 'Сервисные или инвестиционные апартаменты', icon: 'apartments' },
-  { id: 'apartment', backendType: 'apartment', title: 'Квартира', description: 'Квартира в многоквартирном доме', icon: 'apartment' },
-  { id: 'commercial', backendType: 'commercial', title: 'Коммерческая недвижимость', description: 'Офис, магазин, склад или другое помещение', icon: 'commercial' },
-  { id: 'land', backendType: 'house', title: 'Земля', description: 'Участок под застройку, ферму или бизнес', icon: 'land' },
-  { id: 'other', backendType: 'commercial', title: 'Другое', description: 'Нестандартный объект, смешанный формат', icon: 'other' },
+  { id: 'house', backendType: 'house', titleKey: 'oap_propertyTypeHouse', descriptionKey: 'oap_propertyTypeHouseDesc', icon: 'house' },
+  { id: 'villa', backendType: 'villa', titleKey: 'oap_propertyTypeVilla', descriptionKey: 'oap_propertyTypeVillaDesc', icon: 'villa' },
+  { id: 'apartments', backendType: 'apartment', titleKey: 'oap_propertyTypeApartments', descriptionKey: 'oap_propertyTypeApartmentsDesc', icon: 'apartments' },
+  { id: 'apartment', backendType: 'apartment', titleKey: 'oap_propertyTypeApartment', descriptionKey: 'oap_propertyTypeApartmentDesc', icon: 'apartment' },
+  { id: 'commercial', backendType: 'commercial', titleKey: 'oap_propertyTypeCommercialFull', descriptionKey: 'oap_propertyTypeCommercialDesc', icon: 'commercial' },
+  { id: 'land', backendType: 'house', titleKey: 'oap_propertyTypeLand', descriptionKey: 'oap_propertyTypeLandDesc', icon: 'land' },
+  { id: 'other', backendType: 'commercial', titleKey: 'oap_propertyTypeOther', descriptionKey: 'oap_propertyTypeOtherDesc', icon: 'other' },
 ]
+
 
 const LISTING_MODE_OPTIONS = [
   {
     id: 'auction',
-    title: 'Аукцион',
-    description: 'Максимизирует рыночную цену за счет конкуренции между покупателями',
+    titleKey: 'oap_listingModeAuction',
+    descriptionKey: 'oap_listingModeAuctionDesc',
     icon: 'auction',
     tone: 'teal',
     detail: {
-      howTitle: 'Как проходит продажа',
-      howLead:
-        'Вы задаёте стартовую цену и срок приёма ставок. Покупатели повышают ставки в открытой конкуренции; по окончании периода лидер получает право на сделку по итоговой сумме.',
-      howSteps: [
-        'Публикуете объект и параметры аукциона (старт, шаг, дата окончания).',
-        'Участники делают ставки — вы видите динамику спроса в реальном времени.',
-        'После завершения торгов фиксируется победитель и переходите к оформлению сделки по правилам платформы.',
+      howTitleKey: 'oap_listingDetailHowTitle',
+      howLeadKey: 'oap_listingDetailAuctionHowLead',
+      howStepKeys: [
+        'oap_listingDetailAuctionHowStep1',
+        'oap_listingDetailAuctionHowStep2',
+        'oap_listingDetailAuctionHowStep3',
       ],
-      fitTitle: 'Кому подходит',
-      fitText:
-        'Когда объект востребован на рынке и вы хотите «проверить» справедливую цену через конкуренцию, а не полагаться на одну оценку или случайного покупателя.',
-      prosTitle: 'Преимущества',
-      pros: [
-        'Потенциально более высокая итоговая цена за счёт борьбы покупателей.',
-        'Прозрачная механика и понятный дедлайн принятия решений.',
-        'Снижение риска занижения цены при сильном интересе к объекту.',
+      fitTitleKey: 'oap_listingDetailFitTitle',
+      fitTextKey: 'oap_listingDetailAuctionFit',
+      prosTitleKey: 'oap_listingDetailProsTitle',
+      proKeys: [
+        'oap_listingDetailAuctionPro1',
+        'oap_listingDetailAuctionPro2',
+        'oap_listingDetailAuctionPro3',
       ],
     },
   },
   {
     id: 'auction_buy_now',
-    title: 'Аукцион + Продать сейчас',
-    description: 'Дает два сценария сразу: борьба ставок и быстрая сделка по фиксированной цене',
+    titleKey: 'oap_listingModeAuctionBuyNow',
+    descriptionKey: 'oap_listingModeAuctionBuyNowDesc',
     icon: 'flash',
     tone: 'violet',
     detail: {
-      howTitle: 'Как проходит продажа',
-      howLead:
-        'Параллельно работают два канала: классические торги и цена «Продать сейчас». Если покупатель согласен на фикс — он может закрыть сделку без ожидания финала аукциона.',
-      howSteps: [
-        'Указываете старт аукциона и (отдельно) цену мгновенной покупки.',
-        'Покупатели либо повышают ставки, либо активируют «Продать сейчас».',
-        'При срабатывании фиксированной цены торги завершаются в пользу этого покупателя — дальше стандартное оформление сделки.',
+      howTitleKey: 'oap_listingDetailHowTitle',
+      howLeadKey: 'oap_listingDetailAuctionBuyNowHowLead',
+      howStepKeys: [
+        'oap_listingDetailAuctionBuyNowHowStep1',
+        'oap_listingDetailAuctionBuyNowHowStep2',
+        'oap_listingDetailAuctionBuyNowHowStep3',
       ],
-      fitTitle: 'Кому подходит',
-      fitText:
-        'Когда важны и время, и доходность: часть аудитории готова переплатить за скорость, другая — выторговать лучшую цену.',
-      prosTitle: 'Преимущества',
-      pros: [
-        'Гибкость: охватываете и «торгашей», и тех, кто хочет купить сразу.',
-        'Меньше риска «зависнуть» в долгих переговорах без обязательств.',
-        'Часто быстрее выход к реальной сделке по сравнению с чистым аукционом без фикса.',
+      fitTitleKey: 'oap_listingDetailFitTitle',
+      fitTextKey: 'oap_listingDetailAuctionBuyNowFit',
+      prosTitleKey: 'oap_listingDetailProsTitle',
+      proKeys: [
+        'oap_listingDetailAuctionBuyNowPro1',
+        'oap_listingDetailAuctionBuyNowPro2',
+        'oap_listingDetailAuctionBuyNowPro3',
       ],
     },
   },
   {
     id: 'shares',
-    title: 'Доли',
-    description: 'Расширяет круг покупателей за счет входа с меньшим бюджетом',
+    titleKey: 'oap_listingModeShares',
+    descriptionKey: 'oap_listingModeSharesDesc',
     icon: 'shares',
     tone: 'blue',
     detail: {
-      howTitle: 'Как проходит продажа',
-      howLead:
-        'Вы задаёте оценку всего объекта и делите его на доли. На платформе отображается цена входа за одну долю; инвесторы приобретают части согласно вашим условиям и регламенту сделки.',
-      howSteps: [
-        'Указываете общую стоимость объекта и количество долей.',
-        'Система показывает покупателям цену одной доли и условия участия.',
-        'После набора интереса оформляется сделка по выбранной вами модели (полная продажа долей, пул инвесторов и т.д. — в рамках договорённостей).',
+      howTitleKey: 'oap_listingDetailHowTitle',
+      howLeadKey: 'oap_listingDetailSharesHowLead',
+      howStepKeys: [
+        'oap_listingDetailSharesHowStep1',
+        'oap_listingDetailSharesHowStep2',
+        'oap_listingDetailSharesHowStep3',
       ],
-      fitTitle: 'Кому подходит',
-      fitText:
-        'Дорогая недвижимость, объекты для совместных инвестиций или ситуации, когда удобнее продать частями, чем искать одного покупателя на весь лот.',
-      prosTitle: 'Преимущества',
-      pros: [
-        'Ниже порог входа для покупателей — шире воронка интереса.',
-        'Возможность частично остаться в активе или привлечь нескольких партнёров.',
-        'Удобно для презентации инвестиционного кейса с понятной математикой.',
+      fitTitleKey: 'oap_listingDetailFitTitle',
+      fitTextKey: 'oap_listingDetailSharesFit',
+      prosTitleKey: 'oap_listingDetailProsTitle',
+      proKeys: [
+        'oap_listingDetailSharesPro1',
+        'oap_listingDetailSharesPro2',
+        'oap_listingDetailSharesPro3',
       ],
     },
   },
   {
     id: 'debt',
-    title: 'Долги',
-    description: 'Подходит для сложных кейсов: помогает быстрее найти целевого инвестора',
+    titleKey: 'oap_listingModeDebt',
+    descriptionKey: 'oap_listingModeDebtDesc',
     icon: 'debt',
     tone: 'amber',
     detail: {
-      howTitle: 'Как проходит продажа',
-      howLead:
-        'Акцент на сумме обязательств и условиях актива. Публикация ориентирована на инвесторов и стратегических покупателей, которые принимают объект «как есть» и готовы работать с юридико-финансовой структурой.',
-      howSteps: [
-        'Заполняете блок по долгу и прикладываете требуемые документы.',
-        'Целевая аудитория видит ключевые цифры и ограничения без «воды».',
-        'Переговоры ведутся с отфильтрованными откликами — быстрее выход к серьёзному покупателю.',
+      howTitleKey: 'oap_listingDetailHowTitle',
+      howLeadKey: 'oap_listingDetailDebtHowLead',
+      howStepKeys: [
+        'oap_listingDetailDebtHowStep1',
+        'oap_listingDetailDebtHowStep2',
+        'oap_listingDetailDebtHowStep3',
       ],
-      fitTitle: 'Кому подходит',
-      fitText:
-        'Обременения, срочность, нестандартный актив или необходимость найти не розничного, а профессионального контрагента.',
-      prosTitle: 'Преимущества',
-      pros: [
-        'Меньше случайных просмотров — выше доля релевантных обращений.',
-        'Экономия времени за счёт честного описания сложности сделки.',
-        'Фокус на инвесторах, которые умеют закрывать такие истории.',
+      fitTitleKey: 'oap_listingDetailFitTitle',
+      fitTextKey: 'oap_listingDetailDebtFit',
+      prosTitleKey: 'oap_listingDetailProsTitle',
+      proKeys: [
+        'oap_listingDetailDebtPro1',
+        'oap_listingDetailDebtPro2',
+        'oap_listingDetailDebtPro3',
       ],
     },
   },
   {
     id: 'debt_auction',
-    title: 'Долги + Аукцион',
-    description: 'Ускоряет продажу проблемного актива и повышает шанс на лучшую цену через торги',
+    titleKey: 'oap_listingModeDebtAuction',
+    descriptionKey: 'oap_listingModeDebtAuctionDesc',
     icon: 'target',
     tone: 'slate',
     detail: {
-      howTitle: 'Как проходит продажа',
-      howLead:
-        'Сочетание долгового профиля и аукционной механики: ставки помогают обнаружить рыночную цену при сохранении понятного срока и прозрачной процедуры отбора покупателя.',
-      howSteps: [
-        'Размещаете актив с параметрами долга и правилами торгов.',
-        'Участники конкурируют ставками с учётом рисков и обременений.',
-        'По завершении периода фиксируется победитель — переходите к сделке с пониманием итоговых условий.',
+      howTitleKey: 'oap_listingDetailHowTitle',
+      howLeadKey: 'oap_listingDetailDebtAuctionHowLead',
+      howStepKeys: [
+        'oap_listingDetailDebtAuctionHowStep1',
+        'oap_listingDetailDebtAuctionHowStep2',
+        'oap_listingDetailDebtAuctionHowStep3',
       ],
-      fitTitle: 'Кому подходит',
-      fitText:
-        'Когда нельзя просто назначить одну цену «с потолка», но нужно ускорить выход актива на рынок и получить сигнал спроса через торги.',
-      prosTitle: 'Преимущества',
-      pros: [
-        'Конкуренция ставок снижает риск продешевить при неочевидном активе.',
-        'Фиксированный горизонт торгов дисциплинирует процесс.',
-        'Баланс между скоростью сделки и попыткой выжать максимум при сложном кейсе.',
+      fitTitleKey: 'oap_listingDetailFitTitle',
+      fitTextKey: 'oap_listingDetailDebtAuctionFit',
+      prosTitleKey: 'oap_listingDetailProsTitle',
+      proKeys: [
+        'oap_listingDetailDebtAuctionPro1',
+        'oap_listingDetailDebtAuctionPro2',
+        'oap_listingDetailDebtAuctionPro3',
       ],
     },
   },
 ]
 
 /** Раскрывающаяся инструкция по формату продажи (общая разметка для single-page и мастера) */
-function ListingModeInstructionPanel({ mode, layout = 'stack' }) {
+function ListingModeInstructionPanel({ mode, layout = 'stack', t }) {
   const d = mode.detail
   if (!d) return null
+  const howSteps = (d.howStepKeys || []).map((k) => t(k))
+  const pros = (d.proKeys || []).map((k) => t(k))
   return (
     <div className={`lm-instruction lm-instruction--${layout} lm-instruction--tone-${mode.tone}`}>
       <div className="lm-instruction__section">
-        <h4 className="lm-instruction__title">{d.howTitle}</h4>
-        <p className="lm-instruction__lead">{d.howLead}</p>
-        {d.howSteps?.length > 0 && (
+        <h4 className="lm-instruction__title">{t(d.howTitleKey)}</h4>
+        <p className="lm-instruction__lead">{t(d.howLeadKey)}</p>
+        {howSteps.length > 0 && (
           <ol className="lm-instruction__steps">
-            {d.howSteps.map((step, i) => (
+            {howSteps.map((step, i) => (
               <li key={i}>{step}</li>
             ))}
           </ol>
         )}
       </div>
       <div className="lm-instruction__section lm-instruction__section--accent">
-        <h4 className="lm-instruction__title">{d.fitTitle}</h4>
-        <p className="lm-instruction__p">{d.fitText}</p>
+        <h4 className="lm-instruction__title">{t(d.fitTitleKey)}</h4>
+        <p className="lm-instruction__p">{t(d.fitTextKey)}</p>
       </div>
       <div className="lm-instruction__section">
-        <h4 className="lm-instruction__title">{d.prosTitle}</h4>
+        <h4 className="lm-instruction__title">{t(d.prosTitleKey)}</h4>
         <ul className="lm-instruction__pros">
-          {d.pros.map((line, i) => (
+          {pros.map((line, i) => (
             <li key={i}>
               <FiCheck className="lm-instruction__pro-icon" aria-hidden />
               <span>{line}</span>
@@ -218,6 +212,7 @@ function ListingModeInstructionPanel({ mode, layout = 'stack' }) {
     </div>
   )
 }
+
 
 const LISTING_MODE_THEME_STAGES = ['aurora', 'sunset', 'midnight']
 
@@ -326,96 +321,72 @@ const USE_ADD_PROPERTY_SINGLE_PAGE = true
 /** Тексты инструкций и боковой колонки для single-page потока */
 const SINGLE_PAGE_SECTION_HELP = {
   type: {
-    title: 'Тип объекта',
-    lead: 'Выберите категорию, которая совпадает с документом и тем, как объект продаётся.',
-    tips: [
-      'От типа зависят поля на шаге «Параметры» (комнаты, площадь и т.д.)',
-      'Если сомневаетесь между «Квартира» и «Апартаменты», ориентируйтесь на правовой статус помещения',
-    ],
-    recommend: 'Для большинства жилых лотов подходит «Квартира» или «Дом».',
+    titleKey: 'addPropertySpHelp_type_title',
+    leadKey: 'addPropertySpHelp_type_lead',
+    tipKeys: ['addPropertySpHelp_type_tip1', 'addPropertySpHelp_type_tip2'],
+    recommendKey: 'addPropertySpHelp_type_recommend',
   },
   address: {
-    title: 'Адрес на карте',
-    lead: 'Страна и город — из списка с поиском. Улицу лучше выбрать из подсказок, затем уточните точку маркером.',
-    tips: [
-      'Сначала выберите страну, затем начните вводить город — появятся подсказки',
-      'Перетащите маркер на карте — адрес и координаты обновятся автоматически',
-    ],
-    recommend: 'Точная точка на карте повышает доверие покупателей и снижает вопросы по локации.',
+    titleKey: 'addPropertySpHelp_address_title',
+    leadKey: 'addPropertySpHelp_address_lead',
+    tipKeys: ['addPropertySpHelp_address_tip1', 'addPropertySpHelp_address_tip2'],
+    recommendKey: 'addPropertySpHelp_address_recommend',
   },
   details: {
-    title: 'Параметры',
-    lead: 'Укажите реальные цифры из выписки или планировки.',
-    tips: [
-      'Площадь лучше указать как в документе (общая / жилая — что измеряете)',
-      'Материал дома помогает фильтрам и ожиданиям по качеству',
-    ],
-    recommend: 'Честные цифры снижают количество отказов после просмотра.',
+    titleKey: 'addPropertySpHelp_details_title',
+    leadKey: 'addPropertySpHelp_details_lead',
+    tipKeys: ['addPropertySpHelp_details_tip1', 'addPropertySpHelp_details_tip2'],
+    recommendKey: 'addPropertySpHelp_details_recommend',
   },
   amenities: {
-    title: 'Описание и удобства',
-    lead: 'Соберите “витрину” объекта: живое описание + удобства, которые действительно важны покупателю.',
-    tips: [
-      'Пишите по формуле: локация → состояние → преимущества → для кого подходит',
-      'Лучше 4 конкретных факта, чем длинный общий текст без деталей',
-    ],
-    recommend: 'Описание должно отвечать на вопрос покупателя: “Почему именно этот объект стоит посмотреть первым?”.',
+    titleKey: 'addPropertySpHelp_amenities_title',
+    leadKey: 'addPropertySpHelp_amenities_lead',
+    tipKeys: ['addPropertySpHelp_amenities_tip1', 'addPropertySpHelp_amenities_tip2'],
+    recommendKey: 'addPropertySpHelp_amenities_recommend',
   },
   media: {
-    title: 'Фото и видео',
-    lead: 'Добавьте светлые кадры разных ракурсов и короткое видео объекта.',
-    tips: [
-      'Первые кадры — фасад, гостиная, кухня, вид из окна',
-      'Видео до 1 минуты: обход по комнатам без ускоренной «моталки»',
-    ],
-    recommend: 'Минимум 5 качественных фото заметно повышают отклик.',
+    titleKey: 'addPropertySpHelp_media_title',
+    leadKey: 'addPropertySpHelp_media_lead',
+    tipKeys: ['addPropertySpHelp_media_tip1', 'addPropertySpHelp_media_tip2'],
+    recommendKey: 'addPropertySpHelp_media_recommend',
   },
   documents: {
-    title: 'Документы',
-    lead: 'Загрузите обязательные файлы и при необходимости добавьте подтверждающие документы.',
-    tips: [
-      'PDF или скан хорошего разрешения, чтобы был читаем текст',
-      'Дополнительно можно приложить выписку ЕГРН, план и т.п. (до 5 файлов)',
-    ],
-    recommend: 'Полный пакет ускоряет модерацию и проверку покупателем.',
+    titleKey: 'addPropertySpHelp_documents_title',
+    leadKey: 'addPropertySpHelp_documents_lead',
+    tipKeys: ['addPropertySpHelp_documents_tip1', 'addPropertySpHelp_documents_tip2'],
+    recommendKey: 'addPropertySpHelp_documents_recommend',
   },
   testdrive: {
-    title: 'Тест-драйв',
-    lead: 'Тест-драйв — это краткосрочный просмотр/проживание по записи: покупатель “примеряет” объект перед решением о сделке.',
-    tips: [
-      'Зачем это нужно: повышает доверие, снижает страх покупки и ускоряет принятие решения',
-      'Укажите прозрачные условия: цена за сутки, депозит и базовые правила пользования',
-    ],
-    recommend: 'Если объект “сложно почувствовать по фото” (вид, атмосфера, планировка) — тест-драйв заметно повышает конверсию в сделку.',
+    titleKey: 'addPropertySpHelp_testdrive_title',
+    leadKey: 'addPropertySpHelp_testdrive_lead',
+    tipKeys: ['addPropertySpHelp_testdrive_tip1', 'addPropertySpHelp_testdrive_tip2'],
+    recommendKey: 'addPropertySpHelp_testdrive_recommend',
   },
   listing: {
-    title: 'Формат продажи',
-    lead: 'Выберите стратегию продажи под вашу цель: максимальная цена, скорость сделки, гибкий вход для покупателя или работа со сложным активом.',
-    tips: [
-      'Аукцион — когда хотите раскрыть рыночный спрос и получить лучшую ставку',
-      '«Продать сейчас» — когда важны и скорость, и контроль цены одновременно',
-      'Для долей и долгов появятся отдельные поля на шаге «Цена»',
+    titleKey: 'addPropertySpHelp_listing_title',
+    leadKey: 'addPropertySpHelp_listing_lead',
+    tipKeys: [
+      'addPropertySpHelp_listing_tip1',
+      'addPropertySpHelp_listing_tip2',
+      'addPropertySpHelp_listing_tip3',
     ],
-    recommend: 'Если не уверены, начните с «Аукцион + Продать сейчас»: это самый гибкий формат с балансом скорости и доходности.',
+    recommendKey: 'addPropertySpHelp_listing_recommend',
   },
   calculator: {
-    title: 'Оценка рынка',
-    lead: 'Запустите калькулятор по параметрам объекта и адресу — получите ориентир по цене и похожие объявления. Суммы затем подставятся в блок цен, их можно изменить.',
-    tips: [
-      'Чем точнее адрес и район, тем ближе выборка к вашему объекту',
-      'Если мало объявлений — попробуйте «Весь город» или соседний район',
-      'Расчёт может занять до минуты: собираются данные с нескольких площадок',
+    titleKey: 'addPropertySpHelp_calculator_title',
+    leadKey: 'addPropertySpHelp_calculator_lead',
+    tipKeys: [
+      'addPropertySpHelp_calculator_tip1',
+      'addPropertySpHelp_calculator_tip2',
+      'addPropertySpHelp_calculator_tip3',
     ],
-    recommend: 'После расчёта откройте следующий шаг и при необходимости скорректируйте минимальную цену, «Продать сейчас» и старт торгов.',
+    recommendKey: 'addPropertySpHelp_calculator_recommend',
   },
   price: {
-    title: 'Цена и сроки аукциона',
-    lead: 'Суммы вводятся по шагам справа: сначала минимальная цена продажи, затем при необходимости «Продать сейчас», затем стартовая ставка. Слева укажите даты аукциона.',
-    tips: [
-      'Даты аукциона должны быть в будущем и логично отстоять друг от друга',
-      'Стартовая цена — это вход в торги, не финальная продажа',
-    ],
-    recommend: 'Короткий аукцион (7–14 дней) часто даёт более горячий интерес.',
+    titleKey: 'addPropertySpHelp_price_title',
+    leadKey: 'addPropertySpHelp_price_lead',
+    tipKeys: ['addPropertySpHelp_price_tip1', 'addPropertySpHelp_price_tip2'],
+    recommendKey: 'addPropertySpHelp_price_recommend',
   },
 }
 
@@ -449,48 +420,48 @@ function getSinglePageTypeProfile(propertyTypeUi, propertyType) {
   return 'apartment'
 }
 
-function buildSinglePageAmenityGroups(t, typeProfile) {
+function buildSinglePageAmenityGroups(typeProfile) {
   const byType = {
     apartment: [
       {
         id: 'residential-parking',
-        title: t('addPropertyAmenitiesGroupResidentialParkingStorage'),
+        titleKey: 'addPropertyAmenitiesGroupResidentialParkingStorage',
         items: [
-          { key: 'feature1', label: t('addPropertyAmenityUndergroundParking'), tzKey: 'underground_parking' },
-          { key: 'parking', label: t('addPropertyAmenityCoveredParking'), tzKey: 'covered_parking' },
-          { key: 'feature12', label: t('addPropertyAmenityBikeStorage'), tzKey: 'bike_storage' },
-          { key: 'feature8', label: t('addPropertyAmenityStorageRoom'), tzKey: 'storage_room' },
+          { key: 'feature1', labelKey: 'addPropertyAmenityUndergroundParking', tzKey: 'underground_parking' },
+          { key: 'parking', labelKey: 'addPropertyAmenityCoveredParking', tzKey: 'covered_parking' },
+          { key: 'feature12', labelKey: 'addPropertyAmenityBikeStorage', tzKey: 'bike_storage' },
+          { key: 'feature8', labelKey: 'addPropertyAmenityStorageRoom', tzKey: 'storage_room' },
         ],
       },
       {
         id: 'residential-security',
-        title: t('addPropertyAmenitiesGroupResidentialSecurity'),
+        titleKey: 'addPropertyAmenitiesGroupResidentialSecurity',
         items: [
-          { key: 'security', label: t('addPropertyAmenitySecurity247'), tzKey: 'security_24_7' },
-          { key: 'feature6', label: t('addPropertyAmenityCctv'), tzKey: 'cctv' },
-          { key: 'feature16', label: t('addPropertyAmenityVideoIntercom'), tzKey: 'video_intercom' },
-          { key: 'elevator', label: t('addPropertyAmenitiesElevator'), tzKey: 'elevator' },
+          { key: 'security', labelKey: 'addPropertyAmenitySecurity247', tzKey: 'security_24_7' },
+          { key: 'feature6', labelKey: 'addPropertyAmenityCctv', tzKey: 'cctv' },
+          { key: 'feature16', labelKey: 'addPropertyAmenityVideoIntercom', tzKey: 'video_intercom' },
+          { key: 'elevator', labelKey: 'addPropertyAmenitiesElevator', tzKey: 'elevator' },
         ],
       },
       {
         id: 'residential-comfort',
-        title: t('addPropertyAmenitiesGroupResidentialComfort'),
+        titleKey: 'addPropertyAmenitiesGroupResidentialComfort',
         items: [
-          { key: 'electricity', label: t('addPropertyAmenityAirConditioning'), tzKey: 'air_conditioning' },
-          { key: 'feature19', label: t('addPropertyAmenityFireplace'), tzKey: 'fireplace' },
-          { key: 'feature20', label: t('addPropertyAmenitySmartHome'), tzKey: 'smart_home' },
-          { key: 'feature21', label: t('addPropertyAmenitySolarPanels'), tzKey: 'solar_panels' },
-          { key: 'internet', label: t('addPropertyAmenityFibreInternet'), tzKey: 'fibre_internet' },
+          { key: 'electricity', labelKey: 'addPropertyAmenityAirConditioning', tzKey: 'air_conditioning' },
+          { key: 'feature19', labelKey: 'addPropertyAmenityFireplace', tzKey: 'fireplace' },
+          { key: 'feature20', labelKey: 'addPropertyAmenitySmartHome', tzKey: 'smart_home' },
+          { key: 'feature21', labelKey: 'addPropertyAmenitySolarPanels', tzKey: 'solar_panels' },
+          { key: 'internet', labelKey: 'addPropertyAmenityFibreInternet', tzKey: 'fibre_internet' },
         ],
       },
       {
         id: 'residential-outdoor',
-        title: t('addPropertyAmenitiesGroupResidentialOutdoor'),
+        titleKey: 'addPropertyAmenitiesGroupResidentialOutdoor',
         items: [
-          { key: 'pool', label: t('addPropertyAmenityPoolCommunal'), tzKey: 'pool_communal' },
-          { key: 'garden', label: t('addPropertyAmenityGarden'), tzKey: 'garden' },
-          { key: 'balcony', label: t('addPropertyAmenitiesBalcony'), tzKey: 'balcony' },
-          { key: 'feature9', label: t('addPropertyAmenityRooftopTerrace'), tzKey: 'rooftop_terrace' },
+          { key: 'pool', labelKey: 'addPropertyAmenityPoolCommunal', tzKey: 'pool_communal' },
+          { key: 'garden', labelKey: 'addPropertyAmenityGarden', tzKey: 'garden' },
+          { key: 'balcony', labelKey: 'addPropertyAmenitiesBalcony', tzKey: 'balcony' },
+          { key: 'feature9', labelKey: 'addPropertyAmenityRooftopTerrace', tzKey: 'rooftop_terrace' },
         ],
       },
     ],
@@ -498,34 +469,34 @@ function buildSinglePageAmenityGroups(t, typeProfile) {
     house: [
       {
         id: 'residential-parking',
-        title: t('addPropertyAmenitiesGroupResidentialParkingStorage'),
+        titleKey: 'addPropertyAmenitiesGroupResidentialParkingStorage',
         items: [
-          { key: 'feature1', label: t('addPropertyAmenityUndergroundParking'), tzKey: 'underground_parking' },
-          { key: 'feature11', label: t('addPropertyAmenityPrivateGarage'), tzKey: 'private_garage' },
-          { key: 'parking', label: t('addPropertyAmenityOpenParking'), tzKey: 'open_parking' },
-          { key: 'feature8', label: t('addPropertyAmenityStorageRoom'), tzKey: 'storage_room' },
+          { key: 'feature1', labelKey: 'addPropertyAmenityUndergroundParking', tzKey: 'underground_parking' },
+          { key: 'feature11', labelKey: 'addPropertyAmenityPrivateGarage', tzKey: 'private_garage' },
+          { key: 'parking', labelKey: 'addPropertyAmenityOpenParking', tzKey: 'open_parking' },
+          { key: 'feature8', labelKey: 'addPropertyAmenityStorageRoom', tzKey: 'storage_room' },
         ],
       },
       {
         id: 'residential-comfort',
-        title: t('addPropertyAmenitiesGroupResidentialComfort'),
+        titleKey: 'addPropertyAmenitiesGroupResidentialComfort',
         items: [
-          { key: 'electricity', label: t('addPropertyAmenityAirConditioning'), tzKey: 'air_conditioning' },
-          { key: 'feature19', label: t('addPropertyAmenityFireplace'), tzKey: 'fireplace' },
-          { key: 'feature20', label: t('addPropertyAmenitySmartHome'), tzKey: 'smart_home' },
-          { key: 'feature21', label: t('addPropertyAmenitySolarPanels'), tzKey: 'solar_panels' },
-          { key: 'internet', label: t('addPropertyAmenityFibreInternet'), tzKey: 'fibre_internet' },
+          { key: 'electricity', labelKey: 'addPropertyAmenityAirConditioning', tzKey: 'air_conditioning' },
+          { key: 'feature19', labelKey: 'addPropertyAmenityFireplace', tzKey: 'fireplace' },
+          { key: 'feature20', labelKey: 'addPropertyAmenitySmartHome', tzKey: 'smart_home' },
+          { key: 'feature21', labelKey: 'addPropertyAmenitySolarPanels', tzKey: 'solar_panels' },
+          { key: 'internet', labelKey: 'addPropertyAmenityFibreInternet', tzKey: 'fibre_internet' },
         ],
       },
       {
         id: 'residential-outdoor',
-        title: t('addPropertyAmenitiesGroupResidentialOutdoor'),
+        titleKey: 'addPropertyAmenitiesGroupResidentialOutdoor',
         items: [
-          { key: 'pool', label: t('addPropertyAmenityPoolPrivate'), tzKey: 'pool_private' },
-          { key: 'garden', label: t('addPropertyAmenityGarden'), tzKey: 'garden' },
-          { key: 'feature14', label: t('addPropertyAmenitySauna'), tzKey: 'sauna' },
-          { key: 'feature15', label: t('addPropertyAmenitySpa'), tzKey: 'spa' },
-          { key: 'feature9', label: t('addPropertyAmenityRooftopTerrace'), tzKey: 'rooftop_terrace' },
+          { key: 'pool', labelKey: 'addPropertyAmenityPoolPrivate', tzKey: 'pool_private' },
+          { key: 'garden', labelKey: 'addPropertyAmenityGarden', tzKey: 'garden' },
+          { key: 'feature14', labelKey: 'addPropertyAmenitySauna', tzKey: 'sauna' },
+          { key: 'feature15', labelKey: 'addPropertyAmenitySpa', tzKey: 'spa' },
+          { key: 'feature9', labelKey: 'addPropertyAmenityRooftopTerrace', tzKey: 'rooftop_terrace' },
         ],
       },
     ],
@@ -533,99 +504,99 @@ function buildSinglePageAmenityGroups(t, typeProfile) {
     commercial: [
       {
         id: 'commercial-parking',
-        title: t('addPropertyAmenitiesGroupCommercialParking'),
+        titleKey: 'addPropertyAmenitiesGroupCommercialParking',
         items: [
-          { key: 'parking', label: t('addPropertyAmenitySurfaceParking'), tzKey: 'surface_parking' },
-          { key: 'feature1', label: t('addPropertyAmenityUndergroundParking'), tzKey: 'underground_parking' },
-          { key: 'feature12', label: t('addPropertyAmenityEvCharging'), tzKey: 'ev_charging' },
-          { key: 'feature25', label: t('addPropertyAmenityLoadingDock'), tzKey: 'loading_dock' },
+          { key: 'parking', labelKey: 'addPropertyAmenitySurfaceParking', tzKey: 'surface_parking' },
+          { key: 'feature1', labelKey: 'addPropertyAmenityUndergroundParking', tzKey: 'underground_parking' },
+          { key: 'feature12', labelKey: 'addPropertyAmenityEvCharging', tzKey: 'ev_charging' },
+          { key: 'feature25', labelKey: 'addPropertyAmenityLoadingDock', tzKey: 'loading_dock' },
         ],
       },
       {
         id: 'commercial-tech',
-        title: t('addPropertyAmenitiesGroupCommercialTech'),
+        titleKey: 'addPropertyAmenitiesGroupCommercialTech',
         items: [
-          { key: 'feature10', label: t('addPropertyAmenityRaisedFloor'), tzKey: 'raised_floor' },
-          { key: 'feature22', label: t('addPropertyAmenityHvacSystem'), tzKey: 'hvac_system' },
-          { key: 'electricity', label: t('addPropertyAmenityThreePhasePower'), tzKey: 'three_phase_power' },
-          { key: 'feature24', label: t('addPropertyAmenityBackupGenerator'), tzKey: 'backup_generator' },
-          { key: 'internet', label: t('addPropertyAmenityFibreInternet'), tzKey: 'fibre_internet' },
+          { key: 'feature10', labelKey: 'addPropertyAmenityRaisedFloor', tzKey: 'raised_floor' },
+          { key: 'feature22', labelKey: 'addPropertyAmenityHvacSystem', tzKey: 'hvac_system' },
+          { key: 'electricity', labelKey: 'addPropertyAmenityThreePhasePower', tzKey: 'three_phase_power' },
+          { key: 'feature24', labelKey: 'addPropertyAmenityBackupGenerator', tzKey: 'backup_generator' },
+          { key: 'internet', labelKey: 'addPropertyAmenityFibreInternet', tzKey: 'fibre_internet' },
         ],
       },
       {
         id: 'commercial-building',
-        title: t('addPropertyAmenitiesGroupCommercialBuilding'),
+        titleKey: 'addPropertyAmenitiesGroupCommercialBuilding',
         items: [
-          { key: 'feature17', label: t('addPropertyAmenitySecurity247'), tzKey: 'security_24_7' },
-          { key: 'feature6', label: t('addPropertyAmenityCctv'), tzKey: 'cctv' },
-          { key: 'feature5', label: t('addPropertyAmenityAccessControl'), tzKey: 'access_control' },
-          { key: 'elevator', label: t('addPropertyAmenitiesElevator'), tzKey: 'elevator' },
-          { key: 'feature26', label: t('addPropertyAmenityFreightElevator'), tzKey: 'freight_elevator' },
+          { key: 'feature17', labelKey: 'addPropertyAmenitySecurity247', tzKey: 'security_24_7' },
+          { key: 'feature6', labelKey: 'addPropertyAmenityCctv', tzKey: 'cctv' },
+          { key: 'feature5', labelKey: 'addPropertyAmenityAccessControl', tzKey: 'access_control' },
+          { key: 'elevator', labelKey: 'addPropertyAmenitiesElevator', tzKey: 'elevator' },
+          { key: 'feature26', labelKey: 'addPropertyAmenityFreightElevator', tzKey: 'freight_elevator' },
         ],
       },
     ],
     land: [
       {
         id: 'land-utilities',
-        title: t('addPropertyAmenitiesGroupLandUtilities'),
+        titleKey: 'addPropertyAmenitiesGroupLandUtilities',
         items: [
-          { key: 'electricity', label: t('addPropertyAmenityElectricityConnected'), tzKey: 'electricity_connected' },
-          { key: 'internet', label: t('addPropertyAmenityInternetConnected'), tzKey: 'internet_connected' },
-          { key: 'feature24', label: t('addPropertyAmenityWaterConnected'), tzKey: 'water_connected' },
-          { key: 'feature25', label: t('addPropertyAmenityGasConnected'), tzKey: 'gas_connected' },
-          { key: 'feature26', label: t('addPropertyAmenitySewageConnected'), tzKey: 'sewage_connected' },
+          { key: 'electricity', labelKey: 'addPropertyAmenityElectricityConnected', tzKey: 'electricity_connected' },
+          { key: 'internet', labelKey: 'addPropertyAmenityInternetConnected', tzKey: 'internet_connected' },
+          { key: 'feature24', labelKey: 'addPropertyAmenityWaterConnected', tzKey: 'water_connected' },
+          { key: 'feature25', labelKey: 'addPropertyAmenityGasConnected', tzKey: 'gas_connected' },
+          { key: 'feature26', labelKey: 'addPropertyAmenitySewageConnected', tzKey: 'sewage_connected' },
         ],
       },
       {
         id: 'land-access',
-        title: t('addPropertyAmenitiesGroupLandAccess'),
+        titleKey: 'addPropertyAmenitiesGroupLandAccess',
         items: [
-          { key: 'parking', label: t('addPropertyAmenityRoadAccessPaved'), tzKey: 'road_access_paved' },
-          { key: 'feature1', label: t('addPropertyAmenityRoadAccessDirt'), tzKey: 'road_access_dirt' },
-          { key: 'feature9', label: t('addPropertyAmenitySeaFrontage'), tzKey: 'sea_frontage' },
-          { key: 'garden', label: t('addPropertyAmenityTreesOnPlot'), tzKey: 'trees_on_plot' },
-          { key: 'feature11', label: t('addPropertyAmenityExistingStructures'), tzKey: 'existing_structures' },
+          { key: 'parking', labelKey: 'addPropertyAmenityRoadAccessPaved', tzKey: 'road_access_paved' },
+          { key: 'feature1', labelKey: 'addPropertyAmenityRoadAccessDirt', tzKey: 'road_access_dirt' },
+          { key: 'feature9', labelKey: 'addPropertyAmenitySeaFrontage', tzKey: 'sea_frontage' },
+          { key: 'garden', labelKey: 'addPropertyAmenityTreesOnPlot', tzKey: 'trees_on_plot' },
+          { key: 'feature11', labelKey: 'addPropertyAmenityExistingStructures', tzKey: 'existing_structures' },
         ],
       },
     ],
     other: [
       {
         id: 'hotel-guest',
-        title: t('addPropertyAmenitiesGroupHotelGuest'),
+        titleKey: 'addPropertyAmenitiesGroupHotelGuest',
         items: [
-          { key: 'pool', label: t('addPropertyAmenityPoolOutdoor'), tzKey: 'pool_outdoor' },
-          { key: 'feature13', label: t('addPropertyAmenityGym'), tzKey: 'gym' },
-          { key: 'feature14', label: t('addPropertyAmenitySauna'), tzKey: 'sauna' },
-          { key: 'feature15', label: t('addPropertyAmenitySpa'), tzKey: 'spa_wellness' },
-          { key: 'feature9', label: t('addPropertyAmenityTennisCourt'), tzKey: 'tennis_court' },
+          { key: 'pool', labelKey: 'addPropertyAmenityPoolOutdoor', tzKey: 'pool_outdoor' },
+          { key: 'feature13', labelKey: 'addPropertyAmenityGym', tzKey: 'gym' },
+          { key: 'feature14', labelKey: 'addPropertyAmenitySauna', tzKey: 'sauna' },
+          { key: 'feature15', labelKey: 'addPropertyAmenitySpa', tzKey: 'spa_wellness' },
+          { key: 'feature9', labelKey: 'addPropertyAmenityTennisCourt', tzKey: 'tennis_court' },
         ],
       },
       {
         id: 'hotel-fb',
-        title: t('addPropertyAmenitiesGroupHotelFood'),
+        titleKey: 'addPropertyAmenitiesGroupHotelFood',
         items: [
-          { key: 'feature2', label: t('addPropertyAmenityRestaurant'), tzKey: 'restaurant' },
-          { key: 'feature4', label: t('addPropertyAmenityBarLounge'), tzKey: 'bar_lounge' },
+          { key: 'feature2', labelKey: 'addPropertyAmenityRestaurant', tzKey: 'restaurant' },
+          { key: 'feature4', labelKey: 'addPropertyAmenityBarLounge', tzKey: 'bar_lounge' },
         ],
       },
       {
         id: 'hotel-transport',
-        title: t('addPropertyAmenitiesGroupHotelParking'),
+        titleKey: 'addPropertyAmenitiesGroupHotelParking',
         items: [
-          { key: 'parking', label: t('addPropertyAmenityParkingOnsite'), tzKey: 'parking_onsite' },
-          { key: 'feature1', label: t('addPropertyAmenityUndergroundParking'), tzKey: 'underground_parking' },
-          { key: 'feature12', label: t('addPropertyAmenityEvCharging'), tzKey: 'ev_charging' },
-          { key: 'feature11', label: t('addPropertyAmenityHelipad'), tzKey: 'helipad' },
+          { key: 'parking', labelKey: 'addPropertyAmenityParkingOnsite', tzKey: 'parking_onsite' },
+          { key: 'feature1', labelKey: 'addPropertyAmenityUndergroundParking', tzKey: 'underground_parking' },
+          { key: 'feature12', labelKey: 'addPropertyAmenityEvCharging', tzKey: 'ev_charging' },
+          { key: 'feature11', labelKey: 'addPropertyAmenityHelipad', tzKey: 'helipad' },
         ],
       },
       {
         id: 'hotel-tech',
-        title: t('addPropertyAmenitiesGroupHotelTech'),
+        titleKey: 'addPropertyAmenitiesGroupHotelTech',
         items: [
-          { key: 'feature20', label: t('addPropertyAmenitySmartBuildingBms'), tzKey: 'smart_building_bms' },
-          { key: 'feature21', label: t('addPropertyAmenitySolarPanels'), tzKey: 'solar_panels' },
-          { key: 'feature24', label: t('addPropertyAmenityEnergyCertificate'), tzKey: 'energy_certificate' },
-          { key: 'feature25', label: t('addPropertyAmenityBackupGenerator'), tzKey: 'backup_generator' },
+          { key: 'feature20', labelKey: 'addPropertyAmenitySmartBuildingBms', tzKey: 'smart_building_bms' },
+          { key: 'feature21', labelKey: 'addPropertyAmenitySolarPanels', tzKey: 'solar_panels' },
+          { key: 'feature24', labelKey: 'addPropertyAmenityEnergyCertificate', tzKey: 'energy_certificate' },
+          { key: 'feature25', labelKey: 'addPropertyAmenityBackupGenerator', tzKey: 'backup_generator' },
         ],
       },
     ],
@@ -733,6 +704,7 @@ import { scrollMainTo, getMainScrollEl } from '../utils/mainScroll'
 import {
   confirmListingPublicationFeeSession,
   startListingPublicationCheckout,
+  translateBillingError,
 } from '../utils/subscriptionCheckout'
 import { resolveCanPublishWithoutSellerPhotoKyc } from '../utils/sellerPublishKyc'
 import { applyCalculatedPriceToForm } from '../utils/oapApplyCalculatedPrice'
@@ -977,6 +949,14 @@ const AddProperty = ({
   onAdminComplete = null
 } = {}) => {
   const { t, i18n } = useTranslation()
+  const getBedroomDisplayName = (bedroom) => {
+    if (bedroom?.nameKey === 'living') return t('addPropertyRoom_living')
+    if (bedroom?.nameKey === 'other') return t('addPropertyRoom_other')
+    if (bedroom?.nameKey === 'bedroom') return t('addPropertyRoom_bedroomN', { n: bedroom.nameN || bedroom.id || 1 })
+    if (typeof bedroom?.name === 'string' && bedroom.name) return bedroom.name
+    return t('addPropertyRoom_bedroomN', { n: bedroom?.id || 1 })
+  }
+
   const geoLang = (i18n.resolvedLanguage || i18n.language || 'en').split('-')[0]
   const navigate = useNavigate()
   const location = useLocation()
@@ -1015,55 +995,10 @@ const AddProperty = ({
     cat6: ['addPropertyDebtDocCat6_0', 'addPropertyDebtDocCat6_1', 'addPropertyDebtDocCat6_2', 'addPropertyDebtDocCat6_3', 'addPropertyDebtDocCat6_4']
   }
 
-  // Списки конкретных документов по каждой категории (из файла "тест.txt") — отображение через DEBT_DOC_CATEGORY_DOCS_KEYS + t()
-  const DEBT_DOC_CATEGORY_DOCS = {
-    cat1: [
-      'Кредитный договор (Loan Agreement)',
-      'Все дополнительные соглашения к кредитному договору',
-      'График платежей по кредиту',
-      'Подтверждение текущей задолженности (Debt Statement / Outstanding Balance)',
-      'История платежей заемщика',
-      'Документы о дефолте (уведомления о просрочке, default notice)',
-      'Договор уступки долга (если долг уже перепродавался ранее)'
-    ],
-    cat2: [
-      'Нотариальный договор ипотеки',
-      'Выписка из реестра недвижимости — Registro de la Propiedad',
-      'Nota Simple (актуальная выписка по объекту)',
-      'Оценка недвижимости (Appraisal / Tasación)',
-      'Кадастровые данные — Catastro',
-      'Фотографии объекта',
-      'Адрес и описание объекта',
-      'Наличие других обременений или ипотек'
-    ],
-    cat3: [
-      'Документы по судебному процессу (если он уже начат)',
-      'Номер судебного дела',
-      'Статус процедуры взыскания',
-      'Решения суда (если есть)',
-      'Документы по исполнительному производству'
-    ],
-    cat4: [
-      'Информация о заемщике (паспорт / регистрация компании)',
-      'Финансовое состояние заемщика',
-      'Контактные данные',
-      'Наличие других долгов или банкротства'
-    ],
-    cat5: [
-      'Loan Sale Agreement / NPL Sale Agreement',
-      'Договор уступки права требования (Assignment Agreement)',
-      'Подтверждение права фонда продавать долг',
-      'Нотариальная передача прав требования',
-      'Письмо-уведомление должнику о смене кредитора'
-    ],
-    cat6: [
-      'Legal Due Diligence от юристов',
-      'Valuation report',
-      'Strategy memo (план взыскания)',
-      'Оценка сроков судебного взыскания',
-      'Расчет потенциальной доходности'
-    ]
-  }
+  // Slot counts per category; labels come from DEBT_DOC_CATEGORY_DOCS_KEYS + t()
+  const DEBT_DOC_CATEGORY_DOCS = Object.fromEntries(
+    Object.entries(DEBT_DOC_CATEGORY_DOCS_KEYS).map(([key, keys]) => [key, keys.map(() => '')]),
+  )
 
   const debtDocItemInputRefs = useRef({}) // { 'cat1_0': inputEl, 'cat1_1': inputEl, ... }
   const [debtDocumentsByCategory, setDebtDocumentsByCategory] = useState(() => {
@@ -1140,7 +1075,7 @@ const AddProperty = ({
   const [showPhotoLinkModal, setShowPhotoLinkModal] = useState(false)
   const [photoLink, setPhotoLink] = useState('')
   const [currency, setCurrency] = useState('EUR')
-  const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(null) // 'price' или 'auction' или null
+  const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(null) // 'price' | 'auction' | null
   /** Подшаг ввода сумм на шаге 10 (single-page): 0 — мин. цена, далее «Продать сейчас» (если есть), стартовая ставка */
   const [spAuctionAmountStepIndex, setSpAuctionAmountStepIndex] = useState(0)
   const [showSpEnteredAmountsModal, setShowSpEnteredAmountsModal] = useState(false)
@@ -1162,9 +1097,9 @@ const AddProperty = ({
   const [addressSearch, setAddressSearch] = useState('')
   const [addressSuggestions, setAddressSuggestions] = useState([])
   const [bedrooms, setBedrooms] = useState([
-    { id: 1, name: 'Спальня 1', beds: [] },
-    { id: 2, name: 'Гостиная', beds: [] },
-    { id: 3, name: 'Другие помещения', beds: [] }
+    { id: 1, nameKey: 'bedroom', nameN: 1, beds: [] },
+    { id: 2, nameKey: 'living', beds: [] },
+    { id: 3, nameKey: 'other', beds: [] }
   ])
   const [guests, setGuests] = useState(0)
   const [areaUnit, setAreaUnit] = useState('square_meters')
@@ -1218,7 +1153,7 @@ const AddProperty = ({
   const singlePagePriceSectionRef = useRef(null)
   const singlePageCalculatorSectionRef = useRef(null)
   const handleResetAll = () => {
-    const confirmed = window.confirm('Сбросить всю заполненную информацию? Это действие нельзя отменить.')
+    const confirmed = window.confirm(t('addPropertyUi_resetConfirm'))
     if (!confirmed) return
 
     setFormData(INITIAL_FORM_DATA)
@@ -1265,15 +1200,15 @@ const AddProperty = ({
     spFoldByIdRef.current = {}
     prevSpFoldKeyRef.current = ''
     setSpFoldRev(0)
-    showNotification('Все поля формы очищены', 'success')
+    showNotification(t('addProperty_formCleared'), 'success')
   }
 
   const currencies = [
-    { code: 'USD', symbol: '$', name: 'Доллар США' },
-    { code: 'EUR', symbol: '€', name: 'Евро' },
-    { code: 'GBP', symbol: '£', name: 'Фунт стерлингов' },
-    { code: 'AED', symbol: 'د.إ', name: 'Дирхам ОАЭ' },
-    { code: 'RUB', symbol: '₽', name: 'Российский рубль' },
+    { code: 'USD', symbol: '$', nameKey: 'addPropertyCurrency_USD' },
+    { code: 'EUR', symbol: '€', nameKey: 'addPropertyCurrency_EUR' },
+    { code: 'GBP', symbol: '£', nameKey: 'addPropertyCurrency_GBP' },
+    { code: 'AED', symbol: 'د.إ', nameKey: 'addPropertyCurrency_AED' },
+    { code: 'RUB', symbol: '₽', nameKey: 'addPropertyCurrency_RUB' },
   ]
   const quickCurrencies = currencies.filter((curr) =>
     ['USD', 'EUR', 'GBP', 'AED'].includes(curr.code),
@@ -1308,7 +1243,7 @@ const AddProperty = ({
     const remainingSlots = 20 - photos.length
     
     if (files.length > remainingSlots) {
-      showNotification(`Можно загрузить максимум ${remainingSlots} фото`)
+      showNotification(t('addProperty_maxPhotos', { count: remainingSlots }))
       return
     }
 
@@ -1368,7 +1303,7 @@ const AddProperty = ({
 
   const openVideoSourceModal = useCallback(() => {
     if (videos.length >= 3) {
-      showNotification('Можно загрузить максимум 3 видео')
+      showNotification(t('addProperty_maxVideos3'))
       return
     }
     setShowVideoSourceModal(true)
@@ -1390,7 +1325,7 @@ const AddProperty = ({
   // Функция для проверки и обработки ссылки на видео
   const handleVideoLinkSubmit = () => {
     if (!videoLink.trim()) {
-      showNotification('Пожалуйста, введите ссылку')
+      showNotification(t('addProperty_enterLink'))
       return
     }
 
@@ -1421,11 +1356,11 @@ const AddProperty = ({
       closeVideoLinkModal()
     } else {
       if (isYoutubeMode) {
-        showNotification('Пожалуйста, введите корректную ссылку на YouTube')
+        showNotification(t('addProperty_invalidYoutubeLink'))
       } else if (isDriveMode) {
-        showNotification('Пожалуйста, введите корректную ссылку на Google Drive')
+        showNotification(t('addProperty_invalidDriveLink'))
       } else {
-        showNotification('Пожалуйста, введите корректную ссылку на YouTube или Google Drive')
+        showNotification(t('addProperty_invalidVideoLink'))
       }
     }
   }
@@ -1436,14 +1371,14 @@ const AddProperty = ({
     const remainingSlots = 3 - videos.length
     
     if (files.length > remainingSlots) {
-      showNotification(`Можно загрузить максимум ${remainingSlots} видео`)
+      showNotification(t('addProperty_maxVideos', { count: remainingSlots }))
       e.target.value = ''
       return
     }
 
     files.forEach((file, index) => {
       if (!file.type.startsWith('video/')) {
-        showNotification(`Файл ${file.name} не является видео`)
+        showNotification(t('addProperty_fileNotVideo', { name: file.name }))
         return
       }
 
@@ -1457,7 +1392,7 @@ const AddProperty = ({
         const duration = video.duration
         
         if (duration > 60) {
-          showNotification(`Видео "${file.name}" превышает максимальную длительность (1 минута). Текущая длительность: ${Math.round(duration)} секунд`)
+          showNotification(t('addProperty_videoTooLong', { name: file.name, seconds: Math.round(duration) }))
           return
         }
 
@@ -1472,14 +1407,14 @@ const AddProperty = ({
           }])
         }
         reader.onerror = () => {
-          showNotification(`Ошибка при чтении файла "${file.name}"`)
+          showNotification(t('addProperty_fileReadError', { name: file.name }))
         }
         reader.readAsDataURL(file)
       }
 
       video.onerror = () => {
         window.URL.revokeObjectURL(objectUrl)
-        showNotification(`Ошибка при чтении видео "${file.name}"`)
+        showNotification(t('addProperty_videoReadError', { name: file.name }))
       }
 
       video.src = objectUrl
@@ -1499,7 +1434,7 @@ const AddProperty = ({
     
     // Проверяем лимит документов
     if (supportingDocuments.length >= MAX_DOCUMENTS) {
-      showNotification(`Максимальное количество дополнительных документов: ${MAX_DOCUMENTS}`)
+      showNotification(t('addProperty_maxDocuments', { count: MAX_DOCUMENTS }))
       e.target.value = ''
       return
     }
@@ -1508,7 +1443,7 @@ const AddProperty = ({
     const filesToAdd = files.slice(0, remainingSlots)
     
     if (files.length > remainingSlots) {
-      showNotification(`Можно загрузить еще ${remainingSlots} документ(ов). Остальные файлы не будут добавлены.`)
+      showNotification(t('addProperty_docsRemainingSlots', { count: remainingSlots }))
     }
     
     filesToAdd.forEach((file) => {
@@ -1517,7 +1452,7 @@ const AddProperty = ({
       const isImage = file.type.startsWith('image/')
       
       if (!isPDF && !isImage) {
-        showNotification(`Файл ${file.name} не поддерживается. Разрешены только PDF и изображения.`)
+        showNotification(t('addProperty_fileUnsupported', { name: file.name }))
         return
       }
 
@@ -1537,7 +1472,7 @@ const AddProperty = ({
         })
       }
       reader.onerror = () => {
-        showNotification(`Ошибка при чтении файла "${file.name}"`)
+        showNotification(t('addProperty_fileReadError', { name: file.name }))
       }
       reader.readAsDataURL(file)
     })
@@ -1672,7 +1607,7 @@ const AddProperty = ({
         if (value.startsWith('-')) {
           setValidationErrors(prev => ({
             ...prev,
-            [field]: 'Значение не может быть отрицательным'
+            [field]: t('addPropertyVal_nonNegative')
           }))
           return
         }
@@ -1687,7 +1622,7 @@ const AddProperty = ({
         if (numValue < 0) {
           setValidationErrors(prev => ({
             ...prev,
-            [field]: 'Значение не может быть отрицательным'
+            [field]: t('addPropertyVal_nonNegative')
           }))
           // Не обновляем значение, если оно отрицательное
           return
@@ -1703,7 +1638,7 @@ const AddProperty = ({
           if (numValue > currentYear) {
             setValidationErrors(prev => ({
               ...prev,
-              [field]: `Год постройки не может быть больше ${currentYear}`
+              [field]: t('addPropertyVal_yearBuiltMax', { year: currentYear })
             }))
             // Не блокируем ввод, но показываем ошибку
           } else {
@@ -1722,7 +1657,7 @@ const AddProperty = ({
           if (totalFloors > 0 && numValue > totalFloors) {
             setValidationErrors(prev => ({
               ...prev,
-              [field]: `Этаж не может быть больше этажности (${totalFloors})`
+              [field]: t('addPropertyVal_floorAboveTotal', { total: totalFloors })
             }))
             return
           }
@@ -1734,13 +1669,13 @@ const AddProperty = ({
           if (floor > 0 && numValue > 0 && floor > numValue) {
             setValidationErrors(prev => ({
               ...prev,
-              floor: `Этаж (${floor}) не может быть больше этажности (${numValue})`
+              floor: t('addPropertyVal_floorAboveTotalNamed', { floor, total: numValue })
             }))
           } else {
             // Убираем ошибку этажа, если она была связана с этажностью
             setValidationErrors(prev => {
               const newErrors = { ...prev }
-              if (newErrors.floor && newErrors.floor.includes('этажности')) {
+              if (newErrors.floor && (newErrors.floor.includes('этажности') || newErrors.floor.includes('total floors') || newErrors.floor.includes('этажност'))) {
                 delete newErrors.floor
               }
               return newErrors
@@ -1766,11 +1701,11 @@ const AddProperty = ({
   const handlePublish = async (options = {}) => {
     const { skipSuccessModal = false } = options
     if (isEditMode && !originalPropertyId) {
-      showNotification('Данные объекта ещё загружаются. Подождите и попробуйте снова.')
+      showNotification(t('addProperty_propertyStillLoading'))
       return false
     }
     if (!formData.title || photos.length === 0) {
-      showNotification('Пожалуйста, заполните заголовок и загрузите хотя бы одно фото')
+      showNotification(t('addProperty_titleAndPhotoRequired'))
       return false
     }
     const resolvedOwnershipDoc = await draftSerializableToFile(
@@ -1785,7 +1720,7 @@ const AddProperty = ({
       const needNoDebts =
         !resolvedNoDebtsDoc && !(isEditMode && requiredDocuments.noDebts?.isExisting)
       if (needOwnership || needNoDebts) {
-        showNotification('Пожалуйста, загрузите все необходимые документы')
+        showNotification(t('addProperty_allDocsRequired'))
         return false
       }
     }
@@ -1814,18 +1749,18 @@ const AddProperty = ({
           file = new File([blob], 'photo.jpg', { type: blob.type || 'image/jpeg' })
         }
         if (!(file instanceof File)) {
-          throw new Error('Не удалось подготовить фото для загрузки. Загрузите изображения ещё раз.')
+          throw new Error(t('addPropertyErr_photoPrepare'))
         }
         const fd = new FormData()
         fd.append('photo', file)
         const response = await fetch(`${API_BASE_URL}/properties/upload-photo`, { method: 'POST', body: fd })
         if (!response.ok) {
           const text = await response.text()
-          throw new Error(text || `Ошибка загрузки фото (${response.status})`)
+          throw new Error(text || t('addPropertyErr_photoUpload', { status: response.status }))
         }
         const data = await response.json()
         if (!data.success || !data.data?.url) {
-          throw new Error(data.error || 'Сервер не вернул URL фото')
+          throw new Error(data.error || t('addPropertyErr_photoNoUrl'))
         }
         return data.data.url
       }
@@ -1835,7 +1770,7 @@ const AddProperty = ({
         photoUrlsForSubmit = await Promise.all(photos.map((p) => uploadOneListingPhoto(p)))
       } catch (uploadErr) {
         setIsSubmitting(false)
-        showNotification(uploadErr.message || 'Ошибка загрузки фотографий')
+        showNotification(uploadErr.message || t('addProperty_photoUploadError'))
         return false
       }
       
@@ -1859,19 +1794,19 @@ const AddProperty = ({
         const missingFields = []
         
         if (!userProfileData.first_name || userProfileData.first_name.trim() === '') {
-          missingFields.push('Имя')
+          missingFields.push(t('addProperty_fieldFirstName'))
         }
         if (!userProfileData.last_name || userProfileData.last_name.trim() === '') {
-          missingFields.push('Фамилия')
+          missingFields.push(t('addProperty_fieldLastName'))
         }
         if (!userProfileData.country || userProfileData.country.trim() === '') {
-          missingFields.push('Страна')
+          missingFields.push(t('addProperty_fieldCountry'))
         }
         if (!userProfileData.email || userProfileData.email.trim() === '') {
-          missingFields.push('Почта')
+          missingFields.push(t('addProperty_fieldEmail'))
         }
         if (!userProfileData.phone_number || userProfileData.phone_number.trim() === '') {
-          missingFields.push('WhatsApp')
+          missingFields.push(t('addProperty_fieldWhatsApp'))
         }
         
         // Проверяем пароль - если пользователь зарегистрирован через email, пароль должен быть установлен
@@ -1887,7 +1822,7 @@ const AddProperty = ({
         if (missingFields.length > 0) {
           setIsSubmitting(false)
           showNotification(
-            `Для публикации объекта необходимо заполнить все обязательные поля профиля. Не заполнены следующие поля: ${missingFields.join(', ')}. Пожалуйста, перейдите в профиль и заполните недостающие данные.`
+            t('addProperty_profileFieldsRequired', { fields: missingFields.join(', ') })
           )
           // Перенаправляем в кабинет продавца, чтобы пользователь мог заполнить профиль
           if (!adminMode) navigate('/owner-test')
@@ -1900,25 +1835,25 @@ const AddProperty = ({
           const missingFields = []
           
           if (!userData.firstName || !userData.firstName.trim()) {
-            missingFields.push('Имя')
+            missingFields.push(t('addProperty_fieldFirstName'))
           }
           if (!userData.lastName || !userData.lastName.trim()) {
-            missingFields.push('Фамилия')
+            missingFields.push(t('addProperty_fieldLastName'))
           }
           if (!userData.country || !userData.country.trim()) {
-            missingFields.push('Страна')
+            missingFields.push(t('addProperty_fieldCountry'))
           }
           if (!userData.email || !userData.email.trim()) {
-            missingFields.push('Почта')
+            missingFields.push(t('addProperty_fieldEmail'))
           }
           if (!userData.phone && !userData.phoneFormatted) {
-            missingFields.push('WhatsApp')
+            missingFields.push(t('addProperty_fieldWhatsApp'))
           }
           
           if (missingFields.length > 0) {
             setIsSubmitting(false)
             showNotification(
-              `Для публикации объекта необходимо заполнить все обязательные поля профиля. Не заполнены следующие поля: ${missingFields.join(', ')}. Пожалуйста, перейдите в профиль и заполните недостающие данные.`
+              t('addProperty_profileFieldsRequired', { fields: missingFields.join(', ') })
             )
             if (!adminMode) navigate('/owner-test')
             return false
@@ -1939,7 +1874,7 @@ const AddProperty = ({
       const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : Number(userId)
       if (isNaN(numericUserId) || numericUserId <= 0) {
         setIsSubmitting(false)
-        showNotification('Ошибка: Неверный формат ID пользователя. Ожидается положительное число')
+        showNotification(t('addProperty_invalidUserId'))
         return false
       }
       
@@ -2192,14 +2127,14 @@ const AddProperty = ({
       console.log('📥 Ответ сервера:', response.status, response.statusText)
       
       if (!response.ok) {
-        let errorText = 'Неизвестная ошибка'
+        let errorText = t('addPropertyErr_unknown')
         try {
           errorText = await response.text()
           console.error('❌ Ошибка сервера:', errorText)
         } catch (e) {
           console.error('❌ Не удалось прочитать ответ сервера')
         }
-        throw new Error(`Ошибка сервера: ${response.status} - ${errorText}`)
+        throw new Error(t('addPropertyErr_server', { status: response.status, text: errorText }))
       }
       
       const data = await response.json()
@@ -2243,7 +2178,7 @@ const AddProperty = ({
           return true
         }
         if (isEditMode) {
-          showNotification(data.message || 'Изменения отправлены на модерацию')
+          showNotification(data.message || t('addProperty_changesSentToModeration'))
           window.dispatchEvent(new CustomEvent('owner-properties-update'))
           if (!adminMode) navigate('/owner-test')
           return true
@@ -2254,18 +2189,18 @@ const AddProperty = ({
         
         return true
       } else {
-        throw new Error(data.error || 'Ошибка при отправке объявления')
+        throw new Error(data.error || t('addProperty_submitFailed'))
       }
     } catch (error) {
       console.error('❌ Ошибка при отправке объявления:', error)
       setIsSubmitting(false)
       // Показываем более детальное сообщение об ошибке
       if (error.message.includes('Field value too long')) {
-        showNotification('Ошибка: Размер данных слишком большой. Попробуйте уменьшить количество фото или размер файлов.')
+        showNotification(t('addProperty_payloadTooLarge'))
       } else if (error.message.includes('ERR_CONNECTION_RESET') || error.message.includes('Failed to fetch')) {
-        showNotification('Ошибка соединения с сервером. Проверьте, что сервер запущен и попробуйте еще раз.')
+        showNotification(t('addProperty_connectionError'))
       } else {
-        showNotification(`Произошла ошибка при отправке объявления: ${error.message}`)
+        showNotification(t('addProperty_submitError', { message: error.message }))
       }
       return false
     }
@@ -2575,7 +2510,7 @@ const AddProperty = ({
       }
       
       if (!response.ok) {
-        throw new Error('Не удалось загрузить данные объекта')
+        throw new Error(t('addPropertyErr_loadProperty'))
       }
       
       const result = await response.json()
@@ -2643,7 +2578,7 @@ const AddProperty = ({
         // Преобразуем дополнительные документы
         const formattedDocs = additionalDocsArray.map((doc, index) => ({
           id: `doc-${index}`,
-          name: typeof doc === 'object' ? doc.name : `Документ ${index + 1}`,
+          name: typeof doc === 'object' ? doc.name : t('addPropertyDoc_genericN', { n: index + 1 }),
           url: typeof doc === 'string' ? doc : doc.url,
           kind: typeof doc === 'object' ? doc.kind : undefined,
           type: typeof doc === 'object' ? doc.type : 'other'
@@ -2916,7 +2851,7 @@ const AddProperty = ({
           const ownershipDocName = property.ownership_document_name || 
             (property.ownership_document.includes('/') 
               ? property.ownership_document.split('/').pop() 
-              : 'Документ о праве собственности')
+              : t('addPropertyDoc_ownership'))
           setRequiredDocuments(prev => ({
             ...prev,
             ownership: {
@@ -2932,7 +2867,7 @@ const AddProperty = ({
           const noDebtsDocName = property.no_debts_document_name || 
             (property.no_debts_document.includes('/') 
               ? property.no_debts_document.split('/').pop() 
-              : 'Справка об отсутствии обременений')
+              : t('addPropertyDoc_noEncumbrances'))
           setRequiredDocuments(prev => ({
             ...prev,
             noDebts: {
@@ -2956,11 +2891,11 @@ const AddProperty = ({
           property.has_debt === true
         setCurrentStep(isShare || isDebt ? 'property-name' : 'test-drive-question')
       } else {
-        throw new Error('Данные объекта не найдены')
+        throw new Error(t('addPropertyErr_propertyNotFound'))
       }
     } catch (error) {
       console.error('Ошибка загрузки данных объекта:', error)
-      showNotification('Не удалось загрузить данные объекта для редактирования')
+      showNotification(t('addProperty_editLoadFailed'))
       navigate('/owner-test')
     } finally {
       setIsLoadingProperty(false)
@@ -2973,42 +2908,42 @@ const AddProperty = ({
     
     const changes = []
     const fieldLabels = {
-      title: 'Название',
-      description: 'Описание',
-      price: 'Цена',
-      currency: 'Валюта',
-      area: 'Площадь',
-      rooms: 'Комнаты',
-      bedrooms: 'Спальни',
-      bathrooms: 'Ванные',
-      floor: 'Этаж',
-      total_floors: 'Всего этажей',
-      year_built: 'Год постройки',
+      title: t('addPropertyDiff_title'),
+      description: t('addPropertyDiff_description'),
+      price: t('addPropertyDiff_price'),
+      currency: t('addPropertyDiff_currency'),
+      area: t('addPropertyDiff_area'),
+      rooms: t('addPropertyDiff_rooms'),
+      bedrooms: t('addPropertyDiff_bedrooms'),
+      bathrooms: t('addPropertyDiff_bathrooms'),
+      floor: t('addPropertyDiff_floor'),
+      total_floors: t('addPropertyDiff_totalFloors'),
+      year_built: t('addPropertyDiff_yearBuilt'),
       construction_type: t('addPropertyConstructionTypePlaceholder'),
-      location: 'Местоположение',
-      cadastral_number: 'Кадастровый номер',
-      land_area: 'Площадь участка',
-      commercial_type: 'Тип коммерческой',
-      business_hours: 'Часы работы',
-      renovation: 'Ремонт',
-      condition: 'Состояние',
-      heating: 'Отопление',
-      water_supply: 'Водоснабжение',
-      sewerage: 'Канализация',
-      is_auction: 'Аукцион',
-      auction_start_date: 'Дата начала аукциона',
-      auction_end_date: 'Дата окончания аукциона',
-      auction_starting_price: 'Стартовая цена аукциона',
-      balcony: 'Балкон',
-      parking: 'Парковка',
-      elevator: 'Лифт',
-      garage: 'Гараж',
-      pool: 'Бассейн',
-      garden: 'Сад',
-      electricity: 'Электричество',
-      internet: 'Интернет',
-      security: 'Охрана',
-      furniture: 'Мебель'
+      location: t('addPropertyDiff_location'),
+      cadastral_number: t('addPropertyDiff_cadastral'),
+      land_area: t('addPropertyDiff_landArea'),
+      commercial_type: t('addPropertyDiff_commercialType'),
+      business_hours: t('addPropertyDiff_businessHours'),
+      renovation: t('addPropertyDiff_renovation'),
+      condition: t('addPropertyDiff_condition'),
+      heating: t('addPropertyDiff_heating'),
+      water_supply: t('addPropertyDiff_water'),
+      sewerage: t('addPropertyDiff_sewerage'),
+      is_auction: t('addPropertyDiff_isAuction'),
+      auction_start_date: t('addPropertyDiff_auctionStart'),
+      auction_end_date: t('addPropertyDiff_auctionEnd'),
+      auction_starting_price: t('addPropertyDiff_auctionStartPrice'),
+      balcony: t('addPropertyDiff_balcony'),
+      parking: t('addPropertyDiff_parking'),
+      elevator: t('addPropertyDiff_elevator'),
+      garage: t('addPropertyDiff_garage'),
+      pool: t('addPropertyDiff_pool'),
+      garden: t('addPropertyDiff_garden'),
+      electricity: t('addPropertyDiff_electricity'),
+      internet: t('addPropertyDiff_internet'),
+      security: t('addPropertyDiff_security'),
+      furniture: t('addPropertyDiff_furniture'),
     }
     
     // Сравниваем основные поля
@@ -3064,8 +2999,8 @@ const AddProperty = ({
         if (oldBool !== newValue) {
           changes.push({
             field: fieldLabels[key],
-            old: oldBool ? 'Да' : 'Нет',
-            new: newValue ? 'Да' : 'Нет'
+            old: oldBool ? t('addPropertyUi_yes') : t('addPropertyUi_no'),
+            new: newValue ? t('addPropertyUi_yes') : t('addPropertyUi_no')
           })
         }
         return
@@ -3078,8 +3013,8 @@ const AddProperty = ({
         if (oldBool !== newBool) {
           changes.push({
             field: fieldLabels[key],
-            old: oldBool ? 'Да' : 'Нет',
-            new: newBool ? 'Да' : 'Нет'
+            old: oldBool ? t('addPropertyUi_yes') : t('addPropertyUi_no'),
+            new: newBool ? t('addPropertyUi_yes') : t('addPropertyUi_no')
           })
         }
         return
@@ -3092,8 +3027,8 @@ const AddProperty = ({
         if (oldNum !== newNum) {
           changes.push({
             field: fieldLabels[key],
-            old: oldNum !== null ? oldNum.toLocaleString('ru-RU') : 'Не указано',
-            new: newNum !== null ? newNum.toLocaleString('ru-RU') : 'Не указано'
+            old: oldNum !== null ? oldNum.toLocaleString(getUiIntlLocale()) : t('addPropertyDiff_notSet'),
+            new: newNum !== null ? newNum.toLocaleString(getUiIntlLocale()) : t('addPropertyDiff_notSet')
           })
         }
         return
@@ -3105,8 +3040,8 @@ const AddProperty = ({
         if (oldValue !== newLocation && (oldValue || newLocation)) {
           changes.push({
             field: fieldLabels[key],
-            old: oldValue || 'Не указано',
-            new: newLocation || 'Не указано'
+            old: oldValue || t('addPropertyDiff_notSet'),
+            new: newLocation || t('addPropertyDiff_notSet')
           })
         }
         return
@@ -3116,8 +3051,8 @@ const AddProperty = ({
       if (oldValue !== newValue && (oldValue || newValue)) {
         changes.push({
           field: fieldLabels[key],
-          old: oldValue || 'Не указано',
-          new: newValue || 'Не указано'
+          old: oldValue || t('addPropertyDiff_notSet'),
+          new: newValue || t('addPropertyDiff_notSet')
         })
       }
     })
@@ -3128,9 +3063,9 @@ const AddProperty = ({
     const newPhotos = photos.map(p => p.url || p)
     if (JSON.stringify(oldPhotos) !== JSON.stringify(newPhotos)) {
       changes.push({
-        field: 'Фотографии',
-        old: `${oldPhotos.length} фото`,
-        new: `${newPhotos.length} фото`
+        field: t('addPropertyDiff_photos'),
+        old: t('addPropertyDiff_photosCount', { count: oldPhotos.length }),
+        new: t('addPropertyDiff_photosCount', { count: newPhotos.length })
       })
     }
     
@@ -3243,21 +3178,21 @@ const AddProperty = ({
   const getPropertyTypeName = (type) => {
     switch (type) {
       case 'house':
-        return 'Дом'
+        return t('oap_propertyTypeHouse')
       case 'apartment':
-        return 'Квартира'
+        return t('oap_propertyTypeApartment')
       case 'apartments':
-        return 'Аппартаменты'
+        return t('oap_propertyTypeApartments')
       case 'villa':
-        return 'Вилла'
+        return t('oap_propertyTypeVilla')
       case 'commercial':
-        return 'Коммерческая недвижимость'
+        return t('oap_propertyTypeCommercialFull')
       case 'land':
-        return 'Земля'
+        return t('oap_propertyTypeLand')
       case 'other':
-        return 'Другое'
+        return t('oap_propertyTypeOther')
       default:
-        return 'Недвижимость'
+        return t('oap_propertyTypeGeneric')
     }
   }
 
@@ -3440,7 +3375,7 @@ const AddProperty = ({
   // Обработчик перехода к форме после заполнения названия
   const handlePropertyNameContinue = () => {
     if (!formData.title) {
-      showNotification('Пожалуйста, введите название объекта')
+      showNotification(t('addProperty_enterTitle'))
       return
     }
     setCurrentStep('location')
@@ -3647,7 +3582,7 @@ const AddProperty = ({
       if (hasStreetPrefix) {
         shortAddress = road
       } else {
-        shortAddress = `улица ${road}`
+        shortAddress = `${t('streetNamePrefix', { defaultValue: 'Street' })} ${road}`
       }
       
       // Добавляем район, если есть
@@ -3847,7 +3782,7 @@ const AddProperty = ({
       if (hasStreetPrefix) {
         parts.push(road)
       } else {
-        parts.push(`улица ${road}`)
+        parts.push(`${t('streetNamePrefix', { defaultValue: 'Street' })} ${road}`)
       }
     }
     
@@ -4055,7 +3990,7 @@ const AddProperty = ({
                       savedLocationData?.location
     
     if (!hasAddress || (typeof hasAddress === 'string' && hasAddress.trim().length === 0)) {
-      showNotification('Пожалуйста, введите адрес')
+      showNotification(t('addProperty_enterAddress'))
       return
     }
     
@@ -4085,51 +4020,51 @@ const AddProperty = ({
     if (detailsTypeProfile === 'apartment' || detailsTypeProfile === 'apartments') {
       // Проверка обязательных полей
       if (!formData.rooms || formData.rooms === '' || parseFloat(formData.rooms) <= 0) {
-        errors.rooms = 'Укажите количество комнат'
+        errors.rooms = t('addPropertyVal_rooms')
       }
       if (!formData.bathrooms || formData.bathrooms === '' || parseFloat(formData.bathrooms) <= 0) {
-        errors.bathrooms = 'Укажите количество ванных комнат'
+        errors.bathrooms = t('addPropertyVal_bathrooms')
       }
       if (!formData.area || formData.area === '' || parseFloat(formData.area) <= 0) {
-        errors.area = 'Укажите общую площадь'
+        errors.area = t('addPropertyVal_areaTotal')
       }
       if (!formData.livingArea || formData.livingArea === '' || parseFloat(formData.livingArea) <= 0) {
-        errors.livingArea = 'Укажите жилую площадь'
+        errors.livingArea = t('addPropertyVal_livingArea')
       }
       if (!formData.floor || formData.floor === '' || parseFloat(formData.floor) < 0) {
-        errors.floor = 'Укажите этаж'
+        errors.floor = t('addPropertyVal_floor')
       }
       if (!formData.totalFloors || formData.totalFloors === '' || parseFloat(formData.totalFloors) <= 0) {
-        errors.totalFloors = 'Укажите этажность'
+        errors.totalFloors = t('addPropertyVal_totalFloors')
       }
       if (!formData.yearBuilt || formData.yearBuilt === '' || parseFloat(formData.yearBuilt) <= 0) {
-        errors.yearBuilt = 'Укажите год постройки'
+        errors.yearBuilt = t('addPropertyVal_yearBuilt')
       }
       if (!formData.buildingType || formData.buildingType === '') {
-        errors.buildingType = 'Выберите тип дома/здания'
+        errors.buildingType = t('addPropertyVal_buildingType')
       }
       
       // Проверка года постройки - только что год не больше текущего
       const yearBuilt = parseFloat(formData.yearBuilt)
       if (yearBuilt > currentYear) {
-        errors.yearBuilt = `Год постройки не может быть больше ${currentYear}`
+        errors.yearBuilt = t('addPropertyVal_yearBuiltMax', { year: currentYear })
       }
       
       // Проверка этажа и этажности
       const floor = parseFloat(formData.floor)
       const totalFloors = parseFloat(formData.totalFloors)
       if (floor > totalFloors) {
-        errors.floor = `Этаж не может быть больше этажности (${totalFloors})`
+        errors.floor = t('addPropertyVal_floorAboveTotal', { total: totalFloors })
       }
     }
     
     // Проверка для коммерческой недвижимости
     if (detailsTypeProfile === 'commercial') {
       if (!formData.area || formData.area === '' || parseFloat(formData.area) <= 0) {
-        errors.area = 'Укажите площадь помещения'
+        errors.area = t('addPropertyVal_areaPremise')
       }
       if (!formData.commercialType || formData.commercialType === '') {
-        errors.commercialType = 'Выберите тип коммерческого объекта'
+        errors.commercialType = t('addPropertyVal_commercialType')
       }
     }
 
@@ -4137,48 +4072,48 @@ const AddProperty = ({
     if (detailsTypeProfile === 'house' || detailsTypeProfile === 'villa') {
       // Проверка обязательных полей
       if (!formData.landArea || formData.landArea === '' || parseFloat(formData.landArea) <= 0) {
-        errors.landArea = 'Укажите площадь участка'
+        errors.landArea = t('addPropertyVal_landArea')
       }
       if (!formData.area || formData.area === '' || parseFloat(formData.area) <= 0) {
-        errors.area = 'Укажите площадь дома (общую)'
+        errors.area = t('addPropertyVal_houseAreaTotal')
       }
       if (!formData.livingArea || formData.livingArea === '' || parseFloat(formData.livingArea) <= 0) {
-        errors.livingArea = 'Укажите площадь дома (жилую)'
+        errors.livingArea = t('addPropertyVal_houseAreaLiving')
       }
       if (!formData.totalFloors || formData.totalFloors === '' || parseFloat(formData.totalFloors) <= 0) {
-        errors.totalFloors = 'Укажите количество этажей'
+        errors.totalFloors = t('addPropertyVal_floorsCount')
       }
       if (!formData.bathrooms || formData.bathrooms === '' || parseFloat(formData.bathrooms) <= 0) {
-        errors.bathrooms = 'Укажите количество ванных комнат'
+        errors.bathrooms = t('addPropertyVal_bathrooms')
       }
       if (!formData.yearBuilt || formData.yearBuilt === '' || parseFloat(formData.yearBuilt) <= 0) {
-        errors.yearBuilt = 'Укажите год постройки'
+        errors.yearBuilt = t('addPropertyVal_yearBuilt')
       }
       if (!formData.buildingType || formData.buildingType === '') {
-        errors.buildingType = 'Выберите материал постройки'
+        errors.buildingType = t('addPropertyVal_buildingMaterial')
       }
       
       // Проверка года постройки - только что год не больше текущего
       const yearBuilt = parseFloat(formData.yearBuilt)
       if (yearBuilt > currentYear) {
-        errors.yearBuilt = `Год постройки не может быть больше ${currentYear}`
+        errors.yearBuilt = t('addPropertyVal_yearBuiltMax', { year: currentYear })
       }
     }
 
     // Проверка для земельного участка
     if (detailsTypeProfile === 'land') {
       if (!formData.landArea || formData.landArea === '' || parseFloat(formData.landArea) <= 0) {
-        errors.landArea = 'Укажите площадь участка'
+        errors.landArea = t('addPropertyVal_landArea')
       }
       if (!formData.commercialType || formData.commercialType === '') {
-        errors.commercialType = 'Выберите назначение участка'
+        errors.commercialType = t('addPropertyVal_landPurpose')
       }
     }
 
     // Проверка для "другого"
     if (detailsTypeProfile === 'other') {
       if (!formData.area || formData.area === '' || parseFloat(formData.area) <= 0) {
-        errors.area = 'Укажите площадь объекта'
+        errors.area = t('addPropertyVal_objectArea')
       }
     }
     
@@ -4297,7 +4232,7 @@ const AddProperty = ({
   // Обработчик перехода к форме после загрузки фотографий
   const handlePhotosContinue = () => {
     if (photos.length === 0) {
-      showNotification('Пожалуйста, загрузите хотя бы одно фото')
+      showNotification(t('addProperty_atLeastOnePhoto'))
       return
     }
     setCurrentStep('documents')
@@ -4386,27 +4321,27 @@ const AddProperty = ({
       const priceNum = Number(removeCommas(String(formData.price || '')))
       const totalSharesNum = parseInt(formData.totalShares, 10)
       if (!formData.price || priceNum <= 0) {
-        showNotification('Укажите общую стоимость объекта')
+        showNotification(t('oap_err_price'))
         return
       }
       if (!formData.totalShares || isNaN(totalSharesNum) || totalSharesNum <= 0) {
-        showNotification('Укажите количество долей (целое число больше 0)')
+        showNotification(t('oap_err_totalShares'))
         return
       }
     } else if (isDebtMode || isDebtAuctionMode) {
       // Для долгов: обязательна сумма долга, а в режиме debt_auction еще и аукционные поля.
       const debtAmountNum = Number(removeCommas(String(formData.debtAmount || '')))
       if (!formData.debtAmount || !Number.isFinite(debtAmountNum) || debtAmountNum <= 0) {
-        showNotification('Укажите сумму долга')
+        showNotification(t('oap_err_debtAmount'))
         return
       }
       if (isDebtAuctionMode && (!formData.auctionStartDate || !formData.auctionEndDate)) {
-        showNotification('Пожалуйста, укажите период проведения аукциона')
+        showNotification(t('addProperty_auctionPeriodRequired'))
         return
       }
       const startingNumContinue = Number(removeCommas(String(formData.auctionStartingPrice || '0')))
       if (isDebtAuctionMode && (!formData.auctionStartingPrice || !Number.isFinite(startingNumContinue) || startingNumContinue <= 0)) {
-        showNotification('Пожалуйста, укажите стартовую цену аукциона')
+        showNotification(t('addPropertyPriceStartingBidRequired'))
         return
       }
       if (isDebtAuctionMode) {
@@ -4431,12 +4366,12 @@ const AddProperty = ({
     } else {
       // Для аукционных режимов: проверяем поля аукциона.
       if (isAuctionMode && (!formData.auctionStartDate || !formData.auctionEndDate)) {
-        showNotification('Пожалуйста, укажите период проведения аукциона')
+        showNotification(t('addProperty_auctionPeriodRequired'))
         return
       }
       const startingNumContinue = Number(removeCommas(String(formData.auctionStartingPrice || '')))
       if (isAuctionMode && (!formData.auctionStartingPrice || !Number.isFinite(startingNumContinue) || startingNumContinue <= 0)) {
-        showNotification('Пожалуйста, укажите стартовую цену аукциона')
+        showNotification(t('addPropertyPriceStartingBidRequired'))
         return
       }
       const minSaleNumContinue = Number(removeCommas(String(formData.minimumSalePrice || '')))
@@ -4453,7 +4388,7 @@ const AddProperty = ({
       if (mode === 'auction_buy_now') {
         const buyNowNum = Number(removeCommas(String(formData.price || '')))
         if (!formData.price || !Number.isFinite(buyNowNum) || buyNowNum <= 0) {
-          showNotification('Для режима "Аукцион + Продать сейчас" укажите цену "Продать сейчас"')
+          showNotification(t('addProperty_auctionBuyNowPriceRequired'))
           return
         }
         const minVsBuy = getMinimumSaleVsBuyNowError(formData.minimumSalePrice, formData.price)
@@ -4522,7 +4457,7 @@ const AddProperty = ({
     const uid = String(userId).trim()
     if (!/^\d+$/.test(uid)) {
       showNotification(
-        'Для оплаты нужен числовой id пользователя в базе. Подождите синхронизацию после входа или обновите страницу.',
+        t('addProperty_numericUserIdRequired'),
         'error'
       )
       return
@@ -4570,10 +4505,10 @@ const AddProperty = ({
         returnPath: location.pathname || '/owner/property/new',
       })
       if (!result.ok) {
-        showNotification(result.error || 'Не удалось перейти к оплате', 'error')
+        showNotification(translateBillingError(result.error, t, 'addProperty_paymentStartFailed'), 'error')
       }
     } catch (e) {
-      showNotification(e?.message || 'Ошибка при запуске оплаты', 'error')
+      showNotification(e?.message || t('addProperty_paymentLaunchError'), 'error')
     } finally {
       setListingFeeStripeLoading(false)
     }
@@ -4582,7 +4517,7 @@ const AddProperty = ({
   const handleApplyListingFeePromo = async () => {
     const code = (listingFeePromoCode || '').trim()
     if (!code) {
-      setListingFeePromoError('Введите промокод')
+      setListingFeePromoError(t('addProperty_promoEnterCode'))
       return
     }
     if (!userId) {
@@ -4608,13 +4543,13 @@ const AddProperty = ({
         await handleAfterListingFeeSuccess()
       } else {
         if (data.reason === 'used') {
-          setListingFeePromoError('Этот промокод уже был использован')
+          setListingFeePromoError(t('addProperty_promoAlreadyUsed'))
         } else {
-          setListingFeePromoError(data.message || 'Промокод не найден или не подходит')
+          setListingFeePromoError(data.message || t('addProperty_promoNotFound'))
         }
       }
     } catch (e) {
-      setListingFeePromoError('Ошибка сети. Попробуйте позже.')
+      setListingFeePromoError(t('addProperty_promoNetworkError'))
     } finally {
       setListingFeePromoLoading(false)
     }
@@ -4665,9 +4600,9 @@ const AddProperty = ({
         if (cancelled) return
         if (result.ok) {
           if (result.data?.already) {
-            showNotification('Оплата публикации уже была учтена ранее.')
+            showNotification(t('addProperty_paymentAlreadyApplied'))
           } else {
-            showNotification('Оплата получена. Продолжаем публикацию.')
+            showNotification(t('addProperty_paymentReceived'))
           }
           const next = new URLSearchParams(searchParams)
           next.delete('listing_fee_checkout')
@@ -4675,12 +4610,12 @@ const AddProperty = ({
           setSearchParams(next, { replace: true })
           await handleAfterListingFeeSuccess()
         } else {
-          showNotification(result.error || 'Не удалось подтвердить оплату', 'error')
+          showNotification(result.error || t('addProperty_paymentConfirmFailed'), 'error')
           listingFeeCheckoutHandledRef.current = null
         }
       } catch (e) {
         if (!cancelled) {
-          showNotification(e?.message || 'Ошибка подтверждения оплаты', 'error')
+          showNotification(e?.message || t('addProperty_paymentConfirmError'), 'error')
           listingFeeCheckoutHandledRef.current = null
         }
       }
@@ -4726,7 +4661,7 @@ const AddProperty = ({
     if (imageFiles.length > 0) {
       const remainingSlots = 20 - photos.length
       if (imageFiles.length > remainingSlots) {
-        showNotification(`Можно загрузить максимум ${remainingSlots} фото`)
+        showNotification(t('addProperty_maxPhotos', { count: remainingSlots }))
         return
       }
       imageFiles.forEach(file => {
@@ -4746,25 +4681,25 @@ const AddProperty = ({
   // Функция для получения текста типа кровати
   const getBedTypeLabel = (bedType) => {
     const labels = {
-      'twin': 'односпальная кровать',
-      'full': 'двуспальная кровать',
-      'queen': 'кровать размера queen',
-      'king': 'кровать размера king',
-      'sofa': 'диван',
-      'none': 'кроватей'
+      twin: 'addPropertyBed_twin',
+      full: 'addPropertyBed_full',
+      queen: 'addPropertyBed_queen',
+      king: 'addPropertyBed_king',
+      sofa: 'addPropertyBed_sofa',
+      none: 'addPropertyBed_none',
     }
-    return labels[bedType] || 'кровать'
+    return t(labels[bedType] || 'addPropertyBed_generic')
   }
 
   // Функция для получения размера кровати
   const getBedSize = (bedType) => {
     const sizes = {
-      'twin': '35-51 дюймов шириной',
-      'full': '52-59 дюймов шириной',
-      'queen': '60-70 дюймов шириной',
-      'king': '71-81 дюймов шириной'
+      twin: 'addPropertyBedSize_twin',
+      full: 'addPropertyBedSize_full',
+      queen: 'addPropertyBedSize_queen',
+      king: 'addPropertyBedSize_king',
     }
-    return sizes[bedType] || ''
+    return sizes[bedType] ? t(sizes[bedType]) : ''
   }
 
   // Подсчет общего количества кроватей в спальне
@@ -4775,14 +4710,14 @@ const AddProperty = ({
   // Получение текста для отображения кроватей
   const getBedsDisplayText = (beds) => {
     const total = getTotalBedsCount(beds)
-    if (total === 0) return '0 кроватей'
+    if (total === 0) return t('addPropertyBeds_zero')
     
     const bedTypes = beds.filter(b => b.count > 0)
     if (bedTypes.length === 1) {
       const bed = bedTypes[0]
       return `${bed.count} ${getBedTypeLabel(bed.type)}`
     }
-    return `${total} кроватей`
+    return t('addPropertyBeds_count', { count: total })
   }
 
   // Открытие модального окна для редактирования кроватей
@@ -4830,10 +4765,11 @@ const AddProperty = ({
 
   // Добавление новой спальни
   const handleAddBedroom = () => {
-    const bedroomNumber = bedrooms.filter(b => b.name.startsWith('Спальня')).length + 1
+    const bedroomNumber = bedrooms.filter((b) => b.nameKey === 'bedroom' || b.nameKey === 'addPropertyUi_bedroom').length + 1
     const newBedroom = {
       id: Date.now(),
-      name: `Спальня ${bedroomNumber}`,
+      nameKey: 'bedroom',
+      nameN: bedroomNumber,
       beds: []
     }
     setBedrooms([...bedrooms, newBedroom])
@@ -4913,8 +4849,8 @@ const AddProperty = ({
   )
 
   const singlePageAmenityGroups = useMemo(
-    () => buildSinglePageAmenityGroups(t, singlePageTypeProfile),
-    [t, singlePageTypeProfile]
+    () => buildSinglePageAmenityGroups(singlePageTypeProfile),
+    [singlePageTypeProfile]
   )
   const hasMedia = photos.length > 0 || videos.length > 0
   const hasDocuments = !!(
@@ -5073,17 +5009,17 @@ const AddProperty = ({
   const hasPriceCalculatorStepDone = calculatorGuidanceApplied || hasPrice
 
   const stepFlow = [
-    { id: 'type-selection', label: 'Тип' },
-    { id: 'property-name', label: 'Описание' },
-    { id: 'location', label: 'Адрес' },
-    { id: 'details', label: 'Параметры' },
-    { id: 'amenities', label: 'Удобства' },
-    { id: 'photos', label: 'Фото/видео' },
-    { id: 'documents', label: 'Документы' },
-    { id: 'test-drive-question', label: 'Тест-драйв' },
-    { id: 'listing-type', label: 'Размещение' },
-    { id: 'price-calculator', label: 'Оценка' },
-    { id: 'price', label: 'Цена' },
+    { id: 'type-selection', labelKey: 'addPropertyNav_type' },
+    { id: 'property-name', labelKey: 'addPropertyNav_description' },
+    { id: 'location', labelKey: 'addPropertyNav_address' },
+    { id: 'details', labelKey: 'addPropertyNav_params' },
+    { id: 'amenities', labelKey: 'addPropertyNav_amenities' },
+    { id: 'photos', labelKey: 'addPropertyNav_media' },
+    { id: 'documents', labelKey: 'addPropertyNav_docs' },
+    { id: 'test-drive-question', labelKey: 'addPropertyNav_testdrive' },
+    { id: 'listing-type', labelKey: 'addPropertyNav_listing' },
+    { id: 'price-calculator', labelKey: 'addPropertyNav_estimate' },
+    { id: 'price', labelKey: 'addPropertyNav_price' },
   ]
   const currentStepForProgress = wizardRenderStep === 'test-drive-pricing' ? 'test-drive-question' : wizardRenderStep
   const currentStepIndex = Math.max(0, stepFlow.findIndex(step => step.id === currentStepForProgress))
@@ -5390,7 +5326,7 @@ const AddProperty = ({
               className="add-property-reset-btn"
               onClick={handleResetAll}
             >
-              Сбросить
+              {t('addPropertyUi_reset')}
             </button>
           )}
         </div>
@@ -5402,18 +5338,18 @@ const AddProperty = ({
           ]
             .filter(Boolean)
             .join(' ')}
-          aria-label={useSinglePageFlow ? 'Заполнение анкеты' : undefined}
+          aria-label={useSinglePageFlow ? t('addPropertyUi_formFillAria') : undefined}
         >
           {useSinglePageFlow ? (
             <div className="add-property-wizard-progress__compact-head">
               <div className="add-property-wizard-progress__compact-summary">
-                <p className="add-property-wizard-progress__compact-title">Прогресс анкеты</p>
+                <p className="add-property-wizard-progress__compact-title">{t('addPropertyUi_progressTitle')}</p>
                 <p className="add-property-wizard-progress__compact-step">
-                  Шаг {wizardDisplayStepIndex + 1} из {stepFlow.length}
+                  {t('addPropertyUi_stepOf', { current: wizardDisplayStepIndex + 1, total: stepFlow.length })}
                   {` · «${stepFlow[wizardDisplayStepIndex]?.label || ''}»`}
                 </p>
               </div>
-              <div className="add-property-wizard-progress__compact-stats" aria-label={`Заполнено ${progressPercent}%`}>
+              <div className="add-property-wizard-progress__compact-stats" aria-label={t('addPropertyUi_filledPercentAria', { percent: progressPercent })}>
                 <strong>{progressPercent}%</strong>
                 <span>{wizardCompletedCount}/{stepFlow.length}</span>
               </div>
@@ -5425,14 +5361,14 @@ const AddProperty = ({
               </div>
               <div className="add-property-wizard-progress__compact-meta">
                 <span>
-                  Заполнено: {wizardCompletedCount} · Осталось: {remainingSteps}
+                  {t('addPropertyUi_filledRemaining', { filled: wizardCompletedCount, remaining: remainingSteps })}
                 </span>
                 <button
                   type="button"
                   className="add-property-wizard-progress__compact-toggle"
                   onClick={() => setShowProgressSectionLists((prev) => !prev)}
                   aria-expanded={showProgressSectionLists}
-                  aria-label={showProgressSectionLists ? 'Скрыть списки заполненности' : 'Показать списки заполненности'}
+                  aria-label={showProgressSectionLists ? t('addPropertyUi_hideListsAria') : t('addPropertyUi_showListsAria')}
                 >
                   <FiChevronDown
                     className={`add-property-wizard-progress__compact-toggle-icon${showProgressSectionLists ? ' is-open' : ''}`}
@@ -5446,10 +5382,10 @@ const AddProperty = ({
             <>
               <div className="add-property-wizard-progress__top">
                 <span>
-                  Шаг {wizardDisplayStepIndex + 1} из {stepFlow.length}
+                  {t('addPropertyUi_stepOf', { current: wizardDisplayStepIndex + 1, total: stepFlow.length })}
                 </span>
                 <span>
-                  {progressPercent}% заполнено
+                  {t('addPropertyUi_percentFilled', { percent: progressPercent })}
                   <span className="add-property-wizard-progress__count">
                     {' '}
                     ({wizardCompletedCount}/{stepFlow.length})
@@ -5470,7 +5406,7 @@ const AddProperty = ({
                 const labelClass = `add-property-wizard-progress__label ${getWizardStepLabelClass(step, index)}`
                 return (
                   <span key={step.id} className={labelClass} role="listitem">
-                    {step.label}
+                    {t(step.labelKey)}
                   </span>
                 )
               })}
@@ -5480,11 +5416,11 @@ const AddProperty = ({
             <div className="add-property-wizard-progress__legend" aria-hidden>
               <span className="add-property-wizard-progress__legend-item">
                 <span className="add-property-wizard-progress__legend-dot is-done" />
-                Заполнен
+                {t('addPropertyUi_filledStatus')}
               </span>
               <span className="add-property-wizard-progress__legend-item">
                 <span className="add-property-wizard-progress__legend-dot is-pending" />
-                Не заполнен
+                {t('addPropertyUi_unfilledStatus')}
               </span>
             </div>
           )}
@@ -5498,7 +5434,7 @@ const AddProperty = ({
                     onClick={() => setShowPendingProgressSteps((prev) => !prev)}
                     aria-expanded={showPendingProgressSteps}
                   >
-                    <span className="add-property-wizard-progress__accordion-title">Незаполненные</span>
+                    <span className="add-property-wizard-progress__accordion-title">{t('addPropertyUi_incomplete')}</span>
                     <span className="add-property-wizard-progress__accordion-right">
                       <span className="add-property-wizard-progress__accordion-count is-pending">{singlePageProgressSteps.pending.length}</span>
                       <FiChevronDown
@@ -5519,14 +5455,14 @@ const AddProperty = ({
                               className="add-property-wizard-progress__label is-pending"
                               role="listitem"
                               onClick={() => step.spSectionId && scrollSpSectionIntoView(step.spSectionId)}
-                              title={`Перейти к разделу «${step.label}»`}
+                              title={t('addPropertyUi_goToSectionTitle', { label: t(step.labelKey) })}
                             >
-                              {step.label}
+                              {t(step.labelKey)}
                             </button>
                           ))}
                         </div>
                       ) : (
-                        <p className="add-property-wizard-progress__smart-empty">Нет незаполненных разделов.</p>
+                        <p className="add-property-wizard-progress__smart-empty">{t('addPropertyUi_noIncomplete')}</p>
                       )}
                     </div>
                   )}
@@ -5538,7 +5474,7 @@ const AddProperty = ({
                     onClick={() => setShowCompletedProgressSteps((prev) => !prev)}
                     aria-expanded={showCompletedProgressSteps}
                   >
-                    <span className="add-property-wizard-progress__accordion-title">Заполненные</span>
+                    <span className="add-property-wizard-progress__accordion-title">{t('addPropertyUi_complete')}</span>
                     <span className="add-property-wizard-progress__accordion-right">
                       <span className="add-property-wizard-progress__accordion-count is-done">{singlePageProgressSteps.done.length}</span>
                       <FiChevronDown
@@ -5559,14 +5495,14 @@ const AddProperty = ({
                               className="add-property-wizard-progress__label is-done"
                               role="listitem"
                               onClick={() => step.spSectionId && scrollSpSectionIntoView(step.spSectionId)}
-                              title={`Перейти к разделу «${step.label}»`}
+                              title={t('addPropertyUi_goToSectionTitle', { label: t(step.labelKey) })}
                             >
-                              {step.label}
+                              {t(step.labelKey)}
                             </button>
                           ))}
                         </div>
                       ) : (
-                        <p className="add-property-wizard-progress__smart-empty">Пока нет заполненных разделов.</p>
+                        <p className="add-property-wizard-progress__smart-empty">{t('addPropertyUi_noComplete')}</p>
                       )}
                     </div>
                   )}
@@ -5588,8 +5524,8 @@ const AddProperty = ({
               <div className="single-page-add-flow__main">
                 <div className="sp-studio-toolbar">
                   <div className="sp-studio-toolbar__title">
-                    <span className="sp-studio-toolbar__eyebrow">Мастер публикации</span>
-                    <h2 className="sp-studio-toolbar__heading">Добавление объекта</h2>
+                    <span className="sp-studio-toolbar__eyebrow">{t('addPropertyUi_studioEyebrow')}</span>
+                    <h2 className="sp-studio-toolbar__heading">{t('addPropertyUi_studioHeading')}</h2>
                   </div>
                 </div>
 
@@ -5602,10 +5538,10 @@ const AddProperty = ({
                     onClick={() => scrollSpSectionIntoView('type')}
                   >
                     <div className="sp-card__head-maincol">
-                      <span className="sp-card__step">Шаг 1</span>
-                      <h3 className="sp-card__title">Тип недвижимости</h3>
+                      <span className="sp-card__step">{t('addPropertyUi_stepN', { n: 1 })}</span>
+                      <h3 className="sp-card__title">{t('addPropertyUi_typeTitle')}</h3>
                       {isSpSectionBodyVisible('type') && (
-                        <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.type.lead}</p>
+                        <p className="sp-card__lead">{t(SINGLE_PAGE_SECTION_HELP.type.leadKey)}</p>
                       )}
                     </div>
                     <span className="sp-card__head-toggle" aria-hidden="true">
@@ -5617,7 +5553,7 @@ const AddProperty = ({
                     aria-hidden={!isSpSectionBodyVisible('type')}
                   >
                     <div className="sp-card__collapsible-body">
-                      <div className="sp-radio-stack" role="radiogroup" aria-label="Тип объекта">
+                      <div className="sp-radio-stack" role="radiogroup" aria-label={t('addPropertyUi_typeAria')}>
                         {PROPERTY_TYPE_OPTIONS.map((option) => (
                           <label
                             key={option.id}
@@ -5631,8 +5567,8 @@ const AddProperty = ({
                             />
                             <span className="sp-radio-row__icon" aria-hidden="true">{getPropertyTypeIcon(option.icon)}</span>
                             <span className="sp-radio-row__text">
-                              <span className="sp-radio-row__title">{option.title}</span>
-                              <span className="sp-radio-row__desc">{option.description}</span>
+                              <span className="sp-radio-row__title">{t(option.titleKey)}</span>
+                              <span className="sp-radio-row__desc">{t(option.descriptionKey)}</span>
                             </span>
                           </label>
                         ))}
@@ -5651,11 +5587,11 @@ const AddProperty = ({
                       onClick={() => scrollSpSectionIntoView('property-name')}
                     >
                       <div className="sp-card__head-maincol">
-                        <span className="sp-card__step">Шаг 2</span>
-                        <h3 className="sp-card__title">Название и описание</h3>
+                        <span className="sp-card__step">{t('addPropertyUi_stepN', { n: 2 })}</span>
+                        <h3 className="sp-card__title">{t('addPropertyUi_nameDescTitle')}</h3>
                         {isSpSectionBodyVisible('property-name') && (
                           <p className="sp-card__lead">
-                            Создайте первое впечатление: лаконичное название и описание, которое подчеркивает ценность объекта. ИИ поможет сделать текст сильнее.
+                            {t('addPropertyUi_nameLead')}
                           </p>
                         )}
                       </div>
@@ -5718,10 +5654,10 @@ const AddProperty = ({
                       onClick={() => scrollSpSectionIntoView('address')}
                     >
                       <div className="sp-card__head-maincol">
-                        <span className="sp-card__step">Шаг 4</span>
-                        <h3 className="sp-card__title">Адрес и карта</h3>
+                        <span className="sp-card__step">{t('addPropertyUi_stepN', { n: 4 })}</span>
+                        <h3 className="sp-card__title">{t('addPropertyUi_addressMapTitle')}</h3>
                         {isSpSectionBodyVisible('address') && (
-                          <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.address.lead}</p>
+                          <p className="sp-card__lead">{t(SINGLE_PAGE_SECTION_HELP.address.leadKey)}</p>
                         )}
                       </div>
                       <span className="sp-card__head-toggle" aria-hidden="true">
@@ -5955,20 +5891,20 @@ const AddProperty = ({
                     </div>
 
                     <div className="property-location-input-group">
-                      <label className="property-location-label">Кадастровый номер (опционально)</label>
+                      <label className="property-location-label">{t('addPropertyUi_cadastralOptional')}</label>
                       <input
                         type="text"
                         value={formData.cadastralNumber || ''}
                         onChange={(e) => setFormData((prev) => ({ ...prev, cadastralNumber: e.target.value }))}
                         className="property-location-input"
-                        placeholder="Например: 77:01:0004012:3456"
+                        placeholder={t('addProperty_cadastralPlaceholder')}
                       />
                     </div>
 
                     <p className="sp-map-hint">
                       {singlePageMapCoords
-                        ? 'Перетащите маркер на карте — адрес и координаты обновятся автоматически (геокодинг).'
-                        : 'Выберите город и улицу из подсказок — на карте появится маркер.'}
+                        ? t('addPropertyUi_mapDragHint')
+                        : t('addPropertyUi_mapPickHint')}
                     </p>
                     <div className="sp-map-wrap">
                       <Suspense fallback={null}>
@@ -5996,10 +5932,10 @@ const AddProperty = ({
                       onClick={() => scrollSpSectionIntoView('details')}
                     >
                       <div className="sp-card__head-maincol">
-                        <span className="sp-card__step">Шаг 3</span>
-                        <h3 className="sp-card__title">Параметры</h3>
+                        <span className="sp-card__step">{t('addPropertyUi_stepN', { n: 3 })}</span>
+                        <h3 className="sp-card__title">{t('addPropertyUi_paramsTitle')}</h3>
                         {isSpSectionBodyVisible('details') && (
-                          <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.details.lead}</p>
+                          <p className="sp-card__lead">{t(SINGLE_PAGE_SECTION_HELP.details.leadKey)}</p>
                         )}
                       </div>
                       <span className="sp-card__head-toggle" aria-hidden="true">
@@ -6019,47 +5955,47 @@ const AddProperty = ({
                             value={formData.rooms}
                             onChange={(e) => setFormData((prev) => ({ ...prev, rooms: e.target.value }))}
                             className="property-name-input"
-                            placeholder="Комнат"
+                            placeholder={t('addProperty_phRooms')}
                           />
                           <input
                             type="number"
                             value={formData.bathrooms}
                             onChange={(e) => setFormData((prev) => ({ ...prev, bathrooms: e.target.value }))}
                             className="property-name-input"
-                            placeholder="Ванных"
+                            placeholder={t('addProperty_phBathrooms')}
                           />
                           <input
                             type="number"
                             value={formData.area}
                             onChange={(e) => setFormData((prev) => ({ ...prev, area: e.target.value }))}
                             className="property-name-input"
-                            placeholder="Площадь, м²"
+                            placeholder={t('addProperty_phAreaSqm')}
                           />
                           <input
                             type="number"
                             value={formData.floor}
                             onChange={(e) => setFormData((prev) => ({ ...prev, floor: e.target.value }))}
                             className="property-name-input"
-                            placeholder="Этаж"
+                            placeholder={t('addProperty_phFloor')}
                           />
                           <input
                             type="number"
                             value={formData.totalFloors}
                             onChange={(e) => setFormData((prev) => ({ ...prev, totalFloors: e.target.value }))}
                             className="property-name-input"
-                            placeholder="Этажей в здании"
+                            placeholder={t('addProperty_phTotalFloors')}
                           />
                           <select
                             value={formData.buildingType}
                             onChange={(e) => setFormData((prev) => ({ ...prev, buildingType: e.target.value }))}
                             className="property-name-input"
                           >
-                            <option value="">Материал / тип</option>
-                            <option value="brick">Кирпич</option>
-                            <option value="monolithic">Монолит</option>
-                            <option value="panel">Панель</option>
-                            <option value="wood">Дерево</option>
-                            <option value="other">Другое</option>
+                            <option value="">{t('addPropertyUi_materialType')}</option>
+                            <option value="brick">{t('addPropertyUi_materialBrick')}</option>
+                            <option value="monolithic">{t('addPropertyUi_materialMonolithic')}</option>
+                            <option value="panel">{t('addPropertyUi_materialPanel')}</option>
+                            <option value="wood">{t('addPropertyUi_materialWood')}</option>
+                            <option value="other">{t('addPropertyUi_materialOther')}</option>
                           </select>
                           <select
                             value={formData.constructionType || ''}
@@ -6081,40 +6017,40 @@ const AddProperty = ({
                             value={formData.landArea}
                             onChange={(e) => setFormData((prev) => ({ ...prev, landArea: e.target.value }))}
                             className="property-name-input"
-                            placeholder="Площадь участка, м²"
+                            placeholder={t('addProperty_phLandAreaSqm')}
                           />
                           <input
                             type="number"
                             value={formData.area}
                             onChange={(e) => setFormData((prev) => ({ ...prev, area: e.target.value }))}
                             className="property-name-input"
-                            placeholder="Площадь дома, м²"
+                            placeholder={t('addProperty_phHouseAreaSqm')}
                           />
                           <input
                             type="number"
                             value={formData.bathrooms}
                             onChange={(e) => setFormData((prev) => ({ ...prev, bathrooms: e.target.value }))}
                             className="property-name-input"
-                            placeholder="Ванных"
+                            placeholder={t('addProperty_phBathrooms')}
                           />
                           <input
                             type="number"
                             value={formData.totalFloors}
                             onChange={(e) => setFormData((prev) => ({ ...prev, totalFloors: e.target.value }))}
                             className="property-name-input"
-                            placeholder="Этажей"
+                            placeholder={t('addProperty_phFloors')}
                           />
                           <select
                             value={formData.buildingType}
                             onChange={(e) => setFormData((prev) => ({ ...prev, buildingType: e.target.value }))}
                             className="property-name-input"
                           >
-                            <option value="">Материал / тип</option>
-                            <option value="brick">Кирпич</option>
-                            <option value="monolithic">Монолит</option>
-                            <option value="panel">Панель</option>
-                            <option value="wood">Дерево</option>
-                            <option value="other">Другое</option>
+                            <option value="">{t('addPropertyUi_materialType')}</option>
+                            <option value="brick">{t('addPropertyUi_materialBrick')}</option>
+                            <option value="monolithic">{t('addPropertyUi_materialMonolithic')}</option>
+                            <option value="panel">{t('addPropertyUi_materialPanel')}</option>
+                            <option value="wood">{t('addPropertyUi_materialWood')}</option>
+                            <option value="other">{t('addPropertyUi_materialOther')}</option>
                           </select>
                           <select
                             value={formData.constructionType || ''}
@@ -6136,32 +6072,32 @@ const AddProperty = ({
                             value={formData.area}
                             onChange={(e) => setFormData((prev) => ({ ...prev, area: e.target.value }))}
                             className="property-name-input"
-                            placeholder="Площадь помещения, м²"
+                            placeholder={t('addProperty_phPremisesAreaSqm')}
                           />
                           <input
                             type="number"
                             value={formData.floor}
                             onChange={(e) => setFormData((prev) => ({ ...prev, floor: e.target.value }))}
                             className="property-name-input"
-                            placeholder="Этаж / уровень"
+                            placeholder={t('addProperty_phFloorLevel')}
                           />
                           <input
                             type="number"
                             value={formData.totalFloors}
                             onChange={(e) => setFormData((prev) => ({ ...prev, totalFloors: e.target.value }))}
                             className="property-name-input"
-                            placeholder="Этажей в здании"
+                            placeholder={t('addProperty_phTotalFloors')}
                           />
                           <select
                             value={formData.commercialType}
                             onChange={(e) => setFormData((prev) => ({ ...prev, commercialType: e.target.value }))}
                             className="property-name-input"
                           >
-                            <option value="">Тип коммерческого объекта</option>
-                            <option value="office">Офис</option>
-                            <option value="shop">Магазин</option>
-                            <option value="warehouse">Склад</option>
-                            <option value="other">Другое</option>
+                            <option value="">{t('addPropertyUi_commercialType')}</option>
+                            <option value="office">{t('addPropertyUi_commercialOffice')}</option>
+                            <option value="shop">{t('addPropertyUi_commercialShop')}</option>
+                            <option value="warehouse">{t('addPropertyUi_commercialWarehouse')}</option>
+                            <option value="other">{t('addPropertyUi_materialOther')}</option>
                           </select>
                           <select
                             value={formData.constructionType || ''}
@@ -6183,19 +6119,19 @@ const AddProperty = ({
                             value={formData.landArea}
                             onChange={(e) => setFormData((prev) => ({ ...prev, landArea: e.target.value }))}
                             className="property-name-input"
-                            placeholder="Площадь участка, м²"
+                            placeholder={t('addProperty_phLandAreaSqm')}
                           />
                           <select
                             value={formData.commercialType}
                             onChange={(e) => setFormData((prev) => ({ ...prev, commercialType: e.target.value }))}
                             className="property-name-input"
                           >
-                            <option value="">Назначение участка</option>
-                            <option value="residential">Под жилую застройку</option>
-                            <option value="commercial">Под бизнес/коммерцию</option>
-                            <option value="agricultural">Сельхоз назначение</option>
-                            <option value="industrial">Промышленное назначение</option>
-                            <option value="other">Другое</option>
+                            <option value="">{t('addPropertyUi_landPurpose')}</option>
+                            <option value="residential">{t('addPropertyUi_landResidential')}</option>
+                            <option value="commercial">{t('addPropertyUi_landCommercial')}</option>
+                            <option value="agricultural">{t('addPropertyUi_landAgricultural')}</option>
+                            <option value="industrial">{t('addPropertyUi_landIndustrial')}</option>
+                            <option value="other">{t('addPropertyUi_materialOther')}</option>
                           </select>
                         </>
                       )}
@@ -6207,17 +6143,17 @@ const AddProperty = ({
                             value={formData.area}
                             onChange={(e) => setFormData((prev) => ({ ...prev, area: e.target.value }))}
                             className="property-name-input"
-                            placeholder="Площадь, м²"
+                            placeholder={t('addProperty_phAreaSqm')}
                           />
                           <select
                             value={formData.commercialType}
                             onChange={(e) => setFormData((prev) => ({ ...prev, commercialType: e.target.value }))}
                             className="property-name-input"
                           >
-                            <option value="">Тип объекта</option>
-                            <option value="mixed">Смешанный</option>
-                            <option value="special">Специального назначения</option>
-                            <option value="other">Другое</option>
+                            <option value="">{t('addPropertyUi_objectType')}</option>
+                            <option value="mixed">{t('addPropertyUi_objectMixed')}</option>
+                            <option value="special">{t('addPropertyUi_objectSpecial')}</option>
+                            <option value="other">{t('addPropertyUi_materialOther')}</option>
                           </select>
                         </>
                       )}
@@ -6237,10 +6173,10 @@ const AddProperty = ({
                       onClick={() => scrollSpSectionIntoView('amenities')}
                     >
                       <div className="sp-card__head-maincol">
-                        <span className="sp-card__step">Шаг 5</span>
-                        <h3 className="sp-card__title">Описание и удобства</h3>
+                        <span className="sp-card__step">{t('addPropertyUi_stepN', { n: 5 })}</span>
+                        <h3 className="sp-card__title">{t('addPropertyUi_descAmenitiesTitle')}</h3>
                         {isSpSectionBodyVisible('amenities') && (
-                          <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.amenities.lead}</p>
+                          <p className="sp-card__lead">{t(SINGLE_PAGE_SECTION_HELP.amenities.leadKey)}</p>
                         )}
                       </div>
                       <span className="sp-card__head-toggle" aria-hidden="true">
@@ -6269,16 +6205,16 @@ const AddProperty = ({
                     <div className="sp-amenity-groups">
                       {singlePageAmenityGroups.map((group) => (
                         <div key={group.id} className="sp-amenity-group">
-                          <h4 className="sp-amenity-group__title">{group.title}</h4>
+                          <h4 className="sp-amenity-group__title">{t(group.titleKey)}</h4>
                           <div className="sp-amenity-group__chips single-page-add-flow__chips sp-chips">
-                            {group.items.map(({ key, label }) => (
+                            {group.items.map(({ key, labelKey }) => (
                               <button
                                 key={key}
                                 type="button"
                                 className={`single-page-add-flow__chip ${formData[key] ? 'active' : ''}`}
                                 onClick={() => setFormData((prev) => ({ ...prev, [key]: !prev[key] }))}
                               >
-                                {label}
+                                {t(labelKey)}
                               </button>
                             ))}
                           </div>
@@ -6300,10 +6236,10 @@ const AddProperty = ({
                       onClick={() => scrollSpSectionIntoView('media')}
                     >
                       <div className="sp-card__head-maincol">
-                        <span className="sp-card__step">Шаг 6</span>
-                        <h3 className="sp-card__title">Фото и видео</h3>
+                        <span className="sp-card__step">{t('addPropertyUi_stepN', { n: 6 })}</span>
+                        <h3 className="sp-card__title">{t('addPropertyUi_mediaTitle')}</h3>
                         {isSpSectionBodyVisible('media') && (
-                          <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.media.lead}</p>
+                          <p className="sp-card__lead">{t(SINGLE_PAGE_SECTION_HELP.media.leadKey)}</p>
                         )}
                       </div>
                       <span className="sp-card__head-toggle" aria-hidden="true">
@@ -6316,15 +6252,15 @@ const AddProperty = ({
                     >
                       <div className="sp-card__collapsible-body">
                     <div className="single-page-add-flow__stats sp-stats">
-                      <span>Фото: {photos.length}/20</span>
-                      <span>Видео: {videos.length}/3</span>
+                      <span>{t('addPropertyUi_photosCount', { count: photos.length })}</span>
+                      <span>{t('addPropertyUi_videosCount', { count: videos.length })}</span>
                     </div>
                     <div className="single-page-add-flow__upload-row sp-actions">
                       <button type="button" className="sp-btn sp-btn--primary" onClick={() => fileInputRef.current?.click()}>
-                        Выбрать фотографии
+                        {t('addPropertyUi_choosePhotos')}
                       </button>
                       <button type="button" className="sp-btn sp-btn--ghost" onClick={openVideoSourceModal}>
-                        Загрузить видео
+                        {t('addPropertyUi_uploadVideo')}
                       </button>
                     </div>
                     {(photos.length > 0 || videos.length > 0) && (
@@ -6332,7 +6268,7 @@ const AddProperty = ({
                         {photos.map((photo) => (
                           <div key={photo.id} className="sp-media-tile">
                             <img src={photo.url} alt="" />
-                            <button type="button" className="sp-media-tile__remove" onClick={() => handleRemovePhoto(photo.id)} aria-label="Удалить фото">
+                            <button type="button" className="sp-media-tile__remove" onClick={() => handleRemovePhoto(photo.id)} aria-label={t('addPropertyUi_removePhotoAria')}>
                               <FiX size={16} />
                             </button>
                           </div>
@@ -6344,10 +6280,10 @@ const AddProperty = ({
                             ) : (
                               <div className="single-page-add-flow__media-video-placeholder">
                                 <FiVideo size={20} />
-                                <span>Ссылка</span>
+                                <span>{t('addPropertyUi_linkLabel')}</span>
                               </div>
                             )}
-                            <button type="button" className="sp-media-tile__remove" onClick={() => handleRemoveVideo(video.id)} aria-label="Удалить видео">
+                            <button type="button" className="sp-media-tile__remove" onClick={() => handleRemoveVideo(video.id)} aria-label={t('addPropertyUi_removeVideoAria')}>
                               <FiX size={16} />
                             </button>
                           </div>
@@ -6369,10 +6305,10 @@ const AddProperty = ({
                       onClick={() => scrollSpSectionIntoView('documents')}
                     >
                       <div className="sp-card__head-maincol">
-                        <span className="sp-card__step">Шаг 7</span>
-                        <h3 className="sp-card__title">Документы</h3>
+                        <span className="sp-card__step">{t('addPropertyUi_stepN', { n: 7 })}</span>
+                        <h3 className="sp-card__title">{t('addPropertyUi_docsTitle')}</h3>
                         {isSpSectionBodyVisible('documents') && (
-                          <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.documents.lead}</p>
+                          <p className="sp-card__lead">{t(SINGLE_PAGE_SECTION_HELP.documents.leadKey)}</p>
                         )}
                       </div>
                       <span className="sp-card__head-toggle" aria-hidden="true">
@@ -6395,10 +6331,10 @@ const AddProperty = ({
                             else document.getElementById('sp-ownership-input')?.click()
                           }}
                         >
-                          Документ собственности
+                          {t('addPropertyUi_ownershipDoc')}
                         </button>
                         {!requiredDocuments.ownership ? (
-                          <div className="sp-doc-action-status">Файл пока не загружен</div>
+                          <div className="sp-doc-action-status">{t('addPropertyUi_fileNotUploaded')}</div>
                         ) : (
                           <div className="sp-doc-required-preview">
                             {requiredDocumentPreviews.ownership ? (
@@ -6410,7 +6346,7 @@ const AddProperty = ({
                             )}
                             <div className="sp-doc-required-preview__meta">
                               <span>{requiredDocuments.ownership.name}</span>
-                              <button type="button" onClick={() => handleRemoveRequiredDocument('ownership')} aria-label="Удалить документ собственности">
+                              <button type="button" onClick={() => handleRemoveRequiredDocument('ownership')} aria-label={t('addPropertyUi_removeOwnershipAria')}>
                                 <FiX size={14} />
                               </button>
                             </div>
@@ -6427,10 +6363,10 @@ const AddProperty = ({
                             else document.getElementById('sp-no-debts-input')?.click()
                           }}
                         >
-                          Справка об отсутствии обременений
+                          {t('addPropertyUi_noDebtsDoc')}
                         </button>
                         {!requiredDocuments.noDebts ? (
-                          <div className="sp-doc-action-status">Файл пока не загружен</div>
+                          <div className="sp-doc-action-status">{t('addPropertyUi_fileNotUploaded')}</div>
                         ) : (
                           <div className="sp-doc-required-preview">
                             {requiredDocumentPreviews.noDebts ? (
@@ -6442,7 +6378,7 @@ const AddProperty = ({
                             )}
                             <div className="sp-doc-required-preview__meta">
                               <span>{requiredDocuments.noDebts.name}</span>
-                              <button type="button" onClick={() => handleRemoveRequiredDocument('noDebts')} aria-label="Удалить справку об отсутствии обременений">
+                              <button type="button" onClick={() => handleRemoveRequiredDocument('noDebts')} aria-label={t('addPropertyUi_removeNoDebtsAria')}>
                                 <FiX size={14} />
                               </button>
                             </div>
@@ -6452,19 +6388,19 @@ const AddProperty = ({
 
                       <div className="sp-doc-action-card">
                         <button type="button" className="sp-btn sp-btn--ghost sp-btn--wide" onClick={() => documentInputRef.current?.click()}>
-                          Дополнительные документы
+                          {t('addPropertyUi_extraDocs')}
                         </button>
                         <div className={`sp-doc-action-status ${supportingDocuments.length > 0 ? 'is-ready' : ''}`}>
                           {supportingDocuments.length > 0
-                            ? `Загружено файлов: ${supportingDocuments.length}`
-                            : 'Файлы пока не загружены'}
+                            ? t('addPropertyUi_filesUploaded', { count: supportingDocuments.length })
+                            : t('addPropertyUi_filesNone')}
                         </div>
                         {supportingDocuments.length > 0 && (
                           <div className="sp-doc-action-files">
                             {supportingDocuments.map((doc) => (
                               <div key={doc.id} className="sp-doc-action-file">
                                 <span>{doc.name}</span>
-                                <button type="button" onClick={() => handleRemoveDocument(doc.id)} aria-label="Удалить документ">
+                                <button type="button" onClick={() => handleRemoveDocument(doc.id)} aria-label={t('addPropertyUi_removeDocAria')}>
                                   <FiX size={14} />
                                 </button>
                               </div>
@@ -6488,9 +6424,9 @@ const AddProperty = ({
                       onClick={() => scrollSpSectionIntoView('testdrive')}
                     >
                       <div className="sp-card__head-maincol">
-                        <span className="sp-card__step">Шаг 8</span>
+                        <span className="sp-card__step">{t('addPropertyUi_stepN', { n: 8 })}</span>
                         <div className="sp-card__head-row">
-                          <h3 className="sp-card__title">Тест-драйв</h3>
+                          <h3 className="sp-card__title">{t('addPropertyUi_testDriveTitle')}</h3>
                           <button
                             type="button"
                             className="sp-head-info-btn"
@@ -6499,11 +6435,11 @@ const AddProperty = ({
                               setShowTestDriveInfoModal(true)
                             }}
                           >
-                            Подробнее
+                            {t('addPropertyUi_moreDetails')}
                           </button>
                         </div>
                         {isSpSectionBodyVisible('testdrive') && (
-                          <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.testdrive.lead}</p>
+                          <p className="sp-card__lead">{t(SINGLE_PAGE_SECTION_HELP.testdrive.leadKey)}</p>
                         )}
                       </div>
                       <span className="sp-card__head-toggle" aria-hidden="true">
@@ -6530,38 +6466,36 @@ const AddProperty = ({
                           }))
                         }
                       >
-                        Да
+                        {t('addPropertyUi_yes')}
                       </button>
                       <button
                         type="button"
                         className={`single-page-add-flow__chip ${formData.testDrive === false ? 'active' : ''}`}
                         onClick={() => setFormData((prev) => ({ ...prev, testDrive: false }))}
                       >
-                        Нет
+                        {t('addPropertyUi_no')}
                       </button>
                     </div>
                     {formData.testDrive === true && (
                       <>
                         <div className="sp-test-drive-listing-note" role="note">
-                          <strong>Формат продажи</strong>
+                          <strong>{t('addPropertyUi_saleFormatStrong')}</strong>
                           <p>
-                            Тест-драйв сочетается только с вариантом «Аукцион + Продать сейчас»: покупатель видит
-                            торги и отдельную цену мгновенной сделки. Ниже в шаге «Формат продажи» доступен только этот
-                            вариант.
+                            {t('addPropertyUi_testDriveAuctionOnly')}
                           </p>
                         </div>
                         <div className="single-page-add-flow__grid">
                         <input
                           type="number"
                           className="property-name-input"
-                          placeholder="Стоимость за сутки"
+                          placeholder={t('addProperty_phPricePerDay')}
                           value={formData.testDrivePricePerDay || ''}
                           onChange={(e) => setFormData((prev) => ({ ...prev, testDrivePricePerDay: e.target.value }))}
                         />
                         <input
                           type="number"
                           className="property-name-input"
-                          placeholder="Страховой депозит"
+                          placeholder={t('addProperty_phInsuranceDeposit')}
                           value={formData.testDriveInsuranceDeposit || ''}
                           onChange={(e) => setFormData((prev) => ({ ...prev, testDriveInsuranceDeposit: e.target.value }))}
                         />
@@ -6583,10 +6517,10 @@ const AddProperty = ({
                       onClick={() => scrollSpSectionIntoView('listing')}
                     >
                       <div className="sp-card__head-maincol">
-                        <span className="sp-card__step">Шаг 9</span>
-                        <h3 className="sp-card__title">Формат продажи</h3>
+                        <span className="sp-card__step">{t('addPropertyUi_stepN', { n: 9 })}</span>
+                        <h3 className="sp-card__title">{t('addPropertyUi_saleFormatTitle')}</h3>
                         {isSpSectionBodyVisible('listing') && (
-                          <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.listing.lead}</p>
+                          <p className="sp-card__lead">{t(SINGLE_PAGE_SECTION_HELP.listing.leadKey)}</p>
                         )}
                       </div>
                       <span className="sp-card__head-toggle" aria-hidden="true">
@@ -6598,7 +6532,7 @@ const AddProperty = ({
                       aria-hidden={!isSpSectionBodyVisible('listing')}
                     >
                       <div className="sp-card__collapsible-body">
-                    <div className="sp-listing-mode-stack" role="radiogroup" aria-label="Тип размещения">
+                    <div className="sp-listing-mode-stack" role="radiogroup" aria-label={t('addPropertyUi_listingTypeAria')}>
                       {listingModeOptionsForForm.map((mode) => {
                         const isOpen = expandedListingModeId === mode.id
                         return (
@@ -6618,8 +6552,8 @@ const AddProperty = ({
                                   {getListingModeIcon(mode.icon)}
                                 </span>
                                 <span className="sp-radio-row__text">
-                                  <span className="sp-radio-row__title">{mode.title}</span>
-                                  <span className="sp-radio-row__desc">{mode.description}</span>
+                                  <span className="sp-radio-row__title">{t(mode.titleKey)}</span>
+                                  <span className="sp-radio-row__desc">{t(mode.descriptionKey)}</span>
                                 </span>
                               </label>
                               <button
@@ -6634,7 +6568,7 @@ const AddProperty = ({
                               >
                                 <FiChevronDown className={`sp-listing-accordion__chev ${isOpen ? 'is-open' : ''}`} aria-hidden />
                                 <span className="sp-listing-accordion__toggle-text">
-                                  {isOpen ? 'Свернуть' : 'Как это работает'}
+                                  {isOpen ? t('addPropertyUi_collapse') : t('addPropertyUi_howItWorks')}
                                 </span>
                               </button>
                             </div>
@@ -6645,7 +6579,7 @@ const AddProperty = ({
                                 role="region"
                                 aria-labelledby={`listing-mode-trigger-${mode.id}`}
                               >
-                                <ListingModeInstructionPanel mode={mode} layout="stack" />
+                                <ListingModeInstructionPanel mode={mode} layout="stack" t={t} />
                               </div>
                             )}
                           </div>
@@ -6668,10 +6602,10 @@ const AddProperty = ({
                       onClick={() => scrollSpSectionIntoView('calculator')}
                     >
                       <div className="sp-card__head-maincol">
-                        <span className="sp-card__step">Шаг 10</span>
-                        <h3 className="sp-card__title">Автоматический расчёт стоимости</h3>
+                        <span className="sp-card__step">{t('addPropertyUi_stepN', { n: 10 })}</span>
+                        <h3 className="sp-card__title">{t('addPropertyUi_autoCalcTitle')}</h3>
                         {isSpSectionBodyVisible('calculator') && (
-                          <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.calculator.lead}</p>
+                          <p className="sp-card__lead">{t(SINGLE_PAGE_SECTION_HELP.calculator.leadKey)}</p>
                         )}
                       </div>
                       <span className="sp-card__head-toggle" aria-hidden="true">
@@ -6727,8 +6661,8 @@ const AddProperty = ({
                       onClick={isEditMode ? undefined : () => scrollSpSectionIntoView('price')}
                     >
                       <div className="sp-card__head-maincol">
-                        <span className="sp-card__step">Шаг 11</span>
-                        <h3 className="sp-card__title">Цена, долги и сроки аукциона</h3>
+                        <span className="sp-card__step">{t('addPropertyUi_stepN', { n: 11 })}</span>
+                        <h3 className="sp-card__title">{t('addPropertyUi_priceDebtsTitle')}</h3>
                         {isSpSectionBodyVisible('price') && (
                           <p className="sp-card__lead">{t('addPropertyPriceSectionLead')}</p>
                         )}
@@ -7009,7 +6943,7 @@ const AddProperty = ({
                     {!isEditMode && (
                       <div className="sp-submit-row">
                         <button type="button" className="sp-btn sp-btn--primary sp-btn--wide" disabled={!hasPrice || isSubmitting} onClick={handlePriceContinue}>
-                          {isSubmitting ? 'Отправка...' : 'Оплата и верификация'}
+                          {isSubmitting ? t('addPropertyUi_sending') : t('addPropertyUi_payAndVerify')}
                         </button>
                       </div>
                     )}
@@ -7020,13 +6954,13 @@ const AddProperty = ({
                         <div
                           className="sp-card__edit-lock-overlay"
                           role="status"
-                          aria-label="Раздел заблокирован"
+                          aria-label={t('addPropertyUi_sectionLocked')}
                         >
                           <div className="sp-card__edit-lock-card">
                             <span className="sp-card__edit-lock-icon" aria-hidden>
                               <FiLock size={28} />
                             </span>
-                            <p className="sp-card__edit-lock-title">Раздел заблокирован</p>
+                            <p className="sp-card__edit-lock-title">{t('addPropertyUi_sectionLocked')}</p>
                           </div>
                         </div>
                       )}
@@ -7035,19 +6969,19 @@ const AddProperty = ({
                 )}
               </div>
 
-              <aside className="single-page-add-flow__aside" aria-label="Подсказки">
+              <aside className="single-page-add-flow__aside" aria-label={t('addPropertyUi_hintsAria')}>
                 <div className="sp-aside-stack">
                   <div className="sp-aside-card">
-                    <div className="sp-aside-card__kicker">Советы</div>
-                    <h4 className="sp-aside-card__title">{spGuideCopy.title}</h4>
-                    <p className="sp-aside-card__lead">{spGuideCopy.lead}</p>
+                    <div className="sp-aside-card__kicker">{t('addPropertyUi_tipsKicker')}</div>
+                    <h4 className="sp-aside-card__title">{t(spGuideCopy.titleKey)}</h4>
+                    <p className="sp-aside-card__lead">{t(spGuideCopy.leadKey)}</p>
                     <ul className="sp-aside-card__list">
-                      {spGuideCopy.tips.map((tip, i) => (
-                        <li key={i}>{tip}</li>
+                      {(spGuideCopy.tipKeys || []).map((tipKey, i) => (
+                        <li key={i}>{t(tipKey)}</li>
                       ))}
                     </ul>
                     <div className="sp-aside-card__rec">
-                      <strong>Рекомендация.</strong> {spGuideCopy.recommend}
+                      <strong>{t('addPropertyUi_recommendStrong')}</strong> {t(spGuideCopy.recommendKey)}
                     </div>
                   </div>
                 </div>
@@ -7076,8 +7010,8 @@ const AddProperty = ({
                   <div className="property-type-card-icon">
                     {getPropertyTypeIcon(option.icon)}
                   </div>
-                  <h3 className="property-type-card-title">{option.title}</h3>
-                  <p className="property-type-card-description">{option.description}</p>
+                  <h3 className="property-type-card-title">{t(option.titleKey)}</h3>
+                  <p className="property-type-card-description">{t(option.descriptionKey)}</p>
                   <button
                     type="button"
                     className="property-type-card-button"
@@ -7086,7 +7020,7 @@ const AddProperty = ({
                       handlePropertyTypeSelect(option.id)
                     }}
                   >
-                    Продолжить
+                    {t('addPropertyUi_continue')}
                   </button>
                 </div>
               ))}
@@ -7184,8 +7118,7 @@ const AddProperty = ({
                 {t('addPropertyTestDriveSubtitle')}
               </p>
               <p className="test-drive-question-listing-hint">
-                Если выберете «Да», объявление можно будет опубликовать только в формате «Аукцион + Продать сейчас» —
-                с торгами и отдельной ценой мгновенной покупки.
+                {t('addPropertyUi_testDriveYesNote')}
               </p>
               <div className="test-drive-buttons">
                 <button
@@ -7210,12 +7143,12 @@ const AddProperty = ({
         ) : wizardRenderStep === 'test-drive-pricing' ? (
           <div className="property-name-screen">
             <div className="property-name-main">
-              <h2 className="property-name-title">Настройки тест-драйва</h2>
+              <h2 className="property-name-title">{t('addPropertyUi_testDriveSettings')}</h2>
               <p className="property-name-subtitle" style={{ marginBottom: 18 }}>
-                Укажите стоимость за сутки и страховой депозит для клиента.
+                {t('addPropertyUi_testDrivePriceLead')}
               </p>
               <div className="property-name-input-group">
-                <label className="property-name-label">Стоимость за сутки</label>
+                <label className="property-name-label">{t('addPropertyUi_pricePerDay')}</label>
                 <input
                   type="number"
                   min="0"
@@ -7232,7 +7165,7 @@ const AddProperty = ({
                 />
               </div>
               <div className="property-name-input-group">
-                <label className="property-name-label">Страховой депозит</label>
+                <label className="property-name-label">{t('addPropertyUi_insuranceDeposit')}</label>
                 <input
                   type="number"
                   min="0"
@@ -7264,11 +7197,11 @@ const AddProperty = ({
                     const price = Number(formData.testDrivePricePerDay)
                     const deposit = Number(formData.testDriveInsuranceDeposit)
                     if (!(price > 0)) {
-                      showNotification('Укажите стоимость за сутки больше 0')
+                      showNotification(t('oap_err_pricePerDay'))
                       return
                     }
                     if (deposit < 0) {
-                      showNotification('Страховой депозит не может быть отрицательным')
+                      showNotification(t('oap_err_insuranceDeposit'))
                       return
                     }
                     setCurrentStep('listing-type')
@@ -8319,7 +8252,7 @@ const AddProperty = ({
                   <>
                     {/* Блок "Where can people sleep?" */}
                     <div className="sleep-areas-section">
-                      <h3 className="sleep-areas-title">Где могут спать люди?</h3>
+                      <h3 className="sleep-areas-title">{t('addPropertyUi_sleepAreasTitle')}</h3>
                       <div className="sleep-areas-list">
                         {bedrooms.map((bedroom, index) => (
                           <div 
@@ -8329,12 +8262,12 @@ const AddProperty = ({
                             style={{ cursor: 'pointer' }}
                           >
                             <div className="sleep-area-content">
-                              <div className="sleep-area-name">{bedroom.name}</div>
+                              <div className="sleep-area-name">{getBedroomDisplayName(bedroom)}</div>
                               <div className="sleep-area-beds">
                                 {getBedsDisplayText(bedroom.beds)}
                               </div>
                             </div>
-                            {bedroom.name.startsWith('Спальня') && (
+                            {(bedroom.nameKey === 'bedroom' || bedroom.nameKey === 'addPropertyUi_bedroom') && (
                               <button
                                 type="button"
                                 className="sleep-area-remove-btn"
@@ -8355,13 +8288,13 @@ const AddProperty = ({
                         onClick={handleAddBedroom}
                       >
                         <span className="add-bedroom-icon">+</span>
-                        Добавить спальню
+                        {t('addPropertyUi_addBedroom')}
                       </button>
                     </div>
 
-                    {/* Блок "Количество этажей" */}
+                    {/* Floors count block */}
                     <div className="floors-section">
-                      <h3 className="floors-title">Количество этажей</h3>
+                      <h3 className="floors-title">{t('addPropertyUi_floorsTitle')}</h3>
                       <div className="number-input-control">
                         <button
                           type="button"
@@ -8384,7 +8317,7 @@ const AddProperty = ({
 
                     {/* Блок "How many bathrooms are there?" */}
                     <div className="bathrooms-section">
-                      <h3 className="bathrooms-title">Сколько ванных комнат?</h3>
+                      <h3 className="bathrooms-title">{t('addPropertyUi_bathroomsTitle')}</h3>
                       <div className="number-input-control">
                         <button
                           type="button"
@@ -8407,8 +8340,8 @@ const AddProperty = ({
 
                     {/* Блок "How big is this apartment?" */}
                     <div className="apartment-size-section">
-                      <h3 className="apartment-size-title">Какой размер у этой квартиры?</h3>
-                      <label className="apartment-size-label">Размер квартиры – необязательно</label>
+                      <h3 className="apartment-size-title">{t('addPropertyUi_apartmentSizeTitle')}</h3>
+                      <label className="apartment-size-label">{t('addPropertyUi_apartmentSizeOptional')}</label>
                       <div className="apartment-size-input-group">
                         <input
                           type="number"
@@ -8424,8 +8357,8 @@ const AddProperty = ({
                           onChange={(e) => setAreaUnit(e.target.value)}
                           className="apartment-size-unit"
                         >
-                          <option value="square_meters">квадратные метры</option>
-                          <option value="square_feet">квадратные футы</option>
+                          <option value="square_meters">{t('addPropertyUi_sqMeters')}</option>
+                          <option value="square_feet">{t('addPropertyUi_sqFeet')}</option>
                         </select>
                       </div>
                     </div>
@@ -8457,7 +8390,7 @@ const AddProperty = ({
               <div className="bed-modal-overlay" onClick={() => setShowBedModal(false)}>
                 <div className="bed-modal-content" onClick={(e) => e.stopPropagation()}>
                   <div className="bed-modal-header">
-                    <h3 className="bed-modal-title">Какие кровати есть в этом помещении?</h3>
+                    <h3 className="bed-modal-title">{t('addPropertyUi_bedsModalTitle')}</h3>
                     <button
                       type="button"
                       className="bed-modal-close"
@@ -8474,10 +8407,7 @@ const AddProperty = ({
                           <MdBed size={24} className="bed-type-icon" />
                           <div className="bed-type-details">
                             <div className="bed-type-name">
-                              {bedType === 'twin' ? 'Односпальная кровать' :
-                               bedType === 'full' ? 'Двуспальная кровать' :
-                               bedType === 'queen' ? 'Кровать размера Queen' :
-                               'Кровать размера King'}
+                              {bedType === 'twin' ? t('addPropertyUi_bedSingle') : bedType === 'full' ? t('addPropertyUi_bedDouble') : bedType === 'queen' ? t('addPropertyUi_bedQueen') : t('addPropertyUi_bedKing')}
                             </div>
                             <div className="bed-type-size">{getBedSize(bedType)}</div>
                           </div>
@@ -8510,7 +8440,7 @@ const AddProperty = ({
                       className="bed-modal-save-btn"
                       onClick={() => handleSaveBeds(selectedBedroom.id, selectedBedroom.beds)}
                     >
-                      Сохранить
+                      {t('addPropertyUi_save')}
                     </button>
                   </div>
                 </div>
@@ -8546,7 +8476,7 @@ const AddProperty = ({
             <div className="property-amenities-screen">
               <div className="property-amenities-main">
                 <h2 className="property-amenities-title">
-                  Долговые обязательства по объекту
+                  {t('addPropertyUi_debtObligations')}
                 </h2>
 
                 <div className="property-amenities-content-scrollable">
@@ -8554,11 +8484,11 @@ const AddProperty = ({
                   <div className="amenities-category">
                     <h4 className="amenities-category-title">
                       <span className="amenities-category-icon">💰</span>
-                      Сумма долга
+                      {t('addPropertyUi_debtAmountLabel')}
                     </h4>
                     <div className="price-input-section">
                       <label className="price-input-label">
-                        Общая сумма задолженности по объекту
+                        {t('addPropertyUi_debtTotalLabel')}
                       </label>
                       <div className="price-input-wrapper-large">
                         <div className="currency-selector">
@@ -8591,7 +8521,7 @@ const AddProperty = ({
                                   }}
                                 >
                                   <span className="currency-option-symbol">{c.symbol}</span>
-                                  <span className="currency-option-name">{c.name}</span>
+                                  <span className="currency-option-name">{t(c.nameKey)}</span>
                                 </button>
                               ))}
                             </div>
@@ -8601,7 +8531,7 @@ const AddProperty = ({
                           id="debt-amount-input"
                           type="text"
                           className="price-input-large price-input-large--debt"
-                          placeholder="Введите сумму долга"
+                          placeholder={t('addProperty_phDebtAmount')}
                           value={formData.debtAmount || ''}
                           onChange={(e) => handleDetailChange('debtAmount', e.target.value)}
                         />
@@ -8617,14 +8547,14 @@ const AddProperty = ({
                     onClick={() => setCurrentStep('details')}
                   >
                     <FiChevronLeft size={16} />
-                    Назад
+                    {t('addPropertyUi_back')}
                   </button>
                   <button
                     type="button"
                     className="property-amenities-continue-btn"
                     onClick={handleAmenitiesContinue}
                   >
-                    Продолжить
+                    {t('addPropertyUi_continue')}
                   </button>
                 </div>
               </div>
@@ -8633,10 +8563,10 @@ const AddProperty = ({
                 <HintCard
                   icon={MdLightbulb}
                   iconColor="property-name-hint-icon--thumbs"
-                  title="Сумма долга"
+                  title={t('addPropertyPriceDebtAmountLabel')}
                   content={[
-                    "Укажите ориентировочную общую сумму задолженности по объекту",
-                    "Чем прозрачнее информация, тем выше доверие покупателей"
+                    t('addPropertyUi_debtAmountHint'),
+                    t('addPropertyUi_debtTransparencyHint'),
                   ]}
                   show={showHints['amenities']}
                   onClose={() => setShowHints(prev => ({ ...prev, 'amenities': false }))}
@@ -8653,9 +8583,9 @@ const AddProperty = ({
                 <div className="property-amenities-content-scrollable">
                   {singlePageAmenityGroups.map((group) => (
                     <div key={group.id} className="amenities-category">
-                      <h4 className="amenities-category-title">{group.title}</h4>
+                      <h4 className="amenities-category-title">{t(group.titleKey)}</h4>
                       <div className="amenities-list">
-                        {group.items.map(({ key, label }) => (
+                        {group.items.map(({ key, labelKey }) => (
                           <label key={`${group.id}-${key}`} className="amenity-item">
                             <input
                               type="checkbox"
@@ -8663,7 +8593,7 @@ const AddProperty = ({
                               onChange={(e) => handleDetailChange(key, e.target.checked)}
                               className="amenity-checkbox"
                             />
-                            <span className="amenity-label">{label}</span>
+                            <span className="amenity-label">{t(labelKey)}</span>
                           </label>
                         ))}
                       </div>
@@ -8792,7 +8722,7 @@ const AddProperty = ({
                             return (
                               <img 
                                 src={currentMedia.url} 
-                                alt={`Фото ${photosMediaIndex + 1}`}
+                                alt={t('addPropertyUi_photoAlt', { n: photosMediaIndex + 1 })}
                                 className="photos-carousel-image"
                               />
                             )
@@ -8800,7 +8730,7 @@ const AddProperty = ({
                             return (
                               <iframe
                                 src={`https://www.youtube.com/embed/${currentMedia.videoId}`}
-                                title={`YouTube видео ${photosMediaIndex + 1}`}
+                                title={t('addPropertyUi_youtubeTitle', { n: photosMediaIndex + 1 })}
                                 className="photos-carousel-video"
                                 frameBorder="0"
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -8958,9 +8888,9 @@ const AddProperty = ({
                     </h3>
                     <p className="video-link-modal-subtitle">
                       {videoLinkType === 'youtube'
-                        ? 'Вставьте ссылку на видео с YouTube'
+                        ? t('addPropertyUi_youtubePlaceholder')
                         : videoLinkType === 'googledrive'
-                          ? 'Вставьте ссылку на видео из Google Drive'
+                          ? t('addPropertyUi_drivePlaceholder')
                           : t('addPropertyPhotosVideoLinkSubtitle')}
                     </p>
                     <input
@@ -9531,12 +9461,11 @@ const AddProperty = ({
             <div className="listing-mode-stage__glow listing-mode-stage__glow--right" aria-hidden="true" />
             <div className="listing-mode-stage__hero">
               <span className="listing-mode-stage__pill">
-                Шаг {stepFlow.findIndex((s) => s.id === 'listing-type') + 1} из {stepFlow.length}
+                {t('addPropertyUi_stepOf', { current: stepFlow.findIndex((s) => s.id === 'listing-type') + 1, total: stepFlow.length })}
               </span>
-              <h2>Выберите тип размещения</h2>
+              <h2>{t('addPropertyUi_chooseListingType')}</h2>
               <p>
-                Откройте «Инструкцию» у формата, чтобы увидеть, как проходит продажа, кому он подходит и какие у него
-                преимущества. Затем нажмите «Выбрать». Фон шага меняется при прокрутке.
+                {t('addPropertyUi_listingIntro')}
               </p>
             </div>
             <div
@@ -9556,8 +9485,8 @@ const AddProperty = ({
                         <div className="listing-mode-stage__card-top">
                           <span className="listing-mode-stage__card-icon">{getListingModeIcon(mode.icon)}</span>
                           <span className="listing-mode-stage__card-content">
-                            <strong>{mode.title}</strong>
-                            <small>{mode.description}</small>
+                            <strong>{t(mode.titleKey)}</strong>
+                            <small>{t(mode.descriptionKey)}</small>
                           </span>
                         </div>
                         <div className="listing-mode-stage__card-actions">
@@ -9570,20 +9499,20 @@ const AddProperty = ({
                             }
                           >
                             <FiChevronDown className={`listing-mode-stage__btn-chev ${isOpen ? 'is-open' : ''}`} aria-hidden />
-                            {isOpen ? 'Свернуть' : 'Инструкция'}
+                            {isOpen ? t('addPropertyUi_collapse') : t('addPropertyUi_instruction')}
                           </button>
                           <button
                             type="button"
                             className="listing-mode-stage__btn listing-mode-stage__btn--primary"
                             onClick={() => handleListingModeSelect(mode.id)}
                           >
-                            Выбрать
+                            {t('addPropertyUi_choose')}
                           </button>
                         </div>
                       </div>
                       {isOpen && (
                         <div className={`listing-mode-stage__detail listing-mode-stage__detail--${mode.tone}`}>
-                          <ListingModeInstructionPanel mode={mode} layout="compact" />
+                          <ListingModeInstructionPanel mode={mode} layout="compact" t={t} />
                         </div>
                       )}
                     </div>
@@ -9591,7 +9520,7 @@ const AddProperty = ({
                 })}
                 <div className="listing-mode-stage__scroll-tip">
                   <FiChevronDown size={18} />
-                  <span>Скролл и колесо мыши переключают тему оформления</span>
+                  <span>{t('addPropertyUi_themeScrollHint')}</span>
                 </div>
               </div>
             </div>
@@ -9609,10 +9538,10 @@ const AddProperty = ({
         ) : wizardRenderStep === 'price-calculator' ? (
           <div className="add-property-price-calculator-step">
             <div className="add-property-price-calculator-step__header">
-              <span className="add-property-price-calculator-step__eyebrow">Шаг {currentStepIndex + 1} из {stepFlow.length}</span>
-              <h2 className="add-property-price-calculator-step__title">Автоматический расчёт стоимости</h2>
+              <span className="add-property-price-calculator-step__eyebrow">{t('addPropertyUi_stepOf', { current: currentStepIndex + 1, total: stepFlow.length })}</span>
+              <h2 className="add-property-price-calculator-step__title">{t('addPropertyUi_autoCalcTitle')}</h2>
               <p className="add-property-price-calculator-step__lead">
-                Оценка по похожим объявлениям с площадок. После расчёта ориентировочные суммы можно скорректировать на следующем шаге.
+                {t('addPropertyUi_calcLead')}
               </p>
             </div>
             <Suspense fallback={null}>
@@ -9655,7 +9584,7 @@ const AddProperty = ({
           /* Экран цены:
              - для доли — только общая цена и количество долей
              - для долгов — только фиксированная сумма продажи без аукциона
-             - для обычных объектов — аукцион + опциональная цена "Купить сейчас" */
+             - for regular listings — auction + optional buy-now price */
           <div className="property-price-screen">
             <div className="property-price-main">
               <h2 className="property-price-title">
@@ -9696,7 +9625,7 @@ const AddProperty = ({
                             {currencies.map((curr) => (
                               <button key={curr.code} type="button" className={`currency-option ${currency === curr.code ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrency(curr.code); setShowCurrencyDropdown(null) }}>
                                 <span className="currency-option-symbol">{curr.symbol}</span>
-                                <span className="currency-option-name">{curr.name}</span>
+                                <span className="currency-option-name">{t(curr.nameKey)}</span>
                                 <span className="currency-option-code">({curr.code})</span>
                               </button>
                             ))}
@@ -9770,7 +9699,7 @@ const AddProperty = ({
                               onClick={() => { setCurrency(c.code); setShowCurrencyDropdown(null) }}
                             >
                               <span className="currency-option-symbol">{c.symbol}</span>
-                              <span className="currency-option-name">{c.name}</span>
+                              <span className="currency-option-name">{t(c.nameKey)}</span>
                             </button>
                           ))}
                         </div>
@@ -9824,7 +9753,7 @@ const AddProperty = ({
                             }}
                           >
                             <span className="currency-option-symbol">{curr.symbol}</span>
-                            <span className="currency-option-name">{curr.name}</span>
+                            <span className="currency-option-name">{t(curr.nameKey)}</span>
                             <span className="currency-option-code">({curr.code})</span>
                           </button>
                         ))}
@@ -9850,12 +9779,15 @@ const AddProperty = ({
               {(formData.listingMode === 'auction_buy_now' || formData.listingMode === 'debt_auction') && (
               <div className="price-input-section">
                 <label className="price-input-label">
-                  Продать сейчас {formData.listingMode === 'auction_buy_now' ? '(обязательно)' : '(опционально)'}
+                  {t('addPropertyUi_buyNow')}{' '}
+                  {formData.listingMode === 'auction_buy_now'
+                    ? t('addPropertyUi_requiredParen')
+                    : t('addPropertyUi_optionalParen')}
                 </label>
                 <p style={{ fontSize: '14px', color: '#666', marginTop: '4px', marginBottom: '12px' }}>
                   {formData.listingMode === 'auction_buy_now'
-                    ? 'Для этого типа размещения нужно указать цену мгновенной покупки.'
-                    : 'Укажите цену, за которую вы готовы мгновенно продать объект. Если не укажете, объект будет только на аукционе.'}
+                    ? t('addPropertyUi_buyNowRequiredHint')
+                    : t('addPropertyUi_buyNowOptionalHint')}
                 </p>
                 <div className="price-input-wrapper-large">
                   <div className="currency-selector">
@@ -9882,7 +9814,7 @@ const AddProperty = ({
                             }}
                           >
                             <span className="currency-option-symbol">{curr.symbol}</span>
-                            <span className="currency-option-name">{curr.name}</span>
+                            <span className="currency-option-name">{t(curr.nameKey)}</span>
                             <span className="currency-option-code">({curr.code})</span>
                           </button>
                         ))}
@@ -9959,7 +9891,7 @@ const AddProperty = ({
                               }}
                             >
                               <span className="currency-option-symbol">{curr.symbol}</span>
-                              <span className="currency-option-name">{curr.name}</span>
+                              <span className="currency-option-name">{t(curr.nameKey)}</span>
                               <span className="currency-option-code">({curr.code})</span>
                             </button>
                           ))}
@@ -10033,14 +9965,14 @@ const AddProperty = ({
         ) : null}
 
         {isEditMode && (
-          <div className="add-property-edit-moderation-bar" role="region" aria-label="Отправка на модерацию">
+          <div className="add-property-edit-moderation-bar" role="region" aria-label={t('addPropertyUi_moderationRegionAria')}>
             <button
               type="button"
               className="add-property-edit-moderation-bar__btn"
               disabled={isSubmitting || isLoadingProperty}
               onClick={handleSubmitEditForModeration}
             >
-              {isLoadingProperty ? 'Загрузка...' : isSubmitting ? 'Отправка...' : 'Отправить на модерацию'}
+              {isLoadingProperty ? t('addPropertyUi_loading') : isSubmitting ? t('addPropertyUi_sending') : t('addPropertyUi_sendToModeration')}
             </button>
           </div>
         )}
@@ -10077,7 +10009,7 @@ const AddProperty = ({
                   <div className="carousel-image-wrapper">
                     <img 
                       src={mediaItems[currentMediaIndex].url} 
-                      alt={`Фото ${currentMediaIndex + 1}`}
+                      alt={t('addPropertyUi_photoAlt', { n: currentMediaIndex + 1 })}
                       className="carousel-image"
                     />
                   </div>
@@ -10091,7 +10023,7 @@ const AddProperty = ({
                     {mediaItems[currentMediaIndex].type === 'youtube' && mediaItems[currentMediaIndex].videoId ? (
                       <iframe
                         src={`https://www.youtube.com/embed/${mediaItems[currentMediaIndex].videoId}`}
-                        title={`YouTube видео ${currentMediaIndex + 1}`}
+                        title={t('addPropertyUi_youtubeTitle', { n: currentMediaIndex + 1 })}
                         className="carousel-video"
                         frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -10100,7 +10032,7 @@ const AddProperty = ({
                     ) : mediaItems[currentMediaIndex].type === 'googledrive' && mediaItems[currentMediaIndex].videoId ? (
                       <iframe
                         src={`https://drive.google.com/file/d/${mediaItems[currentMediaIndex].videoId}/preview`}
-                        title={`Google Drive видео ${currentMediaIndex + 1}`}
+                        title={t('addPropertyUi_driveTitle', { n: currentMediaIndex + 1 })}
                         className="carousel-video"
                         frameBorder="0"
                         allowFullScreen
@@ -10112,7 +10044,7 @@ const AddProperty = ({
                         className="carousel-video-file"
                         autoPlay
                       >
-                        Ваш браузер не поддерживает воспроизведение видео.
+                        {t('addPropertyUi_videoUnsupported')}
                       </video>
                     ) : null}
                   </div>
@@ -10137,11 +10069,11 @@ const AddProperty = ({
             >
               <FiX size={20} />
             </button>
-            <h3 className="video-link-modal-title">Выберите источник видео</h3>
-            <p className="video-link-modal-subtitle">Добавьте видео одним из трёх способов.</p>
+            <h3 className="video-link-modal-title">{t('addPropertyUi_videoSourceTitle')}</h3>
+            <p className="video-link-modal-subtitle">{t('addPropertyUi_videoSourceSubtitle')}</p>
             <div className="video-source-modal__actions">
               <button type="button" className="video-source-modal__btn" onClick={() => handleVideoSourceSelect('device')}>
-                Устройство
+                {t('addPropertyUi_device')}
               </button>
               <button type="button" className="video-source-modal__btn" onClick={() => handleVideoSourceSelect('youtube')}>
                 YouTube
@@ -10169,9 +10101,9 @@ const AddProperty = ({
             </h3>
             <p className="video-link-modal-subtitle">
               {videoLinkType === 'youtube'
-                ? 'Вставьте ссылку на видео с YouTube'
+                ? t('addPropertyUi_youtubePlaceholder')
                 : videoLinkType === 'googledrive'
-                  ? 'Вставьте ссылку на видео из Google Drive'
+                  ? t('addPropertyUi_drivePlaceholder')
                   : t('addPropertyPhotosVideoLinkSubtitle')}
             </p>
             <input
@@ -10299,7 +10231,7 @@ const AddProperty = ({
                 setListingFeePromoCode('')
                 setListingFeePromoError(null)
               }}
-              aria-label="Закрыть"
+              aria-label={t('addPropertyUi_closeAria')}
             >
               <FiX size={22} />
             </button>
@@ -10308,9 +10240,9 @@ const AddProperty = ({
                 <div className="listing-fee-modal__icon">
                   <FiDollarSign size={32} />
                 </div>
-                <h2 className="listing-fee-modal__title">Оплата публикации объекта</h2>
+                <h2 className="listing-fee-modal__title">{t('addPropertyUi_listingFeeTitle')}</h2>
                 <p className="listing-fee-modal__text">
-                  Чтобы выложить объект, необходимо оплатить <strong>29 €</strong> за размещение на платформе.
+                  {t('addPropertyUi_listingFeeBody', { amount: '29 €' })}
                 </p>
                 <div className="listing-fee-modal__options">
                   <button
@@ -10320,7 +10252,7 @@ const AddProperty = ({
                     disabled={listingFeeStripeLoading}
                   >
                     <FiCreditCard size={24} aria-hidden />
-                    <span>{listingFeeStripeLoading ? 'Переход к оплате…' : 'Карта (Stripe)'}</span>
+                    <span>{listingFeeStripeLoading ? t('addPropertyUi_checkoutRedirect') : t('addPropertyUi_cardStripe')}</span>
                     <span className="listing-fee-modal__option-badge listing-fee-modal__option-badge--price">
                       29 €
                     </span>
@@ -10331,7 +10263,7 @@ const AddProperty = ({
                     onClick={() => setShowPromoInputInFeeModal(true)}
                   >
                     <FiGift size={24} />
-                    <span>Есть промокод</span>
+                    <span>{t('addPropertyUi_havePromo')}</span>
                   </button>
                 </div>
                 <p className="listing-fee-modal__get-promo">
@@ -10346,7 +10278,7 @@ const AddProperty = ({
                       navigate('/bonuses?tab=seller', { state: { fromListingFee: true, returnPath: location.pathname } })
                     }}
                   >
-                    получить промокод
+                    {t('addPropertyUi_getPromo')}
                   </button>
                 </p>
               </>
@@ -10361,20 +10293,20 @@ const AddProperty = ({
                     setListingFeePromoError(null)
                   }}
                 >
-                  <FiChevronLeft size={18} /> Назад
+                  <FiChevronLeft size={18} /> {t('addPropertyUi_back')}
                 </button>
                 <div className="listing-fee-modal__icon listing-fee-modal__icon--promo">
                   <FiGift size={32} />
                 </div>
-                <h2 className="listing-fee-modal__title">Введите промокод</h2>
+                <h2 className="listing-fee-modal__title">{t('addPropertyUi_enterPromo')}</h2>
                 <p className="listing-fee-modal__text">
-                  Промокод из бонусных заданий для продавцов позволяет бесплатно опубликовать объект.
+                  {t('addPropertyUi_promoHint')}
                 </p>
                 <div className="listing-fee-modal__promo-row">
                   <input
                     type="text"
                     className="listing-fee-modal__input"
-                    placeholder="Например: BONUS-SELLER-INSTA-10"
+                    placeholder={t('addProperty_promoPlaceholder')}
                     value={listingFeePromoCode}
                     onChange={(e) => {
                       setListingFeePromoCode(e.target.value)
@@ -10389,7 +10321,7 @@ const AddProperty = ({
                     onClick={handleApplyListingFeePromo}
                     disabled={listingFeePromoLoading}
                   >
-                    {listingFeePromoLoading ? <FiLoader size={20} className="listing-fee-modal__spinner" /> : 'Применить'}
+                    {listingFeePromoLoading ? <FiLoader size={20} className="listing-fee-modal__spinner" /> : t('addPropertyUi_apply')}
                   </button>
                 </div>
                 {listingFeePromoError && (
@@ -10493,31 +10425,31 @@ const AddProperty = ({
               <FiX size={20} />
             </button>
             <h2 id="testdrive-info-title" className="testdrive-info-modal__title">
-              Как работает тест-драйв
+              {t('addPropertyUi_tdHowTitle')}
             </h2>
             <p className="testdrive-info-modal__lead">
-              Это безопасный формат предварительного проживания/просмотра, который помогает покупателю принять решение, а вам — быстрее выйти на сделку.
+              {t('addPropertyUi_tdHowLead')}
             </p>
             <div className="testdrive-info-modal__list">
               <div className="testdrive-info-modal__item">
                 <span className="testdrive-info-modal__index">1</span>
-                <p>Вы указываете стоимость тест-драйва и страховой депозит в карточке объекта.</p>
+                <p>{t('addPropertyUi_tdInfo1')}</p>
               </div>
               <div className="testdrive-info-modal__item">
                 <span className="testdrive-info-modal__index">2</span>
-                <p>Покупатель выбирает удобную дату, и вам приходит уведомление с запросом на подтверждение.</p>
+                <p>{t('addPropertyUi_tdInfo2')}</p>
               </div>
               <div className="testdrive-info-modal__item">
                 <span className="testdrive-info-modal__index">3</span>
-                <p>После подтверждения клиент получает инструкции: правила проживания и максимальный срок тест-драйва (до 3 суток).</p>
+                <p>{t('addPropertyUi_tdInfo3')}</p>
               </div>
               <div className="testdrive-info-modal__item">
                 <span className="testdrive-info-modal__index">4</span>
-                <p>Если покупатель затем оплачивает дом, стоимость тест-драйва засчитывается в общую сумму сделки.</p>
+                <p>{t('addPropertyUi_tdInfo4')}</p>
               </div>
             </div>
             <div className="testdrive-info-modal__note">
-              Такой формат снижает число «случайных» показов и повышает доверие к объекту.
+              {t('addPropertyUi_tdHowTrust')}
             </div>
           </div>
         </div>
@@ -10536,10 +10468,10 @@ const AddProperty = ({
                 <path d="M8 12L11 15L16 9" stroke="#0099A9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <h2 className="success-modal__title">Ваш объект отправлен на модерацию</h2>
+            <h2 className="success-modal__title">{t('addPropertyUi_successModeration')}</h2>
             <p className="success-modal__message">
               <FiClock style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-              Ожидайте ответ в течение 48 часов
+              {t('addPropertyUi_wait48h')}
             </p>
             <button
               className="success-modal__button"
@@ -10548,7 +10480,7 @@ const AddProperty = ({
                 if (!adminMode) navigate('/owner-test')
               }}
             >
-              Понятно
+              {t('addPropertyUi_gotIt')}
             </button>
           </div>
         </div>
@@ -10588,7 +10520,7 @@ const AddProperty = ({
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '600', color: '#111827' }}>
-                Изменения в объявлении
+                {t('addPropertyUi_listingChanges')}
               </h2>
               <button
                 onClick={() => setShowChangesModal(false)}
@@ -10622,7 +10554,7 @@ const AddProperty = ({
                     </div>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem' }}>Было:</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem' }}>{t('addPropertyUi_diffWas')}</div>
                         <div style={{ 
                           padding: '0.5rem', 
                           backgroundColor: '#fee2e2', 
@@ -10635,7 +10567,7 @@ const AddProperty = ({
                       </div>
                       <div style={{ fontSize: '1.5rem', color: '#0099A9' }}>→</div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem' }}>Стало:</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem' }}>{t('addPropertyUi_diffBecame')}</div>
                         <div style={{ 
                           padding: '0.5rem', 
                           backgroundColor: '#d1fae5', 
@@ -10658,7 +10590,7 @@ const AddProperty = ({
                 backgroundColor: '#f9fafb',
                 borderRadius: '8px'
               }}>
-                Изменений не обнаружено
+                {t('addPropertyUi_noChangesFound')}
               </div>
             )}
             
@@ -10676,7 +10608,7 @@ const AddProperty = ({
                   fontSize: '0.875rem'
                 }}
               >
-                Закрыть
+                {t('addPropertyUi_closeAria')}
               </button>
             </div>
           </div>

@@ -11,20 +11,20 @@ import {
 
 test('VIP welcome email includes WhatsApp chat link', () => {
   const { subject, body } = buildVipClubWelcomeEmail({
-    firstName: 'Анна',
+    firstName: 'Anna',
     whatsappUrl: 'https://wa.me/447700183959?text=hello',
   })
-  assert.equal(subject, 'Добро пожаловать в закрытый клуб VIP — Sellyourbrick')
-  assert.match(body, /Здравствуйте, Анна/)
-  assert.match(body, /подписка VIP закрытого клуба активирована/)
+  assert.equal(subject, 'Welcome to the VIP private club — Sellyourbrick')
+  assert.match(body, /Hello, Anna/)
+  assert.match(body, /VIP private club subscription is now active/)
   assert.match(body, /WhatsApp/)
   assert.match(body, /https:\/\/wa\.me\/447700183959\?text=hello/)
 })
 
 test('VIP welcome email works without first name or WhatsApp url', () => {
   const { body } = buildVipClubWelcomeEmail({ firstName: '', whatsappUrl: '' })
-  assert.match(body, /^Здравствуйте!/)
-  assert.match(body, /Менеджер свяжется с вами/)
+  assert.match(body, /^Hello!/)
+  assert.match(body, /A manager will contact you/)
 })
 
 test('welcome email is sent only on the first new VIP payment', () => {
@@ -53,7 +53,7 @@ test('normalizeWhatsAppChatDigits keeps phone numbers and drops LIDs', () => {
 })
 
 test('buildWhatsAppChatUrl encodes prefill text', () => {
-  const url = buildWhatsAppChatUrl('447700183959', 'Здравствуйте! Я оформил подписку VIP закрытого клуба.')
+  const url = buildWhatsAppChatUrl('447700183959', 'Hello! I subscribed to the VIP private club.')
   assert.equal(url.startsWith('https://wa.me/447700183959?text='), true)
-  assert.match(url, /%D0%97%D0%B4%D1%80%D0%B0%D0%B2%D1%81%D1%82%D0%B2%D1%83%D0%B9%D1%82%D0%B5/)
+  assert.match(url, /Hello/)
 })

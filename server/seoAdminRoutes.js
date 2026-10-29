@@ -30,20 +30,20 @@ function parseAdminFromRequest(req) {
 function requireSeoAccess(req, res, minRole = null) {
   const admin = parseAdminFromRequest(req);
   if (!canAccessSeoPanel(admin)) {
-    res.status(403).json({ success: false, error: 'Нет доступа к SEO-кабинету' });
+    res.status(403).json({ success: false, error: 'No access to SEO cabinet' });
     return null;
   }
   const role = resolveSeoRole(admin);
   if (minRole === 'editor' && !seoCanEditPages(role)) {
-    res.status(403).json({ success: false, error: 'Недостаточно прав' });
+    res.status(403).json({ success: false, error: 'Insufficient permissions' });
     return null;
   }
   if (minRole === 'marketer' && !seoCanEditSocial(role)) {
-    res.status(403).json({ success: false, error: 'Недостаточно прав маркетолога' });
+    res.status(403).json({ success: false, error: 'Insufficient marketer permissions' });
     return null;
   }
   if (minRole === 'admin' && role !== 'admin') {
-    res.status(403).json({ success: false, error: 'Только админ SEO' });
+    res.status(403).json({ success: false, error: 'SEO admin only' });
     return null;
   }
   return { admin, role };
@@ -97,17 +97,17 @@ function runSeoChecks(pages, origin) {
     const descLen = String(page.description || '').length;
 
     if (!page.title?.trim()) {
-      issues.push({ path: page.path, severity: 'error', code: 'empty_title', message: 'Пустой title' });
+      issues.push({ path: page.path, severity: 'error', code: 'empty_title', message: 'Empty title' });
     }
     if (!page.description?.trim()) {
-      issues.push({ path: page.path, severity: 'warning', code: 'empty_description', message: 'Пустое meta description' });
+      issues.push({ path: page.path, severity: 'warning', code: 'empty_description', message: 'Empty meta description' });
     }
     if (titleLen > 0 && (titleLen < 30 || titleLen > 65)) {
       issues.push({
         path: page.path,
         severity: 'warning',
         code: 'title_length',
-        message: `Длина title: ${titleLen} (рекомендуется 30–60)`,
+        message: `Title length: ${titleLen} (recommended 30–60)`,
       });
     }
     if (descLen > 0 && (descLen < 70 || descLen > 165)) {
@@ -115,16 +115,16 @@ function runSeoChecks(pages, origin) {
         path: page.path,
         severity: 'warning',
         code: 'description_length',
-        message: `Длина description: ${descLen} (рекомендуется 120–160)`,
+        message: `Description length: ${descLen} (recommended 120–160)`,
       });
     }
 
     const canonical = String(page.canonical || '');
     if (canonical.startsWith('http') && origin && !canonical.startsWith(origin)) {
-      issues.push({ path: page.path, severity: 'error', code: 'canonical_origin', message: 'Canonical на другой домен' });
+      issues.push({ path: page.path, severity: 'error', code: 'canonical_origin', message: 'Canonical points to another domain' });
     }
     if (canonical && !canonical.startsWith('/') && !canonical.startsWith('http')) {
-      issues.push({ path: page.path, severity: 'error', code: 'canonical_invalid', message: 'Некорректный canonical' });
+      issues.push({ path: page.path, severity: 'error', code: 'canonical_invalid', message: 'Invalid canonical' });
     }
 
     if (page.robotsIndex === 'noindex' && IMPORTANT_STATIC_PATHS.has(page.path)) {
@@ -132,7 +132,7 @@ function runSeoChecks(pages, origin) {
         path: page.path,
         severity: 'error',
         code: 'noindex_important',
-        message: 'noindex на важной странице',
+        message: 'noindex on an important page',
       });
     }
 
@@ -150,7 +150,7 @@ function runSeoChecks(pages, origin) {
         path: paths.join(', '),
         severity: 'warning',
         code: 'duplicate_title',
-        message: `Дублирующийся title: «${title}» (${paths.length} стр.)`,
+        message: `Duplicate title: “${title}” (${paths.length} pages)`,
       });
     }
   }
@@ -309,7 +309,7 @@ export function registerSeoAdminRoutes(app) {
 
       if (body.og_title != null || body.og_description != null || body.og_image != null) {
         if (!seoCanEditSocial(ctx.role)) {
-          return res.status(403).json({ success: false, error: 'Соцсети доступны маркетологу и админу' });
+          return res.status(403).json({ success: false, error: 'Social networks available to marketer and admin' });
         }
       }
 
@@ -320,7 +320,7 @@ export function registerSeoAdminRoutes(app) {
         body.sitemap_lastmod != null
       ) {
         if (!seoCanManageSitemap(ctx.role)) {
-          return res.status(403).json({ success: false, error: 'Sitemap доступен только админу SEO' });
+          return res.status(403).json({ success: false, error: 'Sitemap is available to SEO admin only' });
         }
       }
 
@@ -426,7 +426,7 @@ export function registerSeoAdminRoutes(app) {
     try {
       const body = req.body || {};
       if (!body.from_path || !body.to_path) {
-        return res.status(400).json({ success: false, error: 'Укажите from_path и to_path' });
+        return res.status(400).json({ success: false, error: 'Specify from_path and to_path' });
       }
       const row = await seoAdminQueries.createRedirect({
         ...body,
@@ -476,7 +476,7 @@ export function registerSeoAdminRoutes(app) {
     if (!ctx) return;
     try {
       const entry = await seoAdminQueries.getHistoryById(req.params.id);
-      if (!entry) return res.status(404).json({ success: false, error: 'Запись не найдена' });
+      if (!entry) return res.status(404).json({ success: false, error: 'Record not found' });
       const snapshot = JSON.parse(entry.snapshot);
       const changedBy = ctx.admin?.username || 'admin';
       const saved = await seoAdminQueries.upsertOverride(entry.path, snapshot, changedBy);
@@ -504,13 +504,13 @@ export function registerSeoAdminRoutes(app) {
     const ctx = requireSeoAccess(req, res, 'editor');
     if (!ctx) return;
     if (!seoCanBulkEdit(ctx.role)) {
-      return res.status(403).json({ success: false, error: 'Нет прав на массовый импорт' });
+      return res.status(403).json({ success: false, error: 'No permission for bulk import' });
     }
     try {
       const csv = String(req.body?.csv || '');
       const lines = csv.split(/\r?\n/).filter(Boolean);
       if (lines.length < 2) {
-        return res.status(400).json({ success: false, error: 'CSV пустой' });
+        return res.status(400).json({ success: false, error: 'CSV is empty' });
       }
       const header = parseCsvLine(lines[0]);
       const changedBy = ctx.admin?.username || 'admin';
@@ -554,7 +554,7 @@ export function registerSeoAdminRoutes(app) {
     if (!ctx) return;
     res.json({
       success: true,
-      message: 'Sitemap обновится при следующем запросе /sitemap.xml (кэш ~30 мин)',
+      message: 'Sitemap will refresh on the next /sitemap.xml request (~30 min cache)',
     });
   });
 }

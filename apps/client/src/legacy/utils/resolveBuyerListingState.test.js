@@ -18,7 +18,8 @@ test('sold is the final state even when auction timestamps also ended', () => {
 
   assert.deepEqual(result, {
     state: 'sold',
-    label: 'Объект продан',
+    labelKey: 'buyerListing_sold',
+    label: 'Property sold',
     tone: 'sold',
     blocksPurchase: true,
     blocksBid: true,
@@ -47,7 +48,8 @@ test('an ended auction is distinct from a sold object', () => {
   }, NOW)
 
   assert.equal(result.state, 'auction-ended')
-  assert.equal(result.label, 'Аукцион завершён')
+  assert.equal(result.labelKey, 'buyerListing_auctionEnded')
+  assert.equal(result.label, 'Auction ended')
   assert.equal(result.tone, 'auction-ended')
 })
 

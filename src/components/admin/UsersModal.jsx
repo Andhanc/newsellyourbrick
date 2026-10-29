@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiSearch, FiUser, FiMail, FiPhone, FiMapPin, FiCalendar, FiShield, FiShieldOff } from 'react-icons/fi';
 import { getApiBaseUrl, getApiBaseUrlSync } from '../../utils/apiConfig';
 import './UsersModal.css';
+import { getUiIntlLocale } from '../../utils/uiIntlLocale'
 
 // Константа для базового URL без /api (для изображений)
 const API_BASE_URL_WITHOUT_API = getApiBaseUrlSync().replace('/api', '');
 
 const UsersModal = ({ isOpen, onClose, businessInfo }) => {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,14 +33,14 @@ const UsersModal = ({ isOpen, onClose, businessInfo }) => {
         if (result.success && result.data) {
           setUsers(result.data);
         } else {
-          setError('Не удалось загрузить пользователей');
+          setError(t('admin_usersLoadFail'));
         }
       } else {
-        setError('Ошибка при загрузке пользователей');
+        setError(t('admin_usersLoadError'));
       }
     } catch (error) {
       console.error('Ошибка при загрузке пользователей:', error);
-      setError('Ошибка при загрузке пользователей');
+      setError(t('admin_usersLoadError'));
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +51,7 @@ const UsersModal = ({ isOpen, onClose, businessInfo }) => {
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
-    return date.toLocaleDateString('ru-RU', {
+    return date.toLocaleDateString(getUiIntlLocale(), {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
@@ -58,7 +61,7 @@ const UsersModal = ({ isOpen, onClose, businessInfo }) => {
   const getFullName = (user) => {
     const firstName = user.first_name || '';
     const lastName = user.last_name || '';
-    return `${firstName} ${lastName}`.trim() || 'Не указано';
+    return `${firstName} ${lastName}`.trim() || t('admin_notSpecified');
   };
 
   const filteredUsers = users.filter(user => {
@@ -83,7 +86,7 @@ const UsersModal = ({ isOpen, onClose, businessInfo }) => {
         <div className="users-modal-header">
           <h3 className="users-modal-title">
             <FiUser className="users-modal-title-icon" />
-            Все пользователи
+            {t('admin_vse_polzovateli_13f05419')}
           </h3>
           <button className="users-modal-close" onClick={onClose}>&times;</button>
         </div>
@@ -94,14 +97,14 @@ const UsersModal = ({ isOpen, onClose, businessInfo }) => {
             <input
               type="text"
               className="users-modal-search-input"
-              placeholder="Поиск по имени, email, телефону, стране..."
+              placeholder={t('admin_searchNameEmailPhoneCountry')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
           <div className="users-modal-stats">
             <span className="users-modal-stats-text">
-              {isLoading ? 'Загрузка...' : searchTerm ? `Найдено: ${filteredUsers.length} из ${users.length}` : `Всего: ${users.length}`}
+              {isLoading ? t('admin_loading') : searchTerm ? t('admin_naydeno_found_iz_total', { found: filteredUsers.length, total: users.length }) : t('admin_vsego_n', { n: users.length })}
             </span>
           </div>
         </div>
@@ -110,29 +113,29 @@ const UsersModal = ({ isOpen, onClose, businessInfo }) => {
           {isLoading ? (
             <div className="users-modal-loading">
               <div className="users-modal-spinner"></div>
-              <p>Загрузка пользователей...</p>
+              <p>{t('admin_zagruzka_polzovateley_983713a1')}</p>
             </div>
           ) : error ? (
             <div className="users-modal-error">
               <p>{error}</p>
-              <button onClick={fetchUsers} className="users-modal-retry-btn">Попробовать снова</button>
+              <button onClick={fetchUsers} className="users-modal-retry-btn">{t('admin_tryAgain')}</button>
             </div>
           ) : filteredUsers.length === 0 ? (
             <div className="users-modal-empty">
               <FiUser className="users-modal-empty-icon" />
-              <p>{searchTerm ? 'Пользователи не найдены' : 'Нет зарегистрированных пользователей'}</p>
+              <p>{searchTerm ? t('admin_polzovateli_ne_naydeny_942d94c3') : t('admin_net_zaregistrirovannyh_polzovateley_d6cddc4c')}</p>
             </div>
           ) : (
             <div className="users-modal-table-wrapper">
               <table className="users-modal-table">
                 <thead>
                   <tr>
-                    <th>Пользователь</th>
-                    <th>Контакт</th>
-                    <th>Страна</th>
-                    <th>Роль</th>
-                    <th>Статус</th>
-                    <th>Дата регистрации</th>
+                    <th>{t('admin_polzovatel_51aff185')}</th>
+                    <th>{t('admin_kontakt_62f220e3')}</th>
+                    <th>{t('admin_country')}</th>
+                    <th>{t('admin_rol_ab51a3ac')}</th>
+                    <th>{t('admin_status_f7f293b5')}</th>
+                    <th>{t('admin_data_registracii_6bf93f9b')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -186,12 +189,12 @@ const UsersModal = ({ isOpen, onClose, businessInfo }) => {
                             <span>{user.country}</span>
                           </div>
                         ) : (
-                          <span className="users-modal-no-data">Не указано</span>
+                          <span className="users-modal-no-data">{t('admin_notSpecified')}</span>
                         )}
                       </td>
                       <td>
                         <span className={`users-modal-role users-modal-role-${user.role || 'buyer'}`}>
-                          {user.role === 'seller' ? 'Продавец' : 'Покупатель'}
+                          {user.role === 'seller' ? t('admin_seller') : t('admin_buyer')}
                         </span>
                       </td>
                       <td>
@@ -199,17 +202,17 @@ const UsersModal = ({ isOpen, onClose, businessInfo }) => {
                           {user.is_blocked ? (
                             <>
                               <FiShieldOff className="users-modal-status-icon users-modal-status-blocked" />
-                              <span>Заблокирован</span>
+                              <span>{t('admin_zablokirovan_2c998bfc')}</span>
                             </>
                           ) : user.is_verified ? (
                             <>
                               <FiShield className="users-modal-status-icon users-modal-status-verified" />
-                              <span>Верифицирован</span>
+                              <span>{t('admin_verificirovan_d027fb34')}</span>
                             </>
                           ) : (
                             <>
                               <FiShield className="users-modal-status-icon users-modal-status-pending" />
-                              <span>На модерации</span>
+                              <span>{t('admin_na_moderacii_29c1e27e')}</span>
                             </>
                           )}
                         </div>

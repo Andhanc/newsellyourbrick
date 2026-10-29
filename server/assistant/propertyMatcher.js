@@ -177,7 +177,7 @@ export function slimProperty(item) {
   return {
     id: Number(item.id) || item.id,
     slug: item.slug || null,
-    title: String(item.title || item.name || `Объект ${item.id}`).slice(0, 80),
+    title: String(item.title || item.name || `Property ${item.id}`).slice(0, 80),
     location: String(item.location || '').slice(0, 80),
     address: String(item.address || '').slice(0, 160) || null,
     country: item.country || null,
@@ -366,13 +366,11 @@ export function findPropertiesByQuery(properties, query, limit = 5) {
   }
 }
 
-export function formatCatalogForPrompt(match, lang = 'ru') {
+export function formatCatalogForPrompt(match, lang = 'en') {
   if (!match?.items?.length) {
-    return lang === 'en'
-      ? 'CATALOG MATCH: empty. Do not invent listings. Offer /auction.'
-      : lang === 'es'
-        ? 'CATÁLOGO: vacío. No inventes fichas. Ofrece /auction.'
-        : 'КАТАЛОГ: пусто. Не выдумывай объекты. Предложи /auction.'
+    if (lang === 'es') return 'CATÁLOGO: vacío. No inventes fichas. Ofrece /auction.'
+    if (lang === 'ru') return 'КАТАЛОГ: пусто. Не выдумывай объекты. Предложи /auction.'
+    return 'CATALOG MATCH: empty. Do not invent listings. Offer /auction.'
   }
   const lines = match.items.map((item) => {
     const price = item.currentBid || item.price || 0
@@ -389,5 +387,5 @@ export function formatCatalogForPrompt(match, lang = 'ru') {
     ].filter(Boolean).join(' | ')
     return `- id=${item.id} | ${item.title} | ${item.location} | €${Number(price).toLocaleString('en-US')} | ${kind}${details ? ` | ${details}` : ''}`
   })
-  return `**ПОДБОРКА ИЗ КАТАЛОГА (используй только эти id в recommendations):**\n${lines.join('\n')}`
+  return `**CATALOG SHORTLIST (use only these ids in recommendations):**\n${lines.join('\n')}`
 }

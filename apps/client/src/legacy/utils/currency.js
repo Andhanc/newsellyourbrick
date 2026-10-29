@@ -1,11 +1,11 @@
-/** Валюты объявлений (код ISO → символ для UI) */
+/** Listing currencies (ISO code → symbol). Names via nameKey + t(). */
 export const PROPERTY_CURRENCIES = [
-  { code: 'USD', symbol: '$', name: 'Доллар США' },
-  { code: 'EUR', symbol: '€', name: 'Евро' },
-  { code: 'GBP', symbol: '£', name: 'Фунт стерлингов' },
-  { code: 'AED', symbol: 'د.إ', name: 'Дирхам ОАЭ' },
-  { code: 'RUB', symbol: '₽', name: 'Российский рубль' },
-  { code: 'BYN', symbol: 'Br', name: 'Белорусский рубль' },
+  { code: 'USD', symbol: '$', nameKey: 'currencyName_USD', name: 'US Dollar' },
+  { code: 'EUR', symbol: '€', nameKey: 'currencyName_EUR', name: 'Euro' },
+  { code: 'GBP', symbol: '£', nameKey: 'currencyName_GBP', name: 'Pound sterling' },
+  { code: 'AED', symbol: 'د.إ', nameKey: 'currencyName_AED', name: 'UAE dirham' },
+  { code: 'RUB', symbol: '₽', nameKey: 'currencyName_RUB', name: 'Russian ruble' },
+  { code: 'BYN', symbol: 'Br', nameKey: 'currencyName_BYN', name: 'Belarusian ruble' },
 ]
 
 const SYMBOL_BY_CODE = Object.fromEntries(

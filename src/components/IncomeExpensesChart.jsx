@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip } from '@/components/ui/line-charts-5';
 import { TrendingDown, TrendingUp } from 'lucide-react';
 import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
+import { getUiIntlLocale } from '../utils/uiIntlLocale'
 
 const ChartLabel = ({ label, color }) => {
   return (
@@ -51,7 +52,7 @@ export default function IncomeExpensesChart({ yearlyData, formatCurrency }) {
                     <span className="text-white/70">{config?.label}:</span>
                   </div>
                   <span className="font-semibold text-white">
-                    {formatCurrency ? formatCurrency(entry.value) : `${entry.value.toLocaleString('ru-RU')} €`}
+                    {formatCurrency ? formatCurrency(entry.value) : `${entry.value.toLocaleString(getUiIntlLocale())} €`}
                   </span>
                 </div>
               );
@@ -134,7 +135,7 @@ export default function IncomeExpensesChart({ yearlyData, formatCurrency }) {
             }}
           >
             <div className="flex items-center gap-2.5">
-              <ChartLabel label="Доходы" color={chartConfig.income.color} />
+              <ChartLabel label={chartConfig.income.label} color={chartConfig.income.color} />
             </div>
             <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap min-w-0">
               <span 
@@ -143,7 +144,7 @@ export default function IncomeExpensesChart({ yearlyData, formatCurrency }) {
                   textShadow: '0 2px 8px rgba(245, 158, 11, 0.3)',
                 }}
               >
-                {formatCurrency ? formatCurrency(totalIncome) : `${totalIncome.toLocaleString('ru-RU')} €`}
+                {formatCurrency ? formatCurrency(totalIncome) : `${totalIncome.toLocaleString(getUiIntlLocale())} €`}
               </span>
               <div 
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
@@ -181,7 +182,7 @@ export default function IncomeExpensesChart({ yearlyData, formatCurrency }) {
             }}
           >
             <div className="flex items-center gap-2.5">
-              <ChartLabel label="Расходы" color={chartConfig.expenses.color} />
+              <ChartLabel label={chartConfig.expenses.label} color={chartConfig.expenses.color} />
             </div>
             <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap min-w-0">
               <span 
@@ -190,7 +191,7 @@ export default function IncomeExpensesChart({ yearlyData, formatCurrency }) {
                   textShadow: '0 2px 8px rgba(168, 85, 247, 0.3)',
                 }}
               >
-                {formatCurrency ? formatCurrency(totalExpenses) : `${totalExpenses.toLocaleString('ru-RU')} €`}
+                {formatCurrency ? formatCurrency(totalExpenses) : `${totalExpenses.toLocaleString(getUiIntlLocale())} €`}
               </span>
               {expensesSameAsIncome ? (
                 <div 

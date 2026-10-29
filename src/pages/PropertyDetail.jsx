@@ -234,7 +234,7 @@ const PropertyDetail = () => {
       additional_amenities: prop.additional_amenities || null,
       seller: prop.first_name && prop.last_name 
         ? `${prop.first_name} ${prop.last_name}` 
-        : 'Продавец',
+        : t('roleSeller'),
       is_reserved: prop.is_reserved === true || prop.is_reserved === 1 || prop.is_reserved === 'true' || false,
       reserved_until: prop.reserved_until || null,
       reserved_by: prop.reserved_by || null,
@@ -314,7 +314,7 @@ const PropertyDetail = () => {
   // Нормализуем данные объекта для совместимости с разными форматами
   const normalizedProperty = property ? {
     ...property,
-    title: property.title || property.name || 'Объект недвижимости',
+    title: property.title || property.name || t('bidHistoryPropertyDefault'),
     area: property.area || property.sqft,
     rooms: property.rooms || property.beds,
     images: property.images || (property.image ? [property.image] : []),
@@ -454,7 +454,7 @@ const PropertyDetail = () => {
             minHeight: '50vh',
             fontSize: '18px'
           }}>
-            Загрузка...
+            {t('loading')}
           </div>
         </div>
       </div>
@@ -469,9 +469,9 @@ const PropertyDetail = () => {
       <div className="property-detail-page">
         <div className="property-detail">
           <div className="not-found">
-            <h2>Объект не найден</h2>
+            <h2>{t('propertyDetail_notFound')}</h2>
             <p>ID: {id}</p>
-            <Link to="/" className="btn btn-primary">Вернуться на главную</Link>
+            <Link to="/" className="btn btn-primary">{t('propertyDetail_backHome')}</Link>
           </div>
         </div>
       </div>
@@ -484,7 +484,7 @@ const PropertyDetail = () => {
   const showSellerRoleWarningToast = () => {
     showNotification(
       <span>
-        Продавцы не могут делать ставки на объекты.{' '}
+        {t('propertyDetail_sellerCannot', { action: t('propertyDetail_sellerActionBid') })}{' '}
         <button
           type="button"
           className="auth-toast-link"
@@ -500,7 +500,7 @@ const PropertyDetail = () => {
             requestOpenLoginModal({ wizard: false })
           }}
         >
-          Стать покупателем <span className="auth-toast-link__arrow">→</span>
+          {t('propertyDetail_becomeBuyer')} <span className="auth-toast-link__arrow">→</span>
         </button>
       </span>,
       'info',
@@ -513,7 +513,7 @@ const PropertyDetail = () => {
     setBidError('')
     
     if (!userId) {
-      setBidError('Необходимо войти в систему')
+      setBidError(t('propertyDetail_loginRequired'))
       return
     }
 
@@ -525,7 +525,7 @@ const PropertyDetail = () => {
         listingOwnerEmail: property?.email,
       })
     ) {
-      setBidError('Нельзя делать ставки на свой объект')
+      setBidError(t('propertyDetail_ownListingCannotBid'))
       return
     }
     
@@ -541,13 +541,13 @@ const PropertyDetail = () => {
       const reservedUntil = property.reserved_until ? new Date(property.reserved_until) : null
       if (reservedUntil && reservedUntil > new Date()) {
         const hoursRemaining = Math.ceil((reservedUntil - new Date()) / (1000 * 60 * 60))
-        showNotification(`Объект забронирован на ${hoursRemaining} часов. Ставки временно недоступны.`)
+        showNotification(t('propertyDetail_reservedHoursBids', { hours: hoursRemaining }))
         return
       }
     }
     
     if (!bidAmount || parseFloat(bidAmount) <= 0) {
-      setBidError('Введите сумму ставки')
+      setBidError(t('propertyDetailEnterBidAmount'))
       return
     }
     
@@ -555,7 +555,7 @@ const PropertyDetail = () => {
     
     // Проверяем минимальную ставку
     if (bidAmountNum < minimumBid) {
-      setBidError(`Ставка должна быть не меньше ${formatPrice(minimumBid)}`)
+      setBidError(t('propertyDetail_bidBelowMin', { amount: formatPrice(minimumBid) }))
       return
     }
     
@@ -609,7 +609,7 @@ const PropertyDetail = () => {
       if (!response.ok) {
         const errorText = await response.text()
         console.error('❌ Ошибка HTTP:', response.status, errorText)
-        let errMsg = `Ошибка сервера: ${response.status}`
+        let errMsg = t('propertyDetail_serverError', { status: response.status })
         try {
           const errData = JSON.parse(errorText)
           if (errData.code === 'VERIFICATION_PENDING') {
@@ -652,7 +652,7 @@ const PropertyDetail = () => {
         await loadUserDeposit()
         
         // Показываем успешное сообщение
-        showNotification(`Ставка ${formatPrice(bidAmountNum)} успешно принята!`)
+        showNotification(t('propertyDetail_bidAccepted', { amount: formatPrice(bidAmountNum) }))
         
         // Перезагружаем данные и историю через небольшую задержку для гарантии
         setTimeout(async () => {
@@ -670,13 +670,13 @@ const PropertyDetail = () => {
         }, 1500)
       } else {
         console.error('❌ Ошибка создания ставки:', data)
-        setBidError(data.error || 'Ошибка при создании ставки')
-        showNotification(`Ошибка: ${data.error || 'Ошибка при создании ставки'}`)
+        setBidError(data.error || t('propertyDetail_bidCreateError'))
+        showNotification(t('propertyDetail_errorWithMessage', { error: data.error || t('propertyDetail_bidCreateError') }))
       }
     } catch (error) {
       console.error('❌ Ошибка при создании ставки:', error)
-      setBidError('Ошибка при создании ставки. Попробуйте позже.')
-      showNotification(`Ошибка сети: ${error.message}`)
+      setBidError(t('propertyDetail_bidCreateErrorRetry'))
+      showNotification(t('propertyDetail_networkError', { message: error.message }))
     } finally {
       setIsSubmittingBid(false)
     }
@@ -707,10 +707,10 @@ const PropertyDetail = () => {
       <div className="property-detail">
         <div className="detail-header">
           <button onClick={handleBackClick} className="back-button">
-            ← Назад
+            ← {t('back')}
           </button>
           <div className="detail-nav">
-            <Link to="/">Результаты поиска</Link>
+            <Link to="/">{t('propertyDetail_searchResults')}</Link>
             <span> / </span>
             <span>{normalizedProperty.title}</span>
           </div>
@@ -778,22 +778,25 @@ const PropertyDetail = () => {
           <div className="detail-sidebar">
             <div className="auction-info">
               <div className="auction-status active glass-panel glass-panel--pill">
-                Активный аукцион в процессе
+                {t('propertyDetail_auctionInProgress')}
               </div>
               
               {normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date() ? (
                 <div className="property-reservation-block">
                   <div className="reservation-icon">🔒</div>
                   <div className="reservation-text">
-                    <div className="reservation-title">Ставки приостановлены</div>
+                    <div className="reservation-title">{t('propertyDetailBidsPaused')}</div>
                     <div className="reservation-subtitle">
-                      Резервация до {new Date(normalizedProperty.reserved_until).toLocaleString('ru-RU', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })} ({Math.ceil((new Date(normalizedProperty.reserved_until) - new Date()) / (1000 * 60 * 60))} ч)
+                      {t('propertyDetailReservationUntil', {
+                        date: new Date(normalizedProperty.reserved_until).toLocaleString(i18n.language || 'en', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }),
+                        hours: Math.ceil((new Date(normalizedProperty.reserved_until) - new Date()) / (1000 * 60 * 60))
+                      })}
                     </div>
                   </div>
                 </div>
@@ -802,7 +805,7 @@ const PropertyDetail = () => {
               )}
 
               <div className="current-bid glass-panel">
-                <div className="bid-label">Текущая ставка</div>
+                <div className="bid-label">{t('propertyDetailCurrentBidLabel')}</div>
                 <div className="bid-amount">{formatPrice(currentBid || normalizedProperty.currentBid)}</div>
               </div>
 
@@ -821,7 +824,7 @@ const PropertyDetail = () => {
                     fontSize: '14px'
                   }}>
                     <FiLock size={16} />
-                    <span>Ставки временно недоступны. Объект забронирован.</span>
+                    <span>{t('propertyDetailBidsUnavailableReserved')}</span>
                   </div>
                 )}
                 {!reservedBlocksBid && kycBidBlocked && (
@@ -830,7 +833,7 @@ const PropertyDetail = () => {
                   </div>
                 )}
                 <div className="bid-input-group">
-                  <label>Ваша ставка</label>
+                  <label>{t('propertyDetailYourBid')}</label>
                   <input
                     type="number"
                     value={bidAmount}
@@ -838,7 +841,7 @@ const PropertyDetail = () => {
                       setBidAmount(e.target.value)
                       setBidError('')
                     }}
-                    placeholder={`Минимум ${formatPrice(minimumBid || (normalizedProperty.currentBid + (normalizedProperty.currentBid * 0.05)))}`}
+                    placeholder={t('propertyDetail_minPlaceholder', { amount: formatPrice(minimumBid || (normalizedProperty.currentBid + (normalizedProperty.currentBid * 0.05))) })}
                     min={minimumBid || (normalizedProperty.currentBid + (normalizedProperty.currentBid * 0.05))}
                     step="1000"
                     disabled={isSubmittingBid || disableBidFields}
@@ -862,12 +865,12 @@ const PropertyDetail = () => {
                     cursor: disableBidFields ? 'not-allowed' : 'pointer',
                   }}
                 >
-                  {isSubmittingBid ? 'Отправка...' : reservedBlocksBid ? 'Объект забронирован' : 'Сделать ставку сейчас'}
+                  {isSubmittingBid ? t('propertyDetailSubmitting') : reservedBlocksBid ? t('objectReserved') : t('propertyDetail_placeBidNow')}
                 </button>
               </form>
 
               <div className="bid-warning glass-panel glass-panel--warning">
-                Все ставки и продажи финальные и не подлежат отмене.
+                {t('propertyDetail_bidsFinalWarning')}
               </div>
 
               <button 
@@ -875,21 +878,21 @@ const PropertyDetail = () => {
                 className="btn btn-bid-history glass-button glass-button--secondary"
                 onClick={() => setIsBidHistoryOpen(true)}
               >
-                История ставок
+                {t('propertyDetailBidHistory')}
               </button>
 
               <div className="bid-status">
                 <div className="status-item">
-                  <span className="status-label">Статус ставки:</span>
-                  <span className="status-value">У ВАС НЕТ СТАВОК</span>
+                  <span className="status-label">{t('propertyDetail_bidStatusLabel')}</span>
+                  <span className="status-value">{t('propertyDetail_noBidsYet')}</span>
                 </div>
                 <div className="status-item">
-                  <span className="status-label">Статус участника:</span>
-                  <span className="status-value link">Проверить сейчас &gt;</span>
+                  <span className="status-label">{t('propertyDetail_participantStatusLabel')}</span>
+                  <span className="status-value link">{t('propertyDetail_checkNow')}</span>
                 </div>
                 <div className="status-item">
-                  <span className="status-label">Статус продажи:</span>
-                  <span className="status-value">Чистая продажа</span>
+                  <span className="status-label">{t('propertyDetail_saleStatusLabel')}</span>
+                  <span className="status-value">{t('propertyDetail_cleanSale')}</span>
                 </div>
               </div>
             </div>
@@ -905,10 +908,10 @@ const PropertyDetail = () => {
                 {/* Цена объекта */}
                 {normalizedProperty.price && (
                   <div className="detail-price">
-                    <span className="detail-price-label">Цена:</span>
+                    <span className="detail-price-label">{t('propertyDetail_priceColon')}</span>
                     <span className="detail-price-value">
                       {getCurrencySymbol(normalizedProperty.currency)}
-                      {normalizedProperty.price.toLocaleString('ru-RU')}
+                      {normalizedProperty.price.toLocaleString(i18n.language || 'en')}
                     </span>
                   </div>
                 )}
@@ -916,11 +919,11 @@ const PropertyDetail = () => {
                 {normalizedProperty.property_type && (
                   <div className="detail-property-type">
                     <span className="property-type-badge">
-                      {normalizedProperty.property_type === 'apartment' ? 'Квартира' :
-                       normalizedProperty.property_type === 'house' ? 'Дом' :
-                       normalizedProperty.property_type === 'villa' ? 'Вилла' :
-                       normalizedProperty.property_type === 'townhouse' ? 'Дом' :
-                       normalizedProperty.property_type === 'commercial' ? 'Коммерческая' :
+                      {normalizedProperty.property_type === 'apartment' ? t('propertyTypeFlat') :
+                       normalizedProperty.property_type === 'house' ? t('propertyTypeHouse') :
+                       normalizedProperty.property_type === 'villa' ? t('propertyTypeVilla') :
+                       normalizedProperty.property_type === 'townhouse' ? t('propertyTypeHouse') :
+                       normalizedProperty.property_type === 'commercial' ? t('oap_propertyTypeCommercial') :
                        normalizedProperty.property_type}
                     </span>
                   </div>
@@ -931,14 +934,14 @@ const PropertyDetail = () => {
               <div className="detail-info-sections">
                 {/* Основные параметры */}
                 <div className="detail-section">
-                  <h3 className="detail-section-title">Основные параметры</h3>
+                  <h3 className="detail-section-title">{t('propertyDetail_mainParams')}</h3>
                   <div className="detail-specs-grid">
                     {(normalizedProperty.area || normalizedProperty.sqft) && (
                       <div className="spec-item-icon">
                         <BiArea size={20} />
                         <div className="spec-item-content">
-                          <span className="spec-label">Площадь</span>
-                          <span className="spec-value">{normalizedProperty.area || normalizedProperty.sqft || 0} м²</span>
+                          <span className="spec-label">{t('propertyDetailSpecsArea')}</span>
+                          <span className="spec-value">{normalizedProperty.area || normalizedProperty.sqft || 0} {t('propertyDetailAreaUnit')}</span>
                         </div>
                       </div>
                     )}
@@ -946,8 +949,8 @@ const PropertyDetail = () => {
                       <div className="spec-item-icon">
                         <MdBed size={20} />
                         <div className="spec-item-content">
-                          <span className="spec-label">Комнат</span>
-                          <span className="spec-value">{normalizedProperty.rooms || normalizedProperty.beds || 'Студия'}</span>
+                          <span className="spec-label">{t('propertyCalcRoomsLabel')}</span>
+                          <span className="spec-value">{normalizedProperty.rooms || normalizedProperty.beds || t('propertyCalcStudio')}</span>
                         </div>
                       </div>
                     )}
@@ -955,7 +958,7 @@ const PropertyDetail = () => {
                       <div className="spec-item-icon">
                         <MdOutlineBathtub size={20} />
                         <div className="spec-item-content">
-                          <span className="spec-label">Ванных</span>
+                          <span className="spec-label">{t('addProperty_phBathrooms')}</span>
                           <span className="spec-value">{normalizedProperty.bathrooms}</span>
                         </div>
                       </div>
@@ -964,7 +967,7 @@ const PropertyDetail = () => {
                       <div className="spec-item-icon">
                         <FiLayers size={20} />
                         <div className="spec-item-content">
-                          <span className="spec-label">Этаж</span>
+                          <span className="spec-label">{t('propertyDetailFloorLabel')}</span>
                           <span className="spec-value">
                             {normalizedProperty.floor || ''}
                             {normalizedProperty.total_floors && `/${normalizedProperty.total_floors}`}
@@ -976,7 +979,7 @@ const PropertyDetail = () => {
                       <div className="spec-item-icon">
                         <FiHome size={20} />
                         <div className="spec-item-content">
-                          <span className="spec-label">Год постройки</span>
+                          <span className="spec-label">{t('addPropertyDetailsYearBuiltLabel')}</span>
                           <span className="spec-value">{normalizedProperty.year_built}</span>
                         </div>
                       </div>
@@ -990,66 +993,66 @@ const PropertyDetail = () => {
                   normalizedProperty.electricity || normalizedProperty.internet || normalizedProperty.security ||
                   normalizedProperty.furniture) && (
                   <div className="detail-section">
-                    <h3 className="detail-section-title">Удобства и особенности</h3>
+                    <h3 className="detail-section-title">{t('propertyDetail_amenitiesFeaturesTitle')}</h3>
                     <div className="detail-features-grid">
                       {normalizedProperty.balcony && (
                         <div className="feature-item">
                           <FiCheck size={18} />
-                          <span>Балкон</span>
+                          <span>{t('amenityBalcony')}</span>
                         </div>
                       )}
                       {normalizedProperty.parking && (
                         <div className="feature-item">
                           <FiCheck size={18} />
-                          <span>Парковка</span>
+                          <span>{t('propertyDetailParkingLabel')}</span>
                         </div>
                       )}
                       {normalizedProperty.elevator && (
                         <div className="feature-item">
                           <FiCheck size={18} />
-                          <span>Лифт</span>
+                          <span>{t('amenityElevator')}</span>
                         </div>
                       )}
                       {normalizedProperty.garage && (
                         <div className="feature-item">
                           <FiCheck size={18} />
-                          <span>Гараж</span>
+                          <span>{t('propertyDetailAmenityGarage')}</span>
                         </div>
                       )}
                       {normalizedProperty.pool && (
                         <div className="feature-item">
                           <FiCheck size={18} />
-                          <span>Бассейн</span>
+                          <span>{t('propertyDetailAmenityPool')}</span>
                         </div>
                       )}
                       {normalizedProperty.garden && (
                         <div className="feature-item">
                           <FiCheck size={18} />
-                          <span>Сад</span>
+                          <span>{t('propertyDetailAmenityGarden')}</span>
                         </div>
                       )}
                       {normalizedProperty.electricity && (
                         <div className="feature-item">
                           <FiCheck size={18} />
-                          <span>Электричество</span>
+                          <span>{t('propertyDetailAmenityElectricity')}</span>
                         </div>
                       )}
                       {normalizedProperty.internet && (
                         <div className="feature-item">
                           <FiCheck size={18} />
-                          <span>Интернет</span>
+                          <span>{t('addPropertyAmenitiesInternet')}</span>
                         </div>
                       )}
                       {normalizedProperty.security && (
                         <div className="feature-item">
                           <FiCheck size={18} />
-                          <span>Охрана</span>
+                          <span>{t('amenitySecurity')}</span>
                         </div>
                       )}
                       {normalizedProperty.furniture && (
                         <div className="feature-item">
                           <FiCheck size={18} />
-                          <span>Мебель</span>
+                          <span>{t('propertyDetail_amenityFurniture')}</span>
                         </div>
                       )}
                     </div>
@@ -1061,53 +1064,53 @@ const PropertyDetail = () => {
                   normalizedProperty.heating || normalizedProperty.water_supply || normalizedProperty.sewerage ||
                   normalizedProperty.commercial_type || normalizedProperty.business_hours) && (
                   <div className="detail-section">
-                    <h3 className="detail-section-title">Дополнительная информация</h3>
+                    <h3 className="detail-section-title">{t('propertyDetailAdditionalInfoTitle')}</h3>
                     <div className="detail-additional-info">
                       {normalizedProperty.land_area && (
                         <div className="info-item">
-                          <span className="info-label">Площадь участка:</span>
-                          <span className="info-value">{normalizedProperty.land_area} м²</span>
+                          <span className="info-label">{t('addPropertyDetailsLandAreaLabel')}:</span>
+                          <span className="info-value">{normalizedProperty.land_area} {t('propertyDetailAreaUnit')}</span>
                         </div>
                       )}
                       {normalizedProperty.renovation && (
                         <div className="info-item">
-                          <span className="info-label">Ремонт:</span>
+                          <span className="info-label">{t('propertyDetailRenovation')}:</span>
                           <span className="info-value">{normalizedProperty.renovation}</span>
                         </div>
                       )}
                       {normalizedProperty.condition && (
                         <div className="info-item">
-                          <span className="info-label">Состояние:</span>
+                          <span className="info-label">{t('propertyDetailCondition')}:</span>
                           <span className="info-value">{normalizedProperty.condition}</span>
                         </div>
                       )}
                       {normalizedProperty.heating && (
                         <div className="info-item">
-                          <span className="info-label">Отопление:</span>
+                          <span className="info-label">{t('propertyDetailHeating')}:</span>
                           <span className="info-value">{normalizedProperty.heating}</span>
                         </div>
                       )}
                       {normalizedProperty.water_supply && (
                         <div className="info-item">
-                          <span className="info-label">Водоснабжение:</span>
+                          <span className="info-label">{t('propertyDetailWaterSupply')}:</span>
                           <span className="info-value">{normalizedProperty.water_supply}</span>
                         </div>
                       )}
                       {normalizedProperty.sewerage && (
                         <div className="info-item">
-                          <span className="info-label">Канализация:</span>
+                          <span className="info-label">{t('propertyDetailSewerage')}:</span>
                           <span className="info-value">{normalizedProperty.sewerage}</span>
                         </div>
                       )}
                       {normalizedProperty.commercial_type && (
                         <div className="info-item">
-                          <span className="info-label">Тип коммерческой недвижимости:</span>
+                          <span className="info-label">{t('propertyDetailCommercialType')}:</span>
                           <span className="info-value">{normalizedProperty.commercial_type}</span>
                         </div>
                       )}
                       {normalizedProperty.business_hours && (
                         <div className="info-item">
-                          <span className="info-label">Часы работы:</span>
+                          <span className="info-label">{t('propertyDetailBusinessHours')}:</span>
                           <span className="info-value">{normalizedProperty.business_hours}</span>
                         </div>
                       )}
@@ -1118,7 +1121,7 @@ const PropertyDetail = () => {
                 {/* Описание */}
                 {normalizedProperty.description && (
                   <div className="detail-section">
-                    <h3 className="detail-section-title">Описание</h3>
+                    <h3 className="detail-section-title">{t('propertyDetailTabAbout')}</h3>
                     <div className="detail-description">
                       <p>{normalizedProperty.description}</p>
                     </div>
@@ -1128,7 +1131,7 @@ const PropertyDetail = () => {
                 {/* Карта */}
                 {normalizedProperty.coordinates && Array.isArray(normalizedProperty.coordinates) && normalizedProperty.coordinates.length === 2 && (
                   <div className="detail-section">
-                    <h3 className="detail-section-title">Местоположение</h3>
+                    <h3 className="detail-section-title">{t('propertyDetail_locationHeading')}</h3>
                     <div className="detail-map">
                       <div className="detail-map-container">
                         <LocationMap
@@ -1147,22 +1150,25 @@ const PropertyDetail = () => {
           <div className="detail-sidebar">
             <div className="auction-info">
               <div className="auction-status active glass-panel glass-panel--pill">
-                Активный аукцион в процессе
+                {t('propertyDetail_auctionInProgress')}
               </div>
               
               {normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date() ? (
                 <div className="property-reservation-block">
                   <div className="reservation-icon">🔒</div>
                   <div className="reservation-text">
-                    <div className="reservation-title">Ставки приостановлены</div>
+                    <div className="reservation-title">{t('propertyDetailBidsPaused')}</div>
                     <div className="reservation-subtitle">
-                      Резервация до {new Date(normalizedProperty.reserved_until).toLocaleString('ru-RU', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })} ({Math.ceil((new Date(normalizedProperty.reserved_until) - new Date()) / (1000 * 60 * 60))} ч)
+                      {t('propertyDetailReservationUntil', {
+                        date: new Date(normalizedProperty.reserved_until).toLocaleString(i18n.language || 'en', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }),
+                        hours: Math.ceil((new Date(normalizedProperty.reserved_until) - new Date()) / (1000 * 60 * 60))
+                      })}
                     </div>
                   </div>
                 </div>
@@ -1171,7 +1177,7 @@ const PropertyDetail = () => {
               )}
 
               <div className="current-bid glass-panel">
-                <div className="bid-label">Текущая ставка</div>
+                <div className="bid-label">{t('propertyDetailCurrentBidLabel')}</div>
                 <div className="bid-amount">{formatPrice(currentBid || normalizedProperty.currentBid)}</div>
               </div>
 
@@ -1190,7 +1196,7 @@ const PropertyDetail = () => {
                     fontSize: '14px'
                   }}>
                     <FiLock size={16} />
-                    <span>Ставки временно недоступны. Объект забронирован.</span>
+                    <span>{t('propertyDetailBidsUnavailableReserved')}</span>
                   </div>
                 )}
                 {!reservedBlocksBid && kycBidBlocked && (
@@ -1199,7 +1205,7 @@ const PropertyDetail = () => {
                   </div>
                 )}
                 <div className="bid-input-group">
-                  <label>Ваша ставка</label>
+                  <label>{t('propertyDetailYourBid')}</label>
                   <input
                     type="number"
                     value={bidAmount}
@@ -1207,7 +1213,7 @@ const PropertyDetail = () => {
                       setBidAmount(e.target.value)
                       setBidError('')
                     }}
-                    placeholder={`Минимум ${formatPrice(minimumBid || (normalizedProperty.currentBid + (normalizedProperty.currentBid * 0.05)))}`}
+                    placeholder={t('propertyDetail_minPlaceholder', { amount: formatPrice(minimumBid || (normalizedProperty.currentBid + (normalizedProperty.currentBid * 0.05))) })}
                     min={minimumBid || (normalizedProperty.currentBid + (normalizedProperty.currentBid * 0.05))}
                     step="1000"
                     disabled={isSubmittingBid || disableBidFields}
@@ -1231,12 +1237,12 @@ const PropertyDetail = () => {
                     cursor: disableBidFields ? 'not-allowed' : 'pointer',
                   }}
                 >
-                  {isSubmittingBid ? 'Отправка...' : reservedBlocksBid ? 'Объект забронирован' : 'Сделать ставку сейчас'}
+                  {isSubmittingBid ? t('propertyDetailSubmitting') : reservedBlocksBid ? t('objectReserved') : t('propertyDetail_placeBidNow')}
                 </button>
               </form>
 
               <div className="bid-warning glass-panel glass-panel--warning">
-                Все ставки и продажи финальные и не подлежат отмене.
+                {t('propertyDetail_bidsFinalWarning')}
               </div>
 
               <button 
@@ -1244,21 +1250,21 @@ const PropertyDetail = () => {
                 className="btn btn-bid-history glass-button glass-button--secondary"
                 onClick={() => setIsBidHistoryOpen(true)}
               >
-                История ставок
+                {t('propertyDetailBidHistory')}
               </button>
 
               <div className="bid-status">
                 <div className="status-item">
-                  <span className="status-label">Статус ставки:</span>
-                  <span className="status-value">У ВАС НЕТ СТАВОК</span>
+                  <span className="status-label">{t('propertyDetail_bidStatusLabel')}</span>
+                  <span className="status-value">{t('propertyDetail_noBidsYet')}</span>
                 </div>
                 <div className="status-item">
-                  <span className="status-label">Статус участника:</span>
-                  <span className="status-value link">Проверить сейчас &gt;</span>
+                  <span className="status-label">{t('propertyDetail_participantStatusLabel')}</span>
+                  <span className="status-value link">{t('propertyDetail_checkNow')}</span>
                 </div>
                 <div className="status-item">
-                  <span className="status-label">Статус продажи:</span>
-                  <span className="status-value">Чистая продажа</span>
+                  <span className="status-label">{t('propertyDetail_saleStatusLabel')}</span>
+                  <span className="status-value">{t('propertyDetail_cleanSale')}</span>
                 </div>
               </div>
             </div>

@@ -1,7 +1,8 @@
 import { Component } from 'react'
+import i18n from '../i18n/config'
 
 /**
- * Ловит сбои рендера и отказ динамического импорта после исчерпания lazyWithRetry.
+ * Catches render failures and lazy-import exhaustion after lazyWithRetry.
  */
 export default class RouteErrorBoundary extends Component {
   state = { hasError: false }
@@ -19,14 +20,14 @@ export default class RouteErrorBoundary extends Component {
       return (
         <div className="route-error-boundary">
           <p className="route-error-boundary__text">
-            Не удалось загрузить часть интерфейса. Часто это происходит после обновления сайта.
+            {i18n.t('routeError_message')}
           </p>
           <button
             type="button"
             className="route-error-boundary__btn"
             onClick={() => window.location.reload()}
           >
-            Обновить страницу
+            {i18n.t('routeError_reload')}
           </button>
         </div>
       )

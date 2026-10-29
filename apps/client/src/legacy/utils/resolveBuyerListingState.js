@@ -4,37 +4,43 @@ const ACTIONABLE = Object.freeze({ blocksPurchase: false, blocksBid: false })
 const STATES = Object.freeze({
   available: Object.freeze({
     state: 'available',
-    label: 'Доступен',
+    labelKey: 'buyerListing_available',
+    label: 'Available',
     tone: 'available',
     ...ACTIONABLE,
   }),
   'auction-live': Object.freeze({
     state: 'auction-live',
-    label: 'Аукцион идёт',
+    labelKey: 'buyerListing_auctionLive',
+    label: 'Auction live',
     tone: 'auction-live',
     ...ACTIONABLE,
   }),
   reserved: Object.freeze({
     state: 'reserved',
-    label: 'Объект забронирован',
+    labelKey: 'buyerListing_reserved',
+    label: 'Property reserved',
     tone: 'reserved',
     ...BLOCKED,
   }),
   sold: Object.freeze({
     state: 'sold',
-    label: 'Объект продан',
+    labelKey: 'buyerListing_sold',
+    label: 'Property sold',
     tone: 'sold',
     ...BLOCKED,
   }),
   'auction-ended': Object.freeze({
     state: 'auction-ended',
-    label: 'Аукцион завершён',
+    labelKey: 'buyerListing_auctionEnded',
+    label: 'Auction ended',
     tone: 'auction-ended',
     ...BLOCKED,
   }),
   unavailable: Object.freeze({
     state: 'unavailable',
-    label: 'Объект недоступен',
+    labelKey: 'buyerListing_unavailable',
+    label: 'Property unavailable',
     tone: 'unavailable',
     ...BLOCKED,
   }),
@@ -94,7 +100,7 @@ function isReserved(property, nowMs) {
   return until == null || until > nowMs
 }
 
-/** Текущий пользователь — тот, кто забронировал объект. */
+/** Current user is the one who reserved the property. */
 export function isPropertyReservedByUser(property, userId) {
   if (userId == null || userId === '') return false
   const reservedBy = property?.reserved_by ?? property?.reservedBy
@@ -124,7 +130,7 @@ export function resolveBuyerListingState(property, now = new Date()) {
   return { ...STATES.available }
 }
 
-/** Sold / ended lots stay out of «Понравилось» and comparison. */
+/** Sold / ended lots stay out of wishlist and comparison. */
 export function isClosedForWishlist(property, now = new Date()) {
   const state = resolveBuyerListingState(property, now).state
   return state === 'sold' || state === 'auction-ended'

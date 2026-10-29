@@ -1,7 +1,7 @@
 export const PROPERTY_AI_CATEGORIES = Object.freeze({
-  risks: 'Какие у этого объекта главные плюсы и риски?',
-  investment: 'Какой инвестиционный потенциал у этого объекта?',
-  details: 'Сделай подробный разбор этого объекта.',
+  risks: 'What are the main strengths and risks of this property?',
+  investment: 'What is the investment potential of this property?',
+  details: 'Provide a detailed review of this property.',
   custom: '',
 })
 
@@ -35,7 +35,7 @@ function safeListingImage(value) {
 export function normalizePropertyAiRequest(input = {}) {
   const category = limitText(input.category, 40)
   if (!Object.hasOwn(PROPERTY_AI_CATEGORIES, category)) {
-    throw new Error('Неизвестная категория анализа')
+    throw new Error('Unknown analysis category')
   }
 
   const question = category === 'custom'
@@ -43,7 +43,7 @@ export function normalizePropertyAiRequest(input = {}) {
     : PROPERTY_AI_CATEGORIES[category]
 
   if (category === 'custom' && question.length < 5) {
-    throw new Error('Свой вопрос должен содержать не менее 5 символов')
+    throw new Error('Custom question must be at least 5 characters')
   }
 
   return { category, question }
@@ -161,62 +161,62 @@ function fallbackSlides({ title, summary, directAnswer, strengths, risks, metric
   const emptyChart = { type: 'none', title: '', unit: '', caption: '', labels: [], series: [] }
   const base = (slide) => ({ kicker: '', body: '', bullets: [], cards: [], chart: emptyChart, imageIndices: [], ...slide })
   return [
-    base({ layout: 'cover', kicker: 'ПЕРСОНАЛЬНЫЙ AI-РАЗБОР', title, body: summary, imageIndices: images.length ? [0] : [] }),
-    base({ layout: 'stats', kicker: 'ОБЪЕКТ В ЦИФРАХ', title: 'Главное — одним взглядом', cards: metricCards(metrics), imageIndices: images[1] ? [1] : [] }),
+    base({ layout: 'cover', kicker: 'PERSONAL AI REVIEW', title, body: summary, imageIndices: images.length ? [0] : [] }),
+    base({ layout: 'stats', kicker: 'PROPERTY IN FIGURES', title: 'Key facts at a glance', cards: metricCards(metrics), imageIndices: images[1] ? [1] : [] }),
     base({
-      layout: 'comparison', kicker: 'ВЗВЕШЕННОЕ РЕШЕНИЕ', title: 'Плюсы и вопросы для проверки',
+      layout: 'comparison', kicker: 'BALANCED DECISION', title: 'Strengths and checks',
       cards: [
-        { title: 'Сильные стороны', value: '', body: strengths.slice(0, 4).join('\n'), icon: 'check', tone: 'cream' },
-        { title: 'Нужно проверить', value: '', body: risks.slice(0, 4).join('\n'), icon: 'shield', tone: 'ink' },
+        { title: 'Strengths', value: '', body: strengths.slice(0, 4).join('\n'), icon: 'check', tone: 'cream' },
+        { title: 'Needs verification', value: '', body: risks.slice(0, 4).join('\n'), icon: 'shield', tone: 'ink' },
       ],
     }),
-    base({ layout: 'photo_statement', kicker: 'ОТВЕТ НА ВАШ ВОПРОС', title: 'Что важно сейчас', body: directAnswer, imageIndices: images.length ? [Math.min(2, images.length - 1)] : [] }),
-    ...(images.length > 1 ? [base({ layout: 'gallery', kicker: 'ФОТОГРАФИИ ИЗ ОБЪЯВЛЕНИЯ', title: 'Пространство объекта', imageIndices: images.map((_, index) => index).slice(0, 4) })] : []),
-    base({ layout: 'split', kicker: 'ПОДРОБНЫЙ АНАЛИЗ', title: 'Факты, контекст и допущения', body: detailsBody || summary, bullets: detailsBullets, imageIndices: images.length ? [Math.min(3, images.length - 1)] : [] }),
-    base({ layout: 'neighborhood', kicker: 'РАЙОН И ИНФРАСТРУКТУРА', title: 'Что находится рядом', body: neighborhood.summary, bullets: neighborhood.highlights }),
-    base({ layout: 'timeline', kicker: 'ПЛАН ПРОВЕРКИ', title: 'Три шага перед решением', cards: [
-      { title: 'Документы', value: '01', body: 'Подтвердить права, ограничения и комплект документов.', icon: 'document', tone: 'white' },
-      { title: 'Осмотр', value: '02', body: 'Проверить состояние объекта и инженерных систем.', icon: 'home', tone: 'cream' },
-      { title: 'Сравнение', value: '03', body: 'Сопоставить стоимость и расходы с альтернативами.', icon: 'trend', tone: 'tiffany' },
+    base({ layout: 'photo_statement', kicker: 'ANSWER TO YOUR QUESTION', title: 'What matters now', body: directAnswer, imageIndices: images.length ? [Math.min(2, images.length - 1)] : [] }),
+    ...(images.length > 1 ? [base({ layout: 'gallery', kicker: 'LISTING PHOTOS', title: 'Property spaces', imageIndices: images.map((_, index) => index).slice(0, 4) })] : []),
+    base({ layout: 'split', kicker: 'DETAILED ANALYSIS', title: 'Facts, context, and assumptions', body: detailsBody || summary, bullets: detailsBullets, imageIndices: images.length ? [Math.min(3, images.length - 1)] : [] }),
+    base({ layout: 'neighborhood', kicker: 'AREA AND INFRASTRUCTURE', title: 'What is nearby', body: neighborhood.summary, bullets: neighborhood.highlights }),
+    base({ layout: 'timeline', kicker: 'DUE-DILIGENCE PLAN', title: 'Three steps before deciding', cards: [
+      { title: 'Documents', value: '01', body: 'Confirm ownership, encumbrances, and the document pack.', icon: 'document', tone: 'white' },
+      { title: 'Inspection', value: '02', body: 'Check property condition and building systems.', icon: 'home', tone: 'cream' },
+      { title: 'Comparison', value: '03', body: 'Compare price and costs with alternatives.', icon: 'trend', tone: 'tiffany' },
     ] }),
-    base({ layout: 'conclusion', kicker: 'ИТОГ · СЛЕДУЮЩИЙ ШАГ', title: 'Решение начинается с проверки фактов', body: conclusion, bullets: detailsBullets.slice(0, 3), imageIndices: images.length ? [0] : [] }),
+    base({ layout: 'conclusion', kicker: 'SUMMARY · NEXT STEP', title: 'Decisions start with verifying the facts', body: conclusion, bullets: detailsBullets.slice(0, 3), imageIndices: images.length ? [0] : [] }),
   ].slice(0, 10)
 }
 
 function propertyFactStrengths(property, images) {
   const items = []
-  if (property.area) items.push(`В объявлении указана площадь ${property.area} м² — объект можно предметно сравнивать с альтернативами.`)
-  if (property.rooms) items.push(`Планировка заявлена как ${property.rooms}-комнатная — это даёт базу для оценки сценария проживания.`)
-  if (property.location) items.push(`Локация указана как «${limitText(property.location, 120)}», поэтому окружение можно проверить до просмотра.`)
-  if (property.year_built) items.push(`Указан ${property.year_built} год строительства — важный ориентир для технической проверки дома.`)
-  if (images.length) items.push(`В объявлении доступно ${images.length} ${images.length === 1 ? 'реальное фото' : 'реальных фото'} для первичной визуальной оценки.`)
-  if (property.price) items.push('Цена опубликована, поэтому можно рассчитать стоимость за м² и сравнить объект с похожими предложениями.')
-  if (!items.length) items.push('Объект представлен отдельным объявлением и доступен для первичного анализа.')
-  if (items.length < 2) items.push('По объекту можно сформировать точечный список вопросов продавцу до личного просмотра.')
+  if (property.area) items.push(`The listing states an area of ${property.area} m² — useful for concrete comparison with alternatives.`)
+  if (property.rooms) items.push(`The layout is listed as ${property.rooms}-room — a baseline for living-scenario assessment.`)
+  if (property.location) items.push(`Location is listed as “${limitText(property.location, 120)}”, so the surroundings can be checked before a viewing.`)
+  if (property.year_built) items.push(`Year built is listed as ${property.year_built} — an important cue for technical checks.`)
+  if (images.length) items.push(`The listing includes ${images.length} real photo${images.length === 1 ? '' : 's'} for an initial visual assessment.`)
+  if (property.price) items.push('Price is published, so price per m² can be calculated and compared with similar listings.')
+  if (!items.length) items.push('The property has a dedicated listing and is available for an initial review.')
+  if (items.length < 2) items.push('A focused list of seller questions can be prepared before an in-person viewing.')
   return items
 }
 
 function propertyRiskChecks(property) {
   const items = []
-  if (!property.condition && !property.renovation) items.push('Состояние отделки и объём возможных работ не раскрыты — это нужно проверить по фото, видео или на просмотре.')
-  if (!property.year_built) items.push('Год строительства не указан — важно уточнить возраст здания и историю капитальных ремонтов.')
-  if (!property.floor && !property.total_floors) items.push('Этаж и этажность не указаны — эти параметры могут влиять на удобство и ликвидность.')
-  if (!property.coordinates && !property.location) items.push('Точная локация не раскрыта — нельзя проверить транспорт, инфраструктуру и окружение.')
-  items.push('Юридический статус, ограничения и комплект документов необходимо подтвердить до сделки.')
-  items.push('Состояние инженерных систем и фактические эксплуатационные расходы нужно уточнить отдельно.')
+  if (!property.condition && !property.renovation) items.push('Finish condition and possible renovation scope are not disclosed — verify via photos, video, or a viewing.')
+  if (!property.year_built) items.push('Year built is missing — clarify building age and major renovation history.')
+  if (!property.floor && !property.total_floors) items.push('Floor and building height are missing — these can affect convenience and liquidity.')
+  if (!property.coordinates && !property.location) items.push('Exact location is not disclosed — transit, infrastructure, and surroundings cannot be verified.')
+  items.push('Legal status, encumbrances, and the document pack must be confirmed before a deal.')
+  items.push('Building systems condition and actual operating costs need separate clarification.')
   return items
 }
 
 function propertyMetrics(property, images) {
   const metrics = []
-  if (property.price) metrics.push({ label: 'Цена', value: `${property.price} ${property.currency || ''}`.trim(), note: 'По данным объявления' })
-  if (property.area) metrics.push({ label: 'Площадь', value: `${property.area} м²`, note: 'Заявленная площадь' })
-  if (property.rooms) metrics.push({ label: 'Комнаты', value: String(property.rooms), note: 'По данным объявления' })
-  if (property.bedrooms) metrics.push({ label: 'Спальни', value: String(property.bedrooms), note: 'По данным объявления' })
-  if (property.floor) metrics.push({ label: 'Этаж', value: property.total_floors ? `${property.floor} из ${property.total_floors}` : String(property.floor), note: 'Положение в здании' })
-  if (property.year_built) metrics.push({ label: 'Год', value: String(property.year_built), note: 'Год строительства' })
-  if (property.location) metrics.push({ label: 'Локация', value: limitText(property.location, 100), note: 'Как указано в объявлении' })
-  if (images.length) metrics.push({ label: 'Фотографии', value: String(images.length), note: 'Реальные фото объявления' })
+  if (property.price) metrics.push({ label: 'Price', value: `${property.price} ${property.currency || ''}`.trim(), note: 'From the listing' })
+  if (property.area) metrics.push({ label: 'Area', value: `${property.area} m²`, note: 'Stated area' })
+  if (property.rooms) metrics.push({ label: 'Rooms', value: String(property.rooms), note: 'From the listing' })
+  if (property.bedrooms) metrics.push({ label: 'Bedrooms', value: String(property.bedrooms), note: 'From the listing' })
+  if (property.floor) metrics.push({ label: 'Floor', value: property.total_floors ? `${property.floor} of ${property.total_floors}` : String(property.floor), note: 'Position in the building' })
+  if (property.year_built) metrics.push({ label: 'Year', value: String(property.year_built), note: 'Year built' })
+  if (property.location) metrics.push({ label: 'Location', value: limitText(property.location, 100), note: 'As stated in the listing' })
+  if (images.length) metrics.push({ label: 'Photos', value: String(images.length), note: 'Real listing photos' })
   return metrics.slice(0, 8)
 }
 
@@ -224,7 +224,7 @@ function normalizeNeighborhood(property, input) {
   const groups = (Array.isArray(property.nearbyInfrastructure) ? property.nearbyInfrastructure : [])
     .map((group) => ({
       category: limitText(group?.category, 40),
-      label: limitText(group?.label, 80) || 'Инфраструктура',
+      label: limitText(group?.label, 80) || 'Infrastructure',
       places: (Array.isArray(group?.places) ? group.places : [])
         .map((place) => ({
           name: limitText(place?.name, 140),
@@ -236,36 +236,36 @@ function normalizeNeighborhood(property, input) {
     }))
     .filter((group) => group.places.length)
 
-  const verifiedHighlights = groups.flatMap((group) => group.places.slice(0, 2).map((place) => `${group.label}: ${place.name} — ${place.distanceMeters} м`))
+  const verifiedHighlights = groups.flatMap((group) => group.places.slice(0, 2).map((place) => `${group.label}: ${place.name} — ${place.distanceMeters} m`))
   const modelHighlights = cleanList(input.infrastructureHighlights, 6, 240)
   const highlights = [...verifiedHighlights, ...modelHighlights]
     .filter((item, index, list) => list.indexOf(item) === index)
     .slice(0, 6)
   const fallbackSummary = groups.length
-    ? 'По координатам объекта найдены точки повседневной инфраструктуры в радиусе 1,5 км. Расстояния указаны приблизительно по прямой и требуют проверки маршрута.'
-    : 'Координаты или данные OpenStreetMap недоступны, поэтому инфраструктуру района нужно проверить вручную перед решением.'
+    ? 'Everyday infrastructure points were found within 1.5 km of the property coordinates. Distances are approximate as-the-crow-flies and need route verification.'
+    : 'Coordinates or OpenStreetMap data are unavailable, so neighborhood infrastructure should be checked manually before deciding.'
 
   return {
     summary: limitText(input.neighborhoodSummary, 700) || fallbackSummary,
     highlights: highlights.length ? highlights : [
-      'Проверьте время пешего маршрута до остановок и магазинов.',
-      'Уточните школы, медицину, шум и будущую застройку района.',
+      'Check walking time to transit stops and shops.',
+      'Clarify schools, healthcare, noise, and planned nearby development.',
     ],
     groups,
-    sourceNote: groups.length ? 'Источник фактов: OpenStreetMap, радиус поиска 1,5 км.' : 'Автоматическая проверка инфраструктуры не выполнена.',
+    sourceNote: groups.length ? 'Fact source: OpenStreetMap, search radius 1.5 km.' : 'Automatic infrastructure check was not completed.',
   }
 }
 
 export function normalizePropertyAiReport(input = {}, context = {}) {
   const property = context.property || {}
-  const propertyTitle = limitText(property.title || property.name || 'Объект недвижимости', 160)
-  const title = limitText(input.title, 160) || `AI-разбор: ${propertyTitle}`
+  const propertyTitle = limitText(property.title || property.name || 'Property', 160)
+  const title = limitText(input.title, 160) || `AI review: ${propertyTitle}`
   const summary = limitText(input.summary, 1200) || limitText(input.directAnswer || input.shortAnswer, 1200)
-  const directAnswer = limitText(input.directAnswer || input.shortAnswer, 1800) || summary || 'По данным объявления можно сделать только предварительный вывод; ключевые параметры нужно подтвердить у продавца.'
+  const directAnswer = limitText(input.directAnswer || input.shortAnswer, 1800) || summary || 'Based on the listing, only a preliminary conclusion is possible; key parameters must be confirmed with the seller.'
   const shortAnswer = directAnswer
   const sections = normalizeSections(input.sections)
   const assumptions = cleanList(input.assumptions, 8, 260)
-  const conclusion = limitText(input.conclusion, 1400) || 'Перед решением рекомендуем проверить документы и исходные данные объекта.'
+  const conclusion = limitText(input.conclusion, 1400) || 'Before deciding, we recommend verifying documents and the listing source data.'
   const images = (Array.isArray(property.images) ? property.images : [])
     .map(safeListingImage)
     .filter(Boolean)
@@ -281,7 +281,7 @@ export function normalizePropertyAiReport(input = {}, context = {}) {
     .slice(0, 8)
   const neighborhood = normalizeNeighborhood(property, input)
 
-  const detailSections = (sections.length ? sections : [{ title: 'Подробный анализ', body: summary, bullets: assumptions }]).slice(0, 2)
+  const detailSections = (sections.length ? sections : [{ title: 'Detailed analysis', body: summary, bullets: assumptions }]).slice(0, 2)
   const detailsBody = limitText(detailSections.map((section) => [section.title, section.body].filter(Boolean).join(': ')).filter(Boolean).join('\n\n'), 1800)
   const detailsBullets = cleanList(detailSections.flatMap((section) => section.bullets || []).concat(assumptions), 6, 220)
   const aiSlides = normalizeAiSlides(input.slides, images)
@@ -310,7 +310,7 @@ export function normalizePropertyAiReport(input = {}, context = {}) {
     slides,
     // Alias for already stored reports and older clients. New presentations are driven by AI slides.
     pages: slides,
-    disclaimer: 'Материал сформирован AI на основе данных объявления, носит информационный характер и не является финансовой, юридической или оценочной консультацией.',
+    disclaimer: 'This material was generated by AI from listing data for information only and is not financial, legal, or valuation advice.',
   }
 }
 
@@ -324,7 +324,7 @@ export function parsePropertyAiModelContent(content, context = {}) {
     parsed = JSON.parse(raw)
   } catch {
     const match = raw.match(/\{[\s\S]*\}/)
-    if (!match) throw new Error('AI вернул ответ в неподдерживаемом формате')
+    if (!match) throw new Error('AI returned a response in an unsupported format')
     parsed = JSON.parse(match[0])
   }
   return normalizePropertyAiReport(parsed, context)

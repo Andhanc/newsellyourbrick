@@ -1,72 +1,72 @@
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { FiMail, FiMapPin, FiPhone } from 'react-icons/fi'
 import { FaWhatsapp, FaTelegramPlane, FaInstagram, FaLinkedinIn } from 'react-icons/fa'
 import { CO_INVESTMENT_PATH } from '../utils/sectionPaths'
 import './InvestorFooter.css'
 
-const columns = [
+const COLUMN_DEFS = [
   {
-    title: 'Объекты',
+    titleKey: 'footerColListings',
     links: [
-      { label: 'Аукцион', to: '/auction?filter=auction' },
-      { label: 'Купить сейчас', to: '/auction/buy-now' },
-      { label: 'Доли', to: CO_INVESTMENT_PATH },
-      { label: 'Долги', to: '/debts' },
-      { label: 'Карта объектов', to: '/map' },
+      { labelKey: 'auction', to: '/auction?filter=auction' },
+      { labelKey: 'headerMegaBuyNow', to: '/auction/buy-now' },
+      { labelKey: 'shares', to: CO_INVESTMENT_PATH },
+      { labelKey: 'debtsTitle', to: '/debts' },
+      { labelKey: 'siteNavMapObjects', to: '/map' },
     ],
   },
   {
-    title: 'Компания',
+    titleKey: 'footerColCompany',
     links: [
-      { label: 'О нас', to: '/about#about-intro' },
-      { label: 'Все разделы', to: '/sections' },
-      { label: 'Новости', to: '/news' },
-      { label: 'Частный клуб', to: '/private-club' },
-      { label: 'Тарифы', to: '/subscriptions#subscriptions-pricing-section' },
+      { labelKey: 'aboutUs', to: '/about#about-intro' },
+      { labelKey: 'footerAllSections', to: '/sections' },
+      { labelKey: 'news', to: '/news' },
+      { labelKey: 'privateClubPageTitle', to: '/private-club' },
+      { labelKey: 'tariffs', to: '/subscriptions#subscriptions-pricing-section' },
     ],
   },
   {
-    title: 'Инвесторам',
+    titleKey: 'footerForInvestors',
     links: [
-      { label: 'Как начать', to: '/about#about-intro' },
-      { label: 'Калькулятор доходности', to: '/calculator' },
-      { label: 'Сравнение объектов', to: '/compare' },
-      { label: 'Избранное', to: '/favorites' },
+      { labelKey: 'investFooterHowToStart', to: '/about#about-intro' },
+      { labelKey: 'calculator', to: '/calculator' },
+      { labelKey: 'footerCompareObjects', to: '/compare' },
+      { labelKey: 'favorites', to: '/favorites' },
     ],
   },
   {
-    title: 'Поддержка',
+    titleKey: 'chat',
     links: [
-      { label: 'Написать в поддержку', to: '/chat?manager=1' },
-      { label: 'Техподдержка 24/7', to: '/chat?manager=1' },
-      { label: 'Стать продавцом', to: '/add-property' },
+      { labelKey: 'investFooterWriteSupport', to: '/chat?manager=1' },
+      { labelKey: 'investFooterSupport247', to: '/chat?manager=1' },
+      { labelKey: 'becomeSeller', to: '/add-property' },
     ],
   },
 ]
 
 const socials = [
-  { label: 'WhatsApp', href: 'https://wa.me/447700183959', icon: FaWhatsapp },
-  { label: 'Telegram', href: 'https://t.me/', icon: FaTelegramPlane },
-  { label: 'Instagram', href: 'https://instagram.com/', icon: FaInstagram },
-  { label: 'LinkedIn', href: 'https://linkedin.com/', icon: FaLinkedinIn },
+  { labelKey: 'sectionsSocialWhatsapp', href: 'https://wa.me/447700183959', icon: FaWhatsapp },
+  { labelKey: 'sectionsSocialTelegram', href: 'https://t.me/', icon: FaTelegramPlane },
+  { labelKey: 'sectionsSocialInstagram', href: 'https://instagram.com/', icon: FaInstagram },
+  { labelKey: 'investFooterLinkedIn', href: 'https://linkedin.com/', icon: FaLinkedinIn },
 ]
 
 const currentYear = new Date().getFullYear()
 
 export default function InvestorFooter() {
+  const { t } = useTranslation()
+
   return (
-    <footer className="invest-footer" aria-label="Подвал сайта">
+    <footer className="invest-footer" aria-label={t('investFooterAria')}>
       <div className="invest-footer__inner">
         <div className="invest-footer__top">
           <div className="invest-footer__brand">
-            <Link to="/" className="invest-footer__logo" aria-label="SellYourBrick — на главную">
+            <Link to="/" className="invest-footer__logo" aria-label={t('investFooterHomeAria')}>
               <span className="invest-footer__logo-mark" aria-hidden />
               <span className="invest-footer__logo-text">SellYourBrick</span>
             </Link>
-            <p className="invest-footer__tagline">
-              Инвестиционная платформа недвижимости: аукционы, доли и долговые инструменты
-              с проверенной доходностью в 25+ странах.
-            </p>
+            <p className="invest-footer__tagline">{t('investFooterTagline')}</p>
 
             <ul className="invest-footer__contacts">
               <li>
@@ -84,14 +84,14 @@ export default function InvestorFooter() {
             </ul>
 
             <div className="invest-footer__socials">
-              {socials.map(({ label, href, icon: Icon }) => (
+              {socials.map(({ labelKey, href, icon: Icon }) => (
                 <a
-                  key={label}
+                  key={labelKey}
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="invest-footer__social"
-                  aria-label={label}
+                  aria-label={t(labelKey)}
                 >
                   <Icon aria-hidden />
                 </a>
@@ -99,15 +99,15 @@ export default function InvestorFooter() {
             </div>
           </div>
 
-          <nav className="invest-footer__nav" aria-label="Разделы сайта">
-            {columns.map((column) => (
-              <div className="invest-footer__col" key={column.title}>
-                <h3 className="invest-footer__col-title">{column.title}</h3>
+          <nav className="invest-footer__nav" aria-label={t('investFooterNavAria')}>
+            {COLUMN_DEFS.map((column) => (
+              <div className="invest-footer__col" key={column.titleKey}>
+                <h3 className="invest-footer__col-title">{t(column.titleKey)}</h3>
                 <ul className="invest-footer__list">
                   {column.links.map((link) => (
-                    <li key={link.label}>
+                    <li key={link.labelKey}>
                       <Link to={link.to} className="invest-footer__link">
-                        {link.label}
+                        {t(link.labelKey)}
                       </Link>
                     </li>
                   ))}
@@ -118,11 +118,11 @@ export default function InvestorFooter() {
         </div>
 
         <div className="invest-footer__bottom">
-          <p className="invest-footer__copy">© {currentYear} SellYourBrick. Все права защищены.</p>
+          <p className="invest-footer__copy">{t('investFooterCopyright', { year: currentYear })}</p>
           <div className="invest-footer__legal">
-            <Link to="/about#about-intro">Политика конфиденциальности</Link>
-            <Link to="/about#about-intro">Условия использования</Link>
-            <Link to="/about#about-intro">Cookie</Link>
+            <Link to="/about#about-intro">{t('investFooterPrivacy')}</Link>
+            <Link to="/about#about-intro">{t('investFooterTerms')}</Link>
+            <Link to="/about#about-intro">{t('investFooterCookie')}</Link>
           </div>
         </div>
       </div>

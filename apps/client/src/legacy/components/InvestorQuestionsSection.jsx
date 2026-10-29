@@ -1,31 +1,26 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FiMail, FiMinus, FiPlus } from 'react-icons/fi'
 import '../pages/InvestorHomePage.css'
 
-const FAQS = [
-  [
-    'Как участвовать в аукционе на SellYourBrick?',
-    'Зарегистрируйтесь, пройдите верификацию и внесите депозит — после этого вы сможете делать ставки на любой активный лот.',
-  ],
-  [
-    'Какие объекты доступны для покупки «сейчас»?',
-    'Это готовые объекты с фиксированной ценой без торгов — оформление проходит быстро, без ожидания финала аукциона.',
-  ],
-  [
-    'Можно ли инвестировать в доли недвижимости?',
-    'Да, вы можете приобрести долю крупного объекта от минимальной суммы и получать доход пропорционально вашей доле.',
-  ],
-  [
-    'Как разместить объект на платформе?',
-    'Подайте заявку с документами на объект — наша команда проверит право собственности и поможет выбрать стратегию продажи.',
-  ],
+const FAQ_KEYS = [
+  ['investQuestions_faq1Q', 'investQuestions_faq1A'],
+  ['investQuestions_faq2Q', 'investQuestions_faq2A'],
+  ['investQuestions_faq3Q', 'investQuestions_faq3A'],
+  ['investQuestions_faq4Q', 'investQuestions_faq4A'],
 ]
 
 export default function InvestorQuestionsSection({ id = 'contact', idPrefix = 'invest' }) {
+  const { t } = useTranslation()
   const [openFaq, setOpenFaq] = useState(0)
   const [contactEmail, setContactEmail] = useState('')
   const [contactMessage, setContactMessage] = useState('')
   const [formSent, setFormSent] = useState(false)
+
+  const faqs = useMemo(
+    () => FAQ_KEYS.map(([q, a]) => [t(q), t(a)]),
+    [t],
+  )
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -42,10 +37,11 @@ export default function InvestorQuestionsSection({ id = 'contact', idPrefix = 'i
       <div className="invest-shell invest-questions__inner">
         <div className="invest-questions__contact">
           <h2 id={`${idPrefix}-questions-title`} className="invest-questions__title">
-            Остались{' '}<span className="invest-questions__title-accent">вопросы?</span>
+            {t('investQuestions_titleBefore')}{' '}
+            <span className="invest-questions__title-accent">{t('investQuestions_titleAccent')}</span>
           </h2>
           <p className="invest-questions__subtitle">
-            Вы можете задать его, позвонив или написав сообщение
+            {t('investQuestions_subtitle')}
           </p>
           <form className="invest-questions__form" onSubmit={handleSubmit}>
             <div className="invest-questions__fields">
@@ -55,7 +51,7 @@ export default function InvestorQuestionsSection({ id = 'contact', idPrefix = 'i
                   id={`${idPrefix}-contact-email`}
                   type="email"
                   className="invest-questions__input"
-                  placeholder="Введите свою почту"
+                  placeholder={t('investQuestions_emailPlaceholder')}
                   value={contactEmail}
                   onChange={(event) => setContactEmail(event.target.value)}
                   autoComplete="email"
@@ -67,7 +63,7 @@ export default function InvestorQuestionsSection({ id = 'contact', idPrefix = 'i
                 <textarea
                   id={`${idPrefix}-contact-message`}
                   className="invest-questions__textarea"
-                  placeholder="Напишите ваш вопрос"
+                  placeholder={t('investQuestions_messagePlaceholder')}
                   value={contactMessage}
                   onChange={(event) => setContactMessage(event.target.value)}
                   rows={4}
@@ -77,20 +73,20 @@ export default function InvestorQuestionsSection({ id = 'contact', idPrefix = 'i
               </div>
             </div>
             <button className="invest-questions__btn" type="submit" disabled={formSent}>
-              {formSent ? 'Отправлено' : 'Отправить'}
+              {formSent ? t('investQuestions_sent') : t('investQuestions_send')}
             </button>
           </form>
         </div>
 
         <div className="invest-questions__faq">
           <ul className="invest-questions__faq-list">
-            {FAQS.map(([question, answer], index) => {
+            {faqs.map(([question, answer], index) => {
               const isOpen = openFaq === index
               const triggerId = `${idPrefix}-faq-q-${index}`
               const panelId = `${idPrefix}-faq-a-${index}`
 
               return (
-                <li key={question} className="invest-questions__faq-item">
+                <li key={FAQ_KEYS[index][0]} className="invest-questions__faq-item">
                   <h3 className="invest-questions__faq-heading">
                     <button
                       type="button"

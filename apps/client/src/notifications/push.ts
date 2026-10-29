@@ -35,13 +35,13 @@ async function ensureAndroidChannels() {
     sound: 'default' as const,
   }
   await Notifications.setNotificationChannelAsync('transactions', {
-    name: 'Покупки и операции',
-    description: 'Покупки, пополнения и вывод средств',
+    name: 'Purchases & activity',
+    description: 'Purchases, top-ups and withdrawals',
     ...common,
   })
   await Notifications.setNotificationChannelAsync('auctions', {
-    name: 'Аукционы',
-    description: 'Ставки и результаты аукционов',
+    name: 'Auctions',
+    description: 'Bids and auction results',
     ...common,
   })
 }

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   BarChart3,
   Users,
@@ -39,31 +40,32 @@ const Sidebar = ({
   onCrmMenuClose,
   sectionBadges = {},
 }) => {
+  const { t } = useTranslation();
   // Получаем права доступа из localStorage или пропсов
   const permissions = adminPermissions || JSON.parse(localStorage.getItem('adminPermissions') || '{}');
   const isSuperAdmin = permissions.is_super_admin || false;
 
   const allMenuItems = [
-    { id: 'statistics', icon: BarChart3, label: 'Статистика', permission: 'can_access_statistics' },
-    { id: 'users', icon: Users, label: 'Пользователи', permission: 'can_access_users' },
-    { id: 'private_club', icon: Gem, label: 'Закрытый клуб', permission: 'can_access_users' },
-    { id: 'moderation', icon: Shield, label: 'Модерация', permission: 'can_access_moderation' },
-    { id: 'chat', icon: MessageCircle, label: 'Поддержка', permission: 'can_access_chat' },
-    { id: 'smart_assistant', icon: Bot, label: 'Умный помощник', permission: 'can_access_chat' },
-    { id: 'addition', icon: PlusSquare, label: 'Добавление', permission: 'can_access_objects' },
-    { id: 'objects', icon: Building2, label: 'Объекты', permission: 'can_access_objects' },
-    { id: 'auctions', icon: Gavel, label: 'Аукционы', permission: 'can_access_objects' },
-    { id: 'test_drive', icon: Car, label: 'Тест-драйв', permission: 'can_access_objects' },
-    { id: 'debt_reasons', icon: FileText, label: 'Причина долга', permission: 'can_access_objects' },
-    { id: 'debt_documents', icon: File, label: 'Необходимые документы', permission: 'can_access_objects' },
+    { id: 'statistics', icon: BarChart3, label: t('admin_panel_statistics'), permission: 'can_access_statistics' },
+    { id: 'users', icon: Users, label: t('admin_panel_users'), permission: 'can_access_users' },
+    { id: 'private_club', icon: Gem, label: t('admin_panel_privateClub'), permission: 'can_access_users' },
+    { id: 'moderation', icon: Shield, label: t('admin_panel_moderation'), permission: 'can_access_moderation' },
+    { id: 'chat', icon: MessageCircle, label: t('admin_podderzhka_6ae569ea'), permission: 'can_access_chat' },
+    { id: 'smart_assistant', icon: Bot, label: t('admin_sa_title'), permission: 'can_access_chat' },
+    { id: 'addition', icon: PlusSquare, label: t('admin_panel_addition'), permission: 'can_access_objects' },
+    { id: 'objects', icon: Building2, label: t('admin_panel_objects'), permission: 'can_access_objects' },
+    { id: 'auctions', icon: Gavel, label: t('admin_panel_auctions'), permission: 'can_access_objects' },
+    { id: 'test_drive', icon: Car, label: t('admin_panel_testDrive'), permission: 'can_access_objects' },
+    { id: 'debt_reasons', icon: FileText, label: t('admin_panel_debtReasons'), permission: 'can_access_objects' },
+    { id: 'debt_documents', icon: File, label: t('admin_panel_debtDocuments'), permission: 'can_access_objects' },
     { id: 'whatsapp', icon: WhatsAppIcon, label: 'WhatsApp', permission: 'can_access_whatsapp' },
-    { id: 'clients', icon: Contact, label: 'Клиенты / CRM', permission: 'can_access_clients' },
-    { id: 'purchase_requests', icon: ShoppingCart, label: 'Запросы на покупку', permission: 'can_access_purchase_requests' },
-    { id: 'bonuses', icon: Gift, label: 'Бонусные задания', permission: 'can_access_moderation' },
+    { id: 'clients', icon: Contact, label: t('admin_panel_clients'), permission: 'can_access_clients' },
+    { id: 'purchase_requests', icon: ShoppingCart, label: t('admin_pr_title'), permission: 'can_access_purchase_requests' },
+    { id: 'bonuses', icon: Gift, label: t('admin_panel_bonuses'), permission: 'can_access_moderation' },
     { id: 'seo', icon: Search, label: 'SEO', permission: 'can_access_seo' },
-    { id: 'testing', icon: FlaskConical, label: 'Тестирование', permission: 'can_access_objects' },
-    { id: 'access_management', icon: Key, label: 'Доступы', permission: 'can_access_access_management' },
-    { id: 'storage', icon: Warehouse, label: 'Хранилище', permission: 'can_access_objects' }
+    { id: 'testing', icon: FlaskConical, label: t('admin_panel_testing'), permission: 'can_access_objects' },
+    { id: 'access_management', icon: Key, label: t('admin_panel_access'), permission: 'can_access_access_management' },
+    { id: 'storage', icon: Warehouse, label: t('admin_panel_storage'), permission: 'can_access_objects' }
   ];
 
   // Фильтруем пункты меню в зависимости от прав доступа
@@ -111,7 +113,7 @@ const Sidebar = ({
         <button
           type="button"
           className="sidebar-close"
-          aria-label="Закрыть меню"
+          aria-label={t('admin_closeMenu')}
           onClick={handleCloseSidebar}
         >
           <X size={18} />
@@ -140,7 +142,7 @@ const Sidebar = ({
               {badge ? (
                 <span
                   className={sidebarBadgeToneClass()}
-                  aria-label={`Необработано: ${rawBadge}`}
+                  aria-label={t('admin_unprocessedCount', { count: rawBadge })}
                 >
                   {badge}
                 </span>
@@ -158,7 +160,7 @@ const Sidebar = ({
           }}
         >
           <LogOut size={20} />
-          <span className="menu-item__label">Выйти</span>
+          <span className="menu-item__label">{t('admin_vyyti_026abb1e')}</span>
         </div>
       </div>
     </div>

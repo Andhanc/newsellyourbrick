@@ -1,18 +1,76 @@
 /**
- * Экспорт отчёта кабинета продавца в .xlsx (ExcelJS): логотип, блок «Мои продажи», объявления, сводка.
+ * Export seller cabinet report to .xlsx (ExcelJS): logo, My sales, listings, summary.
  */
 
 const BRAND_NAVY = '#1e3a5f'
-/** Фирменный тиффани, как в UI (#0099a9) */
+/** Brand tiffany, same as UI (#0099a9) */
 const BRAND_TIFFANY = '#0099a9'
-/** Светлый фон под итоги (в тон тиффани) */
+/** Soft tiffany-tinted fill for totals */
 const FILL_TIFFANY_SOFT = 'FFE8F1F4'
 
-const SALE_TYPE_LABELS = {
-  auction: 'Аукцион',
-  shares: 'Доли',
-  debts: 'Долги',
-  buy_now: 'Купить сейчас',
+/** English fallbacks + i18n keys (used when `t` is passed). */
+export const OWNER_EXCEL_LABELS = {
+  logoSubtitle: { key: 'ownerExcel_logoSubtitle', en: 'Seller cabinet report' },
+  sheetName: { key: 'ownerExcel_sheetName', en: 'Report' },
+  mySales: { key: 'ownerExcel_mySales', en: 'My sales' },
+  saleType: { key: 'ownerExcel_colSaleType', en: 'Deal type' },
+  object: { key: 'ownerExcel_colObject', en: 'Property' },
+  location: { key: 'ownerExcel_colLocation', en: 'Location' },
+  amount: { key: 'ownerExcel_colAmount', en: 'Amount' },
+  currency: { key: 'ownerExcel_colCurrency', en: 'Currency' },
+  soldAt: { key: 'ownerExcel_colSoldAt', en: 'Sale date' },
+  noSales: { key: 'ownerExcel_noSales', en: 'No sales' },
+  salesTotalBanner: { key: 'ownerExcel_salesTotalBanner', en: 'Sales total' },
+  sumAllSales: { key: 'ownerExcel_sumAllSales', en: 'Total sales amount' },
+  listings: { key: 'ownerExcel_listings', en: 'Listings' },
+  title: { key: 'ownerExcel_colTitle', en: 'Title' },
+  price: { key: 'ownerExcel_colPrice', en: 'Price' },
+  beds: { key: 'ownerExcel_colBeds', en: 'Bedrooms' },
+  baths: { key: 'ownerExcel_colBaths', en: 'Bathrooms' },
+  area: { key: 'ownerExcel_colArea', en: 'Area (m²)' },
+  status: { key: 'ownerExcel_colStatus', en: 'Status' },
+  likes: { key: 'ownerExcel_colLikes', en: 'Likes' },
+  bids: { key: 'ownerExcel_colBids', en: 'Bids' },
+  sharesSold: { key: 'ownerExcel_colSharesSold', en: 'Shares sold' },
+  publishedAt: { key: 'ownerExcel_colPublishedAt', en: 'Published' },
+  statusActive: { key: 'ownerExcel_statusActive', en: 'Active' },
+  statusSold: { key: 'ownerExcel_statusSold', en: 'Sold' },
+  statusRejected: { key: 'ownerExcel_statusRejected', en: 'Rejected' },
+  statusPending: { key: 'ownerExcel_statusPending', en: 'Pending moderation' },
+  statsTitle: { key: 'ownerExcel_statsTitle', en: 'Summary statistics' },
+  statTotalListings: { key: 'ownerExcel_statTotalListings', en: 'Total listings' },
+  statActiveListings: { key: 'ownerExcel_statActiveListings', en: 'Active listings' },
+  statSoldListings: { key: 'ownerExcel_statSoldListings', en: 'Sold listings' },
+  statTotalLikes: { key: 'ownerExcel_statTotalLikes', en: 'Total likes' },
+  statTotalBids: { key: 'ownerExcel_statTotalBids', en: 'Total bids' },
+  statSharesSold: { key: 'ownerExcel_statSharesSold', en: 'Shares sold (total)' },
+  statInterestedUsers: { key: 'ownerExcel_statInterestedUsers', en: 'Interested users' },
+  statRevenue: {
+    key: 'ownerExcel_statRevenue',
+    en: 'Total revenue (listings with status “Sold”)',
+  },
+  statAvgPrice: { key: 'ownerExcel_statAvgPrice', en: 'Average price' },
+  statConvLikesBids: {
+    key: 'ownerExcel_statConvLikesBids',
+    en: 'Conversion likes → bids (%)',
+  },
+  statInterestPerListing: {
+    key: 'ownerExcel_statInterestPerListing',
+    en: 'Interest per listing',
+  },
+  saleTypeAuction: { key: 'ownerExcel_saleTypeAuction', en: 'Auction' },
+  saleTypeShares: { key: 'ownerExcel_saleTypeShares', en: 'Shares' },
+  saleTypeDebts: { key: 'ownerExcel_saleTypeDebts', en: 'Debts' },
+  saleTypeBuyNow: { key: 'ownerExcel_saleTypeBuyNow', en: 'Buy now' },
+  emDash: { key: 'ownerExcel_emDash', en: '—' },
+}
+
+function label(t, entry) {
+  if (typeof t === 'function') {
+    const translated = t(entry.key)
+    if (translated && translated !== entry.key) return translated
+  }
+  return entry.en
 }
 
 function thinBorder() {
@@ -25,9 +83,10 @@ function thinBorder() {
 }
 
 /**
- * PNG с «логотипом» SellYouBrick (тиффани + тёмно-синий).
+ * PNG with SellYouBrick logo (tiffany + navy).
+ * @param {((key: string) => string) | undefined} t
  */
-export function buildSellYourBrickLogoPng() {
+export function buildSellYourBrickLogoPng(t) {
   return new Promise((resolve, reject) => {
     if (typeof document === 'undefined') {
       reject(new Error('no_document'))
@@ -51,7 +110,7 @@ export function buildSellYourBrickLogoPng() {
     ctx.fillText('SellYouBrick', 28, canvas.height / 2 - 8)
     ctx.fillStyle = 'rgba(255,255,255,0.88)'
     ctx.font = '13px system-ui, "Segoe UI", sans-serif'
-    ctx.fillText('Отчёт кабинета продавца', 28, canvas.height / 2 + 16)
+    ctx.fillText(label(t, OWNER_EXCEL_LABELS.logoSubtitle), 28, canvas.height / 2 + 16)
 
     canvas.toBlob(
       (blob) => {
@@ -70,8 +129,14 @@ export function buildSellYourBrickLogoPng() {
   })
 }
 
-function collectSalesRows(data) {
+function collectSalesRows(data, t) {
   if (!data) return []
+  const saleTypeLabels = {
+    auction: label(t, OWNER_EXCEL_LABELS.saleTypeAuction),
+    shares: label(t, OWNER_EXCEL_LABELS.saleTypeShares),
+    debts: label(t, OWNER_EXCEL_LABELS.saleTypeDebts),
+    buy_now: label(t, OWNER_EXCEL_LABELS.saleTypeBuyNow),
+  }
   const out = []
   for (const key of ['auction', 'shares', 'debts', 'buy_now']) {
     const arr = Array.isArray(data[key]) ? data[key] : []
@@ -79,7 +144,7 @@ function collectSalesRows(data) {
       out.push({
         ...item,
         _saleType: key,
-        _saleTypeLabel: SALE_TYPE_LABELS[key] || key,
+        _saleTypeLabel: saleTypeLabels[key] || key,
       })
     }
   }
@@ -111,19 +176,23 @@ function applyHeaderRow(row, cols) {
  * @param {object} params
  * @param {(v: unknown) => string} params.formatDateSafe
  * @param {object[]} params.properties
- * @param {object} params.stats — счётчики и сводка
+ * @param {object} params.stats — counters and summary
  * @param {object | null} params.mySalesData — { auction, shares, debts, buy_now }
+ * @param {((key: string) => string) | undefined} [params.t] — i18n; without it English headers are used
  */
 export async function exportOwnerAnalyticsExcel({
   formatDateSafe,
   properties,
   stats,
   mySalesData,
+  t,
 }) {
+  const L = OWNER_EXCEL_LABELS
+  const dash = label(t, L.emDash)
   const ExcelJS = (await import('exceljs')).default
   const wb = new ExcelJS.Workbook()
   wb.creator = 'SellYouBrick'
-  const ws = wb.addWorksheet('Отчёт', {
+  const ws = wb.addWorksheet(label(t, L.sheetName), {
     views: [{ showGridLines: true }],
   })
 
@@ -139,7 +208,7 @@ export async function exportOwnerAnalyticsExcel({
   let nextRow = 1
 
   try {
-    const logoBuffer = await buildSellYourBrickLogoPng()
+    const logoBuffer = await buildSellYourBrickLogoPng(t)
     const imageId = wb.addImage({ buffer: logoBuffer, extension: 'png' })
     ws.addImage(imageId, {
       tl: { col: 0, row: 0 },
@@ -154,11 +223,11 @@ export async function exportOwnerAnalyticsExcel({
   ws.getRow(3).height = 6
   nextRow = 4
 
-  const salesRows = collectSalesRows(mySalesData)
+  const salesRows = collectSalesRows(mySalesData, t)
 
   ws.mergeCells(`A${nextRow}:F${nextRow}`)
   const secSales = ws.getRow(nextRow)
-  secSales.getCell(1).value = 'Мои продажи'
+  secSales.getCell(1).value = label(t, L.mySales)
   secSales.getCell(1).font = { bold: true, size: 14, color: { argb: 'FF1e3a5f' } }
   secSales.getCell(1).fill = {
     type: 'pattern',
@@ -169,14 +238,21 @@ export async function exportOwnerAnalyticsExcel({
   secSales.height = 26
   nextRow++
 
-  const salesHeaders = ['Тип сделки', 'Объект', 'Локация', 'Сумма', 'Валюта', 'Дата продажи']
+  const salesHeaders = [
+    label(t, L.saleType),
+    label(t, L.object),
+    label(t, L.location),
+    label(t, L.amount),
+    label(t, L.currency),
+    label(t, L.soldAt),
+  ]
   applyHeaderRow(ws.getRow(nextRow), salesHeaders)
   nextRow++
 
   if (salesRows.length === 0) {
     ws.mergeCells(`A${nextRow}:F${nextRow}`)
     const empty = ws.getRow(nextRow)
-    empty.getCell(1).value = 'Нет продаж'
+    empty.getCell(1).value = label(t, L.noSales)
     empty.getCell(1).alignment = { horizontal: 'center' }
     nextRow++
   } else {
@@ -185,11 +261,11 @@ export async function exportOwnerAnalyticsExcel({
       const amount = Number(s.sale_amount)
       const vals = [
         s._saleTypeLabel,
-        s.title || '—',
-        s.location || '—',
+        s.title || dash,
+        s.location || dash,
         Number.isFinite(amount) ? amount : null,
         (s.currency || 'USD').toUpperCase(),
-        s.sold_at ? formatDateSafe(s.sold_at) : '—',
+        s.sold_at ? formatDateSafe(s.sold_at) : dash,
       ]
       vals.forEach((v, i) => {
         const c = r.getCell(i + 1)
@@ -213,7 +289,7 @@ export async function exportOwnerAnalyticsExcel({
   nextRow++
   ws.mergeCells(`A${nextRow}:F${nextRow}`)
   const totalBanner = ws.getRow(nextRow)
-  totalBanner.getCell(1).value = 'Итого по продажам'
+  totalBanner.getCell(1).value = label(t, L.salesTotalBanner)
   totalBanner.getCell(1).font = { bold: true, size: 13, color: { argb: 'FFFFFFFF' } }
   totalBanner.getCell(1).fill = {
     type: 'pattern',
@@ -226,7 +302,7 @@ export async function exportOwnerAnalyticsExcel({
 
   if (totalsByCurrency.size === 0) {
     ws.mergeCells(`A${nextRow}:F${nextRow}`)
-    ws.getRow(nextRow).getCell(1).value = '—'
+    ws.getRow(nextRow).getCell(1).value = dash
     nextRow++
   } else {
     const sortedCur = [...totalsByCurrency.keys()].sort()
@@ -234,7 +310,7 @@ export async function exportOwnerAnalyticsExcel({
       const sum = totalsByCurrency.get(cur) || 0
       const tr = ws.getRow(nextRow)
       ws.mergeCells(`A${nextRow}:D${nextRow}`)
-      tr.getCell(1).value = 'Сумма всех продаж'
+      tr.getCell(1).value = label(t, L.sumAllSales)
       tr.getCell(1).font = { bold: true }
       tr.getCell(1).fill = {
         type: 'pattern',
@@ -266,7 +342,7 @@ export async function exportOwnerAnalyticsExcel({
   nextRow++
   ws.mergeCells(`A${nextRow}:K${nextRow}`)
   const secProps = ws.getRow(nextRow)
-  secProps.getCell(1).value = 'Объявления'
+  secProps.getCell(1).value = label(t, L.listings)
   secProps.getCell(1).font = { bold: true, size: 14, color: { argb: 'FF1e3a5f' } }
   secProps.getCell(1).fill = {
     type: 'pattern',
@@ -278,19 +354,19 @@ export async function exportOwnerAnalyticsExcel({
   nextRow++
 
   const propHeaders = [
-    'Название',
-    'Локация',
-    'Цена',
-    'Спальни',
-    'Ванные',
-    'Площадь (м²)',
-    'Статус',
-    'Лайки',
-    'Ставки',
-    'Куплено долей',
-    'Дата публикации',
+    label(t, L.title),
+    label(t, L.location),
+    label(t, L.price),
+    label(t, L.beds),
+    label(t, L.baths),
+    label(t, L.area),
+    label(t, L.status),
+    label(t, L.likes),
+    label(t, L.bids),
+    label(t, L.sharesSold),
+    label(t, L.publishedAt),
   ]
-  // Расширяем колонки для блока объявлений (A–K)
+  // Widen columns for the listings block (A–K)
   ws.getColumn(1).width = Math.max(ws.getColumn(1).width || 0, 22)
   ws.getColumn(2).width = Math.max(ws.getColumn(2).width || 0, 28)
   for (let c = 3; c <= 11; c++) {
@@ -314,12 +390,12 @@ export async function exportOwnerAnalyticsExcel({
   for (const property of properties) {
     const statusText =
       property.status === 'active'
-        ? 'Активно'
+        ? label(t, L.statusActive)
         : property.status === 'sold'
-          ? 'Продано'
+          ? label(t, L.statusSold)
           : property.status === 'rejected'
-            ? 'Отклонено'
-            : 'На модерации'
+            ? label(t, L.statusRejected)
+            : label(t, L.statusPending)
     const r = ws.getRow(nextRow)
     const cells = [
       property.title,
@@ -346,7 +422,7 @@ export async function exportOwnerAnalyticsExcel({
   nextRow++
   ws.mergeCells(`A${nextRow}:B${nextRow}`)
   const statTitle = ws.getRow(nextRow)
-  statTitle.getCell(1).value = 'Итоговая статистика'
+  statTitle.getCell(1).value = label(t, L.statsTitle)
   statTitle.getCell(1).font = { bold: true, size: 13, color: { argb: 'FF1e3a5f' } }
   statTitle.getCell(1).fill = {
     type: 'pattern',
@@ -355,40 +431,42 @@ export async function exportOwnerAnalyticsExcel({
   }
   nextRow++
 
+  const revenueLabel = label(t, L.statRevenue)
+  const avgPriceLabel = label(t, L.statAvgPrice)
   const statRows = [
-    ['Всего объявлений', stats.totalProperties],
-    ['Активных объявлений', stats.activeProperties],
-    ['Продано объявлений', stats.soldProperties],
-    ['Всего лайков', stats.totalLikes],
-    ['Всего ставок', stats.totalBids],
-    ['Куплено долей (всего)', stats.totalSharesSoldAgg],
-    ['Заинтересованных пользователей', stats.interestCount],
+    [label(t, L.statTotalListings), stats.totalProperties],
+    [label(t, L.statActiveListings), stats.activeProperties],
+    [label(t, L.statSoldListings), stats.soldProperties],
+    [label(t, L.statTotalLikes), stats.totalLikes],
+    [label(t, L.statTotalBids), stats.totalBids],
+    [label(t, L.statSharesSold), stats.totalSharesSoldAgg],
+    [label(t, L.statInterestedUsers), stats.interestCount],
     [
-      'Общая выручка (объявления со статусом «Продано»)',
+      revenueLabel,
       properties.filter((p) => p.status === 'sold').reduce((sum, p) => sum + (Number(p.price) || 0), 0),
     ],
     [
-      'Средняя цена',
+      avgPriceLabel,
       stats.totalProperties > 0
         ? Math.round(
             properties.reduce((sum, p) => sum + (Number(p.price) || 0), 0) / stats.totalProperties
           )
         : 0,
     ],
-    ['Конверсия лайки → ставки (%)', `${stats.convLikesToBidsPct}%`],
-    ['Интерес на объявление', stats.interestPerListing],
+    [label(t, L.statConvLikesBids), `${stats.convLikesToBidsPct}%`],
+    [label(t, L.statInterestPerListing), stats.interestPerListing],
   ]
 
-  for (const [label, val] of statRows) {
+  for (const [rowLabel, val] of statRows) {
     const row = ws.getRow(nextRow)
-    row.getCell(1).value = label
+    row.getCell(1).value = rowLabel
     row.getCell(1).border = thinBorder()
     row.getCell(2).value = val
     row.getCell(2).border = thinBorder()
-    if (typeof val === 'number' && label.includes('выручка')) {
+    if (typeof val === 'number' && rowLabel === revenueLabel) {
       row.getCell(2).numFmt = '#,##0'
     }
-    if (typeof val === 'number' && label.includes('Средняя')) {
+    if (typeof val === 'number' && rowLabel === avgPriceLabel) {
       row.getCell(2).numFmt = '#,##0'
     }
     nextRow++

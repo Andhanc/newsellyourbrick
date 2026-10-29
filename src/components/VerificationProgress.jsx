@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { FiAlertCircle, FiCheck, FiX, FiFile, FiUser } from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
 import './VerificationProgress.css';
 
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api';
 
 const VerificationProgress = ({ userId, onStartVerification }) => {
+  const { t } = useTranslation();
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -25,7 +27,7 @@ const VerificationProgress = ({ userId, onStartVerification }) => {
         }
       }
     } catch (error) {
-      console.error('Ошибка загрузки статуса верификации:', error);
+      console.error('Verification status load error:', error);
     } finally {
       setLoading(false);
     }
@@ -36,14 +38,14 @@ const VerificationProgress = ({ userId, onStartVerification }) => {
   }
 
   const fieldLabels = {
-    firstName: 'Имя',
-    lastName: 'Фамилия',
-    emailOrPhone: 'Email или телефон',
-    country: 'Страна',
-    address: 'Адрес',
-    passportSeries: 'Серия паспорта',
-    passportNumber: 'Номер паспорта',
-    identificationNumber: 'DNI/NIE (для Испании) или идентификационный номер'
+    firstName: t('verificationField_firstName'),
+    lastName: t('verificationField_lastName'),
+    emailOrPhone: t('verificationField_emailOrPhone'),
+    country: t('verificationField_country'),
+    address: t('verificationField_address'),
+    passportSeries: t('verificationField_passportSeries'),
+    passportNumber: t('verificationField_passportNumber'),
+    identificationNumber: t('verificationField_identificationNumber'),
   };
 
   const missingFieldsList = Object.entries(status.missingFields)
@@ -51,9 +53,9 @@ const VerificationProgress = ({ userId, onStartVerification }) => {
     .map(([field, _]) => fieldLabels[field]);
 
   const getProgressColor = () => {
-    if (status.progress === 100 && status.hasDocuments) return '#0099A9'; // green
-    if (status.progress >= 75) return '#f59e0b'; // yellow
-    return '#ef4444'; // red
+    if (status.progress === 100 && status.hasDocuments) return '#0099A9';
+    if (status.progress >= 75) return '#f59e0b';
+    return '#ef4444';
   };
 
   return (
@@ -63,12 +65,12 @@ const VerificationProgress = ({ userId, onStartVerification }) => {
           {status.isReady ? (
             <>
               <FiCheck className="verification-progress__icon verification-progress__icon--success" />
-              Готов к верификации
+              {t('verificationReady')}
             </>
           ) : (
             <>
               <FiAlertCircle className="verification-progress__icon verification-progress__icon--warning" />
-              Верификация не завершена
+              {t('verificationIncomplete')}
             </>
           )}
         </h3>
@@ -89,18 +91,18 @@ const VerificationProgress = ({ userId, onStartVerification }) => {
         <div className="verification-progress__stats">
           <div className="verification-progress__stat">
             <FiUser className="verification-progress__stat-icon" />
-            <span>Заполнено полей: {status.filledFields} из {status.totalFields}</span>
+            <span>{t('verificationFieldsFilled', { filled: status.filledFields, total: status.totalFields })}</span>
           </div>
           <div className="verification-progress__stat">
             <FiFile className="verification-progress__stat-icon" />
-            <span>Документов: {status.documentsCount}</span>
+            <span>{t('verificationDocumentsCount', { count: status.documentsCount })}</span>
           </div>
         </div>
 
         {!status.isReady && (
           <div className="verification-progress__missing">
             <p className="verification-progress__missing-title">
-              Для отправки на верификацию заполните:
+              {t('verificationFillRequired')}
             </p>
             <ul className="verification-progress__missing-list">
               {missingFieldsList.map((field, index) => (
@@ -112,7 +114,7 @@ const VerificationProgress = ({ userId, onStartVerification }) => {
               {!status.hasDocuments && (
                 <li className="verification-progress__missing-item">
                   <FiX className="verification-progress__missing-icon" />
-                  Загрузите документы на верификацию
+                  {t('verificationUploadDocs')}
                 </li>
               )}
             </ul>
@@ -122,7 +124,7 @@ const VerificationProgress = ({ userId, onStartVerification }) => {
         {status.isReady && (
           <div className="verification-progress__ready">
             <FiCheck className="verification-progress__ready-icon" />
-            <p>Все данные заполнены и документы загружены. Ваша заявка будет рассмотрена модератором.</p>
+            <p>{t('verificationReadyText')}</p>
             {onStartVerification && (
               <button 
                 className="verification-progress__start-btn"
@@ -132,7 +134,7 @@ const VerificationProgress = ({ userId, onStartVerification }) => {
                   <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 4H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="2"/>
                 </svg>
-                Начать верификацию
+                {t('verificationStart')}
               </button>
             )}
           </div>
@@ -147,7 +149,7 @@ const VerificationProgress = ({ userId, onStartVerification }) => {
               <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 4H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="2"/>
             </svg>
-            Начать верификацию
+            {t('verificationStart')}
           </button>
         )}
       </div>
@@ -156,5 +158,3 @@ const VerificationProgress = ({ userId, onStartVerification }) => {
 };
 
 export default VerificationProgress;
-
-

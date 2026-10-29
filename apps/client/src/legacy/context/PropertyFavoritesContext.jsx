@@ -21,6 +21,7 @@ import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isClosedForWishlist } from '../utils/resolveBuyerListingState'
 import { getFavoriteDrawerMilestone } from '../utils/favoriteDrawerMilestone'
+import { useTranslation } from 'react-i18next'
 
 const LazyFirstFavoriteDrawer = lazy(() => import('../components/FirstFavoriteDrawer'))
 const LazyCompareFavoritesDrawer = lazy(() => import('../components/CompareFavoritesDrawer'))
@@ -132,6 +133,7 @@ function PropertyFavoritesDrawersHost({
 }
 
 export function PropertyFavoritesProvider({ children }) {
+  const { t } = useTranslation()
   const { user, isLoaded: userLoaded } = useUser()
   const { pathname } = useLocation()
   const [dbKeys, setDbKeys] = useState(() => new Set())
@@ -248,14 +250,14 @@ export function PropertyFavoritesProvider({ children }) {
         ? dbKeys.has(favoriteCompositeKey(property.id, property.source_table))
         : Boolean(mockCategory && mockMap.get(`${mockCategory}-${property.id}`))
       if (!alreadyLiked && isClosedForWishlist(property)) {
-        showNotification('Проданный объект нельзя добавить в избранное')
+        showNotification(t('favoritesSoldCannotAdd'))
         return false
       }
 
       if (hasDbBackedProperty(property)) {
         const uid = getDbUserId()
         if (!uid) {
-          showNotification('Не удалось определить профиль. Обновите страницу после входа.')
+          showNotification(t('favoritesProfileUnknown'))
           return false
         }
         const key = favoriteCompositeKey(property.id, property.source_table)
@@ -292,7 +294,7 @@ export function PropertyFavoritesProvider({ children }) {
               else next.delete(key)
               return next
             })
-            showNotification(json.error || 'Не удалось обновить избранное')
+            showNotification(json.error || t('favoritesUpdateFailed'))
             return false
           }
         } catch (e) {
@@ -305,7 +307,7 @@ export function PropertyFavoritesProvider({ children }) {
             else next.delete(key)
             return next
           })
-          showNotification('Ошибка сети')
+          showNotification(t('networkErrorShort'))
           return false
         }
         dispatchFavoritesChanged()
@@ -340,7 +342,7 @@ export function PropertyFavoritesProvider({ children }) {
       }
       return !wasLiked
     },
-    [user, userLoaded, mockMap, dbKeys]
+    [user, userLoaded, mockMap, dbKeys, t]
   )
 
   const value = useMemo(

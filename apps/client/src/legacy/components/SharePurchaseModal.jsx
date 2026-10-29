@@ -37,7 +37,7 @@ const SharePurchaseModal = ({
   const [useWalletDeposit, setUseWalletDeposit] = useState(false)
   const [step, setStep] = useState(STEP_PRICE)
   const signaturePadRef = useRef(null)
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const numberLocale = i18n.language?.startsWith('ru') ? 'ru-RU' : 'en-US'
   const { visible, isClosing, requestClose } = useDrawerDismiss(isOpen, onClose, {
     duration: DRAWER_DISMISS_MS.spring,
@@ -100,14 +100,14 @@ const SharePurchaseModal = ({
   const totalToPay = Math.max(0, total - walletApplied)
   const propertyId = shareObject.id
   const propertyType = shareObject.property_type
-  const propertyTitle = shareObject.title || 'Объект'
+  const propertyTitle = shareObject.title || t('sharePurchasePropertyFallback')
   const payDisabled =
     submitting || !signatureReady || (useWalletDeposit && !canUseWallet)
 
   const formatPrice = (n) => formatPropertyPrice(n, currency, { compact: false, locale: numberLocale })
 
   const stepTitle =
-    step === STEP_PRICE ? 'Цена и параметры' : step === STEP_TERMS ? 'Условия покупки' : 'Подпишите и оплатите'
+    step === STEP_PRICE ? t('sharePurchaseStepPrice') : step === STEP_TERMS ? t('sharePurchaseStepTerms') : t('sharePurchaseStepSign')
 
   const openPdf = () => {
     try {
@@ -118,7 +118,7 @@ const SharePurchaseModal = ({
         setIsPdfViewerOpen(true)
       }
     } catch {
-      showNotification('Не удалось открыть файл условий', 'error')
+      showNotification(t('sharePurchasePdfOpenFailed'), 'error')
     }
   }
 
@@ -145,20 +145,20 @@ const SharePurchaseModal = ({
     if (submitting) return
     setError(null)
     if (!userId || !propertyId || !propertyType) {
-      setError('Недостаточно данных для оплаты')
+      setError(t('sharePurchaseErrorMissingData'))
       return
     }
     if (signaturePadRef.current?.isEmpty()) {
-      setError('Поставьте подпись в поле ниже')
+      setError(t('sharePurchaseErrorNeedSignature'))
       return
     }
     const signaturePng = signaturePadRef.current?.toDataURL() || ''
     if (!signaturePng.startsWith('data:image/png')) {
-      setError('Не удалось сохранить подпись')
+      setError(t('sharePurchaseErrorSignatureSave'))
       return
     }
     if (useWalletDeposit && !canUseWallet) {
-      setError('Недостаточно депозита для списания 3000 €')
+      setError(t('sharePurchaseErrorDeposit'))
       return
     }
 
@@ -187,7 +187,7 @@ const SharePurchaseModal = ({
         window.clearTimeout(timer)
       }
       if (!intentRes?.ok || !intentData.success || !intentData.signingIntentId) {
-        setError(intentData.error || 'Не удалось сохранить подпись')
+        setError(intentData.error || t('sharePurchaseErrorSignatureSave'))
         return
       }
 
@@ -216,7 +216,7 @@ const SharePurchaseModal = ({
         window.clearTimeout(checkoutTimer)
       }
       if (!res?.ok || !data.success) {
-        setError(data.error || 'Не удалось создать оплату')
+        setError(data.error || t('sharePurchaseErrorCreatePayment'))
         return
       }
       const checkoutUrl =
@@ -228,12 +228,12 @@ const SharePurchaseModal = ({
       if (checkoutUrl && navigateToStripeCheckout(checkoutUrl)) {
         return
       }
-      setError('Сервер не вернул ссылку на оплату')
+      setError(t('sharePurchaseErrorNoCheckoutUrl'))
     } catch (e) {
       const msg =
         e?.name === 'AbortError'
-          ? 'Превышено время ожидания ответа сервера. Проверьте, что API запущен.'
-          : e?.message || 'Ошибка сети'
+          ? t('sharePurchaseErrorTimeout')
+          : e?.message || t('sharePurchaseErrorNetwork')
       setError(msg)
     } finally {
       setSubmitting(false)
@@ -260,7 +260,7 @@ const SharePurchaseModal = ({
           type="button"
           className="share-purchase-modal__close"
           onClick={() => requestClose()}
-          aria-label="Закрыть"
+          aria-label={t('sharePurchaseCloseAria')}
         >
           <FiX size={20} />
         </button>
@@ -278,19 +278,19 @@ const SharePurchaseModal = ({
               <>
                 <div className="share-purchase-modal__summary">
                   <div className="share-purchase-modal__row">
-                    <span>Объект</span>
+                    <span>{t('sharePurchaseLabelProperty')}</span>
                     <strong>{shareObject.title}</strong>
                   </div>
                   <div className="share-purchase-modal__row">
-                    <span>Количество долей</span>
+                    <span>{t('sharePurchaseLabelSharesCount')}</span>
                     <strong>{buyCount}</strong>
                   </div>
                   <div className="share-purchase-modal__row">
-                    <span>Цена одной доли</span>
+                    <span>{t('sharePurchaseLabelSharePrice')}</span>
                     <strong>{formatPrice(pricePerShare)}</strong>
                   </div>
                   <div className="share-purchase-modal__row share-purchase-modal__row--total">
-                    <span>К оплате</span>
+                    <span>{t('sharePurchaseLabelTotalDue')}</span>
                     <strong>{formatPrice(totalToPay)}</strong>
                   </div>
                 </div>
@@ -303,12 +303,12 @@ const SharePurchaseModal = ({
                       onChange={(e) => setUseWalletDeposit(e.target.checked)}
                       disabled={!canUseWallet}
                     />
-                    <span>Использовать депозит 3000 € в счет покупки долей</span>
+                    <span>{t('sharePurchaseUseDeposit')}</span>
                   </label>
                 )}
                 {isEur && !canUseWallet && (
                   <p className="share-purchase-modal__wallet-hint">
-                    Для списания депозита нужно минимум 3000 € на балансе и сумма покупки выше 3000 €.
+                    {t('sharePurchaseDepositHint')}
                   </p>
                 )}
               </>
@@ -321,14 +321,14 @@ const SharePurchaseModal = ({
                 </div>
                 <div className="share-purchase-modal__legal-top">
                   <h3 className="share-purchase-modal__legal-title">
-                    Перед оплатой внимательно прочитайте документ
+                    {t('sharePurchaseLegalTitle')}
                   </h3>
                   <p className="share-purchase-modal__terms-copy">
-                    В нём зафиксированы сумма, количество долей и порядок оформления сделки.
+                    {t('sharePurchaseLegalCopy')}
                   </p>
                   <button type="button" className="share-purchase-modal__pdf-btn" onClick={openPdf}>
                     <FiExternalLink size={15} />
-                    Условия покупки (PDF)
+                    {t('sharePurchasePdfTerms')}
                   </button>
                   <label
                     className={`share-purchase-modal__check ${!pdfOpened ? 'share-purchase-modal__check--disabled' : ''}`}
@@ -339,7 +339,7 @@ const SharePurchaseModal = ({
                       disabled={!pdfOpened}
                       onChange={(e) => setAgreed(e.target.checked)}
                     />
-                    <span>Согласен(на) с условиями</span>
+                    <span>{t('sharePurchaseAgreeCheckbox')}</span>
                   </label>
                 </div>
               </section>
@@ -348,16 +348,16 @@ const SharePurchaseModal = ({
             {step === STEP_SIGN ? (
               <section className="share-purchase-modal__legal share-purchase-modal__legal--signature">
                 <div className="share-purchase-modal__signature-summary">
-                  <span>К оплате сейчас</span>
+                  <span>{t('sharePurchasePayNowLabel')}</span>
                   <strong>{formatPrice(totalToPay)}</strong>
-                  <small>Stripe подтвердит платёж до создания заявки</small>
+                  <small>{t('sharePurchaseStripeConfirmNote')}</small>
                 </div>
                 <div className="share-purchase-modal__signature-block">
                   <div className="share-purchase-modal__signature-head">
-                    <span className="share-purchase-modal__signature-label">Подпись</span>
+                    <span className="share-purchase-modal__signature-label">{t('sharePurchaseSignatureLabel')}</span>
                     <button type="button" className="share-purchase-modal__clear-sig" onClick={clearSignature}>
                       <FiTrash2 size={14} />
-                      Очистить
+                      {t('sharePurchaseClearSignature')}
                     </button>
                   </div>
                   <ShareSignaturePad
@@ -374,7 +374,7 @@ const SharePurchaseModal = ({
           <div className="share-purchase-modal__actions">
             {step > STEP_PRICE ? (
               <button type="button" className="share-purchase-modal__back" onClick={goBack}>
-                <FiArrowLeft size={18} /> Назад
+                <FiArrowLeft size={18} /> {t('sharePurchaseBack')}
               </button>
             ) : null}
             {step < STEP_SIGN ? (
@@ -384,7 +384,7 @@ const SharePurchaseModal = ({
                 onClick={goForward}
                 disabled={step === STEP_TERMS && (!pdfOpened || !agreed)}
               >
-                Продолжить <FiArrowRight size={18} />
+                {t('sharePurchaseContinue')} <FiArrowRight size={18} />
               </button>
             ) : (
               <button
@@ -393,7 +393,7 @@ const SharePurchaseModal = ({
                 onClick={handlePay}
                 disabled={payDisabled}
               >
-                {submitting ? 'Переход к оплате…' : 'Оплатить доли'}
+                {submitting ? t('sharePurchaseRedirecting') : t('sharePurchasePayShares')}
               </button>
             )}
           </div>
@@ -408,17 +408,17 @@ const SharePurchaseModal = ({
         >
           <div className="share-purchase-modal__pdf-viewer" onClick={(e) => e.stopPropagation()}>
             <div className="share-purchase-modal__pdf-viewer-head">
-              <strong>Условия покупки (PDF)</strong>
+              <strong>{t('sharePurchasePdfTerms')}</strong>
               <button
                 type="button"
                 className="share-purchase-modal__pdf-viewer-close"
                 onClick={() => setIsPdfViewerOpen(false)}
-                aria-label="Закрыть просмотр PDF"
+                aria-label={t('sharePurchaseClosePdfAria')}
               >
                 <FiX size={18} />
               </button>
             </div>
-            <iframe title="Условия покупки долей" src={pdfViewerUrl} className="share-purchase-modal__pdf-viewer-frame" />
+            <iframe title={t('sharePurchasePdfIframeTitle')} src={pdfViewerUrl} className="share-purchase-modal__pdf-viewer-frame" />
           </div>
         </div>
       )}

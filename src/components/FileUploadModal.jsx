@@ -38,19 +38,19 @@ const FileUploadModal = ({ isOpen, onClose, onSuccess, userId: propsUserId }) =>
         setFile(selectedFile)
         setUploadError(null)
       } else {
-        setUploadError('Выберите файл CSV или Excel (.csv, .xls, .xlsx)')
+        setUploadError(t('fileUpload_errInvalidType'))
       }
     }
   }
 
   const handleUpload = async () => {
     if (!file) {
-      setUploadError('Выберите файл для загрузки')
+      setUploadError(t('fileUpload_errNoFile'))
       return
     }
     const effectiveUserId = propsUserId ?? (typeof localStorage !== 'undefined' ? localStorage.getItem('userId') : null)
     if (!effectiveUserId || !/^\d+$/.test(String(effectiveUserId))) {
-      setUploadError('Не удалось определить пользователя. Войдите снова.')
+      setUploadError(t('fileUpload_errNoUser'))
       return
     }
 
@@ -76,7 +76,7 @@ const FileUploadModal = ({ isOpen, onClose, onSuccess, userId: propsUserId }) =>
       const data = await response.json()
 
       if (!response.ok) {
-        setUploadError(data.error || 'Ошибка при загрузке файла')
+        setUploadError(data.error || t('fileUpload_errUpload'))
         return
       }
 
@@ -99,7 +99,7 @@ const FileUploadModal = ({ isOpen, onClose, onSuccess, userId: propsUserId }) =>
         onSuccess()
       }
     } catch (err) {
-      setUploadError(err.message || 'Ошибка сети при загрузке файла')
+      setUploadError(err.message || t('fileUpload_errNetwork'))
     } finally {
       setIsUploading(false)
     }
@@ -117,16 +117,19 @@ const FileUploadModal = ({ isOpen, onClose, onSuccess, userId: propsUserId }) =>
   }
 
   const handleExampleDownload = () => {
-    const csvContent = `тип_объекта,название,описание,цена,валюта,страна,город,адрес,площадь,жилая_площадь,комнаты,ванные,этаж,всего_этажей,год_постройки,тип_здания,квартира,спален,этажей_здания,участок_м2,бассейн,сад,гараж,балкон,парковка,лифт
-apartment,Квартира в центре,Уютная квартира с видом на парк,150000,USD,Испания,Тенерифе,ул. Примерная 1,85,70,3,2,5,10,2015,многоквартирный,42,,,,,0,0,1,1,1
-house,Дом с садом,Частный дом с участком,320000,EUR,Испания,Коста-дель-Соль,Шоссе 12 км,180,150,5,3,,2,2010,частный дом,,4,2,500,0,1,1,0,0,0
-villa,Вилла у моря,Вилла с бассейном,850000,USD,Испания,Марбелья,Пляжная аллея,250,200,6,4,,2,2018,вилла,,6,2,800,1,1,1,0,1,0`
+    // English headers (bulk import also accepts Russian aliases).
+    const csvContent = [
+      'property_type,title,description,price,currency,country,city,address,area,living_area,rooms,bathrooms,floor,total_floors,year_built,building_type,apartment,bedrooms,floors,land_area,pool,garden,garage,balcony,parking,elevator',
+      `apartment,${t('fileUpload_sampleRowApartmentTitle')},${t('fileUpload_sampleRowApartmentDesc')},150000,USD,${t('fileUpload_sampleRowApartmentCountry')},${t('fileUpload_sampleRowApartmentCity')},${t('fileUpload_sampleRowApartmentAddress')},85,70,3,2,5,10,2015,${t('fileUpload_sampleRowApartmentBuilding')},42,,,,,0,0,1,1,1`,
+      `house,${t('fileUpload_sampleRowHouseTitle')},${t('fileUpload_sampleRowHouseDesc')},320000,EUR,${t('fileUpload_sampleRowHouseCountry')},${t('fileUpload_sampleRowHouseCity')},${t('fileUpload_sampleRowHouseAddress')},180,150,5,3,,2,2010,${t('fileUpload_sampleRowHouseBuilding')},,4,2,500,0,1,1,0,0,0`,
+      `villa,${t('fileUpload_sampleRowVillaTitle')},${t('fileUpload_sampleRowVillaDesc')},850000,USD,${t('fileUpload_sampleRowVillaCountry')},${t('fileUpload_sampleRowVillaCity')},${t('fileUpload_sampleRowVillaAddress')},250,200,6,4,,2,2018,${t('fileUpload_sampleRowVillaBuilding')},,6,2,800,1,1,1,0,1,0`,
+    ].join('\n')
 
     const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
     link.setAttribute('href', url)
-    link.setAttribute('download', 'шаблон_объекты_недвижимости.csv')
+    link.setAttribute('download', t('fileUpload_templateFilename'))
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
@@ -147,7 +150,7 @@ villa,Вилла у моря,Вилла с бассейном,850000,USD,Исп�
             className="file-upload-modal__close"
             onClick={handleClose}
             disabled={isUploading}
-            aria-label="Закрыть"
+            aria-label={t('close')}
           >
             <FiX size={24} />
           </button>
@@ -274,7 +277,15 @@ villa,Вилла у моря,Вилла с бассейном,850000,USD,Исп�
               </div>
               {result?.failed > 0 && (
                 <p className="success-text success-text--warn">
-                  {t('fileUploadWithErrors')} {result.failed} {result.errors?.length ? `(первые сообщения: ${result.errors.slice(0, 3).map(e => `стр. ${e.row}: ${e.message}`).join('; ')})` : ''}
+                  {t('fileUploadWithErrors')} {result.failed}{' '}
+                  {result.errors?.length
+                    ? t('fileUpload_errorsPreview', {
+                        messages: result.errors
+                          .slice(0, 3)
+                          .map((e) => t('fileUpload_errorRow', { row: e.row, message: e.message }))
+                          .join('; '),
+                      })
+                    : ''}
                 </p>
               )}
               <button

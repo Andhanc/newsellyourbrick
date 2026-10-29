@@ -10,6 +10,7 @@ import {
   isCatalogCountrySegment,
 } from './catalogGeoUrl'
 import { getCanonicalRegionLabel } from './propertySearchLocation'
+import { getLocalizedRegionLabel } from './localizeBuyerNotification'
 import {
   buildAuctionFilterPath,
   isAuctionRoute,
@@ -234,7 +235,7 @@ export function buildBreadcrumbTrail(location, homeTo, t) {
   const segments = pathname.split('/').filter(Boolean)
   if (segments.length >= 2 && isCatalogCountrySegment(segments[0])) {
     const [country, city, typePlural] = segments
-    const cityLabel = getCanonicalRegionLabel(city, city)
+    const cityLabel = getLocalizedRegionLabel(city, getCanonicalRegionLabel(city, city), t)
     /** @type {BreadcrumbItem[]} */
     let catalogCrumbs = [home, { to: `/${country}/${city}`, label: cityLabel }]
 

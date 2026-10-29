@@ -1,6 +1,6 @@
 /**
- * Если в .env указан только origin бэкенда без /api (например http://localhost:3000),
- * запросы на /billing/... уходили в никуда — добавляем /api.
+ * If VITE_API_BASE_URL is only the backend origin without /api
+ * (e.g. http://localhost:3000), billing calls would miss the API prefix.
  */
 function normalizeBillingApiBase() {
   let base = String(import.meta.env?.VITE_API_BASE_URL ?? '/api').trim()
@@ -16,16 +16,51 @@ function normalizeBillingApiBase() {
 const API_BASE = normalizeBillingApiBase()
 const DEFAULT_FETCH_TIMEOUT_MS = 45000
 
+/** Stable error codes for client-side billing fallbacks (map via translateBillingError). */
+export const BILLING_ERROR = {
+  TIMEOUT: 'billing_timeout',
+  NETWORK_UNREACHABLE: 'billing_networkUnreachable',
+  NETWORK: 'billing_networkError',
+  CHECKOUT_SESSION_FAILED: 'billing_checkoutSessionFailed',
+  CHECKOUT_URL_MISSING: 'billing_checkoutUrlMissing',
+  RESERVATION_CHECKOUT_FAILED: 'billing_reservationCheckoutFailed',
+  LISTING_CHECKOUT_FAILED: 'billing_listingCheckoutFailed',
+  LISTING_URL_MISSING: 'billing_listingUrlMissing',
+  CONFIRM_NETWORK_UNREACHABLE: 'billing_confirmNetworkUnreachable',
+}
+
+const BILLING_ERROR_I18N = {
+  [BILLING_ERROR.TIMEOUT]: 'billing_timeout',
+  [BILLING_ERROR.NETWORK_UNREACHABLE]: 'billing_networkUnreachable',
+  [BILLING_ERROR.NETWORK]: 'billing_networkError',
+  [BILLING_ERROR.CHECKOUT_SESSION_FAILED]: 'billing_checkoutSessionFailed',
+  [BILLING_ERROR.CHECKOUT_URL_MISSING]: 'billing_checkoutUrlMissing',
+  [BILLING_ERROR.RESERVATION_CHECKOUT_FAILED]: 'billing_reservationCheckoutFailed',
+  [BILLING_ERROR.LISTING_CHECKOUT_FAILED]: 'billing_listingCheckoutFailed',
+  [BILLING_ERROR.LISTING_URL_MISSING]: 'billing_listingUrlMissing',
+  [BILLING_ERROR.CONFIRM_NETWORK_UNREACHABLE]: 'billing_confirmNetworkUnreachable',
+}
+
+/**
+ * @param {string|null|undefined} error
+ * @param {(key: string, options?: object) => string} t
+ * @param {string} [fallbackKey]
+ */
+export function translateBillingError(error, t, fallbackKey = 'billing_networkError') {
+  if (!error) return typeof t === 'function' ? t(fallbackKey) : fallbackKey
+  const key = BILLING_ERROR_I18N[error]
+  if (key && typeof t === 'function') return t(key)
+  return String(error)
+}
+
 function billingFetchErrorMessage(error) {
   const msg = String(error?.message || '')
   if (error?.name === 'AbortError' || msg.includes('abort')) {
-    return 'Превышено время ожидания ответа сервера. Проверьте, что API запущен, и попробуйте снова.'
+    return BILLING_ERROR.TIMEOUT
   }
   const isNetwork =
     error?.name === 'TypeError' && (msg.includes('fetch') || msg.includes('Failed') || msg.includes('Network'))
-  return isNetwork
-    ? 'Нет связи с сервером. Запустите API (npm run server) или проверьте VITE_API_BASE_URL.'
-    : msg || 'Ошибка сети'
+  return isNetwork ? BILLING_ERROR.NETWORK_UNREACHABLE : msg || BILLING_ERROR.NETWORK
 }
 
 async function fetchBillingJson(path, options = {}, timeoutMs = DEFAULT_FETCH_TIMEOUT_MS) {
@@ -46,10 +81,8 @@ async function fetchBillingJson(path, options = {}, timeoutMs = DEFAULT_FETCH_TI
 }
 
 /**
- * Переход на hosted Stripe Checkout.
- * Используем assign(), а не href/assign history quirks: иначе в истории остаётся checkout.stripe.com
- * и кнопка «Назад» после оплаты снова открывает Stripe.
- * @returns {boolean} true если редирект инициирован
+ * Navigate to hosted Stripe Checkout via assign() so Back does not reopen Stripe.
+ * @returns {boolean} true if redirect started
  */
 export function navigateToStripeCheckout(checkoutUrl) {
   const u = String(checkoutUrl || '').trim()
@@ -58,7 +91,7 @@ export function navigateToStripeCheckout(checkoutUrl) {
   return true
 }
 
-/** После возврата с Stripe — синхронизировать сессию в БД */
+/** After Stripe return — sync session into DB */
 export async function confirmCheckoutSession(sessionId, userId) {
   const resolvedUserId =
     userId != null && String(userId).trim()
@@ -80,11 +113,7 @@ export async function confirmCheckoutSession(sessionId, userId) {
 }
 
 /**
- * Редирект на Stripe Checkout для подписки Pro.
- * @returns {Promise<{ ok: boolean, error?: string }>}
- */
-/**
- * Checkout подписки «Deposit» (кошелёк): после успешной оплаты баланс зачисляется через webhook / confirm.
+ * Deposit wallet checkout; balance credited via webhook / confirm.
  */
 export async function startDepositWalletCheckout({ userId, customerEmail } = {}) {
   const res = await fetch(`${API_BASE}/billing/create-checkout-session`, {
@@ -98,16 +127,16 @@ export async function startDepositWalletCheckout({ userId, customerEmail } = {})
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    return { ok: false, error: data.error || 'Не удалось создать сессию оплаты' }
+    return { ok: false, error: data.error || BILLING_ERROR.CHECKOUT_SESSION_FAILED }
   }
   if (data.url) {
     navigateToStripeCheckout(data.url)
     return { ok: true }
   }
-  return { ok: false, error: 'Сервер не вернул ссылку на оплату' }
+  return { ok: false, error: BILLING_ERROR.CHECKOUT_URL_MISSING }
 }
 
-/** После редиректа с Checkout Deposit — зачислить баланс, если webhook ещё не обработал. */
+/** After Deposit Checkout return — credit balance if webhook has not run yet. */
 export async function confirmWalletDepositSession(sessionId, userId) {
   const res = await fetch(`${API_BASE}/billing/confirm-wallet-deposit`, {
     method: 'POST',
@@ -135,16 +164,16 @@ export async function startProSubscriptionCheckout({ userId, customerEmail, bill
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    return { ok: false, error: data.error || 'Не удалось создать сессию оплаты' }
+    return { ok: false, error: data.error || BILLING_ERROR.CHECKOUT_SESSION_FAILED }
   }
   if (data.url) {
     navigateToStripeCheckout(data.url)
     return { ok: true }
   }
-  return { ok: false, error: 'Сервер не вернул ссылку на оплату' }
+  return { ok: false, error: BILLING_ERROR.CHECKOUT_URL_MISSING }
 }
 
-/** Stripe Checkout: подписка VIP (нужны STRIPE_PRICE_ID_VIP в .env на сервере). */
+/** Stripe Checkout: VIP subscription (needs STRIPE_PRICE_ID_VIP on the server). */
 export async function startVipSubscriptionCheckout({ userId, customerEmail, billingCycle = 'monthly' } = {}) {
   const normalizedBillingCycle = billingCycle === 'yearly' ? 'yearly' : 'monthly'
   const res = await fetch(`${API_BASE}/billing/create-checkout-session`, {
@@ -159,13 +188,13 @@ export async function startVipSubscriptionCheckout({ userId, customerEmail, bill
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    return { ok: false, error: data.error || 'Не удалось создать сессию оплаты' }
+    return { ok: false, error: data.error || BILLING_ERROR.CHECKOUT_SESSION_FAILED }
   }
   if (data.url) {
     navigateToStripeCheckout(data.url)
     return { ok: true }
   }
-  return { ok: false, error: 'Сервер не вернул ссылку на оплату' }
+  return { ok: false, error: BILLING_ERROR.CHECKOUT_URL_MISSING }
 }
 
 export async function startOwnerSubscriptionCheckout({
@@ -191,17 +220,17 @@ export async function startOwnerSubscriptionCheckout({
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
-    return { ok: false, error: data.error || 'Не удалось создать сессию оплаты' }
+    return { ok: false, error: data.error || BILLING_ERROR.CHECKOUT_SESSION_FAILED }
   }
   if (data.url) {
     navigateToStripeCheckout(data.url)
     return { ok: true }
   }
-  return { ok: false, error: 'Сервер не вернул ссылку на оплату' }
+  return { ok: false, error: BILLING_ERROR.CHECKOUT_URL_MISSING }
 }
 
 /**
- * Резерв 10% (Stripe Checkout, сумма считается на сервере по объекту).
+ * 10% reservation (Stripe Checkout; amount computed on the server).
  */
 export async function startPropertyReservationCheckout({
   userId,
@@ -229,7 +258,7 @@ export async function startPropertyReservationCheckout({
       }),
     })
     if (!res.ok) {
-      return { ok: false, error: data.error || 'Не удалось создать оплату резерва' }
+      return { ok: false, error: data.error || BILLING_ERROR.RESERVATION_CHECKOUT_FAILED }
     }
     const checkoutUrl =
       typeof data.url === 'string'
@@ -241,9 +270,9 @@ export async function startPropertyReservationCheckout({
       const redirected = navigateToStripeCheckout(checkoutUrl)
       return { ok: true, redirected }
     }
-    return { ok: false, error: 'Сервер не вернул ссылку на оплату' }
+    return { ok: false, error: BILLING_ERROR.CHECKOUT_URL_MISSING }
   } catch (e) {
-    return { ok: false, error: e?.message || 'Ошибка сети' }
+    return { ok: false, error: e?.message || BILLING_ERROR.NETWORK }
   }
 }
 
@@ -273,7 +302,7 @@ export async function confirmPropertyReservationSession(sessionId, userId) {
   }
 }
 
-/** Stripe Checkout: оплата публикации объявления (фикс. сумма в EUR на сервере). */
+/** Stripe Checkout: listing publication fee (fixed EUR amount on the server). */
 export async function startListingPublicationCheckout({
   userId,
   customerEmail,
@@ -290,7 +319,7 @@ export async function startListingPublicationCheckout({
       }),
     })
     const data = await res.json().catch(() => ({}))
-    const errText = data.error || data.message || 'Не удалось создать оплату публикации'
+    const errText = data.error || data.message || BILLING_ERROR.LISTING_CHECKOUT_FAILED
     if (!res.ok) {
       return { ok: false, error: errText }
     }
@@ -304,16 +333,14 @@ export async function startListingPublicationCheckout({
       navigateToStripeCheckout(checkoutUrl)
       return { ok: true }
     }
-    return { ok: false, error: 'Сервер не вернул ссылку на оплату (проверьте STRIPE_SECRET_KEY и логи API).' }
+    return { ok: false, error: BILLING_ERROR.LISTING_URL_MISSING }
   } catch (e) {
     const msg = String(e?.message || '')
     const isNetwork =
       e?.name === 'TypeError' && (msg.includes('fetch') || msg.includes('Failed') || msg.includes('Network'))
     return {
       ok: false,
-      error: isNetwork
-        ? 'Нет связи с сервером. Запустите API (npm run server) или проверьте VITE_API_BASE_URL (нужен путь …/api).'
-        : msg || 'Ошибка сети',
+      error: isNetwork ? BILLING_ERROR.NETWORK_UNREACHABLE : msg || BILLING_ERROR.NETWORK,
     }
   }
 }
@@ -336,7 +363,7 @@ export async function confirmListingPublicationFeeSession(sessionId, userId) {
       e?.name === 'TypeError' && (msg.includes('fetch') || msg.includes('Failed') || msg.includes('Network'))
     return {
       ok: false,
-      error: isNetwork ? 'Нет связи с сервером при подтверждении оплаты.' : msg || 'confirm_failed',
+      error: isNetwork ? BILLING_ERROR.CONFIRM_NETWORK_UNREACHABLE : msg || 'confirm_failed',
     }
   }
 }

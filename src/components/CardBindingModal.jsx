@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import './CardBindingModal.css'
 
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
 const CardBindingModal = ({ isOpen, onClose, userId, onComplete }) => {
+  const { t } = useTranslation()
   const [cardData, setCardData] = useState({
     cardNumber: '',
     expiryDate: '',
@@ -112,52 +114,52 @@ const CardBindingModal = ({ isOpen, onClose, userId, onComplete }) => {
 
   const validateCardNumber = (number) => {
     const num = number.replace(/\s/g, '')
-    if (!num) return 'Номер карты обязателен'
+    if (!num) return t('cardBinding_errCardRequired')
     
     // Проверяем, что все символы - цифры
-    if (!/^\d+$/.test(num)) return 'Номер карты должен содержать только цифры'
+    if (!/^\d+$/.test(num)) return t('cardBinding_errCardDigits')
     
     // Проверяем минимальную длину (большинство карт имеют 13-19 цифр)
-    if (num.length < 13) return 'Номер карты слишком короткий'
-    if (num.length > 19) return 'Номер карты слишком длинный'
+    if (num.length < 13) return t('cardBinding_errCardShort')
+    if (num.length > 19) return t('cardBinding_errCardLong')
     
     // Определяем тип карты
     const detectedType = detectCardType(num)
     if (!detectedType) {
-      return 'Неподдерживаемый тип карты. Используйте Visa или MasterCard'
+      return t('cardBinding_errUnsupported')
     }
     
     // Проверяем алгоритмом Луна
     if (!luhnAlgorithm(num)) {
-      return 'Неверный номер карты. Проверьте правильность ввода'
+      return t('cardBinding_errInvalidCard')
     }
     
     return null
   }
 
   const validateExpiryDate = (date) => {
-    if (!date) return 'Дата окончания обязательна'
+    if (!date) return t('cardBinding_errExpiryRequired')
     const [month, year] = date.split('/')
-    if (!month || !year) return 'Неверный формат даты'
+    if (!month || !year) return t('cardBinding_errDateFormat')
     const monthNum = parseInt(month)
     const yearNum = parseInt('20' + year)
     const currentDate = new Date()
     const expiryDate = new Date(yearNum, monthNum - 1)
-    if (monthNum < 1 || monthNum > 12) return 'Неверный месяц'
-    if (expiryDate < currentDate) return 'Карта просрочена'
+    if (monthNum < 1 || monthNum > 12) return t('cardBinding_errInvalidMonth')
+    if (expiryDate < currentDate) return t('cardBinding_errExpired')
     return null
   }
 
   const validateCVV = (cvv) => {
-    if (!cvv) return 'CVV обязателен'
-    if (cvv.length < 3 || cvv.length > 4) return 'CVV должен содержать 3-4 цифры'
+    if (!cvv) return t('cardBinding_errCvvRequired')
+    if (cvv.length < 3 || cvv.length > 4) return t('cardBinding_errCvvLength')
     return null
   }
 
   const validateCardholderName = (name) => {
-    if (!name) return 'Имя держателя карты обязательно'
-    if (name.length < 2) return 'Имя слишком короткое'
-    if (!/^[a-zA-Zа-яА-ЯёЁ\s]+$/.test(name)) return 'Имя может содержать только буквы'
+    if (!name) return t('cardBinding_errNameRequired')
+    if (name.length < 2) return t('cardBinding_errNameShort')
+    if (!/^[a-zA-Zа-яА-ЯёЁ\s]+$/.test(name)) return t('cardBinding_errNameLetters')
     return null
   }
 
@@ -360,7 +362,7 @@ const CardBindingModal = ({ isOpen, onClose, userId, onComplete }) => {
       onClose()
     } catch (error) {
       console.error('Ошибка при привязке карточки:', error)
-      alert('Произошла ошибка при привязке карточки. Попробуйте еще раз.')
+      alert(t('cardBinding_errorGeneric'))
     } finally {
       setIsSubmitting(false)
     }
@@ -397,10 +399,10 @@ const CardBindingModal = ({ isOpen, onClose, userId, onComplete }) => {
           <div className="card-binding-modal__header">
             <div className="card-binding-modal__icon">💳</div>
             <h2 className="card-binding-modal__title">
-              Привязка банковской карты
+              {t('cardBinding_title')}
             </h2>
             <p className="card-binding-modal__subtitle">
-              Для публикации объявлений необходимо привязать банковскую карту
+              {t('cardBinding_subtitle')}
             </p>
           </div>
 
@@ -490,7 +492,7 @@ const CardBindingModal = ({ isOpen, onClose, userId, onComplete }) => {
             <div className="card-binding-form__fields">
               <div className="form-field">
                 <label className="form-field__label">
-                  Номер карты
+                  {t('cardBinding_cardNumber')}
                 </label>
                 <input
                   type="text"
@@ -507,7 +509,7 @@ const CardBindingModal = ({ isOpen, onClose, userId, onComplete }) => {
 
               <div className="form-field">
                 <label className="form-field__label">
-                  Имя держателя карты
+                  {t('cardBinding_cardholderName')}
                 </label>
                 <input
                   type="text"
@@ -525,12 +527,12 @@ const CardBindingModal = ({ isOpen, onClose, userId, onComplete }) => {
               <div className="form-field-row">
                 <div className="form-field">
                   <label className="form-field__label">
-                    Срок действия
+                    {t('cardBinding_expiry')}
                   </label>
                   <input
                     type="text"
                     className={`form-field__input ${errors.expiryDate ? 'error' : ''} ${validFields.expiryDate ? 'valid' : ''}`}
-                    placeholder="ММ/ГГ"
+                    placeholder={t('cardBinding_expiryPlaceholder')}
                     value={cardData.expiryDate}
                     onChange={handleExpiryDateChange}
                     maxLength={5}
@@ -566,7 +568,7 @@ const CardBindingModal = ({ isOpen, onClose, userId, onComplete }) => {
                 <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#0099A9" strokeWidth="2"/>
                 <path d="M12 8V12M12 16H12.01" stroke="#0099A9" strokeWidth="2" strokeLinecap="round"/>
               </svg>
-              <span>Ваши данные защищены и зашифрованы</span>
+              <span>{t('cardBinding_secured')}</span>
             </div>
 
             <button
@@ -581,11 +583,11 @@ const CardBindingModal = ({ isOpen, onClose, userId, onComplete }) => {
                       <animateTransform attributeName="transform" type="rotate" values="0 10 10;360 10 10" dur="1s" repeatCount="indefinite"/>
                     </circle>
                   </svg>
-                  Привязка...
+                  {t('cardBinding_submitting')}
                 </>
               ) : (
                 <>
-                  Привязать карту
+                  {t('cardBinding_submit')}
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>

@@ -166,26 +166,26 @@ export async function pickReachablePropertyAiImages(urls = [], overrides = {}) {
 
 export async function requestPropertyAiModel({ category, question, property }, overrides = {}) {
   const apiKey = normalizeApiKey(overrides.apiKey || process.env.OPENROUTER_API_KEY)
-  if (!apiKey) throw new Error('OPENROUTER_API_KEY не настроен')
+  if (!apiKey) throw new Error('OPENROUTER_API_KEY is not configured')
   const fetchImpl = overrides.fetchImpl || fetch
   const mediaBaseUrl = overrides.mediaBaseUrl || propertyAiMediaBaseUrl()
   const pickImages = overrides.pickImages || pickReachablePropertyAiImages
 
-  const system = `Ты — осторожный аналитик недвижимости и арт-директор презентаций SellYourBrick. Отвечай на русском языке.
-Сначала прямо ответь на заданный вопрос в поле directAnswer: 2–4 содержательных предложения.
-Используй только факты из объявления и видимых фотографий. Не придумывай район, состояние, доходность, аренду, документы или юридические обстоятельства.
-Для района используй только nearbyInfrastructure: это проверенные точки OpenStreetMap с приблизительным расстоянием по прямой. Подробно объясняй пользу инфраструктуры для повседневной жизни, семьи и ликвидности.
-Интерпретации отделяй от фактов и начинай словами «Возможный вывод:». Если nearbyInfrastructure пуст, честно напиши, что инфраструктура не проверена.
-Любые расчёты называй ориентировочными и перечисляй допущения. Риски формулируй как пункты для проверки.
-Всегда дай минимум 2 подтверждённых плюса и минимум 2 риска или пункта для проверки. Если данных мало, честно объясни, какой информации не хватает.
-Подготовь 4–8 полезных метрик, 2–4 подробных раздела и вывод со следующими шагами.
+  const system = `You are a careful real-estate analyst and presentation art director for SellYourBrick. Reply in English.
+First answer the asked question directly in directAnswer: 2–4 substantive sentences.
+Use only facts from the listing and visible photos. Do not invent neighborhood details, condition, yield, rent, documents, or legal circumstances.
+For the area, use only nearbyInfrastructure: verified OpenStreetMap points with approximate straight-line distance. Explain clearly how nearby amenities help daily life, families, and liquidity.
+Separate interpretations from facts and start them with “Possible takeaway:”. If nearbyInfrastructure is empty, say honestly that infrastructure was not verified.
+Call any calculations approximate and list assumptions. Phrase risks as items to verify.
+Always give at least 2 confirmed strengths and at least 2 risks or verification items. If data is scarce, explain honestly what is missing.
+Prepare 4–8 useful metrics, 2–4 detailed sections, and a conclusion with next steps.
 
-Полностью спроектируй презентацию сам в массиве slides. Пользователь не задаёт структуру, количество или параметры слайдов: ты выбираешь их как арт-директор исходя из вопроса, данных и фотографий объекта. Создай 7–10 слайдов и реши, какие факты заслуживают отдельного слайда, какой layout нужен, где использовать фотографию, карточки, иконки или график. Не повторяй одну и ту же структуру: используй минимум четыре разных layout.
+Fully design the presentation yourself in the slides array. The user does not set slide structure, count, or parameters: choose them as art director from the question, listing data, and photos. Create 7–10 slides and decide which facts deserve their own slide, which layout to use, and where to place photos, cards, icons, or a chart. Do not repeat the same structure: use at least four different layouts.
 
-Визуальный язык: светлый тёплый бежевый фон, крупные фирменные тифани-блоки SellYourBrick, тонкая типографика, большие фотографии объекта с мягкими скруглениями, чистые карточки, контурные иконки и ясная инфографика. Первый слайд должен быть cover, последний — conclusion. При наличии двух и более фотографий обязательно используй gallery и ещё минимум два фото-ориентированных слайда. Используй cards или stats для ключевых фактов, timeline для последовательности проверок, comparison для взвешенного решения. Добавь chart, только если в объявлении есть честные числовые данные для него; никогда не выдумывай рынок или динамику. Если данных для графика нет, выбери другой layout. Для chart.caption укажи происхождение данных или формулу расчёта. imageIndices — индексы фотографий в исходном порядке, начиная с 0. Пустые неиспользуемые поля возвращай пустыми строками, массивами и chart.type = "none".
+Visual language: light warm beige background, large SellYourBrick Tiffany brand blocks, refined typography, large property photos with soft rounded corners, clean cards, outline icons, and clear infographics. The first slide must be cover, the last — conclusion. When two or more photos exist, include gallery and at least two more photo-led slides. Use cards or stats for key facts, timeline for a verification sequence, comparison for a balanced decision. Add chart only when the listing has honest numeric data for it; never invent market trends. If chart data is missing, choose another layout. For chart.caption, state the data source or calculation. imageIndices are photo indexes in the original order starting at 0. Unused empty fields must be empty strings, empty arrays, and chart.type = "none".
 
-Сделай короткий ответ для чата и содержание цельной, визуально разнообразной презентации. Не возвращай HTML или markdown.`
-  const text = `Категория: ${category}\nВопрос: ${question}\nДанные объекта:\n${JSON.stringify(compactProperty(property), null, 2)}`
+Produce a short chat answer and a cohesive, visually varied presentation. Do not return HTML or markdown.`
+  const text = `Category: ${category}\nQuestion: ${question}\nListing data:\n${JSON.stringify(compactProperty(property), null, 2)}`
   const content = [{ type: 'text', text }]
   const candidateUrls = (Array.isArray(property.images) ? property.images : [])
     .map((value) => resolvePropertyAiImageUrl(value, mediaBaseUrl))
@@ -214,21 +214,21 @@ export async function requestPropertyAiModel({ category, question, property }, o
   })
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
-    throw new Error(data?.error?.message || data?.error || `OpenRouter вернул ${response.status}`)
+    throw new Error(data?.error?.message || data?.error || `OpenRouter returned ${response.status}`)
   }
   const answer = data?.choices?.[0]?.message?.content
-  if (typeof answer !== 'string' || !answer.trim()) throw new Error('OpenRouter вернул пустой ответ')
+  if (typeof answer !== 'string' || !answer.trim()) throw new Error('OpenRouter returned an empty response')
   return answer
 }
 
 function fallbackAnswerForCategory(category) {
   if (category === 'investment') {
-    return 'По данным объявления можно провести только предварительную инвестиционную оценку: заявленные характеристики подходят для сравнения с альтернативами, но доходность нельзя подтвердить без цены аренды, расходов и локальных рыночных данных. До решения проверьте документы, фактическое состояние, эксплуатационные затраты и реалистичный арендный сценарий.'
+    return 'Based on the listing you can only run a preliminary investment review: the stated features are useful for comparison, but yield cannot be confirmed without rent, costs, and local market data. Before deciding, verify documents, actual condition, operating costs, and a realistic rental scenario.'
   }
   if (category === 'risks') {
-    return 'Главные плюсы объекта можно подтвердить только по указанным в объявлении характеристикам и доступным фотографиям. Основные риски сейчас связаны с данными, которых нет в объявлении: перед решением нужно проверить документы, фактическое состояние, инженерные системы, расходы и соответствие фотографий самому объекту.'
+    return 'The main strengths can only be confirmed from the listed features and available photos. The main risks come from missing listing data: before deciding, verify documents, actual condition, building systems, costs, and whether the photos match the property.'
   }
-  return 'По доступным данным объявления можно сделать предварительный разбор объекта, но окончательное решение пока преждевременно. Подтвердите у продавца документы, фактическое состояние, инженерные системы, расходы и соответствие фотографий объекту.'
+  return 'Available listing data supports a preliminary review, but a final decision is premature. Confirm documents, actual condition, building systems, costs, and photo accuracy with the seller.'
 }
 
 function buildFallbackReport(input, property, modelError) {
@@ -236,25 +236,25 @@ function buildFallbackReport(input, property, modelError) {
   return normalizePropertyAiReport({
     directAnswer,
     shortAnswer: directAnswer,
-    title: `Разбор объекта: ${property?.title || property?.name || 'недвижимость'}`,
-    summary: 'Предварительный анализ сформирован по фактам из объявления. Неподтверждённые сведения не использовались.',
+    title: `Listing review: ${property?.title || property?.name || 'property'}`,
+    summary: 'This preliminary analysis uses facts from the listing only. Unverified claims were not used.',
     sections: [
       {
-        title: 'Что можно оценить сейчас',
-        body: 'В отчёте собраны опубликованные характеристики, доступные фотографии и проверяемые ориентиры для сравнения объекта.',
-        bullets: ['Сопоставьте цену и параметры с похожими предложениями.', 'Подготовьте вопросы продавцу до личного просмотра.'],
+        title: 'What can be assessed now',
+        body: 'The report gathers published features, available photos, and checkable comparison points for the listing.',
+        bullets: ['Compare price and specs with similar listings.', 'Prepare questions for the seller before an in-person viewing.'],
       },
       {
-        title: 'Что проверить до решения',
-        body: 'Данные объявления не заменяют техническую, юридическую и финансовую проверку объекта.',
-        bullets: ['Запросите документы и сведения об ограничениях.', 'Проверьте состояние объекта, инженерные системы и регулярные расходы.'],
+        title: 'What to verify before deciding',
+        body: 'Listing data does not replace technical, legal, and financial due diligence.',
+        bullets: ['Request documents and information about encumbrances.', 'Check condition, building systems, and recurring costs.'],
       },
     ],
     assumptions: [
-      'Анализ основан только на данных, опубликованных в объявлении.',
-      'Автоматическая интерпретация модели была недоступна; выводы ограничены проверяемыми фактами.',
+      'The analysis is based only on data published in the listing.',
+      'Automatic model interpretation was unavailable; conclusions are limited to checkable facts.',
     ],
-    conclusion: 'Используйте этот отчёт как список фактов и проверок: запросите документы, проведите осмотр и сравните объект с альтернативами перед финансовым решением.',
+    conclusion: 'Use this report as a checklist of facts and verifications: request documents, inspect the property, and compare alternatives before a financial decision.',
   }, { ...input, property, modelError: String(modelError?.message || modelError || '') })
 }
 

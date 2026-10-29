@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { FiX, FiUpload, FiFile, FiCheck } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 import './DocumentsModal.css'
 
 const DocumentsModal = ({ isOpen, onClose, onComplete }) => {
+  const { t } = useTranslation()
   const [documents, setDocuments] = useState({
     ownership: null,
     noDebts: null
@@ -29,7 +31,7 @@ const DocumentsModal = ({ isOpen, onClose, onComplete }) => {
 
   const handleComplete = () => {
     if (!uploadedFiles.ownership || !uploadedFiles.noDebts) {
-      alert('Пожалуйста, загрузите все необходимые документы')
+      alert(t('documentsModal_alertAllRequired'))
       return
     }
     onComplete(documents)
@@ -51,27 +53,27 @@ const DocumentsModal = ({ isOpen, onClose, onComplete }) => {
   const documentTypes = [
     {
       key: 'ownership',
-      label: 'Право собственности',
-      description: 'Загрузите документ о праве собственности'
+      label: t('documentsModal_ownershipLabel'),
+      description: t('documentsModal_ownershipDesc')
     },
     {
       key: 'noDebts',
-      label: 'Справка об отсутствии обременений',
-      description: 'Загрузите справку об отсутствии задолженностей'
+      label: t('documentsModal_noDebtsLabel'),
+      description: t('documentsModal_noDebtsDesc')
     }
   ]
 
   return (
     <div className="documents-modal-overlay" onClick={onClose}>
       <div className="documents-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="documents-modal__close" onClick={onClose}>
+        <button className="documents-modal__close" onClick={onClose} aria-label={t('close')}>
           <FiX size={24} />
         </button>
         
         <div className="documents-modal__content">
-          <h2 className="documents-modal__title">Загрузка документов</h2>
+          <h2 className="documents-modal__title">{t('documentsModal_title')}</h2>
           <p className="documents-modal__subtitle">
-            Пожалуйста, загрузите все необходимые документы для публикации объявления
+            {t('documentsModal_subtitle')}
           </p>
 
           <div className="documents-modal__list">
@@ -98,20 +100,20 @@ const DocumentsModal = ({ isOpen, onClose, onComplete }) => {
                       className="documents-modal__file-input"
                     />
                     <FiUpload size={24} />
-                    <span>Загрузить файл</span>
+                    <span>{t('documentsModal_uploadFile')}</span>
                   </label>
                 ) : (
                   <div className="documents-modal__file-info">
                     <FiFile size={20} />
                     <span className="documents-modal__file-name">
-                      {documents[doc.key]?.name || 'Файл загружен'}
+                      {documents[doc.key]?.name || t('documentsModal_fileUploaded')}
                     </span>
                     <button
                       type="button"
                       className="documents-modal__remove"
                       onClick={() => removeFile(doc.key)}
                     >
-                      Удалить
+                      {t('documentsModal_remove')}
                     </button>
                   </div>
                 )}
@@ -125,7 +127,7 @@ const DocumentsModal = ({ isOpen, onClose, onComplete }) => {
               className="documents-modal__btn documents-modal__btn--complete"
               onClick={handleComplete}
             >
-              Завершить публикацию
+              {t('documentsModal_completePublish')}
             </button>
           </div>
         </div>

@@ -6,6 +6,7 @@ import {
   RiNotification3Line,
   RiVipCrownLine,
 } from 'react-icons/ri'
+import { useTranslation } from 'react-i18next'
 import './VipClubHeroScene.css'
 
 const PROPERTY_IMAGE = '/images/vip-club/vip-cta-villa.png'
@@ -51,6 +52,8 @@ function MiniBarChart({ className = '' }) {
 }
 
 export default function VipClubHeroScene() {
+  const { t } = useTranslation()
+
   return (
     <div className="vip-club-hero-scene" aria-hidden="true">
       <article className="vip-club-hero-float vip-club-hero-float--objects">
@@ -58,13 +61,13 @@ export default function VipClubHeroScene() {
           <RiBuilding2Line />
         </span>
         <div>
-          <span className="vip-club-hero-float__label">Объекты</span>
+          <span className="vip-club-hero-float__label">{t('vipHeroObjects')}</span>
           <strong className="vip-club-hero-float__value">200+</strong>
         </div>
         <div className="vip-club-hero-float__bar">
           <span style={{ width: '68%' }} />
         </div>
-        <span className="vip-club-hero-float__meta">68% закрытых лотов</span>
+        <span className="vip-club-hero-float__meta">{t('vipHeroClosedLots')}</span>
       </article>
 
       <article className="vip-club-hero-float vip-club-hero-float--income">
@@ -72,7 +75,7 @@ export default function VipClubHeroScene() {
           <RiHandCoinLine />
         </span>
         <div>
-          <span className="vip-club-hero-float__label">Доход</span>
+          <span className="vip-club-hero-float__label">{t('vipHeroIncome')}</span>
           <strong className="vip-club-hero-float__value">$560</strong>
         </div>
         <span className="vip-club-hero-float__delta">
@@ -85,7 +88,7 @@ export default function VipClubHeroScene() {
           <RiLineChartLine />
         </span>
         <strong className="vip-club-hero-float__value">12,4%</strong>
-        <span className="vip-club-hero-float__label">доходность YTD</span>
+        <span className="vip-club-hero-float__label">{t('vipHeroYtd')}</span>
         <MiniBarChart className="vip-club-hero-float__chart" />
       </article>
 
@@ -94,10 +97,10 @@ export default function VipClubHeroScene() {
           <RiVipCrownLine />
         </span>
         <div>
-          <span className="vip-club-hero-float__label">Сделки</span>
+          <span className="vip-club-hero-float__label">{t('vipHeroDeals')}</span>
           <strong className="vip-club-hero-float__value">95%</strong>
         </div>
-        <span className="vip-club-hero-float__meta">успешных закрытий</span>
+        <span className="vip-club-hero-float__meta">{t('vipHeroClosings')}</span>
         <div className="vip-club-hero-float__avatars">
           {dealAvatars.map((src) => (
             <img key={src} src={src} alt="" />
@@ -118,7 +121,7 @@ export default function VipClubHeroScene() {
 
             <div className="vip-club-hero-phone__property">
               <img src={PROPERTY_IMAGE} alt="" />
-              <span className="vip-club-hero-phone__tag">Закрытый лот</span>
+              <span className="vip-club-hero-phone__tag">{t('vipHeroClosedLot')}</span>
               <div className="vip-club-hero-phone__property-copy">
                 <strong>Villa Azure</strong>
                 <span>Costa del Sol, Spain</span>
@@ -126,7 +129,7 @@ export default function VipClubHeroScene() {
             </div>
 
             <div className="vip-club-hero-phone__portfolio">
-              <span className="vip-club-hero-phone__portfolio-label">Портфель VIP</span>
+              <span className="vip-club-hero-phone__portfolio-label">{t('vipHeroPortfolio')}</span>
               <div className="vip-club-hero-phone__portfolio-row">
                 <strong>$2,4M</strong>
                 <span>+12,4%</span>
@@ -135,10 +138,10 @@ export default function VipClubHeroScene() {
             </div>
 
             <nav className="vip-club-hero-phone__nav">
-              <span className="is-active">Обзор</span>
-              <span>Портфель</span>
-              <span>Сделки</span>
-              <span>Профиль</span>
+              <span className="is-active">{t('vipHeroNavOverview')}</span>
+              <span>{t('vipHeroNavPortfolio')}</span>
+              <span>{t('vipHeroNavDeals')}</span>
+              <span>{t('vipHeroNavProfile')}</span>
             </nav>
           </div>
         </div>

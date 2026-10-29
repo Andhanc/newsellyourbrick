@@ -20,7 +20,7 @@ export async function getMarketData() {
       averageRentalYield: 6.5, // Средняя доходность от аренды (%)
       marketTrend: 'stable', // 'growing', 'stable', 'declining'
       lastUpdated: new Date().toISOString(),
-      sources: ['ЦБ РФ', 'Росстат', 'Аналитика рынка']
+      sources: ['CBR', 'Rosstat', 'Market analytics']
     };
 
     // Попытка парсинга данных с сайта ЦБ РФ (пример)
@@ -49,7 +49,7 @@ export async function getMarketData() {
         averageRentalYield: 6.0,
         marketTrend: 'stable',
         lastUpdated: new Date().toISOString(),
-        sources: ['Расчетные значения']
+        sources: ['Calculated values']
       }
     };
   }
@@ -69,10 +69,10 @@ export async function getMortgageRates() {
       minRate: 7.5, // Минимальная ставка
       maxRate: 12.0, // Максимальная ставка
       ratesByBank: [
-        { name: 'Сбербанк', rate: 8.2 },
-        { name: 'ВТБ', rate: 8.5 },
-        { name: 'Альфа-Банк', rate: 9.0 },
-        { name: 'Райффайзенбанк', rate: 8.8 }
+        { name: 'Sberbank', rate: 8.2 },
+        { name: 'VTB', rate: 8.5 },
+        { name: 'Alfa-Bank', rate: 9.0 },
+        { name: 'Raiffeisenbank', rate: 8.8 }
       ],
       lastUpdated: new Date().toISOString()
     };
@@ -108,17 +108,21 @@ export async function getMortgageRates() {
 /**
  * Получает данные о доходности аренды по регионам
  */
-export async function getRentalYieldByRegion(region = 'Москва') {
+export async function getRentalYieldByRegion(region = 'Moscow') {
   try {
-    // Данные о доходности по регионам
+    // Regional yield samples (keys accept EN + RU aliases)
     const regionalData = {
-      'Москва': { yield: 5.5, avgPrice: 250000, avgRent: 11000 },
+      Moscow: { yield: 5.5, avgPrice: 250000, avgRent: 11000 },
+      'Saint Petersburg': { yield: 6.0, avgPrice: 150000, avgRent: 7000 },
+      Sochi: { yield: 7.5, avgPrice: 120000, avgRent: 6000 },
+      Krasnodar: { yield: 8.0, avgPrice: 80000, avgRent: 4000 },
+      Москва: { yield: 5.5, avgPrice: 250000, avgRent: 11000 },
       'Санкт-Петербург': { yield: 6.0, avgPrice: 150000, avgRent: 7000 },
-      'Сочи': { yield: 7.5, avgPrice: 120000, avgRent: 6000 },
-      'Краснодар': { yield: 8.0, avgPrice: 80000, avgRent: 4000 }
+      Сочи: { yield: 7.5, avgPrice: 120000, avgRent: 6000 },
+      Краснодар: { yield: 8.0, avgPrice: 80000, avgRent: 4000 },
     };
 
-    const data = regionalData[region] || regionalData['Москва'];
+    const data = regionalData[region] || regionalData.Moscow;
 
     return {
       success: true,
@@ -132,7 +136,7 @@ export async function getRentalYieldByRegion(region = 'Москва') {
     console.error('Ошибка получения данных по региону:', error);
     return {
       success: false,
-      error: 'Не удалось получить данные по региону'
+      error: 'Could not fetch region data'
     };
   }
 }
@@ -157,7 +161,7 @@ export async function parsePropertyPrices() {
     console.error('Ошибка парсинга цен:', error);
     return {
       success: false,
-      error: 'Не удалось получить данные о ценах'
+      error: 'Could not fetch price data'
     };
   }
 }

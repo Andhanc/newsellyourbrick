@@ -439,7 +439,7 @@ const Header = () => {
       return { 
         allowed: false, 
         reason: 'auth',
-        message: 'Для доступа к этой странице необходимо войти в систему'
+        message: t('headerAccess_loginRequired')
       }
     }
 
@@ -453,7 +453,7 @@ const Header = () => {
         return { 
           allowed: false, 
           reason: 'role',
-          message: 'Доступ только для администраторов'
+          message: t('headerAccess_adminOnly')
         }
       }
 
@@ -461,7 +461,7 @@ const Header = () => {
         return { 
           allowed: false, 
           reason: 'role',
-          message: 'Доступ только для продавцов'
+          message: t('headerAccess_sellersOnly')
         }
       }
     }

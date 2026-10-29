@@ -1,16 +1,30 @@
 const DOCUMENT_ASPECT_RATIO_MIN = 0.45
 const DOCUMENT_ASPECT_RATIO_MAX = 2.5
-/** Жёсткий блок только для совсем крошечных превью */
+/** Hard block only for tiny previews */
 const BLOCK_MIN_SHORT_SIDE = 280
-/** Мягкая подсказка, если фото скромного разрешения */
+/** Soft hint when resolution is modest */
 const WARN_MIN_WIDTH = 640
 const WARN_MIN_HEIGHT = 420
+
+export const PASSPORT_PHOTO_HINT = {
+  OPEN_FAILED: 'passportVal_openFailed',
+  SELECT_DOCUMENT: 'passportVal_selectDocument',
+  TOO_SMALL: 'passportVal_tooSmall',
+  LOW_RESOLUTION: 'passportVal_lowResolution',
+  FRAME_DOCUMENT: 'passportVal_frameDocument',
+  TOO_DARK: 'passportVal_tooDark',
+  TOO_BRIGHT: 'passportVal_tooBright',
+  LOOKS_GOOD: 'passportVal_looksGood',
+  PASSPORT_SIGNALS_OK: 'passportVal_passportSignalsOk',
+  NOT_PASSPORT: 'passportVal_notPassport',
+  NEED_SERIES_AND_FIELDS: 'passportVal_needSeriesAndFields',
+}
 
 function loadImage(file) {
   return new Promise((resolve, reject) => {
     const image = new Image()
     image.onload = () => resolve(image)
-    image.onerror = () => reject(new Error('Не удалось открыть изображение'))
+    image.onerror = () => reject(new Error(PASSPORT_PHOTO_HINT.OPEN_FAILED))
     image.src = URL.createObjectURL(file)
   })
 }
@@ -24,12 +38,17 @@ function getBrightness(canvasCtx, width, height) {
   return total / (data.length / 4)
 }
 
+/**
+ * @returns {Promise<{ isLikelyDocument: boolean, shouldBlock: boolean, hints: string[], hintKeys: string[] }>}
+ * `hintKeys` are i18n keys; `hints` mirror them for backward compatibility (translate via t()).
+ */
 export async function validatePassportImageFile(file) {
   if (!file || !file.type?.startsWith('image/')) {
     return {
       isLikelyDocument: false,
       shouldBlock: true,
-      hints: ['Выберите фото документа (JPG, PNG или HEIC).'],
+      hintKeys: [PASSPORT_PHOTO_HINT.SELECT_DOCUMENT],
+      hints: [PASSPORT_PHOTO_HINT.SELECT_DOCUMENT],
     }
   }
 
@@ -40,15 +59,15 @@ export async function validatePassportImageFile(file) {
   const longSide = Math.max(width, height)
   const aspectRatio = longSide / Math.max(shortSide, 1)
 
-  const hints = []
+  const hintKeys = []
   let shouldBlock = false
   let documentScore = 0
 
   if (shortSide < BLOCK_MIN_SHORT_SIDE) {
     shouldBlock = true
-    hints.push('Фото слишком маленькое. Подойдите ближе и снимите документ крупнее.')
+    hintKeys.push(PASSPORT_PHOTO_HINT.TOO_SMALL)
   } else if (width < WARN_MIN_WIDTH || height < WARN_MIN_HEIGHT) {
-    hints.push('Разрешение невысокое — распознавание может ошибиться. Лучше переснять ближе.')
+    hintKeys.push(PASSPORT_PHOTO_HINT.LOW_RESOLUTION)
     documentScore += 1
   } else {
     documentScore += 1
@@ -58,7 +77,7 @@ export async function validatePassportImageFile(file) {
   if (aspectRatio >= DOCUMENT_ASPECT_RATIO_MIN && aspectRatio <= DOCUMENT_ASPECT_RATIO_MAX) {
     documentScore += 1
   } else {
-    hints.push('Расположите документ полностью в кадре, без сильной обрезки.')
+    hintKeys.push(PASSPORT_PHOTO_HINT.FRAME_DOCUMENT)
   }
 
   const canvas = document.createElement('canvas')
@@ -70,9 +89,9 @@ export async function validatePassportImageFile(file) {
     const brightness = getBrightness(ctx, canvas.width, canvas.height)
 
     if (brightness < 40) {
-      hints.push('Недостаточно света. Добавьте освещение и уберите тени.')
+      hintKeys.push(PASSPORT_PHOTO_HINT.TOO_DARK)
     } else if (brightness > 225) {
-      hints.push('Сильная пересветка. Избегайте бликов и вспышки.')
+      hintKeys.push(PASSPORT_PHOTO_HINT.TOO_BRIGHT)
     } else {
       documentScore += 1
     }
@@ -80,14 +99,15 @@ export async function validatePassportImageFile(file) {
 
   URL.revokeObjectURL(image.src)
 
-  if (hints.length === 0) {
-    hints.push('Отлично: документ читаем, можно запускать распознавание.')
+  if (hintKeys.length === 0) {
+    hintKeys.push(PASSPORT_PHOTO_HINT.LOOKS_GOOD)
   }
 
   return {
     isLikelyDocument: documentScore >= 2,
     shouldBlock,
-    hints,
+    hintKeys,
+    hints: hintKeys,
   }
 }
 
@@ -113,12 +133,9 @@ export function evaluatePassportText(text) {
   }
 
   const isPassportLikely = score >= 2
-  const hints = isPassportLikely
-    ? ['Паспортные признаки найдены, продолжаем извлечение данных.']
-    : [
-        'Похоже, на фото не паспорт. Сфотографируйте разворот паспорта без обложки.',
-        'В кадре должны быть видны серия, номер и текстовые поля документа.',
-      ]
+  const hintKeys = isPassportLikely
+    ? [PASSPORT_PHOTO_HINT.PASSPORT_SIGNALS_OK]
+    : [PASSPORT_PHOTO_HINT.NOT_PASSPORT, PASSPORT_PHOTO_HINT.NEED_SERIES_AND_FIELDS]
 
-  return { isPassportLikely, hints, score }
+  return { isPassportLikely, hintKeys, hints: hintKeys, score }
 }

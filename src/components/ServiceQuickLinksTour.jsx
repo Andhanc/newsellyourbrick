@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { useTranslation } from 'react-i18next'
 import { getMainScrollEl } from '../utils/mainScroll'
 import './ServiceQuickLinksTour.css'
 
@@ -64,6 +65,7 @@ function buildHitSlabs(vw, vh, hole) {
  * Затемнение + «окно» на блоке направлений (Доли / Аукцион / Долги) и подсказка внизу.
  */
 export function ServiceQuickLinksTour({ active, onDismiss, groupRef }) {
+  const { t } = useTranslation()
   const reduceMotion = useReducedMotion()
   const panelRef = useRef(null)
   const lockedScrollTopRef = useRef(0)
@@ -235,10 +237,10 @@ export function ServiceQuickLinksTour({ active, onDismiss, groupRef }) {
             aria-labelledby="service-quick-links-tour-title"
           >
             <p id="service-quick-links-tour-title" className="service-quick-links-tour__text">
-              Начни изучать наш сервис уже сейчас. Покупай недвижимость легко.
+              {t('serviceTour_title')}
             </p>
             <button type="button" className="service-quick-links-tour__ok" onClick={onDismiss}>
-              Понятно
+              {t('serviceTour_gotIt')}
             </button>
           </div>
         </motion.div>

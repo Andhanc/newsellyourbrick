@@ -88,6 +88,35 @@ export async function fetchAdminLiveChatSessions() {
   return json.data;
 }
 
+export async function fetchAdminLiveChatUsers({ q = '', limit = 100, offset = 0 } = {}) {
+  const base = await getApiBaseUrl();
+  const params = new URLSearchParams();
+  if (q) params.set('q', String(q));
+  if (limit != null) params.set('limit', String(limit));
+  if (offset != null) params.set('offset', String(offset));
+  const qs = params.toString();
+  const res = await fetch(`${base}/admin/live-chat/users${qs ? `?${qs}` : ''}`);
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'users');
+  return json.data;
+}
+
+/** Создать или открыть диалог с пользователем; text — опциональное первое сообщение менеджера. */
+export async function ensureAdminLiveChatSessionForUser(userId, { text } = {}) {
+  const base = await getApiBaseUrl();
+  const res = await fetch(`${base}/admin/live-chat/sessions/for-user`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      userId: Number(userId),
+      ...(text ? { text: String(text) } : {}),
+    }),
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'for-user');
+  return json.data;
+}
+
 export async function fetchAdminLiveChatMessages(sessionId) {
   const base = await getApiBaseUrl();
   const res = await fetch(`${base}/admin/live-chat/sessions/${sessionId}/messages`);

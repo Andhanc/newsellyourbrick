@@ -1,5 +1,20 @@
 import { getStoredNumericUserId } from '../services/authService'
 import { getPropertySlugFromRecord } from './propertySlug.js'
+import { getCoInvestmentDetailPath } from './sectionRoutes.js'
+
+function propertyLooksLikeShareListing(property) {
+  if (!property) return false
+  return (
+    property.pricePerShare != null ||
+    (property.totalPrice != null && property.totalShares != null) ||
+    property.is_share === 1 ||
+    property.is_share === true ||
+    property.sale_type === 'share' ||
+    property.is_shared_ownership === 1 ||
+    property.is_shared_ownership === true ||
+    property.is_shared_ownership === '1'
+  )
+}
 
 /** Тип для GET /api/properties/:id?property_type= — снимает неоднозначность при одинаковых id в двух таблицах. */
 const DISAMBIG_PROPERTY_TYPES = new Set(['apartment', 'commercial', 'house', 'villa'])
@@ -42,6 +57,11 @@ export function getPropertyDetailPath(propertyOrId, options = {}) {
   }
 
   if (propertyId == null || propertyId === '') return '/'
+
+  // Долевые лоты — только ShareDetailPage (новый layout), не legacy /property.
+  if (property && propertyLooksLikeShareListing(property) && options.forcePropertyPath !== true) {
+    return getCoInvestmentDetailPath(property)
+  }
 
   const slug = property ? getPropertySlugFromRecord(property) : ''
   const useSlugPath = Boolean(slug && !/^\d+$/.test(slug))

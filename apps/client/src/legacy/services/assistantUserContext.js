@@ -69,7 +69,7 @@ function summarizeFavorites(rows, catalog) {
     const property = findCatalogProperty(catalog, row) || {}
     return propertySummary(property, {
       propertyId: row.property_id,
-      title: property.title || property.name || `Объект #${row.property_id}`,
+      title: property.title || property.name || `Property #${row.property_id}`,
       sourceTable: row.property_table,
     })
   })
@@ -82,7 +82,7 @@ function summarizeBookings(rows) {
     items: rows.slice(0, 12).map((row) => ({
       ...propertySummary(row, {
         propertyId: row.property_id,
-        title: row.property_title || row.title || row.property?.title || `Объект #${row.property_id}`,
+        title: row.property_title || row.title || row.property?.title || `Property #${row.property_id}`,
         status: row.status || row.booking_status,
       }),
       startDate: row.start_date || row.check_in || row.date_from || null,
@@ -128,14 +128,14 @@ export function buildAssistantUserContext({ identity = {}, payloads = {}, catalo
     ownedProperties: summarizeRows(ownedProperties),
     bids: summarizeRows(bids, (row) => propertySummary(row, {
       propertyId: row.property_id,
-      title: row.title || row.property?.title || `Объект #${row.property_id}`,
+      title: row.title || row.property?.title || `Property #${row.property_id}`,
       status: row.status || (row.auction_end_date ? 'auction' : null),
       amount: row.bid_amount,
     })),
     auctionWins: summarizeRows(auctionWins, (row) => propertySummary(row.property || row, {
       id: row.id,
       propertyId: row.property_id,
-      title: row.property?.title || row.title || `Объект #${row.property_id}`,
+      title: row.property?.title || row.title || `Property #${row.property_id}`,
       status: row.status || 'won',
       amount: row.winning_bid_amount,
       currency: row.currency || row.property?.currency,
@@ -144,14 +144,14 @@ export function buildAssistantUserContext({ identity = {}, payloads = {}, catalo
     reservations: summarizeRows(reservations, (row) => propertySummary(row.property || row, {
       id: row.id,
       propertyId: row.property_id || row.billing?.property_id,
-      title: row.property_title || row.title || row.property?.title || `Объект #${row.property_id || row.billing?.property_id}`,
+      title: row.property_title || row.title || row.property?.title || `Property #${row.property_id || row.billing?.property_id}`,
       status: row.status || row.payment_status || 'reserved',
       amount: row.reserve_amount ?? row.amount_paid ?? row.paid_amount,
       sourceTable: row.property_table || row.billing?.property_table,
     })),
     sharePurchases: summarizeRows(sharePurchases, (row) => propertySummary(row, {
       propertyId: row.property_id,
-      title: row.property_title || `Объект #${row.property_id}`,
+      title: row.property_title || `Property #${row.property_id}`,
       status: row.status || 'purchased',
       amount: row.total_paid,
     })),

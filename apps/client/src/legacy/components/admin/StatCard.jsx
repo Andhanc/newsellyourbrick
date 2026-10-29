@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import './StatCard.css';
 
 const StatCard = ({ title, value, change, changeType, icon, iconClass, onClick, ariaLabel }) => {
+  const { t } = useTranslation();
   const Comp = onClick ? 'button' : 'div'
   const extraProps = onClick
     ? {

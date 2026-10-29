@@ -6,7 +6,7 @@ import { getUserData, isAuthenticated } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { showNotification } from '../utils/toastHelper'
-import { startPropertyReservationCheckout } from '../utils/subscriptionCheckout'
+import { startPropertyReservationCheckout, translateBillingError } from '../utils/subscriptionCheckout'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
 import ShareSignaturePad from './ShareSignaturePad'
 import './BuyNowModal.css'
@@ -220,7 +220,7 @@ const BuyNowModal = ({
       // поэтому проверка window.open() блокировала согласие в рабочем сценарии.
       setPdfOpened(true)
     } catch {
-      showNotification('Не удалось открыть файл условий', 'error')
+      showNotification(t('buyNowModalPdfOpenFailed'), 'error')
     }
   }
 
@@ -288,7 +288,7 @@ const BuyNowModal = ({
       } catch (error) {
         const msg =
           error?.name === 'AbortError'
-            ? 'Превышено время ожидания ответа сервера. Проверьте, что API запущен.'
+            ? t('buyNowModalErrorTimeout')
             : error?.message || t('buyNowModalErrorCheckout')
         showNotification(msg, 'error')
         return
@@ -314,7 +314,7 @@ const BuyNowModal = ({
         purchaseVariant: isAuctionWinner ? 'auctionWinner' : 'buyNow',
       })
       if (!result.ok) {
-        showNotification(result.error || t('buyNowModalErrorCheckout'), 'error')
+        showNotification(translateBillingError(result.error, t, 'buyNowModalErrorCheckout'), 'error')
         return
       }
       if (!result.redirected) {
@@ -379,8 +379,8 @@ const BuyNowModal = ({
               {step === 1
                 ? (isAuctionWinner ? t('auctionWinPaymentModalTitle') : t('buyNowModalTitle'))
                 : step === 2
-                  ? 'Условия резерва'
-                  : 'Подпишите и оплатите'}
+                  ? t('buyNowModalStepTerms')
+                  : t('buyNowModalStepSign')}
             </h2>
             <p className="buy-now-modal__subtitle">{propertyTitle}</p>
             {isAuctionWinner && (
@@ -523,9 +523,9 @@ const BuyNowModal = ({
               <section className="buy-now-modal__legal buy-now-modal__legal--terms">
                 <div className="buy-now-modal__terms-icon"><FiLock size={25} /></div>
                 <div className="buy-now-modal__legal-top">
-                  <h3 className="buy-now-modal__legal-title">Перед оплатой внимательно прочитайте документ</h3>
+                  <h3 className="buy-now-modal__legal-title">{t('buyNowModalLegalTitle')}</h3>
                   <p className="buy-now-modal__terms-copy">
-                    В нём зафиксированы сумма резерва, срок бронирования и порядок дальнейшего оформления сделки.
+                    {t('buyNowModalLegalCopy')}
                   </p>
                 <button type="button" className="buy-now-modal__pdf-btn" onClick={openPdf}>
                   <FiExternalLink size={15} />
@@ -549,9 +549,9 @@ const BuyNowModal = ({
             {step === 3 ? (
               <section className="buy-now-modal__legal buy-now-modal__legal--signature">
                 <div className="buy-now-modal__signature-summary">
-                  <span>К оплате сейчас</span>
+                  <span>{t('buyNowModalPayNowLabel')}</span>
                   <strong>{reserveDisplaySymbol}{formatMoney(useWalletDeposit && canUseWallet ? reserveDisplayAmount : tenPercent)}</strong>
-                  <small>Stripe подтвердит платёж до создания заявки</small>
+                  <small>{t('buyNowModalStripeConfirmNote')}</small>
                 </div>
                 <div className="buy-now-modal__signature-block">
                   <div className="buy-now-modal__signature-head">
@@ -574,7 +574,7 @@ const BuyNowModal = ({
           <div className="buy-now-modal__actions">
             {step > 1 ? (
               <button type="button" className="buy-now-modal__back" onClick={() => setStep((value) => Math.max(1, value - 1))}>
-                <FiArrowLeft size={18} /> Назад
+                <FiArrowLeft size={18} /> {t('buyNowModalBack')}
               </button>
             ) : null}
             {step < 3 ? (
@@ -584,7 +584,7 @@ const BuyNowModal = ({
                 onClick={goForward}
                 disabled={step === 2 && (!pdfOpened || !agreed)}
               >
-                Продолжить <FiArrowRight size={18} />
+                {t('buyNowModalContinue')} <FiArrowRight size={18} />
               </button>
             ) : (
               <button

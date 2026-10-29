@@ -24,7 +24,7 @@ export async function fetchMarketerSiteAds() {
   const res = await fetch(`${BASE()}/marketer/ads`, { headers: marketerHeaders() })
   const data = await res.json().catch(() => ({}))
   handleAuthError(res)
-  if (!res.ok) throw new Error(data.error || 'Ошибка загрузки')
+  if (!res.ok) throw new Error(data.error || 'Load failed')
   return data.ads || []
 }
 
@@ -36,7 +36,7 @@ export async function createMarketerSiteAd(payload) {
   })
   const data = await res.json().catch(() => ({}))
   handleAuthError(res)
-  if (!res.ok) throw new Error(data.error || 'Ошибка создания')
+  if (!res.ok) throw new Error(data.error || 'Create failed')
   return data.ad
 }
 
@@ -47,6 +47,6 @@ export async function deleteMarketerSiteAd(id) {
   })
   const data = await res.json().catch(() => ({}))
   handleAuthError(res)
-  if (!res.ok) throw new Error(data.error || 'Ошибка удаления')
+  if (!res.ok) throw new Error(data.error || 'Delete failed')
   return true
 }

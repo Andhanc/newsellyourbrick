@@ -1,27 +1,31 @@
 import { useTranslation } from 'react-i18next'
 import { Check, Lightbulb } from 'lucide-react'
-import { getAmenityGroupsForProfile } from '../utils/oapAmenityGroups'
+import {
+  getAmenityGroupsForProfile,
+  getAmenityGroupTitle,
+  getAmenityItemLabel,
+} from '../utils/oapAmenityGroups'
 import { getAmenityIcon } from './oapAmenityIcons'
 import OapWizardSidebarImage from '../components/OapWizardSidebarImage'
 import { OAP_AMENITIES_IMAGES } from './oapAmenitiesImages'
 import './OwnerAddPropertyAmenitiesStep.css'
 import './oapStepSidebar.css'
 
-function AmenityCard({ item, isActive, embedded, journeyLayout, onToggle }) {
+function AmenityCard({ item, label, isActive, embedded, journeyLayout, wide, onToggle }) {
   const ItemIcon = getAmenityIcon(item.tzKey)
 
   return (
     <button
       type="button"
-      className={`oap-amenity-card${journeyLayout ? ' oap-amenity-card--journey' : ''}${isActive ? ' oap-amenity-card--active' : ''}`}
+      className={`oap-amenity-card${journeyLayout ? ' oap-amenity-card--journey' : ''}${wide ? ' oap-amenity-card--wide' : ''}${isActive ? ' oap-amenity-card--active' : ''}`}
       aria-pressed={isActive}
-      title={item.label}
+      title={label}
       onClick={() => onToggle(item.tzKey)}
     >
       <span className="oap-amenity-card__icon-wrap" aria-hidden>
         <ItemIcon size={16} strokeWidth={1.85} />
       </span>
-      <span className="oap-amenity-card__label">{item.label}</span>
+      <span className="oap-amenity-card__label">{label}</span>
       <span className="oap-amenity-card__check" aria-hidden>
         <Check size={embedded ? 10 : 11} strokeWidth={3} />
       </span>
@@ -41,48 +45,35 @@ export default function OwnerAddPropertyAmenitiesStep({
   const { t } = useTranslation()
   const groups = getAmenityGroupsForProfile(typeProfile)
 
-  const GROUP_TITLE_KEYS = {
-    'residential-parking': 'addPropertyAmenitiesGroupResidentialParkingStorage',
-    'residential-security': 'addPropertyAmenitiesGroupResidentialSecurity',
-    'residential-comfort': 'addPropertyAmenitiesGroupResidentialComfort',
-    'residential-outdoor': 'addPropertyAmenitiesGroupResidentialOutdoor',
-    'commercial-parking': 'addPropertyAmenitiesGroupCommercialParking',
-    'commercial-tech': 'addPropertyAmenitiesGroupCommercialTech',
-    'commercial-security': 'addPropertyAmenitiesGroupCommercialBuilding',
-    'land-utilities': 'addPropertyAmenitiesGroupLandUtilities',
-    'land-access': 'addPropertyAmenitiesGroupLandAccess',
-    'hotel-guest': 'addPropertyAmenitiesGroupHotelGuest',
-    'hotel-fb': 'addPropertyAmenitiesGroupHotelFood',
-    'hotel-transport': 'addPropertyAmenitiesGroupHotelParking',
-    'hotel-tech': 'addPropertyAmenitiesGroupHotelTech',
-  }
-
-  const getGroupTitle = (group) => {
-    const key = GROUP_TITLE_KEYS[group.id]
-    return key ? t(key) : group.title
-  }
-
   const groupedAmenities = (
     <div className="oap-amenities-groups">
-      {groups.map((group) => (
-        <section key={group.id} className="oap-amenities-group" aria-labelledby={`oap-amenity-group-${group.id}`}>
-          <h3 id={`oap-amenity-group-${group.id}`} className="oap-amenities-group__title">
-            {getGroupTitle(group)}
-          </h3>
-          <div className="oap-amenities-grid" role="group" aria-label={getGroupTitle(group)}>
-            {group.items.map((item) => (
-              <AmenityCard
-                key={item.tzKey}
-                item={item}
-                isActive={selectedAmenities.includes(item.tzKey)}
-                embedded={embedded}
-                journeyLayout={journeyLayout}
-                onToggle={onToggleAmenity}
-              />
-            ))}
-          </div>
-        </section>
-      ))}
+      {groups.map((group) => {
+        const groupTitle = getAmenityGroupTitle(t, group)
+        return (
+          <section key={group.id} className="oap-amenities-group" aria-labelledby={`oap-amenity-group-${group.id}`}>
+            <h3 id={`oap-amenity-group-${group.id}`} className="oap-amenities-group__title">
+              {groupTitle}
+            </h3>
+            <div className="oap-amenities-grid" role="group" aria-label={groupTitle}>
+              {group.items.map((item) => {
+                const label = getAmenityItemLabel(t, item)
+                return (
+                  <AmenityCard
+                    key={item.tzKey}
+                    item={item}
+                    label={label}
+                    isActive={selectedAmenities.includes(item.tzKey)}
+                    embedded={embedded}
+                    journeyLayout={journeyLayout}
+                    wide={label.length > 21}
+                    onToggle={onToggleAmenity}
+                  />
+                )
+              })}
+            </div>
+          </section>
+        )
+      })}
     </div>
   )
 

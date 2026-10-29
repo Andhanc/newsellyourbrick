@@ -11,6 +11,8 @@ import {
 import { useSignIn, useAuth, useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import { registerWithEmail, loginWithEmail, validatePassword, saveUserData, getReferrerId, checkSellerRegistrationEmail } from '../services/authService'
+import { formatPasswordValidationMessage } from '../utils/passwordValidationMessage'
+import { localizeAuthError } from '../utils/localizeAuthError'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { showNotification } from '../utils/toastHelper'
 import { shouldDefaultLoginModalToLogin } from '../utils/visitorAuthDefault'
@@ -80,7 +82,7 @@ const LoginModal = ({
     confirmPassword: ''
   })
   const [userRole, setUserRole] = useState(() => {
-    return sessionStorage.getItem('login_modal_user_role') || 'buyer' // 'buyer' или 'seller'
+    return sessionStorage.getItem('login_modal_user_role') || 'buyer' // 'buyer' | 'seller'
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -302,7 +304,7 @@ const LoginModal = ({
             role: userRole === 'seller' || userRole === 'owner' ? 'seller' : 'buyer',
           })
           if (!result?.success || !result?.user) {
-            setError(result?.error || 'Неверный email или пароль')
+            setError(result?.error ? localizeAuthError(result.error, t) : t('invalidEmailOrPassword'))
             setIsLoading(false)
             return
           }
@@ -310,7 +312,7 @@ const LoginModal = ({
           setIsLoading(false)
           navigate(getCabinetHomePath(result.user.role || userRole))
         } catch (nativeAuthError) {
-          setError(nativeAuthError?.message || 'Произошла ошибка при входе. Попробуйте позже.')
+          setError(nativeAuthError?.message ? localizeAuthError(nativeAuthError.message, t) : t('loginGenericError'))
           setIsLoading(false)
         }
         return
@@ -381,7 +383,7 @@ const LoginModal = ({
           navigate('/marketer')
           return
         } catch (err) {
-          setError(err?.message || 'Неверный логин или пароль')
+          setError(err?.message ? localizeAuthError(err.message, t) : t('invalidEmailOrPassword'))
           setIsLoading(false)
           return
         }
@@ -470,26 +472,26 @@ const LoginModal = ({
               window.location.reload();
             }, 100);
           } else {
-            setError(result.error || 'Неверный email или пароль');
+            setError(result.error ? localizeAuthError(result.error, t) : t('invalidEmailOrPassword'));
             setIsLoading(false);
           }
         }
       } catch (error) {
         console.error('❌ Ошибка входа:', error)
-        setError(error.message || 'Произошла ошибка при входе. Попробуйте позже.')
+        setError(error.message ? localizeAuthError(error.message, t) : t('loginGenericError'))
         setIsLoading(false)
       }
     } else {
       // Регистрация с email и паролем
       // Проверка паролей
       if (formData.password !== formData.confirmPassword) {
-        setError('Пароли не совпадают')
+        setError(t('passwordsDoNotMatch'))
         setIsLoading(false)
         return
       }
       
       if (formData.password.length < 6) {
-        setError('Пароль должен содержать минимум 6 символов')
+        setError(t('passwordMinLength'))
         setIsLoading(false)
         return
       }
@@ -497,13 +499,13 @@ const LoginModal = ({
       // Валидация пароля по требованиям (заглавная буква, спецсимвол, цифра)
       const passwordValidation = validatePassword(formData.password)
       if (!passwordValidation.valid) {
-        setError(passwordValidation.message)
+        setError(formatPasswordValidationMessage(passwordValidation, t))
         setIsLoading(false)
         return
       }
       
       if (!formData.name || formData.name.trim().length < 2) {
-        setError('Имя должно содержать минимум 2 символа')
+        setError(t('nameMinLength'))
         setIsLoading(false)
         return
       }
@@ -514,18 +516,16 @@ const LoginModal = ({
           if (chk.status === 'password_same_as_buyer') {
             setError('')
             setRegisterBottomError(
-              chk.error ||
-                'Пароль кабинета продавца должен отличаться от пароля кабинета покупателя. Укажите другой пароль.'
+              chk.error ? localizeAuthError(chk.error, t) : t('sellerPasswordMustDiffer'),
             )
           } else if (chk.status === 'buyer_password_required') {
             setRegisterBottomError('')
             setError(
-              chk.error ||
-                'Сначала войдите в кабинет покупателя и задайте пароль, затем создайте кабинет продавца с другим паролем.'
+              chk.error ? localizeAuthError(chk.error, t) : t('buyerPasswordRequiredFirst'),
             )
           } else {
             setRegisterBottomError('')
-            setError(chk.error || 'Не удалось проверить email')
+            setError(chk.error ? localizeAuthError(chk.error, t) : t('emailCheckFailed'))
           }
           setIsLoading(false)
           return
@@ -550,7 +550,11 @@ const LoginModal = ({
             role: userRole === 'seller' || userRole === 'owner' ? 'seller' : 'buyer',
           })
           if (!result?.success || !result?.user) {
-            setError(result?.error || 'Не удалось зарегистрироваться')
+            setError(
+              result?.passwordValidation
+                ? formatPasswordValidationMessage(result.passwordValidation, t)
+                : (result?.error ? localizeAuthError(result.error, t) : t('registerFailed')),
+            )
             setIsLoading(false)
             return
           }
@@ -558,7 +562,7 @@ const LoginModal = ({
           setIsLoading(false)
           navigate(getCabinetHomePath(result.user.role || userRole))
         } catch (nativeAuthError) {
-          setError(nativeAuthError?.message || 'Произошла ошибка при регистрации. Попробуйте позже.')
+          setError(nativeAuthError?.message ? localizeAuthError(nativeAuthError.message, t) : t('registerGenericError'))
           setIsLoading(false)
         }
         return
@@ -578,12 +582,16 @@ const LoginModal = ({
           setShowEmailVerificationModal(true)
           console.log('📧 showEmailVerificationModal установлен в true')
         } else {
-          setError(result.error || 'Не удалось зарегистрироваться')
+          setError(
+            result.passwordValidation
+              ? formatPasswordValidationMessage(result.passwordValidation, t)
+              : (result.error ? localizeAuthError(result.error, t) : t('registerFailed')),
+          )
           setIsLoading(false)
         }
       } catch (error) {
         console.error('Ошибка регистрации:', error)
-        setError('Произошла ошибка при регистрации. Попробуйте позже.')
+        setError(t('registerGenericError'))
         setIsLoading(false)
       }
     }
@@ -601,20 +609,20 @@ const LoginModal = ({
         })
         if (result?.cancelled) return
         if (!result?.success || !result?.user) {
-          setError(result?.error || 'Не удалось войти через Google')
+          setError(result?.error ? localizeAuthError(result.error, t) : t('googleSignInFailed'))
           return
         }
         saveUserData(result.user, 'clerk')
         navigate(getCabinetHomePath(result.user.role || userRole))
       } catch (nativeAuthError) {
-        setError(nativeAuthError?.message || 'Не удалось войти через Google')
+        setError(nativeAuthError?.message ? localizeAuthError(nativeAuthError.message, t) : t('googleSignInFailed'))
       } finally {
         setIsLoading(false)
       }
       return
     }
     if (nativeSocialAuthUnavailable) {
-      setError('В мобильном приложении сейчас доступен вход по email и паролю.')
+      setError(t('mobileEmailPasswordOnly'))
       return
     }
     try {
@@ -628,9 +636,9 @@ const LoginModal = ({
       if (authLoaded && isSignedIn && userLoaded && user && !localHasDbUser) {
         const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
-        const userName = user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Пользователь'
+        const userName = user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || t('defaultUserDisplayName')
         const nameParts = userName.split(' ')
-        const firstName = nameParts[0] || 'Пользователь'
+        const firstName = nameParts[0] || t('defaultUserDisplayName')
         const lastName = nameParts.slice(1).join(' ') || ''
 
         const userEmail = user.primaryEmailAddress?.emailAddress || (user.emailAddresses?.[0]?.emailAddress || null)
@@ -657,12 +665,12 @@ const LoginModal = ({
 
         if (!response.ok) {
           const data = await response.json().catch(() => ({}))
-          throw new Error(data.error || 'Не удалось создать пользователя в БД')
+          throw new Error(data.error ? localizeAuthError(data.error, t) : t('createUserInDbFailed'))
         }
 
         const data = await response.json()
         if (!data?.success || !data?.data?.id) {
-          throw new Error(data?.error || 'Не удалось создать пользователя в БД')
+          throw new Error(data?.error ? localizeAuthError(data.error, t) : t('createUserInDbFailed'))
         }
 
         const dbUserId = data.data.id
@@ -680,7 +688,7 @@ const LoginModal = ({
         localStorage.setItem('userId', String(dbUserId))
 
         onClose?.()
-        showNotification('Пользователь создан. Продолжаем регистрацию...')
+        showNotification(t('userCreatedContinueRegister'))
         navigateToCabinetAfterClerkDbSync()
         setIsLoading(false)
         return
@@ -701,12 +709,12 @@ const LoginModal = ({
           redirectUrl: returnUrl,
         })
       } else {
-        setError('Система авторизации не готова. Попробуйте обновить страницу.')
+        setError(t('authSystemNotReady'))
         setIsLoading(false)
       }
     } catch (error) {
       console.error('LoginModal: Ошибка авторизации через Google (Clerk):', error)
-      setError(`Не удалось войти через Google: ${error.message || 'Проверьте настройки'}`)
+      setError(t('googleSignInFailedWithDetail', { detail: error.message ? localizeAuthError(error.message, t) : t('authCheckSettings') }))
       setIsLoading(false)
     }
   }
@@ -723,20 +731,20 @@ const LoginModal = ({
         })
         if (result?.cancelled) return
         if (!result?.success || !result?.user) {
-          setError(result?.error || 'Не удалось войти через Facebook')
+          setError(result?.error ? localizeAuthError(result.error, t) : t('facebookSignInFailed'))
           return
         }
         saveUserData(result.user, 'clerk')
         navigate(getCabinetHomePath(result.user.role || userRole))
       } catch (nativeAuthError) {
-        setError(nativeAuthError?.message || 'Не удалось войти через Facebook')
+        setError(nativeAuthError?.message ? localizeAuthError(nativeAuthError.message, t) : t('facebookSignInFailed'))
       } finally {
         setIsLoading(false)
       }
       return
     }
     if (nativeSocialAuthUnavailable) {
-      setError('В мобильном приложении сейчас доступен вход по email и паролю.')
+      setError(t('mobileEmailPasswordOnly'))
       return
     }
     try {
@@ -749,9 +757,9 @@ const LoginModal = ({
       if (authLoaded && isSignedIn && userLoaded && user && !localHasDbUser) {
         const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
-        const userName = user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Пользователь'
+        const userName = user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || t('defaultUserDisplayName')
         const nameParts = userName.split(' ')
-        const firstName = nameParts[0] || 'Пользователь'
+        const firstName = nameParts[0] || t('defaultUserDisplayName')
         const lastName = nameParts.slice(1).join(' ') || ''
 
         const userEmail = user.primaryEmailAddress?.emailAddress || (user.emailAddresses?.[0]?.emailAddress || null)
@@ -778,12 +786,12 @@ const LoginModal = ({
 
         if (!response.ok) {
           const data = await response.json().catch(() => ({}))
-          throw new Error(data.error || 'Не удалось создать пользователя в БД')
+          throw new Error(data.error ? localizeAuthError(data.error, t) : t('createUserInDbFailed'))
         }
 
         const data = await response.json()
         if (!data?.success || !data?.data?.id) {
-          throw new Error(data?.error || 'Не удалось создать пользователя в БД')
+          throw new Error(data?.error ? localizeAuthError(data.error, t) : t('createUserInDbFailed'))
         }
 
         const dbUserId = data.data.id
@@ -802,7 +810,7 @@ const LoginModal = ({
         localStorage.setItem('userId', String(dbUserId))
 
         onClose?.()
-        showNotification('Пользователь создан. Продолжаем регистрацию...')
+        showNotification(t('userCreatedContinueRegister'))
         navigateToCabinetAfterClerkDbSync()
         setIsLoading(false)
         return
@@ -823,12 +831,12 @@ const LoginModal = ({
           redirectUrl: returnUrl,
         })
       } else {
-        setError('Система авторизации не готова. Попробуйте обновить страницу.')
+        setError(t('authSystemNotReady'))
         setIsLoading(false)
       }
     } catch (error) {
       console.error('LoginModal: Ошибка авторизации через Facebook:', error)
-      setError(`Не удалось войти через Facebook: ${error.message || 'Проверьте настройки'}`)
+      setError(t('facebookSignInFailedWithDetail', { detail: error.message ? localizeAuthError(error.message, t) : t('authCheckSettings') }))
       setIsLoading(false)
     }
   }
@@ -841,18 +849,18 @@ const LoginModal = ({
 
   const handleTelegramClick = () => {
     if (nativeSocialAuthUnavailable) {
-      setError('В мобильном приложении сейчас доступен вход по email и паролю.')
+      setError(t('mobileEmailPasswordOnly'))
       return
     }
     if (telegramBotUsername) return // виджет сам обрабатывает клик
-    showNotification('Добавьте VITE_TELEGRAM_BOT_USERNAME в .env и перезапустите приложение, чтобы включить вход через Telegram.')
+    showNotification(t('telegramBotEnvHint'))
   }
 
   const handleWhatsAppSuccess = async (user, authToken = null) => {
     if (nativeAuthSuccess) {
       const adopted = await nativeAuthSuccess({ user, authToken })
       if (!adopted?.success || !adopted?.user) {
-        setError(adopted?.error || 'Не удалось сохранить сессию WhatsApp')
+        setError(adopted?.error ? localizeAuthError(adopted.error, t) : t('whatsappSessionSaveFailed'))
         return
       }
       user = adopted.user
@@ -895,24 +903,24 @@ const LoginModal = ({
         if (chk.status === 'password_same_as_buyer') {
           setError('')
           setRegisterBottomError(
-            chk.error ||
-              'Пароль кабинета продавца должен отличаться от пароля кабинета покупателя. Укажите другой пароль.'
+            chk.error ? localizeAuthError(chk.error, t) : t('sellerPasswordMustDiffer'),
           )
         } else if (chk.status === 'buyer_password_required') {
           setRegisterBottomError('')
           setError(
-            chk.error ||
-              'Сначала войдите в кабинет покупателя и задайте пароль, затем создайте кабинет продавца с другим паролем.'
+            chk.error ? localizeAuthError(chk.error, t) : t('buyerPasswordRequiredFirst'),
           )
         } else {
           setRegisterBottomError('')
-          setError(chk.error || 'Не удалось продолжить регистрацию')
+          setError(
+            chk.error ? localizeAuthError(chk.error, t) : t('registerContinueFailed'),
+          )
         }
         setPendingSellerLinkBuyerId(null)
         return
       }
       if (chk.status !== 'needs_confirmation') {
-        setError('Не удалось подтвердить данные. Попробуйте снова.')
+        setError(t('registerConfirmFailed'))
         setPendingSellerLinkBuyerId(null)
         return
       }
@@ -922,12 +930,12 @@ const LoginModal = ({
       if (result.success) {
         setShowEmailVerificationModal(true)
       } else {
-        setError(result.error || 'Не удалось отправить код')
+        setError(result.error ? localizeAuthError(result.error, t) : t('codeSendFailed'))
         setSellerRegistrationBuyerId(null)
       }
     } catch (e) {
       console.error(e)
-      setError('Произошла ошибка. Попробуйте позже.')
+      setError(t('genericError'))
       setSellerRegistrationBuyerId(null)
     } finally {
       setIsLoading(false)
@@ -938,7 +946,7 @@ const LoginModal = ({
     if (nativeAuthSuccess) {
       const adopted = await nativeAuthSuccess({ user, authToken })
       if (!adopted?.success || !adopted?.user) {
-        setError(adopted?.error || 'Не удалось сохранить сессию')
+        setError(adopted?.error ? localizeAuthError(adopted.error, t) : t('sessionSaveFailed'))
         return
       }
       user = adopted.user
@@ -1226,7 +1234,7 @@ const LoginModal = ({
                   className="login-modal__wizard-tile login-modal__wizard-tile--seller login-modal__wizard-tile--locked"
                   disabled
                   aria-disabled="true"
-                  aria-label={`${t('roleSeller')}. ${t('softLaunchUnavailableBadge', { defaultValue: 'Пока недоступно' })}`}
+                  aria-label={`${t('roleSeller')}. ${t('softLaunchUnavailableBadge')}`}
                 >
                   <span className="login-modal__wizard-tile-blur" aria-hidden>
                     <span className="login-modal__wizard-tile-icon">
@@ -1239,7 +1247,7 @@ const LoginModal = ({
                   </span>
                   <span className="login-modal__wizard-tile-lock">
                     <span className="login-modal__wizard-tile-lock-badge">
-                      {t('softLaunchUnavailableBadge', { defaultValue: 'Пока недоступно' })}
+                      {t('softLaunchUnavailableBadge')}
                     </span>
                   </span>
                 </button>
@@ -1380,11 +1388,11 @@ const LoginModal = ({
                   className="login-modal__role-card login-modal__role-card--locked"
                   disabled
                   aria-disabled="true"
-                  aria-label={`${t('roleSeller')}. ${t('softLaunchUnavailableBadge', { defaultValue: 'Пока недоступно' })}`}
+                  aria-label={`${t('roleSeller')}. ${t('softLaunchUnavailableBadge')}`}
                 >
                   <span className="login-modal__role-card-blur">{t('roleSeller')}</span>
                   <span className="login-modal__role-card-lock">
-                    {t('softLaunchUnavailableBadge', { defaultValue: 'Пока недоступно' })}
+                    {t('softLaunchUnavailableBadge')}
                   </span>
                 </button>
               ) : (

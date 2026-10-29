@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FiX, FiLoader, FiImage, FiRefreshCw, FiSearch } from 'react-icons/fi'
 import {
   generateNewsDraft,
@@ -12,6 +13,7 @@ import NewsArticleBody from './NewsArticleBody'
 import './GenerateNewsModal.css'
 
 export default function GenerateNewsModal({ open, onClose, onPublished }) {
+  const { t } = useTranslation()
   const [prompt, setPrompt] = useState('')
   const [draft, setDraft] = useState(null)
   const [step, setStep] = useState('prompt')
@@ -49,12 +51,12 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
       setImageOptions([])
       setStep('preview')
     } catch (e) {
-      const raw = e?.message || 'Ошибка генерации'
+      const raw = e?.message || t('genNews_errGenerate')
       const friendly =
         raw === 'SESSION_EXPIRED'
-          ? 'Сессия истекла — войдите снова'
+          ? t('genNews_errSession')
           : /aborted|timeout|timed out/i.test(raw)
-            ? 'Генерация заняла слишком много времени. Сократите промпт или подождите ~15 сек и нажмите «Сгенерировать» снова.'
+            ? t('genNews_errTimeout')
             : raw
       setError(friendly)
     } finally {
@@ -74,7 +76,7 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
       onPublished?.(article)
       handleClose()
     } catch (e) {
-      setError(e?.message === 'SESSION_EXPIRED' ? 'Сессия истекла — войдите снова' : e?.message || 'Ошибка публикации')
+      setError(e?.message === 'SESSION_EXPIRED' ? t('genNews_errSession') : e?.message || t('genNews_errPublish'))
     } finally {
       setLoading(false)
     }
@@ -89,7 +91,7 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
     if (!draft) return
     const query = String(queryOverride ?? imageQuery ?? draft.imageSearchQuery ?? '').trim()
     if (!query) {
-      setError('Укажите запрос для поиска фото')
+      setError(t('genNews_errQueryRequired'))
       return
     }
     setError('')
@@ -100,7 +102,7 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
       if (images.length) applyImage(images[0])
       setImageQuery(query)
     } catch (e) {
-      setError(e?.message || 'Не удалось найти фото')
+      setError(e?.message || t('genNews_errFindPhoto'))
     } finally {
       setImageLoading(false)
     }
@@ -120,7 +122,7 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
       })
       await handleSearchImages(meta.imageSearchQuery)
     } catch (e) {
-      setError(e?.message || 'Не удалось подобрать запрос')
+      setError(e?.message || t('genNews_errSuggestQuery'))
     } finally {
       setImageLoading(false)
     }
@@ -144,7 +146,7 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
       setImageQuery(result.imageSearchQuery || imageQuery)
       setImageOptions((prev) => [result.image, ...prev.filter((u) => u !== result.image)].slice(0, 6))
     } catch (e) {
-      setError(e?.message || 'Не удалось сгенерировать фото')
+      setError(e?.message || t('genNews_errGeneratePhoto'))
     } finally {
       setImageLoading(false)
     }
@@ -165,13 +167,13 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
           type="button"
           className="gen-news-modal__close"
           onClick={handleClose}
-          aria-label="Закрыть"
+          aria-label={t('genNews_closeAria')}
         >
           <FiX size={22} />
         </button>
 
         <h2 id="gen-news-modal-title" className="gen-news-modal__title">
-          {step === 'preview' ? 'Предпросмотр новости' : 'Сгенерировать новость'}
+          {step === 'preview' ? t('genNews_titlePreview') : t('genNews_titleGenerate')}
         </h2>
 
         {error ? <p className="gen-news-modal__error">{error}</p> : null}
@@ -179,23 +181,23 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
         {step === 'prompt' ? (
           <>
             <label className="gen-news-modal__label" htmlFor="gen-news-prompt">
-              Промпт для ИИ
+              {t('genNews_promptLabel')}
             </label>
             <textarea
               id="gen-news-prompt"
               className="gen-news-modal__textarea"
               rows={6}
-              placeholder="Кратко опишите тему (2–5 предложений). ИИ создаст статью с 3–7 разделами и подберёт обложку."
+              placeholder={t('genNews_promptPlaceholder')}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               disabled={loading}
             />
             {loading ? (
-              <p className="gen-news-modal__hint">Генерация может занять 1–3 минуты, не закрывайте окно…</p>
+              <p className="gen-news-modal__hint">{t('genNews_generatingHint')}</p>
             ) : null}
             <div className="gen-news-modal__actions">
               <button type="button" className="gen-news-modal__btn gen-news-modal__btn--ghost" onClick={handleClose}>
-                Отмена
+                {t('genNews_cancel')}
               </button>
               <button
                 type="button"
@@ -204,7 +206,7 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
                 disabled={loading || prompt.trim().length < 8}
               >
                 {loading ? <FiLoader className="gen-news-modal__spin" size={18} /> : null}
-                {loading ? 'Генерация…' : 'Сгенерировать'}
+                {loading ? t('genNews_generating') : t('genNews_generate')}
               </button>
             </div>
           </>
@@ -229,7 +231,7 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
                   disabled={imageLoading || loading}
                 >
                   <FiSearch size={16} />
-                  ИИ-подбор фото
+                  {t('genNews_aiPickPhoto')}
                 </button>
                 <button
                   type="button"
@@ -238,7 +240,7 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
                   disabled={imageLoading || loading}
                 >
                   <FiRefreshCw size={16} />
-                  Найти другие
+                  {t('genNews_findOthers')}
                 </button>
                 <button
                   type="button"
@@ -247,12 +249,12 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
                   disabled={imageLoading || loading}
                 >
                   <FiImage size={16} />
-                  Сгенерировать ИИ
+                  {t('genNews_generateAi')}
                 </button>
               </div>
 
               <label className="gen-news-modal__label" htmlFor="gen-news-image-query">
-                Запрос для поиска (English)
+                {t('genNews_imageQueryLabel')}
               </label>
               <div className="gen-news-modal__image-query-row">
                 <input
@@ -270,7 +272,7 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
                   onClick={() => handleSearchImages(imageQuery)}
                   disabled={imageLoading || loading || !imageQuery.trim()}
                 >
-                  Искать
+                  {t('genNews_search')}
                 </button>
               </div>
 
@@ -282,7 +284,7 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
                       type="button"
                       className={`gen-news-modal__image-option${draft?.image === url ? ' gen-news-modal__image-option--active' : ''}`}
                       onClick={() => applyImage(url)}
-                      title="Выбрать обложку"
+                      title={t('genNews_selectCover')}
                     >
                       <img src={url} alt="" />
                     </button>
@@ -293,12 +295,12 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
 
             <h3 className="gen-news-modal__preview-title">{draft?.title}</h3>
             <p className="gen-news-modal__preview-lead">{draft?.lead}</p>
-            <NewsArticleMeta date="сегодня" views={0} />
+            <NewsArticleMeta date={t('genNews_today')} views={0} />
             <p className="gen-news-modal__preview-excerpt">
-              <strong>Карточка:</strong> {draft?.excerpt}
+              <strong>{t('genNews_cardLabel')}</strong> {draft?.excerpt}
             </p>
             <p className="gen-news-modal__preview-sections">
-              <strong>Разделов:</strong> {headingCount} (нужно 3–7)
+              <strong>{t('genNews_sectionsLabel')}</strong> {headingCount} {t('genNews_sectionsNeed')}
             </p>
             <div className="gen-news-modal__preview-body">
               <NewsArticleBody body={draft?.body} />
@@ -310,7 +312,7 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
                 onClick={() => setStep('prompt')}
                 disabled={loading}
               >
-                Изменить промпт
+                {t('genNews_editPrompt')}
               </button>
               <button
                 type="button"
@@ -319,7 +321,7 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
                 disabled={loading || imageLoading}
               >
                 {loading ? <FiLoader className="gen-news-modal__spin" size={18} /> : null}
-                {loading ? 'Публикация…' : 'Опубликовать'}
+                {loading ? t('genNews_publishing') : t('genNews_publish')}
               </button>
             </div>
           </div>

@@ -14,7 +14,7 @@ export async function initDatabase() {
   const url = process.env.DATABASE_URL || '';
   if (!url.startsWith('postgresql://') && !url.startsWith('postgres://')) {
     throw new Error(
-      'Требуется DATABASE_URL с PostgreSQL (postgres:// или postgresql://).'
+      'DATABASE_URL with PostgreSQL is required (postgres:// or postgresql://).'
     );
   }
   const prisma = getPrisma();

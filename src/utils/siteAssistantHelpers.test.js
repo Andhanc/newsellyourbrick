@@ -47,9 +47,23 @@ test('removes a stale test-drive link from an ordinary catalog prompt', () => {
   const message = refreshAssistantMessageCopy({
     sender: 'assistant',
     text: 'Выберите страну: Беларусь.',
-    navigation: [{ path: '/test-drive', label: 'Test-drive объектов' }],
+    navigation: [{ path: '/test-drive', labelKey: 'testDrive' }],
   })
   assert.equal(message.navigation, null)
+})
+
+test('getSiteLinkLabel resolves labelKey via t()', async () => {
+  const { getSiteLinkLabel } = await import('./siteAssistantHelpers.js')
+  const t = (key) =>
+    ({
+      calculator: 'Smart Investor Dashboard',
+      auction: 'Auction',
+      siteNavMapObjects: 'Property map',
+    })[key] || key
+  assert.equal(getSiteLinkLabel({ path: '/calculator', labelKey: 'calculator' }, t), 'Smart Investor Dashboard')
+  assert.equal(getSiteLinkLabel({ path: '/auction' }, t), 'Auction')
+  assert.equal(getSiteLinkLabel({ path: '/map', label: 'Custom Map' }, t), 'Property map')
+  assert.equal(getSiteLinkLabel({ path: '/unknown', label: 'Fallback' }, t), 'Fallback')
 })
 
 test('estimateSimpleYield computes gross yield', () => {

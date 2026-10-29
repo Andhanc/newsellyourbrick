@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": 400,
+    "message": "Bad request: Origin doesn't match Host for XD3.",
+    "status": "INVALID_ARGUMENT"
+  }
+}

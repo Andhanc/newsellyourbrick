@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { useTranslation } from 'react-i18next';
 import { cva } from 'class-variance-authority';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
@@ -40,11 +41,13 @@ const ServiceCard = React.forwardRef(
       href,
       imgSrc,
       imgAlt,
-      linkLabel = 'УЗНАТЬ БОЛЬШЕ',
+      linkLabel,
       ...props
     },
     ref
   ) => {
+    const { t } = useTranslation();
+    const resolvedLinkLabel = linkLabel ?? t('sharesLearnMore');
     const cardAnimation = {
       hover: {
         scale: 1.02,
@@ -77,10 +80,10 @@ const ServiceCard = React.forwardRef(
           ) : href ? (
             <a
               href={href}
-              aria-label={`Узнать больше: ${title}`}
+              aria-label={t('serviceCardLearnMoreAria', { title })}
               className="mt-auto flex items-center gap-2 text-sm font-semibold group-hover:underline pt-2"
             >
-              {linkLabel}
+              {resolvedLinkLabel}
               <motion.span variants={{ hover: { x: 4 } }} className="inline-flex">
                 <ArrowRight className="h-4 w-4" />
               </motion.span>

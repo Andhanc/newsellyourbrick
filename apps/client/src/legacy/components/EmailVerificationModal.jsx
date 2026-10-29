@@ -10,7 +10,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
   const [code, setCode] = useState(['', '', '', '', '', ''])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-  const [step, setStep] = useState('email') // 'email' или 'code'
+  const [step, setStep] = useState('email') // 'email' or 'code'
   const [countdown, setCountdown] = useState(0)
   const [isValidatingEmail, setIsValidatingEmail] = useState(false)
   const [devCode, setDevCode] = useState(null) // Код для режима разработки
@@ -24,7 +24,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
     setIsValidatingEmail(false)
     
     if (!validation.valid) {
-      setError(validation.error || t('enterValidEmail') || 'Введите корректный email адрес')
+      setError(validation.error || t('enterValidEmail'))
       return
     }
 
@@ -39,7 +39,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
         // Это происходит только если EmailJS не настроен или произошла ошибка
         if (result.code && (result.devMode || result.warning)) {
           setDevCode(result.code)
-          console.log('🔐 Код для ввода (режим разработки):', result.code)
+          console.log('[dev] verification code:', result.code)
         } else {
           // Если код успешно отправлен через EmailJS, не показываем devCode
           setDevCode(null)
@@ -47,7 +47,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
         
         // Сохраняем предупреждение, если есть
         if (result.warning || result.devMode) {
-          setDevWarning(result.warning || result.message || 'EmailJS не настроен, используется режим разработки')
+          setDevWarning(result.warning || result.message || t('emailDevModeWarning'))
         } else {
           setDevWarning(null)
         }
@@ -61,13 +61,13 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
           }
         }, 100)
       } else {
-        setError(result.error || 'Не удалось отправить код')
+        setError(result.error || t('emailSendError'))
         setDevCode(null)
         setDevWarning(null)
       }
     } catch (error) {
-      console.error('Ошибка отправки кода:', error)
-      setError(t('genericError') || 'Произошла ошибка. Попробуйте позже.')
+      console.error('Code send failed:', error)
+      setError(t('genericError'))
       setDevCode(null)
       setDevWarning(null)
     } finally {
@@ -78,12 +78,12 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
   useEffect(() => {
     if (isOpen) {
       if (initialEmail) {
-        console.log('📧 EmailVerificationModal открыт с email:', initialEmail)
+        console.log('EmailVerificationModal open with email:', initialEmail)
         setEmail(initialEmail)
         // Если email передан, значит код уже отправлен, сразу показываем форму ввода кода
         setStep('code')
         setCountdown(60) // Устанавливаем таймер для повторной отправки
-        setError('') // Очищаем ошибки
+        setError('') // clear errors
         // Фокусируемся на первом поле ввода кода
         setTimeout(() => {
           if (inputRefs.current[0]) {
@@ -203,7 +203,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
             onClose()
           }
         } else {
-          setError(result.error || t('invalidCode') || 'Неверный код. Попробуйте еще раз.')
+          setError(result.error || t('invalidCode'))
           // Очищаем поля ввода
           setCode(['', '', '', '', '', ''])
           inputRefs.current[0]?.focus()
@@ -219,15 +219,15 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
           }
           onClose()
         } else {
-          setError(result.error || t('invalidCode') || 'Неверный код. Попробуйте еще раз.')
+          setError(result.error || t('invalidCode'))
           // Очищаем поля ввода
           setCode(['', '', '', '', '', ''])
           inputRefs.current[0]?.focus()
         }
       }
     } catch (error) {
-      console.error('Ошибка верификации кода:', error)
-      setError(t('genericError') || 'Произошла ошибка. Попробуйте позже.')
+      console.error('Code verification failed:', error)
+      setError(t('genericError'))
     } finally {
       setIsLoading(false)
     }
@@ -241,23 +241,23 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
 
   // Логирование для отладки
   useEffect(() => {
-    console.log('📧 EmailVerificationModal состояние:', {
+    console.log('EmailVerificationModal state:', {
       isOpen,
       step,
       email,
       hasInitialEmail: !!initialEmail,
       codeLength: code.filter(c => c).length,
-      password: password ? '***' : 'нет',
-      name: name || 'нет'
+      password: password ? '***' : 'no',
+      name: name || 'no'
     })
   }, [isOpen, step, email, initialEmail, code, password, name])
 
   if (!isOpen) {
-    console.log('📧 EmailVerificationModal закрыт (isOpen = false)')
+    console.log('EmailVerificationModal closed (isOpen = false)')
     return null
   }
 
-  console.log('📧 EmailVerificationModal рендерится, isOpen =', isOpen)
+  console.log('EmailVerificationModal render, isOpen =', isOpen)
 
   return (
     <div className="email-verification-overlay" onClick={onClose}>

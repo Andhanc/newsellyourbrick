@@ -5,6 +5,11 @@ import FilterCollapsibleSection from './FilterCollapsibleSection'
 import useFilterSectionState from '../hooks/useFilterSectionState'
 import { AUCTION_DESKTOP_PROPERTY_TYPE_ITEMS } from '../utils/auctionDesktopFilterMatch'
 import { DEBTS_RISK_OPTIONS } from '../utils/debtsPageFilters'
+import {
+  getLocalizedCountryLabelFromOption,
+  normalizeCountryLocale,
+} from '../utils/localizeCountryName'
+import { getLocalizedRegionLabel } from '../utils/localizeBuyerNotification'
 import './AuctionDesktopFilters.css'
 import './DebtsDesktopFilters.css'
 
@@ -53,7 +58,11 @@ function DebtsDesktopFilters({
   onApply,
   variant = 'sidebar',
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const countryLocale = useMemo(
+    () => normalizeCountryLocale(i18n.language),
+    [i18n.language],
+  )
 
   const countryValue = normalizeCountry(country)
   const cityValue = normalizeCity(city)
@@ -112,8 +121,11 @@ function DebtsDesktopFilters({
       }
     })
     if (countryValue) {
-      const countryLabel =
-        locationOptions.find((item) => item.key === countryValue)?.label || countryValue
+      const countryOpt = locationOptions.find((item) => item.key === countryValue)
+      const countryLabel = getLocalizedCountryLabelFromOption(
+        countryOpt || { key: countryValue },
+        countryLocale,
+      )
       chips.push({
         id: `country-${countryValue}`,
         label: countryLabel,
@@ -125,7 +137,7 @@ function DebtsDesktopFilters({
     }
     if (cityValue) {
       const cityLabel =
-        selectedCountry?.regions?.find((item) => item.key === cityValue)?.label || cityValue
+        getLocalizedRegionLabel(cityValue, selectedCountry?.regions?.find((item) => item.key === cityValue)?.label || cityValue, t)
       chips.push({
         id: `city-${cityValue}`,
         label: cityLabel,
@@ -174,6 +186,7 @@ function DebtsDesktopFilters({
     cityValue,
     locationOptions,
     selectedCountry,
+    countryLocale,
     setCountry,
     setCity,
     t,
@@ -277,7 +290,7 @@ function DebtsDesktopFilters({
                 <option value="">{t('catalogFilterAll')}</option>
                 {locationOptions.map((item) => (
                   <option key={item.key} value={item.key}>
-                    {item.label}
+                    {getLocalizedCountryLabelFromOption(item, countryLocale)}
                   </option>
                 ))}
               </select>
@@ -293,7 +306,7 @@ function DebtsDesktopFilters({
                 <option value="">{t('catalogFilterAll')}</option>
                 {(selectedCountry?.regions || []).map((item) => (
                   <option key={item.key} value={item.key}>
-                    {item.label}
+                    {getLocalizedRegionLabel(item.key, item.label, t)}
                   </option>
                 ))}
               </select>

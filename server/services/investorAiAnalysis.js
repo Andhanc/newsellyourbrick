@@ -518,14 +518,14 @@ function normalizeAnalysis(ai, fallback, model) {
 
 export function promptFor(input, fallback) {
   const years = sampleYears(input.goal.periodYears)
-  return `Ты — осторожный аналитик инвестиций в жилую недвижимость. Выполни актуальный поиск по официальным статистическим источникам, центральным банкам, официальным страницам банков и крупным площадкам недвижимости для ${input.property.city}, ${input.property.country}. Сегодня ${new Date().toISOString().slice(0, 10)}.
+  return `You are a cautious residential real-estate investment analyst. Run a fresh search across official statistics sources, central banks, official bank pages, and major property portals for ${input.property.city}, ${input.property.country}. Today is ${new Date().toISOString().slice(0, 10)}.
 
-Верни только JSON по заданной схеме. Построй три сценария и обязательно верни yearlyPoints строго для лет: ${years.join(', ')}. Значения графиков должны быть числовыми и внутренне согласованными. Ипотека — только предварительный диапазон, не обещание одобрения. Если данных заёмщика недостаточно, status=insufficient_data и перечисли недостающие данные. Не выдумывай источники: sources содержит только реально найденные URL. Все пользовательские текстовые поля JSON пиши строго на языке ${LANGUAGE_NAMES[input.locale]} (${input.locale}), включая вывод, сценарии, риски, рекомендации, ипотеку и пробелы в данных. Названия собственные и URL оставь как в источнике.
+Return only JSON matching the given schema. Build three scenarios and always return yearlyPoints strictly for years: ${years.join(', ')}. Chart values must be numeric and internally consistent. Mortgage figures are a preliminary range only, not an approval promise. If borrower data is insufficient, set status=insufficient_data and list the missing fields. Do not invent sources: sources may contain only real URLs you found. Write every user-facing JSON text field strictly in ${LANGUAGE_NAMES[input.locale]} (${input.locale}), including the verdict, scenarios, risks, recommendations, mortgage notes, and data gaps. Keep proper names and URLs as in the source.
 
-Вход пользователя:
+User input:
 ${JSON.stringify(input)}
 
-Расчётная опора сервера (её можно осторожно уточнить на основе свежих источников):
+Server baseline (you may carefully refine it using fresh sources):
 ${JSON.stringify({ assumptions: fallback.assumptions, scenarios: fallback.scenarios, metrics: fallback.metrics, mortgageEstimate: fallback.mortgageEstimate })}`
 }
 
@@ -536,7 +536,7 @@ export function getInvestorAiFallback(rawInput, reason = '') {
 
 export async function analyzeInvestorScenario(rawInput) {
   const input = sanitizeInput(rawInput)
-  if (input.property.price <= 0) throw new Error('Цена объекта должна быть больше нуля')
+  if (input.property.price <= 0) throw new Error('Property price must be greater than zero')
   const fallback = buildFallback(input)
   const cacheKey = crypto.createHash('sha256').update(JSON.stringify(input)).digest('hex')
   const cached = analysisCache.get(cacheKey)

@@ -1,4 +1,5 @@
 import { FiInfo, FiAlertCircle } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 import './AuthAlertModal.css'
 
 /**
@@ -13,28 +14,30 @@ const AuthAlertModal = ({
   variant = 'error',
   title,
   message,
-  buttonText = 'Понятно',
+  buttonText,
   icon: IconOverride,
 }) => {
+  const { t } = useTranslation()
+
   if (!isOpen) return null
 
   const config = {
     already_registered: {
       icon: FiAlertCircle,
-      title: title || 'Вы уже зарегистрированы',
-      message: message || 'Этот аккаунт уже привязан к вашему профилю. Закройте окно и выберите «Вход», чтобы войти.',
+      title: title || t('authAlert_alreadyTitle'),
+      message: message || t('authAlert_alreadyMessage'),
       className: 'auth-alert-modal--warning',
     },
     need_register: {
       icon: FiInfo,
-      title: title || 'Вы не зарегистрированы на сайте',
-      message: message || 'Сначала зарегистрируйтесь: закройте окно, выберите «Регистрация» и войдите тем же способом (Google, Telegram, WhatsApp или email).',
+      title: title || t('authAlert_needTitle'),
+      message: message || t('authAlert_needMessage'),
       className: 'auth-alert-modal--info',
     },
     error: {
       icon: FiAlertCircle,
-      title: title || 'Что-то пошло не так',
-      message: message || 'Попробуйте ещё раз или выберите другой способ входа — например, через email, Telegram или WhatsApp.',
+      title: title || t('authAlert_errorTitle'),
+      message: message || t('authAlert_errorMessage'),
       className: 'auth-alert-modal--error',
     },
   }
@@ -52,7 +55,7 @@ const AuthAlertModal = ({
           <h2 className="auth-alert-modal__title">{title || defaultTitle}</h2>
           <p className="auth-alert-modal__message">{message || defaultMessage}</p>
           <button type="button" className="auth-alert-modal__button" onClick={onClose}>
-            {buttonText}
+            {buttonText || t('authAlert_ok')}
           </button>
         </div>
       </div>

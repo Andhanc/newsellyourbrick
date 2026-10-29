@@ -85,7 +85,7 @@ export function closeTruncatedJson(jsonStr) {
 export function parseLooseJson(text) {
   const extracted = extractJsonObject(text)
   if (!extracted) {
-    throw new Error('AI не вернул JSON-объект')
+    throw new Error('AI did not return a JSON object')
   }
 
   const attempts = [
@@ -106,8 +106,8 @@ export function parseLooseJson(text) {
     }
   }
 
-  const msg = lastError?.message || 'невалидный JSON'
+  const msg = lastError?.message || 'invalid JSON'
   throw new Error(
-    msg.includes('JSON') ? `AI вернул некорректный JSON: ${msg}` : 'AI вернул некорректный JSON',
+    msg.includes('JSON') ? `AI returned invalid JSON: ${msg}` : 'AI returned invalid JSON',
   )
 }

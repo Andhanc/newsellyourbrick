@@ -1,0 +1,52 @@
+{
+  "key_files": {
+    "advert_en.docx": "18goz-sHpvNUS3FgA-Le_m3WdP4lZSBOP",
+    "advert_es.docx": "15drQOAlNaopDQP9V4Aq0899PqA_U8WgT",
+    "dossier_en.pdf": "1sjzxOp3Z22OfgVm3sCcU23X1O73k651y",
+    "dossier_es.pdf": "1BSENetJ61746HEeKsffUP-sLD__aQIxo",
+    "memoria_en.pdf": "1zovzy0LaiooFEAdnKt4otRxkSJsUyP_V",
+    "memoria_es.pdf": "14Uu8wt2kPsFOr0XKXNQr5qJWoQvmu9zY",
+    "dia_en.pdf": "15UyPeFfNNhnBbifXxuOrlfgFSWR5Tomx",
+    "dia_es.pdf": "1a7tpXPHnzItybARmV5gAKRBXCtW_gX3c",
+    "plot_jpg": "1Uu8ZJ74N1MP69fOY2VugMDcq5G7Lqo0H",
+    "plots_png": "1N-AlIy-GR-qBs1dCAAehyvBDLzBp5FaQ",
+    "vistas_jpg": "1DuRt0G4U7PflVicacFdnRX6aO-nBkDFU"
+  },
+  "renders": {
+    "aerial": [
+      "1mK-XV-kSMFHqWB0Y4ih6i7vi-3uygrBs",
+      "1p-DwgbLNW_Vze5oM2zSNZ7IxFW48wl_x",
+      "11QbjsrcJvo_fsUbaYEUP2Z4ns36odsHy",
+      "1Wo4-wxTI24PEBdikPzxKNPRwcae2WrCC"
+    ],
+    "interior": [
+      "1M9uyXf75yhQefWeedl1E8dN-gj-lBD5q",
+      "1rQ3g4wkXNSqgehekU8H2aNi7b_471PAY",
+      "1ljAAP-1mNwfOSOrJQ-IFBQEuCTbV06Ki",
+      "1J9FwunRl-EIvEbwcoFOXS_965fDUYHfz",
+      "1MZTS5XjtW1RbzKQyB-WvjjetP0NKA_gw",
+      "1eUW2e6GtYLw4UUyU6wcRje0QMzesLzPu",
+      "1xR4zvedaycvNsPimuE74b1TQWKg0JxYp"
+    ],
+    "outdoor": [
+      "1Ah8gUR7qfohQwxvJe7Y96ffYlsCH-Cut",
+      "1hCtejHi2Uq-x-w6ypQXlgWGbaE3hI149",
+      "1EPhTHBfYyVLjeYlO2z-HgOTtJ5Wu7ixY",
+      "1RIBcYiQXYH0fFK1yN6u80ncpD41UdrDv",
+      "16t3Vcz-nbAaM0RwOrvClMyz8JdvYSTsR",
+      "1S3wP9eyrUOn08HIBh_WxHkQQaGRT9YL6"
+    ],
+    "terrace": [
+      "1X3AMZttACerO8ET5tBlePw-R0cYPynsJ",
+      "1X01UTqulyK5bB6_jSs4TtTMgttiZf_iz",
+      "1_mByFNfJjy59NIrRr9kbJK_nF43veCeq",
+      "1B_VwRMfxRQXmCI-5bTgMKas3IEw-XsPl"
+    ],
+    "spa": [
+      "1bPk7JTOJnYGBToSyJHhUAmznSaxYvmcX",
+      "11C_F0qLsLzLKMmPCp42AOCKLNg0F--jx",
+      "1yM0DTdWOHCkVhk0Fpz8WWVbmhzK2JrDZ"
+    ]
+  },
+  "layout_count": 136
+}

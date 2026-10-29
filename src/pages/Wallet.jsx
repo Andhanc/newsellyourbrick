@@ -35,6 +35,7 @@ import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import {
   startDepositWalletCheckout,
   confirmWalletDepositSession,
+  translateBillingError,
 } from '../utils/subscriptionCheckout'
 import { getUsdtJettonWalletAddress, buildUsdtTransferTransaction } from '../utils/tonUsdt'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
@@ -81,21 +82,21 @@ const WALLET_PREVIEW_TRANSACTIONS = [
     id: 'preview-deposit',
     amount: 1099,
     type: 'deposit',
-    description: 'Пополнение депозита',
+    descriptionKey: 'walletPreview_depositTopUp',
     created_at: '2026-08-25T09:41:00.000Z',
   },
   {
     id: 'preview-reserve',
     amount: -120.75,
     type: 'withdrawal',
-    description: 'Резерв по ставке',
+    descriptionKey: 'walletPreview_bidReserve',
     created_at: '2026-08-24T18:12:00.000Z',
   },
   {
     id: 'preview-return',
     amount: 45,
     type: 'deposit',
-    description: 'Возврат резерва',
+    descriptionKey: 'walletPreview_reserveReturn',
     created_at: '2026-08-23T14:20:00.000Z',
   },
 ]
@@ -200,7 +201,7 @@ const resolveWonPropertyFromBid = async (bid, dbUserId, apiBase) => {
     if (!isWinner) return null
     return { ...bid, bid_amount: userMaxBid }
   } catch (error) {
-    console.error('Ошибка проверки выигранного объекта:', error)
+    console.error('Won-property check failed:', error)
     return null
   }
 }
@@ -284,7 +285,14 @@ const WalletInner = () => {
   const [loading, setLoading] = useState(!isDesignPreview)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [loadError, setLoadError] = useState(null)
-  const [transactions, setTransactions] = useState(isDesignPreview ? WALLET_PREVIEW_TRANSACTIONS : [])
+  const [transactions, setTransactions] = useState(() => (isDesignPreview ? WALLET_PREVIEW_TRANSACTIONS.map((row) => ({ ...row, description: t(row.descriptionKey) })) : []))
+  useEffect(() => {
+    if (!isDesignPreview) return
+    setTransactions((prev) => {
+      const next = WALLET_PREVIEW_TRANSACTIONS.map((row) => ({ ...row, description: t(row.descriptionKey) }))
+      return isSameTransactionList(prev, next) ? prev : next
+    })
+  }, [isDesignPreview, t, i18n.language])
   const [isDepositInfoOpen, setIsDepositInfoOpen] = useState(false)
   const [isStrategyModalOpen, setIsStrategyModalOpen] = useState(false)
   const [strategyReturnPath, setStrategyReturnPath] = useState(null)
@@ -509,10 +517,10 @@ const WalletInner = () => {
       }
       
       const [depositResult, transactionsResult, analyticsResult, bidsResult] = await Promise.allSettled([
-        fetchWithErrorHandling(`${API_BASE_URL}/users/${dbUserId}/deposit`, 'Ошибка загрузки депозита'),
-        fetchWithErrorHandling(`${API_BASE_URL}/users/${dbUserId}/transactions`, 'Ошибка загрузки транзакций'),
-        fetchWithErrorHandling(`${API_BASE_URL}/users/${dbUserId}/analytics`, 'Ошибка загрузки аналитики'),
-        fetchWithErrorHandling(`${API_BASE_URL}/bids/user/${dbUserId}`, 'Ошибка загрузки ставок')
+        fetchWithErrorHandling(`${API_BASE_URL}/users/${dbUserId}/deposit`, 'wallet_loadDepositFailed'),
+        fetchWithErrorHandling(`${API_BASE_URL}/users/${dbUserId}/transactions`, 'wallet_loadTransactionsFailed'),
+        fetchWithErrorHandling(`${API_BASE_URL}/users/${dbUserId}/analytics`, 'wallet_loadAnalyticsFailed'),
+        fetchWithErrorHandling(`${API_BASE_URL}/bids/user/${dbUserId}`, 'wallet_loadBidsFailed')
       ])
       
       const depositRes = depositResult.status === 'fulfilled' ? depositResult.value.response : null
@@ -595,7 +603,7 @@ const WalletInner = () => {
         setWonProperty(null)
       }
     } catch (error) {
-      console.error('Ошибка загрузки данных:', error)
+      console.error('Wallet data load failed:', error)
     } finally {
       if (showLoading) {
         setLoading(false)
@@ -685,7 +693,7 @@ const WalletInner = () => {
         customerEmail,
       })
       if (!result.ok) {
-        showNotification(result.error || t('walletPage_stripeCheckoutError'), 'error')
+        showNotification(translateBillingError(result.error, t, 'walletPage_stripeCheckoutError'), 'error')
       }
     } finally {
       setStripeCheckoutLoading(false)
@@ -716,7 +724,7 @@ const WalletInner = () => {
         showNotification(data.error || t('walletPage_withdrawError'))
       }
     } catch (error) {
-      console.error('Ошибка вывода:', error)
+      console.error('Withdraw failed:', error)
       showNotification(t('walletPage_withdrawError'))
     }
   }

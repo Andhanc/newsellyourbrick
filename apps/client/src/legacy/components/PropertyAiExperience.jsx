@@ -66,7 +66,7 @@ function PropertyMiniCard({ property }) {
       <div>
         <strong>{property?.title || property?.name || t('propertyAi_propertyFallback')}</strong>
         <span>{[
-          property?.area ? `${property.area} м²` : '',
+          property?.area ? t('propertyAi_areaSqm', { area: property.area }) : '',
           property?.rooms ? t('propertyAi_roomsShort', { count: property.rooms }) : '',
           property?.floor ? t('propertyAi_floorShort', { floor: property.floor }) : '',
         ].filter(Boolean).join(' · ')}</span>
@@ -142,15 +142,15 @@ export default function PropertyAiExperience({
       setJob(next)
       if (next.status === 'completed' || next.status === 'failed') {
         if (next.status === 'failed') {
-          setError(next.error || 'Не удалось подготовить отчёт. Попробуйте создать его снова.')
+          setError(next.error || t('propertyAi_errorPrepareReport'))
         }
         void loadHistory()
         return next
       }
       await new Promise((resolve) => window.setTimeout(resolve, 1200))
     }
-    throw new Error('Генерация занимает больше обычного. Отчёт появится в истории.')
-  }, [loadHistory])
+    throw new Error(t('propertyAi_errorGenerationSlow'))
+  }, [loadHistory, t])
 
   const start = useCallback(async (category, nextQuestion) => {
     const userId = requireUser()
@@ -169,17 +169,17 @@ export default function PropertyAiExperience({
         await pollReport(result.data.id, userId)
       } else {
         if (result.data.status === 'failed') {
-          setError(result.data.error || 'Не удалось подготовить отчёт. Попробуйте создать его снова.')
+          setError(result.data.error || t('propertyAi_errorPrepareReport'))
         }
         void loadHistory()
       }
     } catch (startError) {
       if (startError?.name !== 'AbortError') {
-        setError(startError?.message || 'Не удалось подготовить отчёт.')
+        setError(startError?.message || t('propertyAi_errorPrepareReportShort'))
         setJob((current) => ({ ...current, status: 'failed' }))
       }
     }
-  }, [loadHistory, pollReport, propertyId, propertyTable, requireUser])
+  }, [loadHistory, pollReport, propertyId, propertyTable, requireUser, t])
 
   const selectScenario = (scenario) => {
     if (!requireUser()) return
@@ -195,7 +195,7 @@ export default function PropertyAiExperience({
   const submitCustom = () => {
     const value = customQuestion.trim()
     if (value.length < 5) {
-      setError('Напишите вопрос длиной не менее 5 символов.')
+      setError(t('propertyAi_errorQuestionTooShort'))
       return
     }
     setCustomQuestion('')
@@ -227,7 +227,7 @@ export default function PropertyAiExperience({
       }
       window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
     } catch (pdfError) {
-      setError(pdfError?.message || 'Не удалось открыть PDF.')
+      setError(pdfError?.message || t('propertyAi_errorPdfOpen'))
     } finally {
       setPdfBusy(false)
     }
@@ -351,7 +351,7 @@ export default function PropertyAiExperience({
     [t],
   )
   const visibleError = error || (job?.status === 'failed'
-    ? job.error || 'Не удалось подготовить отчёт. Попробуйте создать его снова.'
+    ? job.error || t('propertyAi_errorPrepareReport')
     : '')
   const handleLauncherClick = () => {
     // Пока идёт морфинг — игнор; модалку открываем только на полностью развёрнутой плашке
@@ -466,13 +466,13 @@ export default function PropertyAiExperience({
               <div className="property-ai-answer-summary">
                 {answerStrengths.length > 0 && (
                   <section className="property-ai-answer-summary__group property-ai-answer-summary__group--strengths">
-                    <strong><span aria-hidden>+</span> Плюсы</strong>
+                    <strong><span aria-hidden>+</span> {t('propertyAi_pros')}</strong>
                     <ul>{answerStrengths.slice(0, 4).map((item, index) => <li key={`strength-${index}`}>{item}</li>)}</ul>
                   </section>
                 )}
                 {answerRisks.length > 0 && (
                   <section className="property-ai-answer-summary__group property-ai-answer-summary__group--risks">
-                    <strong><span aria-hidden>!</span> Риски</strong>
+                    <strong><span aria-hidden>!</span> {t('propertyAi_risks')}</strong>
                     <ul>{answerRisks.slice(0, 4).map((item, index) => <li key={`risk-${index}`}>{item}</li>)}</ul>
                   </section>
                 )}
@@ -487,51 +487,51 @@ export default function PropertyAiExperience({
                 <div>
                   <span>
                     {job.status === 'completed'
-                      ? 'PDF · 7–8 страниц'
+                      ? t('propertyAi_pdfPagesReady')
                       : job.status === 'failed'
-                        ? 'PDF не создан'
-                        : 'Собираем PDF-презентацию'}
+                        ? t('propertyAi_pdfNotCreated')
+                        : t('propertyAi_pdfBuilding')}
                   </span>
-                  <strong>{job.report?.title || 'Подробный AI-разбор объекта'}</strong>
+                  <strong>{job.report?.title || t('propertyAi_reportTitleFallback')}</strong>
                   <small>
                     {job.status === 'completed'
-                      ? 'С реальными фото, выводами и допущениями'
+                      ? t('propertyAi_pdfReadyHint')
                       : job.status === 'failed'
-                        ? 'Можно повторить создание файла'
-                        : 'Файл появится здесь автоматически'}
+                        ? t('propertyAi_pdfRetryHint')
+                        : t('propertyAi_pdfAutoHint')}
                   </small>
                 </div>
                 {job.status === 'completed' ? (
                   <div className="property-ai-pdf-card__actions">
-                    <button type="button" disabled={pdfBusy} onClick={() => handlePdf(false)}><FiExternalLink /> Открыть</button>
-                    <button type="button" disabled={pdfBusy} onClick={() => handlePdf(true)}><FiDownload /> Скачать</button>
+                    <button type="button" disabled={pdfBusy} onClick={() => handlePdf(false)}><FiExternalLink /> {t('propertyAi_open')}</button>
+                    <button type="button" disabled={pdfBusy} onClick={() => handlePdf(true)}><FiDownload /> {t('propertyAi_download')}</button>
                   </div>
                 ) : job.status === 'failed' ? (
                   <div className="property-ai-pdf-card__actions">
-                    <button type="button" onClick={() => start(job.category || 'custom', job.question)}><FiRefreshCw /> Создать снова</button>
+                    <button type="button" onClick={() => start(job.category || 'custom', job.question)}><FiRefreshCw /> {t('propertyAi_createAgain')}</button>
                   </div>
                 ) : (
-                  <div className="property-ai-pdf-wait" aria-label="PDF создаётся"><i /></div>
+                  <div className="property-ai-pdf-wait" aria-label={t('propertyAi_pdfCreatingAria')}><i /></div>
                 )}
               </article>
             )}
 
-            {visibleError && <div className="property-ai-error" role="alert"><p>{visibleError}</p>{job?.question && <button type="button" onClick={() => start(job.category || 'custom', job.question)}><FiRefreshCw /> Попробовать снова</button>}</div>}
+            {visibleError && <div className="property-ai-error" role="alert"><p>{visibleError}</p>{job?.question && <button type="button" onClick={() => start(job.category || 'custom', job.question)}><FiRefreshCw /> {t('propertyAi_tryAgain')}</button>}</div>}
           </div>
 
           <form className="property-ai-composer" onSubmit={(event) => { event.preventDefault(); submitCustom() }}>
-            <input value={customQuestion} onChange={(event) => setCustomQuestion(event.target.value)} placeholder="Задайте свой вопрос" aria-label="Ваш вопрос" />
-            <button type="submit" disabled={Boolean(statusCopy)} aria-label="Отправить"><FiArrowUp /></button>
+            <input value={customQuestion} onChange={(event) => setCustomQuestion(event.target.value)} placeholder={t('propertyAi_questionPlaceholder')} aria-label={t('propertyAi_questionAria')} />
+            <button type="submit" disabled={Boolean(statusCopy)} aria-label={t('propertyAi_sendAria')}><FiArrowUp /></button>
           </form>
 
           {historyOpen && (
             <aside className="property-ai-history">
-              <div><strong>История отчётов</strong><button type="button" onClick={() => setHistoryOpen(false)}><FiX /></button></div>
+              <div><strong>{t('propertyAi_historyTitle')}</strong><button type="button" onClick={() => setHistoryOpen(false)}><FiX /></button></div>
               {history.length ? history.map((item) => (
                 <button key={item.id} type="button" onClick={() => openHistoryReport(item)}>
-                  <span>{item.question}</span><small>{item.status === 'completed' ? 'PDF готов' : item.status === 'failed' ? 'Ошибка' : 'Готовится'}</small>
+                  <span>{item.question}</span><small>{item.status === 'completed' ? t('propertyAi_statusPdfReady') : item.status === 'failed' ? t('propertyAi_statusFailed') : t('propertyAi_statusPreparing')}</small>
                 </button>
-              )) : <p>Здесь появятся ваши анализы этого объекта.</p>}
+              )) : <p>{t('propertyAi_historyEmpty')}</p>}
             </aside>
           )}
           </div>

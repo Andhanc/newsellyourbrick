@@ -1,10 +1,12 @@
 import { forwardRef, useImperativeHandle, useRef, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import './ShareSignaturePad.css'
 
 /**
  * Компактное поле подписи: чёрное по белому. ref: { clear(), isEmpty(), toDataURL() }
  */
 const ShareSignaturePad = forwardRef(function ShareSignaturePad({ active, onInkChange }, ref) {
+  const { t } = useTranslation()
   const frameRef = useRef(null)
   const canvasRef = useRef(null)
   const drawing = useRef(false)
@@ -199,14 +201,14 @@ const ShareSignaturePad = forwardRef(function ShareSignaturePad({ active, onInkC
           ref={canvasRef}
           className="share-signature-pad__canvas"
           role="img"
-          aria-label="Поле для подписи"
+          aria-label={t('shareSignatureAria')}
           onMouseDown={start}
           onMouseMove={move}
           onMouseUp={end}
           onMouseLeave={end}
         />
       </div>
-      <p className="share-signature-pad__hint">Подпись мышью или пальцем</p>
+      <p className="share-signature-pad__hint">{t('shareSignatureHint')}</p>
     </div>
   )
 })

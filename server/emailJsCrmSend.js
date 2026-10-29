@@ -67,7 +67,7 @@ function buildCrmTemplateParams(toEmail, subject, messageText) {
 export async function sendCrmEmailViaEmailJS(toEmail, subject, messageText) {
   const email = String(toEmail || '').trim();
   if (!email) {
-    throw new Error('Email получателя пустой');
+    throw new Error('Recipient email is empty');
   }
 
   const crmTemplateRaw =
@@ -99,9 +99,9 @@ export async function sendCrmEmailViaEmailJS(toEmail, subject, messageText) {
 
   if (!emailJsConfig.serviceId || !emailJsConfig.templateId || !emailJsConfig.publicKey) {
     throw new Error(
-      'EmailJS не настроен для сервера: нужны SERVICE_ID, PUBLIC_KEY и отдельный шаблон писем ' +
-        'EMAILJS_CRM_TEMPLATE_ID (или VITE_EMAILJS_CRM_TEMPLATE_ID в корневом .env). ' +
-        'Не используйте шаблон «код подтверждения» — создайте шаблон с {{to_email}}, {{subject}}, {{message}} (или {{full_message}}). См. .env.example.'
+      'EmailJS is not configured for the server: SERVICE_ID, PUBLIC_KEY, and a separate email template are required ' +
+        'EMAILJS_CRM_TEMPLATE_ID (or VITE_EMAILJS_CRM_TEMPLATE_ID in the root .env). ' +
+        'Do not use the verification-code template — create a template with {{to_email}}, {{subject}}, {{message}} (or {{full_message}}). See .env.example.'
     );
   }
 
@@ -120,7 +120,7 @@ export async function sendCrmEmailViaEmailJS(toEmail, subject, messageText) {
       sendOptions
     );
     if (result.status !== 200) {
-      throw new Error(`EmailJS вернул статус ${result.status}`);
+      throw new Error(`EmailJS returned status ${result.status}`);
     }
     console.log(`[EmailJS] Письмо отправлено → ${email} | тема: ${(subject || '').slice(0, 60)}`);
   } catch (err) {
@@ -142,24 +142,24 @@ export async function sendCrmEmailViaEmailJS(toEmail, subject, messageText) {
       if (!emailJs403ServerHintLogged) {
         emailJs403ServerHintLogged = true;
         console.warn(
-          '[EmailJS] 403: серверные запросы. Откройте https://dashboard.emailjs.com/admin/account/security и включите «Allow EmailJS API for non-browser applications». Private key в .env не отменяет эту настройку.'
+          '[EmailJS] 403: server-side requests. Open https://dashboard.emailjs.com/admin/account/security and enable “Allow EmailJS API for non-browser applications”. A private key in .env does not override this setting.'
         );
       }
       const hint403 = nonBrowserBlocked
-        ? 'Включите в EmailJS: Account → Security → «Allow EmailJS API for non-browser applications» (сервер Node считается non-browser).'
+        ? 'In EmailJS enable: Account → Security → “Allow EmailJS API for non-browser applications” (Node server counts as non-browser).'
         : privateKey
-          ? 'Проверьте, что EMAILJS_PRIVATE_KEY скопирован из того же аккаунта, что и Public Key; лимиты плана.'
-          : 'Добавьте EMAILJS_PRIVATE_KEY в .env или включите non-browser API в настройках EmailJS (см. выше).';
+          ? 'Confirm EMAILJS_PRIVATE_KEY was copied from the same account as the Public Key; check plan limits.'
+          : 'Add EMAILJS_PRIVATE_KEY to .env or enable the non-browser API in EmailJS settings (see above).';
       throw new Error(`EmailJS 403: ${hint403} ${detailStr ? detailStr.slice(0, 280) : ''}`);
     }
     const hint400 =
       status === 400 && /parameters are invalid/i.test(String(detail))
-        ? ' Проверьте в EmailJS: шаблон с полями {{to_email}}, {{subject}}, {{message}} (не OTP); service_id и template_id из одного аккаунта; почтовый сервис в дашборде подключён.'
+        ? ' In EmailJS check: a template with {{to_email}}, {{subject}}, {{message}} (not OTP); service_id and template_id from the same account; mail service connected in the dashboard.'
         : '';
     throw new Error(
       status != null && detail
-        ? `EmailJS ошибка ${status}: ${detail}${hint400}`
-        : err?.message || `EmailJS: ${detail || 'ошибка отправки'}`
+        ? `EmailJS error ${status}: ${detail}${hint400}`
+        : err?.message || `EmailJS: ${detail || 'send failed'}`
     );
   }
 }

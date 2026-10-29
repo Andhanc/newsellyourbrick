@@ -752,13 +752,13 @@ const Debts = () => {
                           className="debts-listing-empty debts-empty-guided"
                           image={DEBTS_EMPTY_IMAGE}
                           eyebrow={null}
-                          title={apiDebts.length ? 'По фильтрам ничего не найдено' : 'Новых долгов пока нет'}
+                          title={apiDebts.length ? t('debtsEmptyFilteredTitle') : t('debtsEmptyNewTitle')}
                           description={
                             apiDebts.length
-                              ? 'Снимем ограничения и покажем все доступные активы с долговым профилем.'
-                              : 'Пока новых предложений нет — посмотрите другие объекты, которые можно купить уже сейчас.'
+                              ? t('debtsEmptyFilteredDesc')
+                              : t('debtsEmptyNewDesc')
                           }
-                          primaryLabel={apiDebts.length ? 'Показать все долги' : 'Смотреть другие объекты'}
+                          primaryLabel={apiDebts.length ? t('debtsEmptyShowAll') : t('testDriveLanding_seeOtherObjects')}
                           onPrimary={resetDebtsDiscovery}
                         />
                       ) : null}
@@ -809,13 +809,13 @@ const Debts = () => {
                         className="debts-empty-guided"
                         image={DEBTS_EMPTY_IMAGE}
                         eyebrow={null}
-                        title={apiDebts.length ? 'По фильтрам ничего не найдено' : 'Новых долгов пока нет'}
+                        title={apiDebts.length ? t('debtsEmptyFilteredTitle') : t('debtsEmptyNewTitle')}
                         description={
                           apiDebts.length
-                            ? 'Снимем ограничения и покажем все доступные активы с долговым профилем.'
-                            : 'Пока новых предложений нет — посмотрите другие объекты, которые можно купить уже сейчас.'
+                            ? t('debtsEmptyFilteredDesc')
+                            : t('debtsEmptyNewDesc')
                         }
-                        primaryLabel={apiDebts.length ? 'Показать все долги' : 'Смотреть другие объекты'}
+                        primaryLabel={apiDebts.length ? t('debtsEmptyShowAll') : t('testDriveLanding_seeOtherObjects')}
                         onPrimary={resetDebtsDiscovery}
                       />
                     ) : null}

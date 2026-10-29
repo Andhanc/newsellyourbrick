@@ -20,6 +20,11 @@ import {
   mergeCatalogFilters,
   persistCatalogFilters,
 } from '../utils/catalogFilters'
+import {
+  getLocalizedCountryLabelFromOption,
+  normalizeCountryLocale,
+} from '../utils/localizeCountryName'
+import { getLocalizedRegionLabel } from '../utils/localizeBuyerNotification'
 import './PropertySearchFiltersPanel.css'
 
 export { EMPTY_CATALOG_FILTERS }
@@ -93,7 +98,11 @@ const PropertySearchFiltersPanel = ({
   onApplyFilters,
   findButtonLabelKey = 'modalFind',
 }) => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const countryLocale = useMemo(
+    () => normalizeCountryLocale(i18n.language),
+    [i18n.language],
+  )
   const panelRef = useRef(null)
   const isControlled = controlledFilters != null && typeof onFiltersChange === 'function'
   const [internalFilters, setInternalFilters] = useState(EMPTY_CATALOG_FILTERS)
@@ -247,7 +256,7 @@ const PropertySearchFiltersPanel = ({
                 <option value="">{t('catalogFilterAll')}</option>
                 {locationOptions.map((country) => (
                   <option key={country.key} value={country.key}>
-                    {country.label}
+                    {getLocalizedCountryLabelFromOption(country, countryLocale)}
                   </option>
                 ))}
               </select>
@@ -264,7 +273,7 @@ const PropertySearchFiltersPanel = ({
                 <option value="">{t('catalogFilterAll')}</option>
                 {(selectedCountry?.regions || []).map((region) => (
                   <option key={region.key} value={region.key}>
-                    {region.label}
+                    {getLocalizedRegionLabel(region.key, region.label, t)}
                   </option>
                 ))}
               </select>

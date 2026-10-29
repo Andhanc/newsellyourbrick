@@ -75,7 +75,7 @@ export const DEMO_WALLET_TRANSACTIONS = [
   {
     id: 'tx-1',
     date: '2024-05-28T14:30:00',
-    propertyTitle: 'Эко-усадьба «Лесной край»',
+    propertyTitle: 'Forest Edge eco estate',
     propertyId: '58941',
     propertyImage: OWL_IMAGES.thumbForest,
     type: 'income',
@@ -86,7 +86,7 @@ export const DEMO_WALLET_TRANSACTIONS = [
   {
     id: 'tx-2',
     date: '2024-05-28T14:30:00',
-    propertyTitle: 'Эко-усадьба «Лесной край»',
+    propertyTitle: 'Forest Edge eco estate',
     propertyId: '58941',
     propertyImage: OWL_IMAGES.thumbForest,
     type: 'deal_completed',
@@ -97,7 +97,7 @@ export const DEMO_WALLET_TRANSACTIONS = [
   {
     id: 'tx-3',
     date: '2024-05-28T14:30:00',
-    propertyTitle: 'Эко-усадьба «Лесной край»',
+    propertyTitle: 'Forest Edge eco estate',
     propertyId: '58941',
     propertyImage: OWL_IMAGES.thumbForest,
     type: 'platform_commission',
@@ -108,7 +108,7 @@ export const DEMO_WALLET_TRANSACTIONS = [
   {
     id: 'tx-4',
     date: '2024-05-24T11:15:00',
-    propertyTitle: 'Апартаменты в центре',
+    propertyTitle: 'City-center apartments',
     propertyId: '47218',
     propertyImage: OWL_IMAGES.thumbApartment,
     type: 'deal_completed',
@@ -119,7 +119,7 @@ export const DEMO_WALLET_TRANSACTIONS = [
   {
     id: 'tx-5',
     date: '2024-05-24T11:15:00',
-    propertyTitle: 'Апартаменты в центре',
+    propertyTitle: 'City-center apartments',
     propertyId: '47218',
     propertyImage: OWL_IMAGES.thumbApartment,
     type: 'platform_commission',
@@ -141,7 +141,7 @@ export const DEMO_WALLET_TRANSACTIONS = [
   {
     id: 'tx-7',
     date: '2024-05-14T16:45:00',
-    propertyTitle: 'Лофт на набережной',
+    propertyTitle: 'Waterfront loft',
     propertyId: '33102',
     propertyImage: OWL_IMAGES.thumbLoft,
     type: 'income',
@@ -152,7 +152,7 @@ export const DEMO_WALLET_TRANSACTIONS = [
   {
     id: 'tx-8',
     date: '2024-05-10T10:20:00',
-    propertyTitle: 'Пентхаус с видом на море',
+    propertyTitle: 'Sea-view penthouse',
     propertyId: '29877',
     propertyImage: OWL_IMAGES.thumbPenthouse,
     type: 'deal_completed',

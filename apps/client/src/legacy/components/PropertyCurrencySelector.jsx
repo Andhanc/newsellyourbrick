@@ -27,7 +27,7 @@ function CurrencySelectorPills({
             onClick={() => onChange(opt.code)}
             disabled={loading}
             aria-pressed={active}
-            title={isBase ? t('propertyDetailCurrencyListing') : opt.name}
+            title={isBase ? t('propertyDetailCurrencyListing') : t(opt.nameKey || opt.name)}
           >
             <span className="property-currency-selector__symbol" aria-hidden>
               {opt.symbol}

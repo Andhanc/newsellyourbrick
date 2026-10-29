@@ -584,7 +584,7 @@ test('two favorites and cabinet facts are passed to the model prompt', async () 
     },
   })
 
-  assert.match(prompt, /ПЕРСОНАЛЬНЫЙ КОНТЕКСТ/)
+  assert.match(prompt, /PERSONAL CONTEXT/)
   assert.match(prompt, /Анна/)
   assert.match(prompt, /Marina loft/)
   assert.match(prompt, /270000/)

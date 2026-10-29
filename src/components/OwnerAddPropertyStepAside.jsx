@@ -10,16 +10,38 @@ export default function OwnerAddPropertyStepAside({
   variant = 'full',
   image,
   eyebrow,
+  eyebrowKey,
   lead,
+  leadKey,
   stepLabel,
+  stepLabelKey,
+  stepLabelParams,
   highlights = [],
+  highlightKeys = [],
   tipsTitle,
+  tipsTitleKey,
   tips = [],
   help,
 }) {
   const { t } = useTranslation()
-  const resolvedTipsTitle = tipsTitle ?? t('ownerTest_oapTipsTitle')
-  if (!image && tips.length === 0 && !eyebrow && !lead) return null
+  const resolvedTipsTitle = tipsTitleKey
+    ? t(tipsTitleKey)
+    : tipsTitle ?? t('ownerTest_oapTipsTitle')
+  const resolvedEyebrow = eyebrowKey ? t(eyebrowKey) : eyebrow
+  const resolvedLead = leadKey ? t(leadKey) : lead
+  const resolvedStepLabel = stepLabelKey
+    ? t(stepLabelKey, stepLabelParams || {})
+    : stepLabel
+  const resolvedHighlights =
+    highlightKeys.length > 0 ? highlightKeys.map((key) => t(key)) : highlights
+  const resolvedHelp = help
+    ? {
+        title: help.titleKey ? t(help.titleKey) : help.title,
+        text: help.textKey ? t(help.textKey) : help.text,
+      }
+    : null
+
+  if (!image && tips.length === 0 && !resolvedEyebrow && !resolvedLead) return null
 
   const asideClass = [
     'oap-wizard-aside',
@@ -32,9 +54,9 @@ export default function OwnerAddPropertyStepAside({
 
   const showHero = Boolean(
     (variant !== 'compact' && image) ||
-      eyebrow ||
-      lead ||
-      (variant !== 'compact' && highlights.length > 0)
+      resolvedEyebrow ||
+      resolvedLead ||
+      (variant !== 'compact' && resolvedHighlights.length > 0)
   )
 
   return (
@@ -43,14 +65,14 @@ export default function OwnerAddPropertyStepAside({
         {showHero ? (
           <div className="oap-wizard-aside__hero">
             <div className="oap-wizard-aside__hero-mesh" aria-hidden />
-            {stepLabel ? (
+            {resolvedStepLabel ? (
               <span className="oap-wizard-aside__step-badge" aria-hidden>
-                {stepLabel}
+                {resolvedStepLabel}
               </span>
             ) : null}
-            {highlights.length > 0 ? (
+            {resolvedHighlights.length > 0 ? (
               <div className="oap-wizard-aside__highlights">
-                {highlights.map((item) => (
+                {resolvedHighlights.map((item) => (
                   <span key={item} className="oap-wizard-aside__highlight">
                     {item}
                   </span>
@@ -63,10 +85,12 @@ export default function OwnerAddPropertyStepAside({
                 <OapWizardSidebarImage src={image} className="oap-wizard-aside__visual-img" />
               </div>
             ) : null}
-            {(eyebrow || lead) && (
+            {(resolvedEyebrow || resolvedLead) && (
               <div className="oap-wizard-aside__hero-copy">
-                {eyebrow ? <span className="oap-wizard-aside__eyebrow">{eyebrow}</span> : null}
-                {lead ? <p className="oap-wizard-aside__lead">{lead}</p> : null}
+                {resolvedEyebrow ? (
+                  <span className="oap-wizard-aside__eyebrow">{resolvedEyebrow}</span>
+                ) : null}
+                {resolvedLead ? <p className="oap-wizard-aside__lead">{resolvedLead}</p> : null}
               </div>
             )}
           </div>
@@ -83,8 +107,10 @@ export default function OwnerAddPropertyStepAside({
             <ul className="oap-wizard-aside__guide-list">
               {tips.map((tip, index) => {
                 const TipIcon = tip.Icon
+                const tipTitle = tip.titleKey ? t(tip.titleKey) : tip.title
+                const tipText = tip.textKey ? t(tip.textKey) : tip.text
                 return (
-                  <li key={tip.title} className="oap-wizard-aside__guide-item">
+                  <li key={tip.titleKey || tip.title || index} className="oap-wizard-aside__guide-item">
                     <span className="oap-wizard-aside__guide-num" aria-hidden>
                       {index + 1}
                     </span>
@@ -96,9 +122,9 @@ export default function OwnerAddPropertyStepAside({
                         >
                           <TipIcon size={15} strokeWidth={1.85} />
                         </span>
-                        <strong>{tip.title}</strong>
+                        <strong>{tipTitle}</strong>
                       </div>
-                      <p>{tip.text}</p>
+                      <p>{tipText}</p>
                     </div>
                   </li>
                 )
@@ -107,10 +133,10 @@ export default function OwnerAddPropertyStepAside({
           </div>
         ) : null}
 
-        {help ? (
+        {resolvedHelp ? (
           <div className="oap-wizard-aside__help">
-            <h4 className="oap-wizard-aside__help-title">{help.title}</h4>
-            <p className="oap-wizard-aside__help-text">{help.text}</p>
+            <h4 className="oap-wizard-aside__help-title">{resolvedHelp.title}</h4>
+            <p className="oap-wizard-aside__help-text">{resolvedHelp.text}</p>
             <Link to="/chat?manager=1" className="oap-wizard-aside__help-btn">
               <Headphones size={16} aria-hidden />
               {t('ownerTest_oapContactSupport')}

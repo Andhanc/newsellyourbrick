@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslation } from 'react-i18next'
 import { FiLayers, FiMaximize2, FiX } from 'react-icons/fi'
 import { createMarketerSiteAd } from '@/services/siteAdsApi'
 import { SITE_AD_PAGES } from '@/utils/siteAdPages'
@@ -14,19 +15,28 @@ import './CreateSiteAdModal.css'
 const TYPE_OPTIONS = [
   {
     id: 'modal',
-    label: 'Модальное окно',
-    hint: 'Показывается один раз каждому пользователю',
+    labelKey: 'createSiteAd_typeModal',
+    hintKey: 'createSiteAd_typeModalHint',
     Icon: FiMaximize2,
   },
   {
     id: 'block',
-    label: 'Рекламный блок',
-    hint: 'Внизу экрана, пользователь может закрыть крестиком',
+    labelKey: 'createSiteAd_typeBlock',
+    hintKey: 'createSiteAd_typeBlockHint',
     Icon: FiLayers,
   },
 ]
 
+const PAGE_LABEL_KEYS = {
+  home: 'createSiteAd_page_home',
+  auction: 'createSiteAd_page_auction',
+  shares: 'createSiteAd_page_shares',
+  'test-drive': 'createSiteAd_page_testDrive',
+  debts: 'createSiteAd_page_debts',
+}
+
 export default function CreateSiteAdModal({ open, onClose, onCreated }) {
+  const { t } = useTranslation()
   const [type, setType] = useState('modal')
   const [icon, setIcon] = useState(DEFAULT_SITE_AD_ICON)
   const [title, setTitle] = useState('')
@@ -64,7 +74,7 @@ export default function CreateSiteAdModal({ open, onClose, onCreated }) {
     setError('')
 
     if (buttonEnabled && !buttonUrl.trim()) {
-      setError('Укажите ссылку для кнопки')
+      setError(t('createSiteAd_errButtonUrl'))
       return
     }
 
@@ -83,7 +93,7 @@ export default function CreateSiteAdModal({ open, onClose, onCreated }) {
       onCreated?.()
       onClose?.()
     } catch (err) {
-      setError(err?.message || 'Не удалось создать рекламу')
+      setError(err?.message || t('createSiteAd_errCreate'))
     } finally {
       setLoading(false)
     }
@@ -109,25 +119,25 @@ export default function CreateSiteAdModal({ open, onClose, onCreated }) {
           type="button"
           className="create-site-ad-modal__close"
           onClick={handleClose}
-          aria-label="Закрыть"
+          aria-label={t('createSiteAd_closeAria')}
         >
           <FiX size={20} />
         </button>
 
         <h2 id="create-site-ad-modal-title" className="create-site-ad-modal__title">
-          Новая реклама
+          {t('createSiteAd_title')}
         </h2>
         <p className="create-site-ad-modal__subtitle">
-          Выберите формат, иконку, текст и при необходимости кнопку со ссылкой
+          {t('createSiteAd_subtitle')}
         </p>
 
         {error ? <p className="create-site-ad-modal__error">{error}</p> : null}
 
         <form className="create-site-ad-modal__form" onSubmit={handleSubmit} noValidate>
           <fieldset className="create-site-ad-modal__fieldset">
-            <legend className="create-site-ad-modal__legend">Тип рекламы</legend>
+            <legend className="create-site-ad-modal__legend">{t('createSiteAd_typeLegend')}</legend>
             <div className="create-site-ad-modal__type-grid">
-              {TYPE_OPTIONS.map(({ id, label, hint, Icon }) => (
+              {TYPE_OPTIONS.map(({ id, labelKey, hintKey, Icon }) => (
                 <button
                   key={id}
                   type="button"
@@ -137,51 +147,54 @@ export default function CreateSiteAdModal({ open, onClose, onCreated }) {
                   <span className="create-site-ad-modal__type-icon">
                     <Icon size={20} />
                   </span>
-                  <span className="create-site-ad-modal__type-label">{label}</span>
-                  <span className="create-site-ad-modal__type-hint">{hint}</span>
+                  <span className="create-site-ad-modal__type-label">{t(labelKey)}</span>
+                  <span className="create-site-ad-modal__type-hint">{t(hintKey)}</span>
                 </button>
               ))}
             </div>
           </fieldset>
 
           <fieldset className="create-site-ad-modal__fieldset">
-            <legend className="create-site-ad-modal__legend">Иконка</legend>
+            <legend className="create-site-ad-modal__legend">{t('createSiteAd_iconLegend')}</legend>
             <div className="create-site-ad-modal__icon-grid">
-              {SITE_AD_ICONS.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`create-site-ad-modal__icon-btn${icon === item.id ? ' create-site-ad-modal__icon-btn--active' : ''}`}
-                  onClick={() => setIcon(item.id)}
-                  title={item.label}
-                  aria-label={item.label}
-                  aria-pressed={icon === item.id}
-                >
-                  <SiteAdIcon iconId={item.id} size={20} />
-                  <span className="create-site-ad-modal__icon-label">{item.label}</span>
-                </button>
-              ))}
+              {SITE_AD_ICONS.map((item) => {
+                const iconLabel = t(`createSiteAd_icon_${item.id}`)
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`create-site-ad-modal__icon-btn${icon === item.id ? ' create-site-ad-modal__icon-btn--active' : ''}`}
+                    onClick={() => setIcon(item.id)}
+                    title={iconLabel}
+                    aria-label={iconLabel}
+                    aria-pressed={icon === item.id}
+                  >
+                    <SiteAdIcon iconId={item.id} size={20} />
+                    <span className="create-site-ad-modal__icon-label">{iconLabel}</span>
+                  </button>
+                )
+              })}
             </div>
           </fieldset>
 
           <label className="create-site-ad-modal__label">
-            Заголовок
+            {t('createSiteAd_titleLabel')}
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Например: Скидка 20% на первую ставку"
+              placeholder={t('createSiteAd_titlePlaceholder')}
               maxLength={120}
               required
             />
           </label>
 
           <label className="create-site-ad-modal__label">
-            Описание
+            {t('createSiteAd_descLabel')}
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Кратко опишите предложение для пользователей"
+              placeholder={t('createSiteAd_descPlaceholder')}
               rows={4}
               maxLength={500}
               required
@@ -189,7 +202,7 @@ export default function CreateSiteAdModal({ open, onClose, onCreated }) {
           </label>
 
           <fieldset className="create-site-ad-modal__fieldset">
-            <legend className="create-site-ad-modal__legend">Страницы показа</legend>
+            <legend className="create-site-ad-modal__legend">{t('createSiteAd_pagesLegend')}</legend>
             <div className="create-site-ad-modal__pages">
               {SITE_AD_PAGES.map((page) => (
                 <label
@@ -201,55 +214,55 @@ export default function CreateSiteAdModal({ open, onClose, onCreated }) {
                     checked={pages.includes(page.id)}
                     onChange={() => togglePage(page.id)}
                   />
-                  <span>{page.label}</span>
+                  <span>{t(PAGE_LABEL_KEYS[page.id] || page.id)}</span>
                 </label>
               ))}
             </div>
           </fieldset>
 
           <fieldset className="create-site-ad-modal__fieldset">
-            <legend className="create-site-ad-modal__legend">Кнопка</legend>
+            <legend className="create-site-ad-modal__legend">{t('createSiteAd_buttonLegend')}</legend>
             <label className="create-site-ad-modal__toggle">
               <input
                 type="checkbox"
                 checked={buttonEnabled}
                 onChange={(e) => setButtonEnabled(Boolean(e.target.checked))}
               />
-              <span>Показать кнопку «Подробнее»</span>
+              <span>{t('createSiteAd_showButton')}</span>
             </label>
             {buttonEnabled ? (
               <label className="create-site-ad-modal__label create-site-ad-modal__label--nested">
-                Ссылка кнопки
+                {t('createSiteAd_buttonUrl')}
                 <input
                   type="text"
                   value={buttonUrl}
                   onChange={(e) => setButtonUrl(e.target.value)}
-                  placeholder="https://example.com или /auction"
+                  placeholder={t('createSiteAd_buttonUrlPlaceholder')}
                   maxLength={500}
                 />
                 <span className="create-site-ad-modal__field-hint">
-                  Можно указать внутренний путь (/auction) или полный URL
+                  {t('createSiteAd_buttonUrlHint')}
                 </span>
               </label>
             ) : null}
           </fieldset>
 
           <div className="create-site-ad-modal__preview-wrap">
-            <p className="create-site-ad-modal__preview-label">Предпросмотр</p>
+            <p className="create-site-ad-modal__preview-label">{t('createSiteAd_preview')}</p>
             <div className={`create-site-ad-modal__preview create-site-ad-modal__preview--${type}`}>
               <span className="create-site-ad-modal__preview-icon">
                 <SiteAdIcon iconId={icon} size={24} />
               </span>
               {type === 'modal' ? (
-                <span className="create-site-ad-modal__preview-badge">Специальное предложение</span>
+                <span className="create-site-ad-modal__preview-badge">{t('createSiteAd_previewBadge')}</span>
               ) : (
-                <span className="create-site-ad-modal__preview-block-label">Реклама</span>
+                <span className="create-site-ad-modal__preview-block-label">{t('createSiteAd_previewBlockLabel')}</span>
               )}
-              <strong>{title || 'Заголовок рекламы'}</strong>
-              <p>{description || 'Описание появится здесь'}</p>
+              <strong>{title || t('createSiteAd_previewTitleFallback')}</strong>
+              <p>{description || t('createSiteAd_previewDescFallback')}</p>
               {buttonEnabled ? (
                 <span className="create-site-ad-modal__preview-cta">
-                  Подробнее
+                  {t('createSiteAd_learnMore')}
                   {previewButtonUrl ? <small>{previewButtonUrl}</small> : null}
                 </span>
               ) : null}
@@ -258,14 +271,14 @@ export default function CreateSiteAdModal({ open, onClose, onCreated }) {
 
           <div className="create-site-ad-modal__actions">
             <button type="button" className="create-site-ad-modal__btn" onClick={handleClose}>
-              Отмена
+              {t('createSiteAd_cancel')}
             </button>
             <button
               type="submit"
               className="create-site-ad-modal__btn create-site-ad-modal__btn--primary"
               disabled={loading || !pages.length || (buttonEnabled && !buttonUrl.trim())}
             >
-              {loading ? 'Публикация…' : 'Опубликовать'}
+              {loading ? t('createSiteAd_publishing') : t('createSiteAd_publish')}
             </button>
           </div>
         </form>

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiX, FiCreditCard, FiUser, FiMail, FiCalendar } from 'react-icons/fi';
 import { getApiBaseUrl } from '../../utils/apiConfig';
 import { formatBillingReasonForUi } from '../../utils/formatBillingReason';
 import './PaymentsModal.css';
+import { getUiIntlLocale } from '../../utils/uiIntlLocale'
 
 function formatMoney(cents, currency) {
   if (cents == null) return '—';
@@ -18,7 +20,7 @@ function formatMoney(cents, currency) {
 function formatDate(iso) {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleString('ru-RU', {
+    return new Date(iso).toLocaleString(getUiIntlLocale(), {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -31,6 +33,7 @@ function formatDate(iso) {
 }
 
 const PaymentsModal = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
   const [tab, setTab] = useState('all');
   const [rows, setRows] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -56,7 +59,7 @@ const PaymentsModal = ({ isOpen, onClose }) => {
         const resJson = await resRes.json().catch(() => ({}));
         const surveyJson = await surveyRes.json().catch(() => ({}));
         if (!allRes.ok || !allJson.success) {
-          throw new Error(allJson.error || 'Не удалось загрузить платежи');
+          throw new Error(allJson.error || t('admin_paymentsLoadFail'));
         }
         if (!cancelled) {
           setRows(allJson.data?.payments || []);
@@ -69,7 +72,7 @@ const PaymentsModal = ({ isOpen, onClose }) => {
           }
         }
       } catch (e) {
-        if (!cancelled) setError(e.message || 'Ошибка загрузки');
+        if (!cancelled) setError(e.message || t('admin_loadError'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -77,7 +80,7 @@ const PaymentsModal = ({ isOpen, onClose }) => {
     return () => {
       cancelled = true;
     };
-  }, [isOpen]);
+  }, [isOpen, t]);
 
   if (!isOpen) return null;
 
@@ -95,11 +98,11 @@ const PaymentsModal = ({ isOpen, onClose }) => {
           <div className="payments-modal__title-wrap">
             <FiCreditCard className="payments-modal__title-icon" aria-hidden />
             <h2 id="payments-modal-title" className="payments-modal__title">
-              Платежи Stripe
+              {t('admin_platezhi_tripe_5fb031b0')}
             </h2>
-            <span className="payments-modal__badge">{totalCount} записей</span>
+            <span className="payments-modal__badge">{t('admin_n_zapisey_345c996f', { n: totalCount })}</span>
           </div>
-          <button type="button" className="payments-modal__close" onClick={onClose} aria-label="Закрыть">
+          <button type="button" className="payments-modal__close" onClick={onClose} aria-label={t('admin_close')}>
             <FiX size={22} />
           </button>
         </div>
@@ -109,40 +112,40 @@ const PaymentsModal = ({ isOpen, onClose }) => {
             className={`payments-modal__tab ${tab === 'all' ? 'payments-modal__tab--active' : ''}`}
             onClick={() => setTab('all')}
           >
-            Все платежи
+            {t('admin_vse_platezhi_6ea32dba')}
           </button>
           <button
             type="button"
             className={`payments-modal__tab ${tab === 'reservations' ? 'payments-modal__tab--active' : ''}`}
             onClick={() => setTab('reservations')}
           >
-            Резерв 10% ({resRows.length})
+            {t('admin_rezerv_10_n_08288823', { n: resRows.length })}
           </button>
           <button
             type="button"
             className={`payments-modal__tab ${tab === 'td_surveys' ? 'payments-modal__tab--active' : ''}`}
             onClick={() => setTab('td_surveys')}
           >
-            Тест-драйв · опросы ({surveyRows.length})
+            {t('admin_test_drayv_oprosy_n_20050360', { n: surveyRows.length })}
           </button>
         </div>
         <div className="payments-modal__body">
-          {loading && <div className="payments-modal__hint">Загрузка…</div>}
+          {loading && <div className="payments-modal__hint">{t('admin_loadingEllipsis')}</div>}
           {error && <div className="payments-modal__error">{error}</div>}
           {!loading && !error && tab === 'all' && rows.length === 0 && (
-            <div className="payments-modal__empty">Пока нет платежей</div>
+            <div className="payments-modal__empty">{t('admin_poka_net_platezhey_b082e1e6')}</div>
           )}
           {!loading && !error && tab === 'all' && rows.length > 0 && (
             <div className="payments-modal__table-wrap">
               <table className="payments-modal__table">
                 <thead>
                   <tr>
-                    <th>Дата оплаты</th>
-                    <th>Сумма</th>
-                    <th>План</th>
-                    <th>Пользователь</th>
+                    <th>{t('admin_data_oplaty_4123512f')}</th>
+                    <th>{t('admin_summa_99d74083')}</th>
+                    <th>{t('admin_plan_3146141c')}</th>
+                    <th>{t('admin_polzovatel_51aff185')}</th>
                     <th>Email</th>
-                    <th>Причина</th>
+                    <th>{t('admin_prichina_4a9ea52c')}</th>
                     <th>Invoice / Session</th>
                   </tr>
                 </thead>
@@ -182,20 +185,20 @@ const PaymentsModal = ({ isOpen, onClose }) => {
             </div>
           )}
           {!loading && !error && tab === 'reservations' && resRows.length === 0 && (
-            <div className="payments-modal__empty">Нет резервов 10%</div>
+            <div className="payments-modal__empty">{t('admin_net_rezervov_10_e12a1304')}</div>
           )}
           {!loading && !error && tab === 'reservations' && resRows.length > 0 && (
             <div className="payments-modal__table-wrap">
               <table className="payments-modal__table">
                 <thead>
                   <tr>
-                    <th>Дата</th>
-                    <th>Покупатель</th>
-                    <th>Объект</th>
-                    <th>Мин. цена</th>
-                    <th>Карта</th>
-                    <th>Депозит €</th>
-                    <th>Осталось</th>
+                    <th>{t('admin_data_a5b49d2e')}</th>
+                    <th>{t('admin_buyer')}</th>
+                    <th>{t('admin_pr_property')}</th>
+                    <th>{t('admin_min_cena_31615d37')}</th>
+                    <th>{t('admin_karta_5736d0ca')}</th>
+                    <th>{t('admin_depozit_ef36b180')}</th>
+                    <th>{t('admin_ostalos_76a8eb13')}</th>
                     <th>Session</th>
                   </tr>
                 </thead>
@@ -231,20 +234,20 @@ const PaymentsModal = ({ isOpen, onClose }) => {
             </div>
           )}
           {!loading && !error && tab === 'td_surveys' && surveyRows.length === 0 && (
-            <div className="payments-modal__empty">Нет платежей тест-драйва с опросами</div>
+            <div className="payments-modal__empty">{t('admin_net_platezhey_test_drayva_0a602b45')}</div>
           )}
           {!loading && !error && tab === 'td_surveys' && surveyRows.length > 0 && (
             <div className="payments-modal__table-wrap">
               <table className="payments-modal__table">
                 <thead>
                   <tr>
-                    <th>Оплата</th>
-                    <th>Сумма</th>
-                    <th>Покупатель</th>
-                    <th>Бронь / объект</th>
-                    <th>WA рассылка</th>
-                    <th>Опрос</th>
-                    <th>Ответы (кратко)</th>
+                    <th>{t('admin_oplata_f076d3b3')}</th>
+                    <th>{t('admin_summa_99d74083')}</th>
+                    <th>{t('admin_buyer')}</th>
+                    <th>{t('admin_bron_obekt_e30985b0')}</th>
+                    <th>{t('admin__rassylka_107ff098')}</th>
+                    <th>{t('admin_opros_24574ad6')}</th>
+                    <th>{t('admin_otvety_kratko_f8d3d71b')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -272,14 +275,14 @@ const PaymentsModal = ({ isOpen, onClose }) => {
                           }
                         >
                           {String(s.survey_whatsapp_status || '').toLowerCase() === 'sent'
-                            ? 'отправлено'
-                            : 'ожидает'}
+                            ? t('admin_otpravleno_c333d1a6')
+                            : t('admin_ozhidaet_e837624f')}
                         </span>
                         <div className="payments-modal__cell-muted">
                           {s.survey_whatsapp_sent_at ? formatDate(s.survey_whatsapp_sent_at) : ''}
                         </div>
                       </td>
-                      <td>{s.survey_completed ? 'да' : 'нет'}</td>
+                      <td>{s.survey_completed ? t('admin_da_d4f57dba') : t('admin_net_ced07fd1')}</td>
                       <td className="payments-modal__cell-muted" style={{ maxWidth: 280 }}>
                         {s.answers_summary || '—'}
                       </td>

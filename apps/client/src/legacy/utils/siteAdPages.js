@@ -1,15 +1,18 @@
 export const SITE_AD_PAGES = [
-  { id: 'home', label: 'Главная' },
-  { id: 'auction', label: 'Аукцион' },
-  { id: 'shares', label: 'Доли' },
-  { id: 'test-drive', label: 'Test-drive' },
-  { id: 'debts', label: 'Долги' },
+  { id: 'home', labelKey: 'siteAdPage_home' },
+  { id: 'auction', labelKey: 'siteAdPage_auction' },
+  { id: 'shares', labelKey: 'siteAdPage_shares' },
+  { id: 'test-drive', labelKey: 'siteAdPage_testDrive' },
+  { id: 'debts', labelKey: 'siteAdPage_debts' },
 ]
 
-export const SITE_AD_TYPE_LABELS = {
-  modal: 'Модальное окно',
-  block: 'Рекламный блок',
+export const SITE_AD_TYPE_LABEL_KEYS = {
+  modal: 'siteAdType_modal',
+  block: 'siteAdType_block',
 }
+
+/** @deprecated use SITE_AD_TYPE_LABEL_KEYS + t() */
+export const SITE_AD_TYPE_LABELS = SITE_AD_TYPE_LABEL_KEYS
 
 /** @returns {'home'|'auction'|'shares'|'test-drive'|'debts'|null} */
 export function pathnameToAdPage(pathname) {
@@ -23,8 +26,17 @@ export function pathnameToAdPage(pathname) {
   return null
 }
 
-export function getSiteAdPageLabel(pageId) {
-  return SITE_AD_PAGES.find((p) => p.id === pageId)?.label || pageId
+export function getSiteAdPageLabel(pageId, t) {
+  const page = SITE_AD_PAGES.find((p) => p.id === pageId)
+  if (!page) return pageId
+  if (page.labelKey && typeof t === 'function') return t(page.labelKey)
+  return page.label || pageId
+}
+
+export function getSiteAdTypeLabel(type, t) {
+  const key = SITE_AD_TYPE_LABEL_KEYS[type]
+  if (key && typeof t === 'function') return t(key)
+  return key || type
 }
 
 const MODAL_SEEN_PREFIX = 'site_ad_modal_seen_'

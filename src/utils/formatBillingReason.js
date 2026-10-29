@@ -20,7 +20,7 @@ export function formatBillingReasonForUi(raw) {
     }
     if (j.type === 'test_drive_booking') {
       const pid = j.property_id != null ? String(j.property_id) : '—'
-      return `Оплата тест-драйва по объекту #${pid}`
+      return i18n.t('buyerBilling_reasonTestDrive', { id: pid })
     }
   } catch {
     return null

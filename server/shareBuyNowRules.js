@@ -10,27 +10,27 @@ export function getShareBuyNowCheckoutBlock(property, purchaseVariant = 'buyNow'
     return {
       status: 403,
       code: 'SHARE_BUY_NOW_DISABLED',
-      error: 'Для этого долевого объекта покупка 100% не подключена',
+      error: '100% purchase is not enabled for this share listing',
     }
   }
   if (availability.reason === 'shares_already_sold') {
     return {
       status: 409,
       code: 'SHARE_BUY_NOW_PARTIAL_OWNERSHIP',
-      error: 'Покупка 100% объекта недоступна: хотя бы одна доля уже продана',
+      error: '100% purchase unavailable: at least one share is already sold',
     }
   }
   if (availability.reason === 'completed') {
     return {
       status: 409,
       code: 'SHARE_BUY_NOW_COMPLETED',
-      error: 'Объект уже продан',
+      error: 'Listing already sold',
     }
   }
 
   return {
     status: 409,
     code: 'SHARE_BUY_NOW_UNAVAILABLE',
-    error: 'Покупка 100% объекта сейчас недоступна',
+    error: '100% purchase is currently unavailable',
   }
 }

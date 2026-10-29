@@ -65,12 +65,12 @@ async function ensureStagesPg() {
   const count = await prisma.crm_stages.count();
   if (count > 0) return;
   const defaults = [
-    { slug: 'new', label: 'Новый', sort_order: 0 },
-    { slug: 'qualified', label: 'Квалифицирован', sort_order: 1 },
-    { slug: 'negotiation', label: 'Переговоры', sort_order: 2 },
-    { slug: 'proposal', label: 'Предложение', sort_order: 3 },
-    { slug: 'closed_won', label: 'Сделка', sort_order: 4 },
-    { slug: 'closed_lost', label: 'Отказ', sort_order: 5 },
+    { slug: 'new', label: 'New', sort_order: 0 },
+    { slug: 'qualified', label: 'Qualified', sort_order: 1 },
+    { slug: 'negotiation', label: 'Negotiation', sort_order: 2 },
+    { slug: 'proposal', label: 'Proposal', sort_order: 3 },
+    { slug: 'closed_won', label: 'Deal', sort_order: 4 },
+    { slug: 'closed_lost', label: 'Lost', sort_order: 5 },
   ];
   for (const row of defaults) {
     await prisma.crm_stages.create({ data: row });
@@ -122,7 +122,7 @@ async function syncRegisteredUsersIntoCrmPg() {
       COALESCE(
         NULLIF(TRIM(CONCAT(COALESCE(u."first_name", ''), ' ', COALESCE(u."last_name", ''))), ''),
         u."email",
-        CONCAT('Пользователь #', u."id"::text)
+        CONCAT('User #', u."id"::text)
       ),
       u."email",
       u."phone_number",
@@ -181,7 +181,7 @@ async function fetchUserScheduleSignals(userIds) {
     if (!submittedAt || !checkInOutsideBookingSlot(submittedAt, row.start_date, row.end_date)) continue;
     const slot = map.get(uid);
     if (!slot) continue;
-    const label = `Тест-драйв #${row.id}: чек-in не в дни слота`;
+    const label = `Test drive #${row.id}: check-in outside slot days`;
     if (!slot.off_schedule_labels.includes(label)) {
       slot.off_schedule_labels.push(label);
       slot.off_schedule = true;
@@ -198,7 +198,7 @@ async function fetchUserScheduleSignals(userIds) {
     if (!paymentOutsideDeclaredPeriod(p.paid_at, p.period_start, p.period_end)) continue;
     const slot = map.get(p.user_id);
     if (!slot) continue;
-    const label = `Оплата #${p.id}: дата оплаты вне периода счёта`;
+    const label = `Payment #${p.id}: payment date outside invoice period`;
     if (!slot.off_schedule_labels.includes(label)) {
       slot.off_schedule_labels.push(label);
       slot.off_schedule = true;
@@ -221,7 +221,7 @@ function attachScheduleFlagsToLead(lead, userSignals, now) {
   const na = parseTs(lead.next_action_at != null ? String(lead.next_action_at).replace(' ', 'T') : '');
   if (na && na < now) {
     off = true;
-    const lab = 'Просрочен плановый контакт (дата в CRM)';
+    const lab = 'Scheduled contact overdue (CRM date)';
     if (!labels.includes(lab)) labels.push(lab);
   }
   return {
@@ -375,7 +375,7 @@ export const crmQueries = {
     const row = await prisma.crm_leads.create({
       data: {
         user_id: data.user_id || null,
-        display_name: data.display_name || 'Без имени',
+        display_name: data.display_name || 'No name',
         email: data.email || null,
         phone: data.phone || null,
         stage_id: stageId,
@@ -431,7 +431,7 @@ export const crmQueries = {
     const id = Number(leadId);
     const destStage = Number(toStageId);
     const lead = await prisma.crm_leads.findUnique({ where: { id } });
-    if (!lead) throw new Error('Лид не найден');
+    if (!lead) throw new Error('Lead not found');
     const fromStage = lead.stage_id;
 
     await prisma.$transaction(async (tx) => {

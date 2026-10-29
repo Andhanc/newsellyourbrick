@@ -59,7 +59,7 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   let payload = {
     title: 'SellYourBrick',
-    body: 'Новое уведомление',
+    body: 'New notification',
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
     data: { url: '/' },

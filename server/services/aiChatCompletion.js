@@ -12,7 +12,7 @@ export async function postChatCompletions(body, init = {}) {
   const provider = init.provider || getActiveAiProvider()
   if (provider.needsKey && !provider.apiKey) {
     throw new Error(
-      `Ключ AI не задан для провайдера «${provider.id}». Укажите ключ в .env или используйте AI_PROVIDER=pollinations (без ключа).`,
+      `AI key is not set for provider “${provider.id}”. Set the key in .env or use AI_PROVIDER=pollinations (no key).`,
     )
   }
 
@@ -36,12 +36,12 @@ export async function postChatCompletions(body, init = {}) {
 
   if (!res.ok) {
     const errText = await res.text()
-    let friendly = `Ошибка AI (${provider.id}), код ${res.status}`
+    let friendly = `AI error (${provider.id}), status ${res.status}`
     try {
       const parsed = JSON.parse(errText)
       if (parsed?.deprecation_notice && provider.id === 'pollinations') {
         friendly =
-          'Pollinations: неверные параметры запроса. Перезапустите сервер после обновления. Если в .env есть POLLINATIONS_API_KEY — удалите его для бесплатного режима.'
+          'Pollinations: invalid request parameters. Restart the server after updating. If POLLINATIONS_API_KEY is set in .env, remove it for free mode.'
       } else if (parsed?.error) {
         if (typeof parsed.error === 'string') {
           friendly = parsed.error
@@ -64,7 +64,7 @@ export async function postChatCompletions(body, init = {}) {
       }
     } catch {
       if (/reasoning_effort|validation error/i.test(errText)) {
-        friendly = 'Неподдерживаемый параметр запроса к AI. Обновите сервер и повторите.'
+        friendly = 'Unsupported AI request parameter. Update the server and try again.'
       }
     }
     throw new Error(friendly)

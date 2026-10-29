@@ -143,14 +143,14 @@ export default function TestDriveBookingPage() {
 
   useEffect(() => {
     if (!import.meta.env?.DEV || searchParams.get('buyer_booking_preview') !== '1') return
-    setPropertyTitle('Вилла с бассейном у Средиземного моря')
+    setPropertyTitle(t('testDriveBooking_previewTitle'))
     setBookingSuccess({
       booking_id: 142,
       start_date: '2026-08-12',
       end_date: '2026-08-18',
       buyer_contact_channel: 'telegram',
     })
-  }, [searchParams])
+  }, [searchParams, t])
 
   useEffect(() => {
     const load = async () => {
@@ -206,10 +206,9 @@ export default function TestDriveBookingPage() {
           const msg =
             data.message ||
             ({
-              already_requested:
-                'У вас уже есть активная бронь на этот объект. Откройте «Мои бронирования».',
-              dates_unavailable: 'Эти даты уже заняты. Выберите другие.',
-              not_paid: 'Оплата ещё обрабатывается. Обновите страницу через минуту.',
+              already_requested: t('testDriveBooking_toastAlreadyBooked'),
+              dates_unavailable: t('testDriveBooking_toastDatesUnavailable'),
+              not_paid: t('testDriveBooking_toastNotPaid'),
             }[data.error] ||
               data.error ||
               t('testDriveBooking_toastConfirmFail'))
@@ -340,7 +339,7 @@ export default function TestDriveBookingPage() {
         const msg =
           data.message ||
           (data.error === 'already_requested'
-            ? 'У вас уже есть активная бронь тест-драйва на этот объект. Откройте «Мои бронирования».'
+            ? t('testDriveBooking_toastAlreadyBookedTestDrive')
             : data.error || t('testDriveBooking_toastCheckoutFail'))
         showToast(msg, 'error')
         if (data.error === 'already_requested' && data.data?.booking_id) {
@@ -527,10 +526,10 @@ export default function TestDriveBookingPage() {
               </div>
             ) : null}
             <h3 id="test-drive-contact-title" className="test-drive-contact-sheet__title">
-              Как с вами связаться?
+              {t('testDriveBooking_contactTitle')}
             </h3>
             <p className="test-drive-contact-sheet__subtitle">
-              Выберите удобный канал — так владелец поймёт, куда писать или звонить для согласования заезда.
+              {t('testDriveBooking_contactSubtitle')}
             </p>
             <div
               className={`test-drive-contact-grid${isMobile ? ' test-drive-contact-grid--drawer' : ''}`}
@@ -559,7 +558,7 @@ export default function TestDriveBookingPage() {
               className="test-drive-page__btn test-drive-page__btn--ghost test-drive-contact-sheet__close"
               onClick={() => setContactPickerOpen(false)}
             >
-              Закрыть
+              {t('testDriveBooking_close')}
             </button>
             </motion.div>
           </motion.div>
@@ -614,36 +613,31 @@ export default function TestDriveBookingPage() {
               </div>
             ) : null}
             <h3 id="test-drive-pay-title" className="test-drive-pay-sheet__title">
-              {paymentStep === 1 ? 'Инструкция и правила тест-драйва' : 'Шаг 2: оплата тест-драйва'}
+              {paymentStep === 1 ? t('testDriveBooking_payStep1Title') : t('testDriveBooking_payStep2Title')}
             </h3>
             <div className="test-drive-pay-sheet__scroll">
               {paymentStep === 1 ? (
                 <>
                   <p className="test-drive-pay-sheet__text">
-                    Оплата проходит одним платежом: отдельно сумма за выбранные сутки проживания и страховой депозит
-                    (если он задан для объекта). После оплаты бронирование сразу отобразится у вас, у продавца и в
-                    админ-панели.
+                    {t('testDriveBooking_payIntro')}
                   </p>
                   <ul className="test-drive-pay-sheet__rules">
-                    <li>Заезд в первый день с 15:00, выезд в последний день до 12:00.</li>
-                    <li>Соблюдайте правила объекта и бережно относитесь к имуществу.</li>
-                    <li>
-                      Страховой депозит: при отсутствии нарушений после проживания он возвращается на вашу карту в
-                      течение одной недели с момента выезда (срок зачисления может зависеть от банка).
-                    </li>
+                    <li>{t('testDriveBooking_rule1')}</li>
+                    <li>{t('testDriveBooking_rule2')}</li>
+                    <li>{t('testDriveBooking_rule3')}</li>
                   </ul>
                 </>
               ) : (
                 <>
                   <p className="test-drive-pay-sheet__text">
-                    Выбрано: <strong>{pendingRange.start}</strong> — <strong>{pendingRange.end}</strong>
+                    {t('testDriveBooking_selected')} <strong>{pendingRange.start}</strong> — <strong>{pendingRange.end}</strong>
                   </p>
                   {quoteData ? (
                     <div className="test-drive-pay-sheet__summary">
-                      <p>Суток: <strong>{quoteData.day_count}</strong></p>
-                      <p>Стоимость за сутки: <strong>{currencyFmt(quoteData.daily_price, quoteData.currency)}</strong></p>
+                      <p>{t('testDriveBooking_days')}: <strong>{quoteData.day_count}</strong></p>
+                      <p>{t('testDriveBooking_dailyPrice')}: <strong>{currencyFmt(quoteData.daily_price, quoteData.currency)}</strong></p>
                       <p>
-                        Проживание:{' '}
+                        {t('testDriveBooking_stayTotal')}:{' '}
                         <strong>
                           {currencyFmt(
                             quoteData.stay_total ?? quoteData.day_count * quoteData.daily_price,
@@ -651,19 +645,18 @@ export default function TestDriveBookingPage() {
                           )}
                         </strong>
                       </p>
-                      <p>Страховой депозит: <strong>{currencyFmt(quoteData.insurance_deposit, quoteData.currency)}</strong></p>
+                      <p>{t('testDriveBooking_deposit')}: <strong>{currencyFmt(quoteData.insurance_deposit, quoteData.currency)}</strong></p>
                       {Number(quoteData.insurance_deposit) > 0 ? (
                         <p className="test-drive-pay-sheet__deposit-note">
-                          Депозит удерживается вместе с оплатой суток. Если правила проживания не нарушались, в течение
-                          недели после выезда сумма депозита возвращается на ту же карту.
+                          {t('testDriveBooking_depositNote')}
                         </p>
                       ) : null}
                       <p className="test-drive-pay-sheet__total-line">
-                        Итого к оплате: <strong>{currencyFmt(quoteData.total_amount, quoteData.currency)}</strong>
+                        {t('testDriveBooking_total')}: <strong>{currencyFmt(quoteData.total_amount, quoteData.currency)}</strong>
                       </p>
                     </div>
                   ) : (
-                    <p className="test-drive-pay-sheet__text">Расчет суммы...</p>
+                    <p className="test-drive-pay-sheet__text">{t('testDriveBooking_calculating')}</p>
                   )}
                 </>
               )}
@@ -676,7 +669,7 @@ export default function TestDriveBookingPage() {
                   disabled={saving}
                   onClick={handleContinueToStep2}
                 >
-                  Перейти к оплате
+                  {t('testDriveBooking_goToPayment')}
                 </button>
               ) : (
                 <button
@@ -685,7 +678,7 @@ export default function TestDriveBookingPage() {
                   disabled={checkoutLoading || !quoteData}
                   onClick={handlePay}
                 >
-                  {checkoutLoading ? 'Переход к оплате...' : 'Оплатить'}
+                  {checkoutLoading ? t('testDriveBooking_redirecting') : t('testDriveBooking_pay')}
                 </button>
               )}
             </div>

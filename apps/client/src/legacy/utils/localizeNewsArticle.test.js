@@ -68,4 +68,24 @@ describe('localizeNewsArticle', () => {
     assert.equal(localized.badge, 'Custom')
     assert.notEqual(localized.date, '26 мая 2026')
   })
+
+  it('localizes body and section titles for known slugs', () => {
+    const strings = {
+      newsArticle_barcelonaBuildings_body_0: 'Body ES 0',
+      newsArticle_barcelonaBuildings_section_s1: 'Section ES 1',
+    }
+    const t = (key, opts) => strings[key] || opts?.defaultValue || key
+    const localized = localizeNewsArticle(
+      {
+        slug: '5-neobychnyh-postroek-v-barselone',
+        title: 'EN title',
+        sections: [{ id: 's1', title: 'EN section' }],
+        body: [{ type: 'p', text: 'EN body' }],
+      },
+      t,
+      'es',
+    )
+    assert.equal(localized.body[0].text, 'Body ES 0')
+    assert.equal(localized.sections[0].title, 'Section ES 1')
+  })
 })

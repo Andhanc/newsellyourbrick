@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiArrowLeft, FiChevronLeft, FiChevronRight, FiCheck, FiXCircle, FiFileText, FiVideo, FiImage, FiEye, FiX, FiAlertCircle, FiExternalLink, FiGlobe } from 'react-icons/fi';
 import { IoLocationOutline as IoLocation } from 'react-icons/io5';
 import { MdBed, MdOutlineBathtub } from 'react-icons/md';
@@ -9,35 +10,36 @@ import { getApiBaseUrlSync } from '../../utils/apiConfig';
 import { showNotification } from '../../utils/toastHelper';
 import {
   collectAmenityKeys,
-  getAmenityLabelRu,
+  getAmenityLabel,
   getResolvedAmenityLabels,
 } from '../../utils/tzAmenityLabels';
+import { getUiIntlLocale } from '../../utils/uiIntlLocale'
 
 const API_BASE_URL = getApiBaseUrlSync();
 
-const TRANSLATION_LANGUAGES = [
-  { code: 'ru', name: 'Русский' },
-  { code: 'en', name: 'English' },
-  { code: 'de', name: 'Deutsch' },
-  { code: 'es', name: 'Español' },
-  { code: 'fr', name: 'Français' },
-  { code: 'sv', name: 'Svenska' },
+const TRANSLATION_LANGUAGE_DEFS = [
+  { code: 'ru', nameKey: 'admin_russian' },
+  { code: 'en', nameKey: null, nameFixed: 'English' },
+  { code: 'de', nameKey: null, nameFixed: 'Deutsch' },
+  { code: 'es', nameKey: null, nameFixed: 'Español' },
+  { code: 'fr', nameKey: null, nameFixed: 'Français' },
+  { code: 'sv', nameKey: null, nameFixed: 'Svenska' },
 ];
 
-const EXTRA_TRANSLATION_LABELS = [
-  ['location', 'Локация'],
-  ['address', 'Адрес'],
-  ['city', 'Город'],
-  ['country', 'Страна'],
-  ['additional_amenities', 'Доп. удобства'],
-  ['renovation', 'Ремонт'],
-  ['condition', 'Состояние'],
-  ['heating', 'Отопление'],
-  ['water_supply', 'Водоснабжение'],
-  ['sewerage', 'Канализация'],
-  ['commercial_type', 'Тип коммерции'],
-  ['business_hours', 'Часы работы'],
-  ['debt_other', 'Прочие долги'],
+const EXTRA_TRANSLATION_LABEL_KEYS = [
+  ['location', 'admin_location'],
+  ['address', 'admin_address'],
+  ['city', 'admin_city'],
+  ['country', 'admin_country'],
+  ['additional_amenities', 'admin_extraAmenities'],
+  ['renovation', 'admin_renovation'],
+  ['condition', 'admin_condition'],
+  ['heating', 'admin_heating'],
+  ['water_supply', 'admin_waterSupply'],
+  ['sewerage', 'admin_sewerage'],
+  ['commercial_type', 'admin_commercialType'],
+  ['business_hours', 'admin_businessHours'],
+  ['debt_other', 'admin_debtOther'],
 ];
 
 // Моковые изображения для недвижимости
@@ -53,9 +55,15 @@ const mockPropertyImages = [
 ];
 
 const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => {
+  const { t } = useTranslation();
+  const TRANSLATION_LANGUAGES = TRANSLATION_LANGUAGE_DEFS.map((x) => ({
+    code: x.code,
+    name: x.nameKey ? t(x.nameKey) : x.nameFixed,
+  }));
+  const EXTRA_TRANSLATION_LABELS = EXTRA_TRANSLATION_LABEL_KEYS.map(([field, key]) => [field, t(key)]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedDocument, setSelectedDocument] = useState(null);
-  const [mediaType, setMediaType] = useState('photos'); // 'photos' или 'videos'
+  const [mediaType, setMediaType] = useState('photos'); // 'photost('admin_ili_8bad5b26')videos'
   const [originalProperty, setOriginalProperty] = useState(null); // Оригинальный объект для сравнения
   const [showChangesModal, setShowChangesModal] = useState(false); // Модальное окно с изменениями
   const [loadingOriginal, setLoadingOriginal] = useState(false);
@@ -103,13 +111,13 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
       .then((data) => {
         if (data.success) {
           loadTranslations();
-          showNotification('Перевод готов', 'success');
+          showNotification(t('admin_translationReady'), 'success');
         } else {
-          showNotification(data.error || 'Ошибка перевода', 'error');
+          showNotification(data.error || t('admin_translationError'), 'error');
         }
       })
       .catch((err) => {
-        showNotification(err.message || 'Ошибка перевода', 'error');
+        showNotification(err.message || t('admin_translationError'), 'error');
       })
       .finally(() => setIsTranslating(false));
   };
@@ -260,9 +268,9 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
 
   const getTypeLabel = (type) => {
     const types = {
-      apartment: 'Квартира',
-      villa: 'Вилла',
-      house: 'Дом'
+      apartment: t('admin_apartment'),
+      villa: t('admin_villa'),
+      house: t('admin_house')
     };
     return types[type] || type;
   };
@@ -282,9 +290,9 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
 
   const requestType = getRequestType(property);
   const requestTypeLabels = {
-    'publication': 'Запрос на публикацию',
-    'edit': 'Запрос на редактирование',
-    'delete': 'Запрос на удаление'
+    'publication': t('admin_publicationRequest'),
+    'edit': t('admin_editRequest'),
+    'delete': t('admin_deleteRequest')
   };
   const requestTypeColors = {
     'publication': '#0099A9',
@@ -383,41 +391,41 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
     
     const changes = [];
     const fieldLabels = {
-      title: 'Название',
-      description: 'Описание',
-      price: 'Цена',
-      currency: 'Валюта',
-      area: 'Площадь',
-      rooms: 'Комнаты',
-      bedrooms: 'Спальни',
-      bathrooms: 'Ванные',
-      floor: 'Этаж',
-      total_floors: 'Всего этажей',
-      year_built: 'Год постройки',
-      location: 'Местоположение',
-      land_area: 'Площадь участка',
-      commercial_type: 'Тип коммерческой',
-      business_hours: 'Часы работы',
-      renovation: 'Ремонт',
-      condition: 'Состояние',
-      heating: 'Отопление',
-      water_supply: 'Водоснабжение',
-      sewerage: 'Канализация',
-      is_auction: 'Аукцион',
-      auction_start_date: 'Дата начала аукциона',
-      auction_end_date: 'Дата окончания аукциона',
-      auction_starting_price: 'Стартовая цена аукциона',
-      balcony: 'Балкон',
-      parking: 'Парковка',
-      elevator: 'Лифт',
-      garage: 'Гараж',
-      pool: 'Бассейн',
-      garden: 'Сад',
-      electricity: 'Электричество',
-      internet: 'Интернет',
-      security: 'Охрана',
-      furniture: 'Мебель',
-      test_drive: 'Есть тест-драйв'
+      title: t('admin_title'),
+      description: t('admin_description'),
+      price: t('admin_price'),
+      currency: t('admin_currency'),
+      area: t('admin_area'),
+      rooms: t('admin_rooms'),
+      bedrooms: t('admin_bedrooms'),
+      bathrooms: t('admin_bathrooms'),
+      floor: t('admin_floor'),
+      total_floors: t('admin_totalFloors'),
+      year_built: t('admin_yearBuilt'),
+      location: t('admin_locationFull'),
+      land_area: t('admin_landArea'),
+      commercial_type: t('admin_commercialTypeLong'),
+      business_hours: t('admin_businessHours'),
+      renovation: t('admin_renovation'),
+      condition: t('admin_condition'),
+      heating: t('admin_heating'),
+      water_supply: t('admin_waterSupply'),
+      sewerage: t('admin_sewerage'),
+      is_auction: t('admin_auction'),
+      auction_start_date: t('admin_auctionStartDate'),
+      auction_end_date: t('admin_auctionEndDate'),
+      auction_starting_price: t('admin_auctionStartingPrice'),
+      balcony: t('admin_balcony'),
+      parking: t('admin_parking'),
+      elevator: t('admin_elevator'),
+      garage: t('admin_garage'),
+      pool: t('admin_pool'),
+      garden: t('admin_garden'),
+      electricity: t('admin_elektrichestvo_48fa2552'),
+      internet: t('admin_internet_60a68004'),
+      security: t('admin_ohrana_b0bb2237'),
+      furniture: t('admin_mebel_75fc63ea'),
+      test_drive: t('admin_est_test_drayv_bf06086d')
     };
     
     // Сравниваем основные поля
@@ -438,8 +446,8 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
         if (oldBool !== newBool) {
           changes.push({
             field: fieldLabels[key],
-            old: oldBool ? 'Да' : 'Нет',
-            new: newBool ? 'Да' : 'Нет'
+            old: oldBool ? t('admin_yes') : t('admin_no'),
+            new: newBool ? t('admin_yes') : t('admin_no')
           });
         }
         return;
@@ -461,8 +469,8 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
         if (oldBool !== newBool) {
           changes.push({
             field: fieldLabels[key],
-            old: oldBool ? 'Да' : 'Нет',
-            new: newBool ? 'Да' : 'Нет'
+            old: oldBool ? t('admin_yes') : t('admin_no'),
+            new: newBool ? t('admin_yes') : t('admin_no')
           });
         }
         return;
@@ -475,8 +483,8 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
         if (oldNum !== newNum) {
           changes.push({
             field: fieldLabels[key],
-            old: oldNum !== null ? oldNum.toLocaleString('ru-RU') : 'Не указано',
-            new: newNum !== null ? newNum.toLocaleString('ru-RU') : 'Не указано'
+            old: oldNum !== null ? oldNum.toLocaleString(getUiIntlLocale()) : t('admin_notSpecified'),
+            new: newNum !== null ? newNum.toLocaleString(getUiIntlLocale()) : t('admin_notSpecified')
           });
         }
         return;
@@ -486,8 +494,8 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
       if (oldValue !== newValue && (oldValue || newValue)) {
         changes.push({
           field: fieldLabels[key],
-          old: oldValue || 'Не указано',
-          new: newValue || 'Не указано'
+          old: oldValue || t('admin_notSpecified'),
+          new: newValue || t('admin_notSpecified')
         });
       }
     });
@@ -499,9 +507,9 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
       (typeof property.photos === 'string' ? JSON.parse(property.photos) : property.photos) : [];
     if (JSON.stringify(oldPhotos) !== JSON.stringify(newPhotos)) {
       changes.push({
-        field: 'Фотографии',
-        old: `${oldPhotos.length} фото`,
-        new: `${newPhotos.length} фото`
+        field: t('admin_fotografii_534c2f6a'),
+        old: t('admin_photos_n', { n: oldPhotos.length }),
+        new: t('admin_photos_n', { n: newPhotos.length })
       });
     }
 
@@ -509,13 +517,13 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
     const newAmenityKeys = [...collectAmenityKeys(property)].sort();
     if (JSON.stringify(oldAmenityKeys) !== JSON.stringify(newAmenityKeys)) {
       changes.push({
-        field: 'Удобства',
+        field: t('admin_udobstva_ab46fc85'),
         old: oldAmenityKeys.length
-          ? oldAmenityKeys.map((k) => getAmenityLabelRu(k)).join(', ')
-          : 'Не указано',
+          ? oldAmenityKeys.map((k) => getAmenityLabel(t, k)).join(', ')
+          : t('admin_notSpecified'),
         new: newAmenityKeys.length
-          ? newAmenityKeys.map((k) => getAmenityLabelRu(k)).join(', ')
-          : 'Не указано',
+          ? newAmenityKeys.map((k) => getAmenityLabel(t, k)).join(', ')
+          : t('admin_notSpecified'),
       });
     }
     
@@ -567,15 +575,15 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
         <div className="moderation-property-detail__translate-overlay" aria-hidden="true">
           <div className="moderation-property-detail__translate-preloader">
             <div className="moderation-property-detail__translate-spinner" />
-            <p className="moderation-property-detail__translate-text">Переводим объявление на все языки сайта</p>
+            <p className="moderation-property-detail__translate-text">{t('admin_perevodim_obyavlenie_na_vse_ea09d0ca')}</p>
             <p className="moderation-property-detail__translate-langs">English · Deutsch · Español · Français · Svenska</p>
-            <p className="moderation-property-detail__translate-hint">После перевода объявление будет опубликовано</p>
+            <p className="moderation-property-detail__translate-hint">{t('admin_posle_perevoda_obyavlenie_budet_073f9088')}</p>
           </div>
         </div>
       )}
       <button className="moderation-property-detail__back" onClick={onBack}>
         <FiArrowLeft size={20} />
-        Назад
+        {t('admin_nazad_f6dab074')}
       </button>
 
       <div className="moderation-property-detail__content">
@@ -614,14 +622,14 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                 <button
                   className="moderation-property-detail__nav-btn moderation-property-detail__nav-btn--prev"
                   onClick={handlePrevMedia}
-                  aria-label="Предыдущее"
+                  aria-label={t('admin_predyduschee_e5134f63')}
                 >
                   <FiChevronLeft size={24} />
                 </button>
                 <button
                   className="moderation-property-detail__nav-btn moderation-property-detail__nav-btn--next"
                   onClick={handleNextMedia}
-                  aria-label="Следующее"
+                  aria-label={t('admin_sleduyuschee_7b4e6ccb')}
                 >
                   <FiChevronRight size={24} />
                 </button>
@@ -634,24 +642,24 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
           </div>
 
           <div className="moderation-property-detail__gallery-info">
-            <p className="moderation-property-detail__gallery-info-title">Галерея</p>
+            <p className="moderation-property-detail__gallery-info-title">{t('admin_galereya_e6f95e75')}</p>
             <p className="moderation-property-detail__gallery-info-text">
-              {images.length} {images.length === 1 ? 'фотография' : images.length < 5 ? 'фотографии' : 'фотографий'}
-              {videos.length > 0 && `, ${videos.length} ${videos.length === 1 ? 'видео' : videos.length < 5 ? 'видео' : 'видео'}`}
+              {images.length} {images.length === 1 ? t('admin_fotografiya_296b75e4') : images.length < 5 ? t('admin_fotografii_6655cffc') : t('admin_fotografiy_795245b0')}
+              {videos.length > 0 && `, ${videos.length} ${videos.length === 1 ? t('admin_video_be5983f0') : videos.length < 5 ? t('admin_video_be5983f0') : t('admin_video_be5983f0')}`}
             </p>
           </div>
         </div>
 
         <div className="moderation-property-detail__info">
           <div className="moderation-property-detail__header">
-            <h1 className="moderation-property-detail__title">{property.title || 'Без названия'}</h1>
+            <h1 className="moderation-property-detail__title">{property.title || t('admin_untitled')}</h1>
             <div className="moderation-property-detail__statuses">
               <div className="moderation-property-detail__badge">
                 {getTypeLabel(property.property_type || property.type)}
               </div>
               {isDebtProperty && (
                 <div className="moderation-property-detail__badge">
-                  Долг
+                  {t('admin_dolg_949c1d86')}
                 </div>
               )}
               <span 
@@ -695,7 +703,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                     fontWeight: '600',
                     color: '#991b1b'
                   }}>
-                    Причина удаления:
+                    {t('admin_prichina_udaleniya_fc739dc6')}
                   </h4>
                   <p style={{
                     margin: 0,
@@ -721,7 +729,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
             {property.area && (
               <div className="moderation-property-detail__feature">
                 <BiArea size={20} />
-                <span>{property.area} м²</span>
+                <span>{t('admin_area_m2', { n: property.area })}</span>
               </div>
             )}
             {property.bedrooms && (
@@ -738,7 +746,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
             )}
             {property.rooms && (
               <div className="moderation-property-detail__feature">
-                <span>Комнат: {property.rooms}</span>
+                <span>{t('admin_rooms_count', { n: property.rooms })}</span>
               </div>
             )}
           </div>
@@ -748,24 +756,24 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
             {property.price && Number(property.price) > 0 && (
               <div style={{ marginBottom: '10px' }}>
                 <span style={{ color: '#111827', fontWeight: 500 }}>
-                  {isDebtProperty ? 'Сумма продажи:' : 'Купить сейчас:'}
+                  {isDebtProperty ? t('admin_summa_prodazhi_12afebb2') : t('admin_kupit_seychas_1bb6de5e')}
                 </span>{' '}
                 <span style={{ color: '#0099A9', fontWeight: 600 }}>
-                  {Number(property.price).toLocaleString('ru-RU')} {property.currency || 'USD'}
+                  {Number(property.price).toLocaleString(getUiIntlLocale())} {property.currency || 'USD'}
                 </span>
               </div>
             )}
             {!isDebtProperty && (
               <div style={{ fontSize: '14px', color: '#666' }}>
-                <div style={{ marginBottom: '8px' }}>Аукционный объект</div>
+                <div style={{ marginBottom: '8px' }}>{t('admin_aukcionnyy_obekt_06ee7e17')}</div>
                 {property.auction_start_date && (
-                  <div>Начало: {new Date(property.auction_start_date).toLocaleDateString('ru-RU')}</div>
+                  <div>{t('admin_start_colon')} {new Date(property.auction_start_date).toLocaleDateString()}</div>
                 )}
                 {property.auction_end_date && (
-                  <div>Окончание: {new Date(property.auction_end_date).toLocaleDateString('ru-RU')}</div>
+                  <div>{t('admin_end_colon')} {new Date(property.auction_end_date).toLocaleDateString()}</div>
                 )}
                 {property.auction_starting_price && (
-                  <div>Начальная сумма ставки: {Number(property.auction_starting_price).toLocaleString('ru-RU')} {property.currency || 'USD'}</div>
+                  <div>{t('admin_nachalnaya_summa_stavki_amount_1ade3fc6', { amount: Number(property.auction_starting_price).toLocaleString(), currency: property.currency || 'USD' })}</div>
                 )}
               </div>
             )}
@@ -775,12 +783,12 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
           {isDebtProperty && (
             <div className="moderation-property-detail__debt-block">
               <div className="moderation-property-detail__debt-block-risk">
-                <h4 className="moderation-property-detail__debt-block-title">Уровень риска объекта</h4>
+                <h4 className="moderation-property-detail__debt-block-title">{t('admin_uroven_riska_obekta_36ed4f54')}</h4>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {[
-                    { id: 'red', label: 'Высокий', bg: '#ef4444' },
-                    { id: 'yellow', label: 'Средний', bg: '#eab308' },
-                    { id: 'green', label: 'Низкий', bg: '#0099A9' }
+                    { id: 'red', label: t('admin_vysokiy_01e753ce'), bg: '#ef4444' },
+                    { id: 'yellow', label: t('admin_sredniy_afdc9818'), bg: '#eab308' },
+                    { id: 'green', label: t('admin_nizkiy_c37cd2bf'), bg: '#0099A9' }
                   ].map(option => {
                     const isActive = debtSeverity === option.id;
                     return (
@@ -814,47 +822,47 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                     {(property.debt_utilities === 1 || property.debt_utilities === true) && (
                       <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
-                        Долги по коммунальным услугам
+                        {t('admin_dolgi_po_kommunalnym_uslugam_72a19ad6')}
                       </span>
                     )}
                     {(property.debt_mortgage_pledge === 1 || property.debt_mortgage_pledge === true) && (
                       <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
-                        Залог у банка
+                        {t('admin_zalog_u_banka_692b02e9')}
                       </span>
                     )}
                     {(property.debt_property_taxes === 1 || property.debt_property_taxes === true) && (
                       <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
-                        Неоплаченные налоги на имущество
+                        {t('admin_neoplachennye_nalogi_na_imuschestvo_3ad07a08')}
                       </span>
                     )}
                     {(property.debt_arrest === 1 || property.debt_arrest === true) && (
                       <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
-                        Арест / ограничения
+                        {t('admin_arest_ogranicheniya_3c8bc455')}
                       </span>
                     )}
                     {(property.debt_inherited === 1 || property.debt_inherited === true) && (
                       <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
-                        Долги наследодателя
+                        {t('admin_dolgi_nasledodatelya_f40d881b')}
                       </span>
                     )}
                     {(property.debt_third_party === 1 || property.debt_third_party === true) && (
                       <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
-                        Долги перед третьими лицами
+                        {t('admin_dolgi_pered_tretimi_licami_e5389cee')}
                       </span>
                     )}
                   </div>
 
                   {property.debt_other && (
                     <div style={{ fontSize: '14px', color: '#111827' }}>
-                      <strong>Другое:</strong> {property.debt_other}
+                      <strong>{t('admin_drugoe_a99dbabf')}</strong> {property.debt_other}
                     </div>
                   )}
 
                   {property.debt_amount != null && property.debt_amount !== '' && !Number.isNaN(Number(property.debt_amount)) && (
                     <div style={{ fontSize: '14px', color: '#111827' }}>
-                      <strong>Ориентировочная сумма долга:</strong>{' '}
+                      <strong>{t('admin_orientirovochnaya_summa_dolga_e66eed9a')}</strong>{' '}
                       <span style={{ color: '#0099A9', fontWeight: 600 }}>
-                        {Number(property.debt_amount).toLocaleString('ru-RU')} {property.currency || 'USD'}
+                        {Number(property.debt_amount).toLocaleString(getUiIntlLocale())} {property.currency || 'USD'}
                       </span>
                     </div>
                   )}
@@ -865,60 +873,60 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
 
           {property.description && (
             <div className="moderation-property-detail__description">
-              <h3>Описание объекта</h3>
+              <h3>{t('admin_opisanie_obekta_520622e5')}</h3>
               <p>{property.description}</p>
             </div>
           )}
           
           {/* Дополнительная информация */}
           <div className="moderation-property-detail__additional-info">
-            <h3>Дополнительная информация</h3>
+            <h3>{t('admin_dopolnitelnaya_informaciya_39903d43')}</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginTop: '10px' }}>
               {property.floor && (
-                <div><strong>Этаж:</strong> {property.floor}</div>
+                <div><strong>{t('admin_etazh_77c75de0')}</strong> {property.floor}</div>
               )}
               {property.total_floors && (
-                <div><strong>Всего этажей:</strong> {property.total_floors}</div>
+                <div><strong>{t('admin_vsego_etazhey_de2973ee')}</strong> {property.total_floors}</div>
               )}
               {property.year_built && (
-                <div><strong>Год постройки:</strong> {property.year_built}</div>
+                <div><strong>{t('admin_god_postroyki_ae4c3700')}</strong> {property.year_built}</div>
               )}
               {property.land_area && (
-                <div><strong>Площадь участка:</strong> {property.land_area} м²</div>
+                <div><strong>{t('admin_ploschad_uchastka_51c7b339')}</strong> {t('admin_area_m2', { n: property.land_area })}</div>
               )}
               {property.renovation && (
-                <div><strong>Ремонт:</strong> {property.renovation}</div>
+                <div><strong>{t('admin_remont_0810bb2e')}</strong> {property.renovation}</div>
               )}
               {property.condition && (
-                <div><strong>Состояние:</strong> {property.condition}</div>
+                <div><strong>{t('admin_sostoyanie_0ae07a91')}</strong> {property.condition}</div>
               )}
               {property.heating && (
-                <div><strong>Отопление:</strong> {property.heating}</div>
+                <div><strong>{t('admin_otoplenie_3d6d29d6')}</strong> {property.heating}</div>
               )}
               {property.water_supply && (
-                <div><strong>Водоснабжение:</strong> {property.water_supply}</div>
+                <div><strong>{t('admin_vodosnabzhenie_a8145551')}</strong> {property.water_supply}</div>
               )}
               {property.sewerage && (
-                <div><strong>Канализация:</strong> {property.sewerage}</div>
+                <div><strong>{t('admin_kanalizaciya_4c48c9d7')}</strong> {property.sewerage}</div>
               )}
               {property.commercial_type && (
-                <div><strong>Тип коммерческой:</strong> {property.commercial_type}</div>
+                <div><strong>{t('admin_tip_kommercheskoy_d71158ea')}</strong> {property.commercial_type}</div>
               )}
               {property.business_hours && (
-                <div><strong>Часы работы:</strong> {property.business_hours}</div>
+                <div><strong>{t('admin_chasy_raboty_1eae7bee')}</strong> {property.business_hours}</div>
               )}
-              <div><strong>Есть тест-драйв:</strong> {(property.test_drive === 1 || property.test_drive === true || property.testDrive === true) ? 'Да' : 'Нет'}</div>
+              <div><strong>{t('admin_est_test_drayv_245ba9fb')}</strong> {(property.test_drive === 1 || property.test_drive === true || property.testDrive === true) ? t('admin_yes') : t('admin_no')}</div>
             </div>
           </div>
           
           {/* Удобства */}
           <div className="moderation-property-detail__amenities">
-            <h3>Удобства</h3>
+            <h3>{t('admin_udobstva_ab46fc85')}</h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
               {(() => {
-                const labels = getResolvedAmenityLabels(property)
+                const labels = getResolvedAmenityLabels(property, t)
                 if (!labels.length) {
-                  return <span style={{ color: '#999' }}>Удобства не указаны</span>
+                  return <span style={{ color: '#999' }}>{t('admin_udobstva_ne_ukazany_2ca5990b')}</span>
                 }
                 return labels.map((label, index) => (
                   <span
@@ -933,7 +941,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
             {/* Дополнительные удобства */}
             {property.additional_amenities && property.additional_amenities.trim() && (
               <div style={{ marginTop: '15px', padding: '12px', backgroundColor: '#f5f5f5', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
-                <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600', color: '#333' }}>Дополнительно:</h4>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: '600', color: '#333' }}>{t('admin_dopolnitelno_9d5f2ee5')}</h4>
                 <p style={{ margin: 0, fontSize: '14px', color: '#666', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
                   {property.additional_amenities}
                 </p>
@@ -942,16 +950,16 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
           </div>
 
           <div className="moderation-property-detail__owner">
-            <h3>Информация о владельце</h3>
-            <p><strong>Имя:</strong> {property.first_name || property.ownerName || 'Не указано'} {property.last_name || ''}</p>
-            <p><strong>Email:</strong> {property.email || property.ownerEmail || 'Не указано'}</p>
-            <p><strong>Телефон:</strong> {property.phone_number || 'Не указано'}</p>
-            <p><strong>Дата подачи:</strong> {
+            <h3>{t('admin_informaciya_o_vladelce_3592529f')}</h3>
+            <p><strong>{t('admin_imya_e6cc1511')}</strong> {property.first_name || property.ownerName || t('admin_notSpecified')} {property.last_name || ''}</p>
+            <p><strong>Email:</strong> {property.email || property.ownerEmail || t('admin_notSpecified')}</p>
+            <p><strong>{t('admin_telefon_0e41c7c4')}</strong> {property.phone_number || t('admin_notSpecified')}</p>
+            <p><strong>{t('admin_data_podachi_71a7232c')}</strong> {
               property.created_at 
-                ? new Date(property.created_at).toLocaleDateString('ru-RU')
+                ? new Date(property.created_at).toLocaleDateString(getUiIntlLocale())
                 : property.submittedDate 
-                  ? new Date(property.submittedDate).toLocaleDateString('ru-RU')
-                  : 'Не указано'
+                  ? new Date(property.submittedDate).toLocaleDateString(getUiIntlLocale())
+                  : t('admin_notSpecified')
             }</p>
           </div>
 
@@ -964,13 +972,13 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
               disabled={isTranslating}
             >
               <FiGlobe size={18} />
-              {isTranslating ? 'Перевод...' : 'Перевести без публикации'}
+              {isTranslating ? t('admin_perevod_3e2c3c3e') : t('admin_perevesti_bez_publikacii_0a81fa8e')}
             </button>
             {Object.keys(translationsByLang).length > 0 && (
               <div className="moderation-property-detail__translations-view">
-                <h3 className="moderation-property-detail__translations-title">Просмотр перевода</h3>
+                <h3 className="moderation-property-detail__translations-title">{t('admin_prosmotr_perevoda_069436ca')}</h3>
                 <div className="moderation-property-detail__translations-lang-select">
-                  <label htmlFor="translation-lang">Язык:</label>
+                  <label htmlFor="translation-lang">{t('admin_yazyk_e1357f63')}</label>
                   <select
                     id="translation-lang"
                     value={selectedTranslationLang}
@@ -985,11 +993,11 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                 {translationsByLang[selectedTranslationLang] && (
                   <div className="moderation-property-detail__translations-content">
                     <div className="moderation-property-detail__translations-item">
-                      <strong>Название:</strong>
+                      <strong>{t('admin_nazvanie_37e1ddf1')}</strong>
                       <p>{translationsByLang[selectedTranslationLang].title || '—'}</p>
                     </div>
                     <div className="moderation-property-detail__translations-item">
-                      <strong>Описание:</strong>
+                      <strong>{t('admin_opisanie_943961fd')}</strong>
                       <p>{translationsByLang[selectedTranslationLang].description || '—'}</p>
                     </div>
                     {EXTRA_TRANSLATION_LABELS.map(([key, label]) => {
@@ -1016,7 +1024,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                   checked={approveAsPrivateClub}
                   onChange={(e) => setApproveAsPrivateClub(e.target.checked)}
                 />
-                <span>Только закрытый клуб (VIP)</span>
+                <span>{t('admin_tolko_zakrytyy_klub__af6d1f41')}</span>
               </label>
             )}
             <div className="moderation-property-detail__actions">
@@ -1027,15 +1035,15 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                   if (originalProperty) {
                     setShowChangesModal(true);
                   } else if (loadingOriginal) {
-                    alert('Загрузка оригинального объекта...');
+                    alert(t('admin_loadingOriginalProperty'));
                   } else {
-                    alert('Не удалось загрузить оригинальный объект для сравнения');
+                    alert(t('admin_originalPropertyLoadFail'));
                   }
                 }}
                 disabled={!originalProperty || loadingOriginal}
               >
                 <FiEye size={18} />
-                {loadingOriginal ? 'Загрузка...' : 'Изменения'}
+                {loadingOriginal ? t('admin_loading') : t('admin_izmeneniya_adc32cb9')}
               </button>
             )}
             <button
@@ -1044,7 +1052,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
               disabled={isTranslating}
             >
               <FiCheck size={20} />
-              {isTranslating ? 'Перевод и публикация...' : 'Одобрить'}
+              {isTranslating ? t('admin_perevod_i_publikaciya_ed7e582f') : t('admin_approve')}
             </button>
             <button
               className="moderation-property-detail__btn moderation-property-detail__btn--reject"
@@ -1052,7 +1060,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
               disabled={isTranslating}
             >
               <FiXCircle size={20} />
-              Отклонить
+              {t('admin_reject')}
             </button>
           </div>
           </div>
@@ -1076,7 +1084,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
             }}
           >
             <FiImage size={18} style={{ marginRight: '5px', verticalAlign: 'middle' }} />
-            Фотографии ({images.length})
+            {t('admin_photos_count', { n: images.length })}
           </button>
           {videos.length > 0 && (
             <button
@@ -1094,14 +1102,14 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
               }}
             >
               <FiVideo size={18} style={{ marginRight: '5px', verticalAlign: 'middle' }} />
-              Видео ({videos.length})
+              {t('admin_videos_count', { n: videos.length })}
             </button>
           )}
         </div>
         
         {mediaType === 'photos' && (
           <>
-            <h2 className="moderation-property-detail__gallery-title">Фотографии объекта</h2>
+            <h2 className="moderation-property-detail__gallery-title">{t('admin_debtDoc_fotografii_obekta_f9f089x')}</h2>
             <div className="moderation-property-detail__gallery-grid">
               {images.map((img, index) => (
                 <div
@@ -1116,7 +1124,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                 >
                   <img src={img} alt={`${property.title} ${index + 1}`} />
                   <div className="moderation-property-detail__gallery-overlay">
-                    <span>Фото {index + 1}</span>
+                    <span>{t('admin_foto_n_1d705dae', { n: index + 1 })}</span>
                   </div>
                 </div>
               ))}
@@ -1126,7 +1134,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
         
         {mediaType === 'videos' && videos.length > 0 && (
           <>
-            <h2 className="moderation-property-detail__gallery-title">Видео объекта</h2>
+            <h2 className="moderation-property-detail__gallery-title">{t('admin_video_obekta_855029a6')}</h2>
             <div className="moderation-property-detail__gallery-grid">
               {videos.map((video, index) => {
                 const videoUrl = typeof video === 'string' ? video : (video.url || video.embedUrl || video.videoId);
@@ -1149,14 +1157,14 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                     }}
                   >
                     {thumbnail ? (
-                      <img src={thumbnail} alt={`Видео ${index + 1}`} />
+                      <img src={thumbnail} alt={t('admin_videoN', { n: index + 1 })} />
                     ) : (
                       <div style={{ width: '100%', height: '200px', backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <FiVideo size={48} color="#fff" />
                       </div>
                     )}
                     <div className="moderation-property-detail__gallery-overlay">
-                      <span>Видео {index + 1}</span>
+                      <span>{t('admin_videoN', { n: index + 1 })}</span>
                     </div>
                   </div>
                 );
@@ -1173,14 +1181,14 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
         <div className="moderation-property-detail__documents-section">
           <h2 className="moderation-property-detail__documents-title">
             <FiFileText size={24} />
-            Документы на недвижимость
+            {t('admin_dokumenty_na_nedvizhimost_c51d57b5')}
           </h2>
           <div className="moderation-property-detail__documents-grid">
             {/* Документ о праве собственности */}
             {(property.ownership_document || property.ownershipDocument) && (() => {
               const rawDocUrl = property.ownership_document || property.ownershipDocument;
               const docUrl = processDocumentUrl(rawDocUrl);
-              const docName = property.ownership_document_name || property.ownershipDocumentName || 'Документ о праве собственности';
+              const docName = property.ownership_document_name || property.ownershipDocumentName || t('admin_dokument_o_prave_sobstvennosti_1131f297');
               const docType = getDocumentType(rawDocUrl, docName);
               
               return (
@@ -1200,7 +1208,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                       {docName}
                     </h3>
                     <span className="moderation-property-detail__document-type">
-                      {docType === 'pdf' ? 'PDF документ' : 'Изображение'}
+                      {docType === 'pdf' ? t('admin_pdfDocument') : t('admin_image')}
                     </span>
                   </div>
                 </div>
@@ -1211,7 +1219,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
             {!isDebtProperty && (property.no_debts_document || property.noDebtsDocument) && (() => {
               const rawDocUrl = property.no_debts_document || property.noDebtsDocument;
               const docUrl = processDocumentUrl(rawDocUrl);
-              const docName = property.no_debts_document_name || property.noDebtsDocumentName || 'Справка об отсутствии обременений';
+              const docName = property.no_debts_document_name || property.noDebtsDocumentName || t('admin_spravka_ob_otsutstvii_obremeneniy_e91143be');
               const docType = getDocumentType(rawDocUrl, docName);
               
               return (
@@ -1231,7 +1239,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                       {docName}
                     </h3>
                     <span className="moderation-property-detail__document-type">
-                      {docType === 'pdf' ? 'PDF документ' : 'Изображение'}
+                      {docType === 'pdf' ? t('admin_pdfDocument') : t('admin_image')}
                     </span>
                   </div>
                 </div>
@@ -1264,7 +1272,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                   <div className="moderation-property-detail__document-info">
                     <h3 className="moderation-property-detail__document-name">{documentName}</h3>
                     <span className="moderation-property-detail__document-type">
-                      {documentType === 'pdf' ? 'PDF документ' : 'Изображение'}
+                      {documentType === 'pdf' ? t('admin_pdfDocument') : t('admin_image')}
                     </span>
                   </div>
                 </div>
@@ -1285,7 +1293,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
               }
               
               return additionalDocs.map((doc, index) => {
-                const documentName = typeof doc === 'string' ? doc : (doc.name || `Документ ${index + 1}`);
+                const documentName = typeof doc === 'string' ? doc : (doc.name || t('admin_documentN', { n: index + 1 }));
                 const documentUrl = typeof doc === 'object' && doc.url ? doc.url : null;
                 const documentType = typeof doc === 'object' && doc.type 
                   ? doc.type 
@@ -1309,7 +1317,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                     <div className="moderation-property-detail__document-info">
                       <h3 className="moderation-property-detail__document-name">{documentName}</h3>
                       <span className="moderation-property-detail__document-type">
-                        {documentType === 'pdf' ? 'PDF документ' : 'Изображение'}
+                        {documentType === 'pdf' ? t('admin_pdfDocument') : t('admin_image')}
                       </span>
                     </div>
                   </div>
@@ -1328,12 +1336,12 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
               }, {});
 
               const typeTitles = {
-                cat1: 'Документы по самому долгу',
-                cat2: 'Документы по обеспечению (недвижимости)',
-                cat3: 'Юридические документы',
-                cat4: 'Документы по заемщику',
-                cat5: 'Документы по сделке покупки долга',
-                cat6: 'Дополнительно'
+                cat1: t('admin_dokumenty_po_samomu_dolgu_6ad18c0a'),
+                cat2: t('admin_dokumenty_po_obespecheniyu_nedvizhim_d7fc202c'),
+                cat3: t('admin_yuridicheskie_dokumenty_b75b5938'),
+                cat4: t('admin_dokumenty_po_zaemschiku_e60bc654'),
+                cat5: t('admin_dokumenty_po_sdelke_pokupki_cf6cc2da'),
+                cat6: t('admin_dopolnitelno_d7907f4d')
               };
 
               const entries = Object.entries(groups);
@@ -1345,13 +1353,13 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                   </div>
                   <div className="moderation-property-detail__document-info">
                     <h3 className="moderation-property-detail__document-name">
-                      {typeTitles[type] || `Документы категории ${type}`}
+                      {typeTitles[type] || t('admin_dokumenty_kategorii_type_4d00304e', { type })}
                     </h3>
                     <ul className="moderation-property-detail__debt-documents-list">
                       {docs.map((doc, index) => {
                         const rawUrl = doc.file_path;
                         const url = processDocumentUrl(rawUrl);
-                        const name = doc.original_name || `Документ ${index + 1}`;
+                        const name = doc.original_name || t('admin_documentN', { n: index + 1 });
                         const docType = getDocumentType(rawUrl, name);
                         return (
                           <li key={doc.id || `${type}_${index}`} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -1361,7 +1369,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                                   className="moderation-property-detail__debt-document-link"
                                   style={{ border: 'none', cursor: 'pointer', textAlign: 'left' }}
                                   onClick={() => setSelectedDocument({ type: docType, url, name })}
-                                  title="Открыть предпросмотр"
+                                  title={t('admin_otkryt_predprosmotr_5afa4d2a')}
                                 >
                                   {name}
                                 </button>
@@ -1369,7 +1377,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                                   href={url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  title="Открыть в новой вкладке"
+                                  title={t('admin_otkryt_v_novoy_vkladke_97acdc26')}
                                   style={{ color: '#9ca3af', flexShrink: 0, display: 'flex', alignItems: 'center' }}
                                 >
                                   <FiExternalLink size={14} />
@@ -1431,7 +1439,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                 style={{ maxWidth: '95vw', maxHeight: '90vh', objectFit: 'contain' }}
                 onError={(e) => {
                   console.error('Ошибка загрузки изображения:', selectedDocument.url);
-                  e.target.src = 'https://via.placeholder.com/800x600?text=Ошибка+загрузки+изображения';
+                  e.target.src = t('admin_https_via_placeholder_com_bc84e599');
                 }}
               />
             )}
@@ -1454,21 +1462,21 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                 <span className="moderation-confirm__mark" aria-hidden>
                   <FiGlobe size={22} />
                 </span>
-                <p className="moderation-confirm__kicker">Модерация</p>
+                <p className="moderation-confirm__kicker">{t('admin_moderaciya_80ae616e')}</p>
                 <h2 id="moderation-confirm-title" className="moderation-confirm__title">
-                  Опубликовать объявление
+                  {t('admin_opublikovat_obyavlenie_cb13631a')}
                 </h2>
                 <p className="moderation-confirm__text">
-                  Сначала переведём текст на все языки сайта, затем опубликуем объект.
+                  {t('admin_snachala_perevedem_tekst_na_77b157c3')}
                 </p>
                 <p className="moderation-confirm__langs">EN · DE · ES · FR · SV</p>
                 <div className="moderation-confirm__actions">
                   <button type="button" className="moderation-confirm__btn moderation-confirm__btn--ghost" onClick={closeConfirm}>
-                    Отмена
+                    {t('admin_otmena_0ec753be')}
                   </button>
                   <button type="button" className="moderation-confirm__btn moderation-confirm__btn--approve" onClick={handleConfirmApprove}>
                     <FiCheck size={18} />
-                    Одобрить и перевести
+                    {t('admin_odobrit_i_perevesti_05128924')}
                   </button>
                 </div>
               </>
@@ -1477,20 +1485,20 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                 <span className="moderation-confirm__mark moderation-confirm__mark--reject" aria-hidden>
                   <FiXCircle size={22} />
                 </span>
-                <p className="moderation-confirm__kicker">Модерация</p>
+                <p className="moderation-confirm__kicker">{t('admin_moderaciya_80ae616e')}</p>
                 <h2 id="moderation-confirm-title" className="moderation-confirm__title">
-                  Отклонить объявление
+                  {t('admin_otklonit_obyavlenie_176b3550')}
                 </h2>
                 <p className="moderation-confirm__text">
-                  Объект не будет опубликован. Владелец получит уведомление об отклонении.
+                  {t('admin_obekt_ne_budet_opublikovan_5ee95354')}
                 </p>
                 <div className="moderation-confirm__actions">
                   <button type="button" className="moderation-confirm__btn moderation-confirm__btn--ghost" onClick={closeConfirm}>
-                    Отмена
+                    {t('admin_otmena_0ec753be')}
                   </button>
                   <button type="button" className="moderation-confirm__btn moderation-confirm__btn--reject" onClick={handleConfirmReject}>
                     <FiXCircle size={18} />
-                    Отклонить
+                    {t('admin_reject')}
                   </button>
                 </div>
               </>
@@ -1532,7 +1540,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '600', color: '#111827' }}>
-                Изменения в объявлении
+                {t('admin_izmeneniya_v_obyavlenii_d2f70c60')}
               </h2>
               <button
                 onClick={() => setShowChangesModal(false)}
@@ -1569,7 +1577,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                     </div>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem', fontWeight: '500' }}>Было:</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem', fontWeight: '500' }}>{t('admin_bylo_62aac560')}</div>
                         <div style={{ 
                           padding: '0.5rem', 
                           backgroundColor: '#fee2e2', 
@@ -1583,7 +1591,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                       </div>
                       <div style={{ fontSize: '1.5rem', color: '#0099A9', fontWeight: 'bold' }}>→</div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem', fontWeight: '500' }}>Стало:</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.25rem', fontWeight: '500' }}>{t('admin_stalo_73bbbd80')}</div>
                         <div style={{ 
                           padding: '0.5rem', 
                           backgroundColor: '#d1fae5', 
@@ -1607,7 +1615,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                 backgroundColor: '#f9fafb',
                 borderRadius: '8px'
               }}>
-                Изменений не обнаружено
+                {t('admin_izmeneniy_ne_obnaruzheno_91521b87')}
               </div>
             )}
             
@@ -1632,7 +1640,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                   e.target.style.backgroundColor = '#0099A9';
                 }}
               >
-                Закрыть
+                {t('admin_close')}
               </button>
             </div>
           </div>

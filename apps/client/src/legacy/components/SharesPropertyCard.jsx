@@ -30,6 +30,9 @@ function SharesPropertyCard({
   const { t, i18n } = useTranslation()
   const cardShare = normalizeMarketplaceShare(share)
   const investmentState = resolveShareMarketplaceState(cardShare)
+  const ctaLabel = investmentState.ctaLabelKey
+    ? t(investmentState.ctaLabelKey, { defaultValue: investmentState.ctaLabel })
+    : investmentState.ctaLabel || t('sharesPage_learnMore')
   const buyNowState = getShareBuyNowAvailability(cardShare)
   const detailHref = href || getCoInvestmentDetailPath(cardShare)
   const totalShares = Number.isFinite(cardShare.totalShares) ? cardShare.totalShares : null
@@ -292,7 +295,7 @@ function SharesPropertyCard({
               onClick={handleOpen}
             >
               <span className="shares-v2-card__sold-cta-copy">
-                <span className="shares-v2-card__sold-cta-label">{investmentState.ctaLabel}</span>
+                <span className="shares-v2-card__sold-cta-label">{ctaLabel}</span>
                 <span className="shares-v2-card__sold-cta-open">{t('buyerCabinet_openProperty')}</span>
               </span>
               <ArrowUpRight size={17} aria-hidden />
@@ -307,7 +310,7 @@ function SharesPropertyCard({
                 onClick={handleOpen}
                 aria-disabled={investmentState.blocksInvestment || undefined}
               >
-                <span className="shares-v2-card__btn-text">{investmentState.ctaLabel}</span>
+                <span className="shares-v2-card__btn-text">{ctaLabel}</span>
                 <ArrowUpRight className="shares-v2-card__btn-arrow" size={15} aria-hidden />
               </button>
             </div>

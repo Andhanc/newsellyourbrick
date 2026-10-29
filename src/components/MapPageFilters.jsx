@@ -152,7 +152,7 @@ export default function MapPageFilters({
         >
           <div className="map-page-filters__price-row">
             <label className="map-page-filters__price-field">
-              <span>{t('mapFiltersPriceFrom', { defaultValue: 'От' })}</span>
+              <span>{t('mapFiltersPriceFrom')}</span>
               <input
                 type="text"
                 inputMode="numeric"
@@ -166,7 +166,7 @@ export default function MapPageFilters({
               —
             </span>
             <label className="map-page-filters__price-field">
-              <span>{t('mapFiltersPriceTo', { defaultValue: 'До' })}</span>
+              <span>{t('mapFiltersPriceTo')}</span>
               <input
                 type="text"
                 inputMode="numeric"
@@ -195,7 +195,7 @@ export default function MapPageFilters({
 
             {activeCount > 0 ? (
               <button type="button" className="map-page-filters__reset-row" onClick={handleReset}>
-                {t('mapFiltersReset', { defaultValue: 'Сбросить' })}
+                {t('mapFiltersReset')}
               </button>
             ) : null}
           </div>

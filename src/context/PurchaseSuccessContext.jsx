@@ -41,8 +41,8 @@ export function PurchaseSuccessProvider({ children }) {
     openPurchaseSuccess({
       id: 900001,
       purchaseKind: preview,
-      title: 'Вилла с панорамным видом на море',
-      location: 'Пафос, Кипр',
+      title: 'Villa with panoramic sea view',
+      location: 'Paphos, Cyprus',
       image: '/images/sellyourbrick/about/about-hero-villa.jpg',
     })
   }, [openPurchaseSuccess])

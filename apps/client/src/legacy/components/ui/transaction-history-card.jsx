@@ -2,24 +2,29 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Check } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 
 const TIFFANY = '#0099A9'
 
 /**
- * История транзакций: плоская белая карта и серые строки (референс payment card), без градиентов.
+ * Transaction history: flat white card and grey rows (payment-card reference), no gradients.
  */
 export default function TransactionHistoryCard({
-  totalLabel = 'Сумма операций',
+  totalLabel,
   totalAmountDisplay,
   subtitle,
-  listTitle = 'Последние операции',
+  listTitle,
   items = [],
   defaultSelectedId,
   historyHref = '/profile?history=1',
-  historyButtonLabel = 'Вся история',
+  historyButtonLabel,
   className,
 }) {
+  const { t } = useTranslation()
+  const resolvedTotalLabel = totalLabel ?? t('transactionHistory_totalLabel')
+  const resolvedListTitle = listTitle ?? t('transactionHistory_listTitle')
+  const resolvedHistoryButtonLabel = historyButtonLabel ?? t('buyerCabinet_allHistory')
   const initialId = defaultSelectedId ?? items[0]?.id ?? ''
   const [selectedId, setSelectedId] = useState(initialId)
 
@@ -31,19 +36,19 @@ export default function TransactionHistoryCard({
   return (
     <div className={cn('test-tx-panel', className)}>
       <div className="text-center">
-        <p className="test-tx__eyebrow">{totalLabel}</p>
+        <p className="test-tx__eyebrow">{resolvedTotalLabel}</p>
         <p className="test-tx__headline test-tx__headline--center">{totalAmountDisplay}</p>
         {subtitle ? <p className="mt-2 text-sm leading-snug text-zinc-500">{subtitle}</p> : null}
       </div>
 
       <div className="mt-7 flex flex-1 flex-col">
-        <p className="test-tx__eyebrow mb-3">{listTitle}</p>
+        <p className="test-tx__eyebrow mb-3">{resolvedListTitle}</p>
         {items.length === 0 ? (
           <p className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-6 text-center text-sm text-zinc-500">
-            Пока нет событий в истории — они появятся после ставок и покупок.
+            {t('transactionHistory_emptyEvents')}
           </p>
         ) : null}
-        <div role="radiogroup" aria-label={listTitle} className="flex flex-col gap-3">
+        <div role="radiogroup" aria-label={resolvedListTitle} className="flex flex-col gap-3">
           {items.map((row) => {
             const isSelected = selectedId === row.id
             return (
@@ -112,7 +117,7 @@ export default function TransactionHistoryCard({
       </div>
 
       <Link to={historyHref} className="test-tx__cta">
-        {historyButtonLabel}
+        {resolvedHistoryButtonLabel}
       </Link>
     </div>
   )

@@ -15,7 +15,7 @@ import {
 import { assignSheetPanelRef, sheetHandleDragProps, useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
 import { getUserData } from '../services/authService'
-import { startVipSubscriptionCheckout } from '../utils/subscriptionCheckout'
+import { startVipSubscriptionCheckout, translateBillingError } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
 import {
   buildDebtCategories,
@@ -24,15 +24,16 @@ import {
 } from '../utils/debtPropertyDetail'
 import './DebtAuctionInsight.css'
 
-const DOC_BENEFITS = [
-  'Кредитный договор и ипотечные документы',
-  'Выписки и документы о сумме долга',
-  'Реестровые записи и обременения',
-  'Дополнительные материалы по объекту',
+const DOC_BENEFIT_KEYS = [
+  'debtPro_benefit1',
+  'debtPro_benefit2',
+  'debtPro_benefit3',
+  'debtPro_benefit4',
 ]
 
 /** Модалка: VIP открывает документы долгового объекта (не «отчёт»). */
 export function DebtProModal({ open, onClose, onRequireLogin, onOpenDocuments, risk, isAuction }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const titleId = useId()
   const dialogRef = useRef(null)
@@ -93,15 +94,15 @@ export function DebtProModal({ open, onClose, onRequireLogin, onOpenDocuments, r
       })
       if (!result.ok) {
         if (result.error === 'already_subscribed_vip') {
-          showNotification('VIP уже активен — открываем документы', 'info')
+          showNotification(t('debtPro_vipAlreadyActive'), 'info')
           onClose()
           onOpenDocuments?.()
           return
         }
-        showNotification(result.error || 'Не удалось открыть оплату VIP', 'error')
+        showNotification(translateBillingError(result.error, t, 'debtPro_checkoutFailed'), 'error')
       }
     } catch (error) {
-      showNotification(error?.message || 'Не удалось открыть оплату VIP', 'error')
+      showNotification(error?.message || t('debtPro_checkoutFailed'), 'error')
     } finally {
       setCheckoutLoading(false)
     }
@@ -120,21 +121,21 @@ export function DebtProModal({ open, onClose, onRequireLogin, onOpenDocuments, r
         aria-labelledby={titleId}
       >
         <div className="debt-pro-modal__handle" aria-hidden {...sheetHandleDragProps(sheetDrag)} />
-        <button type="button" className="debt-pro-modal__close" onClick={onClose} aria-label="Закрыть">
+        <button type="button" className="debt-pro-modal__close" onClick={onClose} aria-label={t('debtPro_closeAria')}>
           <X size={20} />
         </button>
 
         <div className="debt-pro-modal__eyebrow"><Sparkles size={15} /> SYB VIP</div>
-        <h2 id={titleId}>Документы по долговому объекту</h2>
+        <h2 id={titleId}>{t('debtPro_title')}</h2>
         <p className="debt-pro-modal__lead">
           {isAuction
-            ? 'Откройте пакет документов объекта, чтобы проверить обязательства до ставки.'
-            : 'Откройте пакет документов объекта, чтобы проверить обязательства до покупки.'}
+            ? t('debtPro_leadAuction')
+            : t('debtPro_leadBuy')}
         </p>
 
         <div className={`debt-pro-report debt-pro-report--${risk.tone}`} aria-hidden>
           <div className="debt-pro-report__top">
-            <span><FileText size={18} /> Документы объекта</span>
+            <span><FileText size={18} /> {t('debtPro_docsLabel')}</span>
             <span className="debt-pro-report__risk">{risk.shortLabel}</span>
           </div>
           <div className="debt-pro-report__lines">
@@ -144,14 +145,14 @@ export function DebtProModal({ open, onClose, onRequireLogin, onOpenDocuments, r
         </div>
 
         <ul className="debt-pro-modal__benefits">
-          {DOC_BENEFITS.map((benefit) => (
-            <li key={benefit}><Check size={17} /> <span>{benefit}</span></li>
+          {DOC_BENEFIT_KEYS.map((key) => (
+            <li key={key}><Check size={17} /> <span>{t(key)}</span></li>
           ))}
         </ul>
 
         <div className="debt-pro-modal__offer">
-          <div><strong>VIP</strong><span>доступ к документам объекта</span></div>
-          <div className="debt-pro-modal__price"><strong>€499</strong><span>/ месяц</span></div>
+          <div><strong>VIP</strong><span>{t('debtPro_vipAccess')}</span></div>
+          <div className="debt-pro-modal__price"><strong>€499</strong><span>{t('debtPro_perMonth')}</span></div>
         </div>
 
         <button
@@ -160,7 +161,7 @@ export function DebtProModal({ open, onClose, onRequireLogin, onOpenDocuments, r
           onClick={startCheckout}
           disabled={checkoutLoading}
         >
-          {checkoutLoading ? 'Открываем оплату…' : 'Купить VIP'}
+          {checkoutLoading ? t('debtPro_checkoutLoading') : t('debtPro_buyVip')}
           {!checkoutLoading && <ArrowRight size={18} />}
         </button>
         <button
@@ -171,9 +172,9 @@ export function DebtProModal({ open, onClose, onRequireLogin, onOpenDocuments, r
             navigate('/subscriptions#subscriptions-pricing-section')
           }}
         >
-          Посмотреть все тарифы
+          {t('debtPro_viewPlans')}
         </button>
-        <p className="debt-pro-modal__note">Подписку можно отменить в любой момент</p>
+<p className="debt-pro-modal__note">{t('debtPro_cancelNote')}</p>
       </section>
     </div>,
     document.body,
@@ -200,7 +201,7 @@ export default function DebtAuctionInsight({
   const categories = useMemo(() => buildDebtCategories(property, t), [property, t])
   const debtAmount = normalizeDebtAmount(property?.debt_amount)
   const bidAmount = Number(currentBid) > 0 ? Number(currentBid) : null
-  const formatAmount = (value) => value != null ? formatPrice(value) : 'Уточняется'
+  const formatAmount = (value) => value != null ? formatPrice(value) : t('debtInsight_tba')
 
   const handleDetailsClick = () => {
     if (!resolved) return
@@ -227,22 +228,22 @@ export default function DebtAuctionInsight({
         <div className="debt-insight__head">
           <div>
             <span className="debt-insight__eyebrow">
-              <Gavel size={14} /> {isAuction ? 'Долговой аукцион' : 'Объект с долгом'}
+              <Gavel size={14} /> {isAuction ? t('debtInsight_eyebrowAuction') : t('debtInsight_eyebrowDebt')}
             </span>
-            <h2>Финансовая картина</h2>
+            <h2>{t('debtInsight_title')}</h2>
           </div>
           <span className="debt-insight__risk"><ShieldAlert size={15} /> {risk.label}</span>
         </div>
 
         <div className="debt-insight__metrics">
-          <div><span>{isAuction ? 'Текущая ставка' : 'Стоимость объекта'}</span><strong>{formatAmount(bidAmount)}</strong></div>
-          <div><span>Сумма долга</span><strong>{formatAmount(debtAmount)}</strong></div>
+          <div><span>{isAuction ? t('debtInsight_currentBid') : t('debtInsight_propertyPrice')}</span><strong>{formatAmount(bidAmount)}</strong></div>
+          <div><span>{t('debtInsight_debtAmount')}</span><strong>{formatAmount(debtAmount)}</strong></div>
         </div>
 
         <div className="debt-insight__known">
           <div className="debt-insight__known-title">
             <div>
-              <span>Что известно о долге</span>
+              <span>{t('debtInsight_knownTitle')}</span>
               <small>{risk.description}</small>
             </div>
             {docsUnlocked ? <FileText size={19} /> : <LockKeyhole size={19} />}
@@ -255,23 +256,23 @@ export default function DebtAuctionInsight({
           </div>
           {docsUnlocked ? (
             <p className="debt-insight__unlocked-note">
-              Документы этого объекта доступны по вашей подписке VIP.
+              {t('debtInsight_unlockedNote')}
             </p>
           ) : (
             <div className="debt-insight__locked-preview" aria-hidden>
               <span /><span /><span />
-              <div><LockKeyhole size={15} /> Документы доступны с VIP</div>
+<div><LockKeyhole size={15} /> {t('debtInsight_lockedPreview')}</div>
             </div>
           )}
           <button type="button" className="debt-insight__cta" onClick={handleDetailsClick} disabled={!resolved}>
-            {docsUnlocked ? 'Открыть документы' : 'Открыть документы объекта'}
+            {docsUnlocked ? t('debtInsight_openDocs') : t('debtInsight_openDocsObject')}
             <ArrowRight size={17} />
           </button>
         </div>
         <p className="debt-insight__disclaimer">
           {isAuction
-            ? 'Перед участием в торгах рекомендуем юридическую проверку объекта.'
-            : 'Перед покупкой рекомендуем юридическую проверку объекта.'}
+            ? t('debtInsight_disclaimerAuction')
+            : t('debtInsight_disclaimerBuy')}
         </p>
       </section>
 

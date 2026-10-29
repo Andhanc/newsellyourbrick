@@ -42,26 +42,26 @@ export function buildSummary(messages, preferences) {
   const msgList = Array.isArray(messages) ? messages : (messages ? JSON.parse(messages || '[]') : []);
   const parts = [];
 
-  if (prefs.purpose) parts.push(`Цель: ${prefs.purpose}`);
-  if (prefs.budget) parts.push(`Бюджет: ${prefs.budget}`);
-  if (prefs.location) parts.push(`Регион/локация: ${prefs.location}`);
-  if (prefs.propertyType) parts.push(`Тип объекта: ${prefs.propertyType}`);
-  if (prefs.rooms) parts.push(`Комнат: ${prefs.rooms}`);
-  if (prefs.area) parts.push(`Площадь: ${prefs.area}`);
-  if (prefs.other) parts.push(`Прочее: ${prefs.other}`);
+  if (prefs.purpose) parts.push(`Purpose: ${prefs.purpose}`);
+  if (prefs.budget) parts.push(`Budget: ${prefs.budget}`);
+  if (prefs.location) parts.push(`Region/location: ${prefs.location}`);
+  if (prefs.propertyType) parts.push(`Property type: ${prefs.propertyType}`);
+  if (prefs.rooms) parts.push(`Rooms: ${prefs.rooms}`);
+  if (prefs.area) parts.push(`Area: ${prefs.area}`);
+  if (prefs.other) parts.push(`Other: ${prefs.other}`);
   if (prefs.managerContactRequested || prefs.preferredContact) {
-    const method = { phone: 'телефон', email: 'почта', whatsapp: 'WhatsApp' }[prefs.preferredContact];
+    const method = { phone: 'phone', email: 'email', whatsapp: 'WhatsApp' }[prefs.preferredContact];
     parts.push(method
-      ? `Заявка на связь с менеджером; удобный канал: ${method}.`
-      : 'Заявка на связь с менеджером (способ связи уточняется).');
+      ? `Manager contact request; preferred channel: ${method}.`
+      : 'Manager contact request (channel to be confirmed).');
   }
 
   const userTexts = msgList.filter(m => m.sender === 'user').map(m => m.text || '');
-  if (userTexts.some(t => /цена|бюджет|евро|стоимость/i.test(t))) parts.push('Дошли до обсуждения цены.');
-  if (userTexts.some(t => /квартир|дом|апартамент|объект/i.test(t))) parts.push('Уточнял тип недвижимости.');
-  if (userTexts.some(t => /испани|дубай|барселон|оаэ|страна|регион/i.test(t))) parts.push('Уточнял регион/страну.');
+  if (userTexts.some(t => /цена|бюджет|евро|стоимость/i.test(t))) parts.push('Reached price discussion.');
+  if (userTexts.some(t => /квартир|дом|апартамент|объект/i.test(t))) parts.push('Clarified property type.');
+  if (userTexts.some(t => /испани|дубай|барселон|оаэ|страна|регион/i.test(t))) parts.push('Clarified region/country.');
 
-  return parts.length ? parts.join(' ') : 'Общение с ботом без выделенных предпочтений.';
+  return parts.length ? parts.join(' ') : 'Chat with the bot without highlighted preferences.';
 }
 
 export function parseAssistantLeadJsonColumn(val, fallback) {

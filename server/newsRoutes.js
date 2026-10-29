@@ -45,7 +45,7 @@ function requireMarketer(req, res, next) {
   const header = req.headers.authorization || ''
   const token = header.startsWith('Bearer ') ? header.slice(7).trim() : ''
   if (!isValidMarketerToken(token)) {
-    return res.status(401).json({ success: false, error: 'Требуется вход маркетолога' })
+    return res.status(401).json({ success: false, error: 'Marketer sign-in required' })
   }
   req.marketerToken = token
   return next()
@@ -96,7 +96,7 @@ export function registerNewsRoutes(app) {
     const login = String(req.body?.login || '').trim()
     const password = String(req.body?.password || '')
     if (login !== MARKETER_LOGIN() || password !== MARKETER_PASSWORD()) {
-      return res.status(401).json({ success: false, error: 'Неверный логин или пароль' })
+      return res.status(401).json({ success: false, error: 'Invalid login or password' })
     }
     const token = issueMarketerToken()
     return res.json({ success: true, token })
@@ -121,7 +121,7 @@ export function registerNewsRoutes(app) {
       console.error('[news/generate]', err)
       return res.status(500).json({
         success: false,
-        error: err?.message || 'Не удалось сгенерировать новость',
+        error: err?.message || 'Could not generate the article',
       })
     }
   })
@@ -131,14 +131,14 @@ export function registerNewsRoutes(app) {
       const { searchNewsCoverImages } = await import('./services/newsImageSearch.js')
       const query = String(req.body?.query || '').trim()
       if (!query) {
-        return res.status(400).json({ success: false, error: 'Укажите запрос для поиска' })
+        return res.status(400).json({ success: false, error: 'Enter a search query' })
       }
       const limit = Math.min(Number(req.body?.limit) || 6, 10)
       const images = await searchNewsCoverImages(query, { limit })
       return res.json({ success: true, images, query })
     } catch (err) {
       console.error('[news/images/search]', err)
-      return res.status(500).json({ success: false, error: err?.message || 'Ошибка поиска фото' })
+      return res.status(500).json({ success: false, error: err?.message || 'Photo search error' })
     }
   })
 
@@ -147,13 +147,13 @@ export function registerNewsRoutes(app) {
       const { generateImageMetaFromDraft } = await import('./services/newsImageAi.js')
       const draft = req.body?.draft
       if (!draft?.title) {
-        return res.status(400).json({ success: false, error: 'Нет данных статьи' })
+        return res.status(400).json({ success: false, error: 'No article data' })
       }
       const meta = await generateImageMetaFromDraft(draft)
       return res.json({ success: true, ...meta })
     } catch (err) {
       console.error('[news/images/suggest]', err)
-      return res.status(500).json({ success: false, error: err?.message || 'Ошибка подбора запроса' })
+      return res.status(500).json({ success: false, error: err?.message || 'Query suggestion error' })
     }
   })
 
@@ -162,13 +162,13 @@ export function registerNewsRoutes(app) {
       const { generateAiCoverFromDraft } = await import('./services/newsImageAi.js')
       const draft = req.body?.draft
       if (!draft?.title) {
-        return res.status(400).json({ success: false, error: 'Нет данных статьи' })
+        return res.status(400).json({ success: false, error: 'No article data' })
       }
       const result = await generateAiCoverFromDraft(draft)
       return res.json({ success: true, ...result })
     } catch (err) {
       console.error('[news/images/generate]', err)
-      return res.status(500).json({ success: false, error: err?.message || 'Ошибка генерации фото' })
+      return res.status(500).json({ success: false, error: err?.message || 'Photo generation error' })
     }
   })
 
@@ -176,19 +176,19 @@ export function registerNewsRoutes(app) {
     try {
       const draft = req.body?.draft
       if (!draft?.title || !draft?.image) {
-        return res.status(400).json({ success: false, error: 'Нет данных для публикации' })
+        return res.status(400).json({ success: false, error: 'No data to publish' })
       }
       const article = publishArticle(draft)
       return res.json({ success: true, article })
     } catch (err) {
       console.error('[news/publish]', err)
-      return res.status(500).json({ success: false, error: err?.message || 'Ошибка публикации' })
+      return res.status(500).json({ success: false, error: err?.message || 'Publish error' })
     }
   })
 
   router.delete('/marketer/articles/:id', requireMarketer, (req, res) => {
     const ok = deleteArticle(req.params.id)
-    if (!ok) return res.status(404).json({ success: false, error: 'Статья не найдена' })
+    if (!ok) return res.status(404).json({ success: false, error: 'Article not found' })
     return res.json({ success: true })
   })
 
@@ -205,14 +205,14 @@ export function registerNewsRoutes(app) {
       const status = err?.statusCode || 500
       return res.status(status).json({
         success: false,
-        error: err?.message || 'Ошибка создания рекламы',
+        error: err?.message || 'Failed to create advertisement',
       })
     }
   })
 
   router.delete('/marketer/ads/:id', requireMarketer, (req, res) => {
     const ok = deleteAd(req.params.id)
-    if (!ok) return res.status(404).json({ success: false, error: 'Реклама не найдена' })
+    if (!ok) return res.status(404).json({ success: false, error: 'Ad not found' })
     return res.json({ success: true })
   })
 
@@ -229,7 +229,7 @@ export function registerNewsRoutes(app) {
   router.get('/articles/:slug', (req, res) => {
     const article = getArticleBySlug(req.params.slug)
     if (!article) {
-      return res.status(404).json({ success: false, error: 'Статья не найдена' })
+      return res.status(404).json({ success: false, error: 'Article not found' })
     }
     const views = incrementArticleViews(req.params.slug)
     const payload = toPublicDetail({ ...article, views: views ?? article.views })

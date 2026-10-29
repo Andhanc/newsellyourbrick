@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { properties } from '../data/properties'
 import { MOCK_SECTIONS, readLocalFavoriteFlags } from '../data/favoriteMockLists'
 import { usePropertyFavorites, PROPERTY_FAVORITES_CHANGED } from '../context/PropertyFavoritesContext'
@@ -10,11 +11,12 @@ import { normalizePropertyMediaFields } from '../utils/propertyImage'
 import { isClosedForWishlist } from '../utils/resolveBuyerListingState'
 
 export function useFavoriteAuctionItems() {
+  const { t } = useTranslation()
   const { favoriteRows, favoritesLoading } = usePropertyFavorites()
   const [catalogByKey, setCatalogByKey] = useState(() => new Map())
   const [catalogVersion, setCatalogVersion] = useState(0)
   const [mockTick, setMockTick] = useState(0)
-  /** Первый запрос каталога с API — для скелетона карточек на «Понравилось» */
+  /** First catalog request from API — skeleton cards on Favorites */
   const [catalogLoading, setCatalogLoading] = useState(true)
 
   const loadCatalog = useCallback(async () => {
@@ -151,8 +153,8 @@ export function useFavoriteAuctionItems() {
           property: {
             id: row.property_id,
             source_table: row.property_table,
-            title: `Объект #${row.property_id}`,
-            name: `Объект #${row.property_id}`,
+            title: t('buyerCabinet_propertyWithId', { id: row.property_id }),
+            name: t('buyerCabinet_propertyWithId', { id: row.property_id }),
             location: '',
               image: '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
           },
@@ -189,7 +191,7 @@ export function useFavoriteAuctionItems() {
     }
 
     return out
-  }, [favoriteRows, catalogByKey, catalogVersion, mockTick])
+  }, [favoriteRows, catalogByKey, catalogVersion, mockTick, t])
 
   return { favoriteAuctions, loadCatalog, catalogLoading }
 }

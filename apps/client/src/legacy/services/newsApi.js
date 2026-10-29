@@ -36,7 +36,7 @@ export async function marketerLogin(login, password) {
     body: JSON.stringify({ login, password }),
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error || 'Ошибка входа')
+  if (!res.ok) throw new Error(data.error || 'Sign-in failed')
   setMarketerToken(data.token)
   return data.token
 }
@@ -55,14 +55,14 @@ export async function marketerLogout() {
 export async function fetchPublishedArticles() {
   const res = await fetchDedupe(`${BASE()}/articles`)
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error || 'Не удалось загрузить новости')
+  if (!res.ok) throw new Error(data.error || 'Could not load news')
   return data.articles || []
 }
 
 export async function fetchArticleBySlug(slug) {
   const res = await fetch(`${BASE()}/articles/${encodeURIComponent(slug)}`)
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error || 'Статья не найдена')
+  if (!res.ok) throw new Error(data.error || 'Article not found')
   return data.article
 }
 
@@ -73,16 +73,16 @@ export async function fetchMarketerArticles() {
     setMarketerToken('')
     throw new Error('SESSION_EXPIRED')
   }
-  if (!res.ok) throw new Error(data.error || 'Ошибка загрузки')
+  if (!res.ok) throw new Error(data.error || 'Load failed')
   return data.articles || []
 }
 
 function formatGenerateError(err) {
   const msg = String(err?.message || err || '')
   if (/aborted|timeout|timed out/i.test(msg)) {
-    return 'Генерация заняла слишком много времени. Укоротите промпт или повторите через 15–20 секунд.'
+    return 'Generation took too long. Shorten the prompt or wait ~15–20 seconds and try again.'
   }
-  return msg || 'Ошибка генерации'
+  return msg || 'Generation failed'
 }
 
 export async function generateNewsDraft(prompt) {
@@ -101,7 +101,7 @@ export async function generateNewsDraft(prompt) {
       setMarketerToken('')
       throw new Error('SESSION_EXPIRED')
     }
-    if (!res.ok) throw new Error(data.error || 'Ошибка генерации')
+    if (!res.ok) throw new Error(data.error || 'Generation failed')
     return data.draft
   } catch (err) {
     if (err?.name === 'AbortError') {
@@ -124,7 +124,7 @@ export async function publishNewsDraft(draft) {
     setMarketerToken('')
     throw new Error('SESSION_EXPIRED')
   }
-  if (!res.ok) throw new Error(data.error || 'Ошибка публикации')
+  if (!res.ok) throw new Error(data.error || 'Publish failed')
   return data.article
 }
 
@@ -138,7 +138,7 @@ export async function deleteMarketerArticle(id) {
     setMarketerToken('')
     throw new Error('SESSION_EXPIRED')
   }
-  if (!res.ok) throw new Error(data.error || 'Ошибка удаления')
+  if (!res.ok) throw new Error(data.error || 'Delete failed')
   return true
 }
 
@@ -157,7 +157,7 @@ export async function searchNewsCoverImages(query, limit = 6) {
     body: JSON.stringify({ query, limit }),
   })
   const data = await res.json().catch(() => ({}))
-  await parseNewsApiError(res, data, 'Ошибка поиска фото')
+  await parseNewsApiError(res, data, 'Photo search failed')
   return data.images || []
 }
 
@@ -168,7 +168,7 @@ export async function suggestNewsImageQuery(draft) {
     body: JSON.stringify({ draft }),
   })
   const data = await res.json().catch(() => ({}))
-  await parseNewsApiError(res, data, 'Ошибка подбора запроса')
+  await parseNewsApiError(res, data, 'Query suggestion failed')
   return data
 }
 
@@ -179,6 +179,6 @@ export async function generateNewsAiCover(draft) {
     body: JSON.stringify({ draft }),
   })
   const data = await res.json().catch(() => ({}))
-  await parseNewsApiError(res, data, 'Ошибка генерации фото')
+  await parseNewsApiError(res, data, 'Photo generation failed')
   return data
 }

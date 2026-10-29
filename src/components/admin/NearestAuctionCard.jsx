@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import './NearestAuctionCard.css';
+import { getUiIntlLocale } from '../../utils/uiIntlLocale'
 
 const NearestAuctionCard = ({ auction }) => {
+  const { t } = useTranslation();
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -46,9 +49,9 @@ const NearestAuctionCard = ({ auction }) => {
 
   const getTypeLabel = (type) => {
     const types = {
-      apartment: 'Квартира',
-      villa: 'Вилла',
-      house: 'Дом'
+      apartment: t('admin_apartment'),
+      villa: t('admin_villa'),
+      house: t('admin_house')
     };
     return types[type] || type;
   };
@@ -56,26 +59,26 @@ const NearestAuctionCard = ({ auction }) => {
   return (
     <div className="nearest-auction-card">
       <div className="nearest-auction-header">
-        <div className="nearest-auction-title">Самый ближайший аукцион</div>
+        <div className="nearest-auction-title">{t('admin_samyy_blizhayshiy_aukcion_52a5fc91')}</div>
         <div className={`nearest-auction-timer ${statusClass} ${isCritical ? 'timer-critical' : ''}`}>
           <div className="timer-item">
             <div className="timer-value">{String(timeLeft.days).padStart(2, '0')}</div>
-            <div className="timer-label">дней</div>
+            <div className="timer-label">{t('admin_dney_6784ba01')}</div>
           </div>
           <div className="timer-separator">:</div>
           <div className="timer-item">
             <div className="timer-value">{String(timeLeft.hours).padStart(2, '0')}</div>
-            <div className="timer-label">часов</div>
+            <div className="timer-label">{t('admin_chasov_217fae81')}</div>
           </div>
           <div className="timer-separator">:</div>
           <div className="timer-item">
             <div className="timer-value">{String(timeLeft.minutes).padStart(2, '0')}</div>
-            <div className="timer-label">мин</div>
+            <div className="timer-label">{t('admin_min_d6035dc6')}</div>
           </div>
           <div className="timer-separator">:</div>
           <div className="timer-item">
             <div className="timer-value">{String(timeLeft.seconds).padStart(2, '0')}</div>
-            <div className="timer-label">сек</div>
+            <div className="timer-label">{t('admin_sek_0be9aa07')}</div>
           </div>
         </div>
       </div>
@@ -88,12 +91,12 @@ const NearestAuctionCard = ({ auction }) => {
           <div className="nearest-auction-object-type">{getTypeLabel(auction.object_type)}</div>
           <div className="nearest-auction-object-location">{auction.object_location}</div>
           <div className="nearest-auction-price">
-            <div className="price-label">Текущая ставка:</div>
-            <div className="price-value">${auction.current_bid.toLocaleString('ru-RU')}</div>
+            <div className="price-label">{t('admin_tekuschaya_stavka_b8a8827e')}</div>
+            <div className="price-value">${auction.current_bid.toLocaleString(getUiIntlLocale())}</div>
           </div>
           <div className="nearest-auction-start-price">
-            <div className="price-label">Стартовая цена:</div>
-            <div className="price-value">${auction.object_price.toLocaleString('ru-RU')}</div>
+            <div className="price-label">{t('admin_startovaya_cena_fb82c1cc')}</div>
+            <div className="price-value">${auction.object_price.toLocaleString(getUiIntlLocale())}</div>
           </div>
         </div>
       </div>

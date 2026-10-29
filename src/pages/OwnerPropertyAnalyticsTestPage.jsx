@@ -847,6 +847,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
         formatDateSafe: formatDateForExport,
         properties: [excelProperty],
         mySalesData: propertySales,
+        t,
         stats: {
           totalProperties: 1,
           activeProperties: property.filterKey === 'active' || property.statusKey === 'active' ? 1 : 0,
@@ -1062,7 +1063,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
                     <div className="opa-property-card__hero-summary-top">
                       <span className={`opa-property-card__hero-status opa-property-card__hero-status--${property.statusKey}`}>
                         <i aria-hidden />
-                        {property.status}
+                        {t(property.statusLabelKey || property.status)}
                       </span>
                       <span className="opa-property-card__hero-id">{property.displayId || `#${property.id}`}</span>
                     </div>
@@ -1148,7 +1149,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
                     {exportingExcel ? t('ownerTest_profileExporting') : t('ownerTest_analyticsDownloadExcel')}
                   </button>
                   <div className="opa-property-card__chips opa-desktop-only">
-                    <span className={`opa-status opa-status--${property.statusKey}`}>{property.status}</span>
+                    <span className={`opa-status opa-status--${property.statusKey}`}>{t(property.statusLabelKey || property.status)}</span>
                     <span className={`opa-listing-type opa-listing-type--${property.listingType}`}>
                       <span>{t('auctionFilterSaleType')}</span>
                       <strong>{listingTypeLabel}</strong>

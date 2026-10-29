@@ -3,15 +3,15 @@
     {
       "id": "3ac7650f-55d2-489a-923a-a2aab495d8f7",
       "type": "block",
-      "title": "Тест",
-      "description": "Тестовая реклама",
+      "title": "Test",
+      "description": "Test advertisement",
       "pages": [
         "home"
       ],
       "icon": "gift",
       "buttonEnabled": true,
       "buttonUrl": "https://mercimed.by/uslugi/napravleniya/nevrologiya/",
-      "buttonLabel": "Подробнее",
+      "buttonLabel": "Learn more",
       "createdAt": "2026-05-31T19:42:06.335Z",
       "updatedAt": "2026-05-31T19:42:06.335Z"
     }

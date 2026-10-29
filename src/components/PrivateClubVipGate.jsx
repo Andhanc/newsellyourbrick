@@ -4,13 +4,14 @@ import { useTranslation } from 'react-i18next'
 import { FiX } from 'react-icons/fi'
 import { RiVipDiamondLine } from 'react-icons/ri'
 import { getUserData } from '../services/authService'
-import { startVipSubscriptionCheckout } from '../utils/subscriptionCheckout'
+import { startVipSubscriptionCheckout, translateBillingError } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
 import { SUBSCRIPTION_BILLING_UPDATED_EVENT } from '../constants/cabinetEvents'
 import { userHasVipAccess } from '../utils/subscriptionTier'
 import { sheetHandleDragProps, useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import { useDrawerDismiss } from '../hooks/useDrawerDismiss'
 import './PrivateClubVipGate.css'
+import { getUiIntlLocale } from '../utils/uiIntlLocale'
 
 const API_BASE = import.meta.env?.VITE_API_BASE_URL || '/api'
 const MOBILE_MAX = 767
@@ -34,7 +35,7 @@ function formatVipUntilDate(iso, language) {
       year: 'numeric',
     })
   } catch {
-    return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+    return date.toLocaleDateString(getUiIntlLocale(), { day: 'numeric', month: 'long', year: 'numeric' })
   }
 }
 
@@ -231,7 +232,7 @@ export default function PrivateClubVipGate({ open, onClose, userId, onPrivateClu
             ? t('privateClubVipAlready')
             : result.error === 'already_subscribed_pro'
               ? t('buyerCabinet_toastDuplicateSubscription')
-              : result.error || t('buyerCabinet_checkoutError')
+              : translateBillingError(result.error, t, 'buyerCabinet_checkoutError')
         showNotification(msg, result.error === 'already_subscribed_vip' ? 'info' : 'error')
       }
     } finally {

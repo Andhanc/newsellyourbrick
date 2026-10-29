@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useUser, useClerk } from '@clerk/clerk-react'
+import { useAuth, useUser, useClerk } from '@clerk/clerk-react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { AsYouType } from 'libphonenumber-js'
 import {
@@ -43,16 +43,29 @@ import {
 import { confirmCheckoutSession } from '../utils/subscriptionCheckout'
 import { BuyerCabinetHeroSkeleton, BuyerCabinetBelowSkeleton } from '../components/BuyerCabinetOverviewSkeleton'
 import PassportRecognitionModal from '../components/PassportRecognitionModal'
-import { validatePassportImageFile } from '../utils/passportPhotoValidation'
-import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
-import { countries as countryList } from '../components/CountrySelect'
-import { COUNTRY_CODES as phoneCountryCodes } from '../components/PhoneInput'
-import PhoneInput from '../components/PhoneInput'
-import '../components/PhoneInput.css'
+import PassportUploadSourceSheet from '../components/PassportUploadSourceSheet'
 import { ProfileSpotlightOnboarding } from '../components/ProfileSpotlightOnboarding'
 import OwnerCabinetOnboardingDrawer from '../components/OwnerCabinetOnboardingDrawer'
 import { BUYER_CABINET_WELCOME_PRESET } from '../components/buyerCabinetWelcomeImages'
 import PrivateClubWhatsAppCommunityModal from '../components/PrivateClubWhatsAppCommunityModal'
+import { validatePassportImageFile } from '../utils/passportPhotoValidation'
+import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
+import BiometricSecurityDrawer from '../components/BiometricSecurityDrawer'
+import {
+  getBiometricStatus,
+  isBiometricCancel,
+  rememberBiometricEnabled,
+  registerPlatformBiometric,
+} from '../services/biometricAuthService'
+import { getBiometricErrorMessage } from '../utils/biometricMessages'
+import { countries as countryList } from '../components/CountrySelect'
+import { COUNTRY_CODES as phoneCountryCodes } from '../components/PhoneInput'
+import PhoneInput from '../components/PhoneInput'
+import {
+  getLocalizedCountryName,
+  normalizeCountryLocale,
+} from '../utils/localizeCountryName'
+import '../components/PhoneInput.css'
 import AuctionCategoryCtaCards, {
   preloadProfilePageCtaImages,
 } from '../components/AuctionCategoryCtaCards'
@@ -65,7 +78,6 @@ import { fetchVerificationStatus, invalidateVerificationStatusCache } from '../u
 import { fetchUserDeposit } from '../utils/depositApi'
 import ManagerChatModal, { useManagerChatUserId } from '../components/ManagerChatModal'
 import { useRoleSwitchFlow } from '../hooks/useRoleSwitchFlow'
-import { useHasBothLinkedRoles } from '../hooks/useHasBothLinkedRoles'
 import { resolveSellCabinetMode, OPEN_ROLE_SWITCH_FOR_SELL_EVENT } from '../utils/navigateToSellPurchasedProperty'
 import { SELLER_LISTING_CTA_QUERY, PENDING_BECOME_SELLER_CTA_KEY } from '../utils/navigateSellerListingCta'
 import {
@@ -77,9 +89,9 @@ import { OWNER_VIEWS, buildOwnerTestPath } from '../utils/ownerTestNav'
 import { detectPhoneDialByGeo } from '../utils/detectPhoneCountryByGeo'
 import { openVipPersonalManagerWhatsApp } from '../utils/whatsappManagerChat'
 import {
-  isBundledNativeDom,
-  triggerNativeProfileSavedVibration,
-} from '../utils/nativeDomBridge'
+  PROFILE_ONBOARDING_MIN_COMPLETE_PCT,
+  writeBuyerOnboardingGateFlag,
+} from '../utils/buyerProfileOnboardingGate'
 import {
   BUYER_CABINET_WELCOME_PREVIEW_EVENT,
   clearBuyerCabinetWelcomeComplete,
@@ -108,8 +120,6 @@ const VIP_MANAGER_SPOTLIGHT_QUERY = 'vip_manager_spotlight'
 /** Query: принудительно открыть welcome-drawer покупателя. */
 const BUYER_WELCOME_PREVIEW_QUERY = 'buyer_welcome'
 
-/** Показывать затемнённые подсказки и блокировать разделы, пока заполнено меньше этого процента. */
-const PROFILE_ONBOARDING_MIN_COMPLETE_PCT = 78
 
 /** После перехода к полю из тоста — не крутим подсветку на тосте; при новом открытии панели «Данные» ключ сбрасывается в TestPage. */
 const TOAST_GUIDE_FIELD_NAV_DONE_PREFIX = 'syb.profile.dataToastGuide.fieldNavDone:'
@@ -271,7 +281,7 @@ function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(String(reader.result || ''))
-    reader.onerror = () => reject(new Error('Не удалось прочитать файл'))
+    reader.onerror = () => reject(new Error('Could not read file'))
     reader.readAsDataURL(file)
   })
 }
@@ -692,9 +702,9 @@ function TestPage() {
   const [searchParams] = useSearchParams()
   const { t, i18n } = useTranslation()
   const { user, isLoaded } = useUser()
+  const { isSignedIn, getToken } = useAuth()
   const { signOut } = useClerk()
   const sellPurchasedPropertyRoleFlow = useRoleSwitchFlow('seller')
-  const { hasBoth: hasBothLinkedRoles } = useHasBothLinkedRoles()
   const [historyLoadRequested, setHistoryLoadRequested] = useState(false)
   const {
     numericUserId,
@@ -707,21 +717,15 @@ function TestPage() {
     cabinetSubscriptionTier,
     cabinetVipActive,
   } = useCabinetOverviewData({ loadHistory: historyLoadRequested })
-  const directionSummaries = useMemo(() => {
-    const items = buildDirectionSummaries(t, { vipActive: cabinetVipActive })
-    if (hasBothLinkedRoles) {
-      return items.filter((item) => item.action !== 'becomeSeller')
-    }
-    return items
-  }, [t, cabinetVipActive, hasBothLinkedRoles])
+  const directionSummaries = useMemo(
+    () => buildDirectionSummaries(t, { vipActive: cabinetVipActive }),
+    [t, cabinetVipActive],
+  )
   const mainCards = useMemo(() => buildMainCards(t), [t])
   const { quickLinksPrimary, quickLogoutLink } = useMemo(() => {
     const { primary, logout } = buildQuickLinks(t)
-    const filtered = hasBothLinkedRoles
-      ? primary.filter((link) => link.action !== 'becomeSeller')
-      : primary
-    return { quickLinksPrimary: filtered, quickLogoutLink: logout }
-  }, [t, hasBothLinkedRoles])
+    return { quickLinksPrimary: primary, quickLogoutLink: logout }
+  }, [t])
   const QuickLogoutIcon = quickLogoutLink.icon
   const locale = useMemo(() => (i18n.language === 'en' ? 'en-US' : i18n.language), [i18n.language])
   const moneyLocale = useMemo(() => {
@@ -737,6 +741,10 @@ function TestPage() {
 
   const [dataSheetOpen, setDataSheetOpen] = useState(false)
   const [dataSheetStep, setDataSheetStep] = useState('contacts')
+  const [biometricOfferOpen, setBiometricOfferOpen] = useState(false)
+  const [biometricOfferBusy, setBiometricOfferBusy] = useState(false)
+  const [biometricOfferError, setBiometricOfferError] = useState('')
+  const biometricOfferCheckRef = useRef('')
   const [legalSheetOpen, setLegalSheetOpen] = useState(false)
   const [legalSheetTab, setLegalSheetTab] = useState('agreement')
   const [historySheetOpen, setHistorySheetOpen] = useState(false)
@@ -775,6 +783,7 @@ function TestPage() {
   const [passportPhotoHints, setPassportPhotoHints] = useState([])
   const [isSavingExtractPatch, setIsSavingExtractPatch] = useState(false)
   const [showPassportRecognitionModal, setShowPassportRecognitionModal] = useState(false)
+  const [showPassportUploadSourceSheet, setShowPassportUploadSourceSheet] = useState(false)
   const [passportRecognitionMode, setPassportRecognitionMode] = useState('confirm')
   const [extractedPassportData, setExtractedPassportData] = useState(null)
   const [verificationStatus, setVerificationStatus] = useState(null)
@@ -811,8 +820,8 @@ function TestPage() {
   const dataHydratedForSheetRef = useRef(false)
   const countryGeoTriedRef = useRef(false)
   const persistFieldRef = useRef(async () => {})
-  const profileCelebrationVibrationStartedRef = useRef(false)
   const passportInputRef = useRef(null)
+  const passportCameraInputRef = useRef(null)
   const countryFieldRef = useRef(null)
   const serviceTourTimerRef = useRef(null)
   const directionSummariesGridRef = useRef(null)
@@ -849,13 +858,22 @@ function TestPage() {
     }
     return map
   }, [])
+  const countryLocale = useMemo(
+    () => normalizeCountryLocale(i18n.language || 'ru'),
+    [i18n.language],
+  )
   const filteredCountries = useMemo(() => {
     const q = countrySearchQuery.trim().toLowerCase()
     if (!q) return sortedCountries
-    return sortedCountries.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q),
-    )
-  }, [countrySearchQuery, sortedCountries])
+    return sortedCountries.filter((c) => {
+      const localized = getLocalizedCountryName(c.code, countryLocale).toLowerCase()
+      return (
+        localized.includes(q) ||
+        c.name.toLowerCase().includes(q) ||
+        c.code.toLowerCase().includes(q)
+      )
+    })
+  }, [countrySearchQuery, sortedCountries, countryLocale])
 
   /** Подсказка на тост: один раз за открытие панели «Данные»; сбрасывается при закрытии панели. */
   const toastHintShownThisDataOpenRef = useRef(false)
@@ -867,20 +885,20 @@ function TestPage() {
     }
     sessionStorage.setItem('clerk_logout_in_progress', 'true')
     try {
+      await logout()
+    } catch (e) {
+      console.warn('TestPage logout:', e)
+    }
+    try {
       if (user && signOut) {
         await signOut({ redirectUrl: `${window.location.origin}/` })
       }
     } catch (e) {
       console.warn('TestPage Clerk signOut:', e)
-    }
-    try {
-      await logout()
-    } catch (e) {
-      console.warn('TestPage logout:', e)
     } finally {
       sessionStorage.removeItem('clerk_logout_in_progress')
     }
-    if (!isBundledNativeDom()) window.location.assign('/')
+    window.location.assign('/')
   }, [user, signOut, t])
 
   const handleBecomeSellerRegister = useCallback(async () => {
@@ -1033,10 +1051,6 @@ function TestPage() {
   }, [resolvedNumericUserId])
 
   useEffect(() => {
-    // Native Expo Router owns protected-route decisions. The legacy DOM guard can
-    // briefly observe an empty WebView-local session while native props hydrate and
-    // must never bounce a valid email/WhatsApp session back to the home screen.
-    if (isBundledNativeDom()) return
     if (!isLoaded) return
     if (!isSiteUserSignedIn(user, isLoaded)) {
       requestOpenLoginModal({ wizard: true })
@@ -1067,18 +1081,6 @@ function TestPage() {
     setDataSheetOpen(false)
     setShowProfileCompleteCelebration(true)
   }, [loadVerificationStatus, verificationStatus])
-
-  useEffect(() => {
-    if (!showProfileCompleteCelebration) {
-      profileCelebrationVibrationStartedRef.current = false
-      return
-    }
-    if (profileCelebrationVibrationStartedRef.current) return
-    profileCelebrationVibrationStartedRef.current = true
-    void triggerNativeProfileSavedVibration().catch((error) => {
-      console.warn('Native profile-save vibration failed:', error)
-    })
-  }, [showProfileCompleteCelebration])
 
   useEffect(() => {
     if (resolvedNumericUserId == null || resolvedNumericUserId === '') {
@@ -1270,6 +1272,12 @@ function TestPage() {
         window.setTimeout(() => {
           void openBecomeSeller(attempt + 1)
         }, 120)
+        return
+      }
+
+      const pending = readPendingSellPurchasedProperty()
+      if (pending?.id) {
+        await sellPurchasedPropertyRoleFlow.openSellCabinetFlow(mode)
         return
       }
 
@@ -1662,15 +1670,18 @@ function TestPage() {
         showNotification(t('buyerData_waitProfileLoad'), 'error')
         return
       }
+
       setIsRecognizingPassport(true)
       setPassportPhotoHints([])
       setExtractedPassportData(null)
       setPassportRecognitionMode('confirm')
       try {
         const photoValidation = await validatePassportImageFile(file)
-        setPassportPhotoHints(photoValidation.hints)
+        const hintKeys = photoValidation.hintKeys || photoValidation.hints || []
+        const localizedHints = hintKeys.map((key) => t(key, { defaultValue: key }))
+        setPassportPhotoHints(localizedHints)
         if (photoValidation.shouldBlock) {
-          throw new Error(photoValidation.hints[0] || t('buyerData_passportPhotoQuality'))
+          throw new Error(localizedHints[0] || t('buyerData_passportPhotoQuality'))
         }
 
         const dataUrl = await readFileAsDataUrl(file)
@@ -1695,34 +1706,34 @@ function TestPage() {
             setShowPassportRecognitionModal(true)
             return
           }
-          throw new Error(result?.error || 'Ошибка при извлечении данных из паспорта')
+          throw new Error(result?.error || t('buyerData_passportExtractFailed'))
         }
 
         setPassportRecognitionMode('confirm')
         setExtractedPassportData(result.data)
         setShowPassportRecognitionModal(true)
       } catch (error) {
-        console.error('Ошибка распознавания паспорта:', error)
-        showNotification(error.message || 'Не удалось распознать паспорт', 'error')
+        console.error('Passport recognition error:', error)
+        showNotification(error.message || t('buyerData_passportRecognizeFailed'), 'error')
         setExtractedPassportData(null)
       } finally {
         setIsRecognizingPassport(false)
       }
     },
-    [numericUserId],
+    [numericUserId, t],
   )
 
   const handlePassportRecognitionConfirm = useCallback(
     async (extracted) => {
       const uid = numericUserId ?? getStoredNumericUserId()
       if (!uid || !dbUserRowRef.current) {
-        showNotification('Сначала дождитесь загрузки профиля', 'error')
+        showNotification(t('buyerData_waitProfileLoad'), 'error')
         return
       }
 
       const body = extractedPassportDataToApiPayload(extracted)
       if (Object.keys(body).length === 0) {
-        showNotification('Не удалось извлечь поля с фото — попробуйте другое изображение', 'info')
+        showNotification(t('buyerData_passportFieldsEmpty'), 'info')
         setShowPassportRecognitionModal(false)
         setExtractedPassportData(null)
         return
@@ -1782,11 +1793,15 @@ function TestPage() {
     setExtractedPassportData(null)
     setPassportPhotoHints([])
     window.requestAnimationFrame(() => {
-      passportInputRef.current?.click()
+      setShowPassportUploadSourceSheet(true)
     })
   }, [])
 
   const profileFieldsLocked = isRecognizingPassport || isSavingExtractPatch
+  const openPassportUploadSource = useCallback(() => {
+    if (isRecognizingPassport || isSavingExtractPatch) return
+    setShowPassportUploadSourceSheet(true)
+  }, [isRecognizingPassport, isSavingExtractPatch])
   const isProfileFullyCompleted = PROFILE_FIELDS_META.every((f) =>
     isProfileFieldFilledFromFormOnly(f.key, completionFormMerged),
   )
@@ -1801,6 +1816,69 @@ function TestPage() {
     documents: isDocumentsStepComplete,
     review: isProfileFullyCompleted,
   }
+
+  const buildBiometricAuthContext = useCallback(async () => ({
+    clerkToken: isSignedIn ? await getToken() : '',
+    role: localStorage.getItem('userRole') || 'buyer',
+  }), [getToken, isSignedIn])
+
+  useEffect(() => {
+    if (!dataSheetOpen || dataSheetStep !== 'review' || !isProfileFullyCompleted) return
+    if (!resolvedNumericUserId || window.matchMedia('(min-width: 768px)').matches) return
+    const key = String(resolvedNumericUserId)
+    if (sessionStorage.getItem(`syb.biometricOfferLater:${key}`) === '1') return
+    if (biometricOfferCheckRef.current === key) return
+    biometricOfferCheckRef.current = key
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const status = await getBiometricStatus(await buildBiometricAuthContext())
+        rememberBiometricEnabled(resolvedNumericUserId, status.enabled)
+        if (!cancelled && !status.enabled) setBiometricOfferOpen(true)
+      } catch {
+        // The recommendation is still useful on LAN/legacy sessions; the CTA explains availability.
+        if (!cancelled) setBiometricOfferOpen(true)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [
+    buildBiometricAuthContext,
+    dataSheetOpen,
+    dataSheetStep,
+    isProfileFullyCompleted,
+    resolvedNumericUserId,
+  ])
+
+  const handleBiometricOfferLater = useCallback(() => {
+    if (resolvedNumericUserId) {
+      sessionStorage.setItem(`syb.biometricOfferLater:${resolvedNumericUserId}`, '1')
+    }
+    setBiometricOfferError('')
+    setBiometricOfferOpen(false)
+  }, [resolvedNumericUserId])
+
+  const handleBiometricOfferAdd = useCallback(async () => {
+    setBiometricOfferBusy(true)
+    setBiometricOfferError('')
+    try {
+      await registerPlatformBiometric(await buildBiometricAuthContext())
+      if (resolvedNumericUserId) {
+        rememberBiometricEnabled(resolvedNumericUserId, true)
+        sessionStorage.setItem(`syb.biometricUnlocked:${resolvedNumericUserId}`, '1')
+      }
+      setBiometricOfferOpen(false)
+      showNotification(t('biometric_enabledSuccess'), 'success')
+    } catch (error) {
+      if (!isBiometricCancel(error)) {
+        setBiometricOfferError(getBiometricErrorMessage(t, error, 'offer'))
+      }
+    } finally {
+      setBiometricOfferBusy(false)
+    }
+  }, [buildBiometricAuthContext, resolvedNumericUserId, t])
   const shouldPulseSaveButton =
     dataSheetOpen &&
     !dbUserLoading &&
@@ -1975,7 +2053,7 @@ function TestPage() {
   const showDepositAttentionDot =
     Boolean(resolvedNumericUserId) && depositAmount != null && Number(depositAmount) <= 0
 
-  /** Пока профиль &lt; 78% — флаг для логики заполнения данных (без UI-подсказок). */
+  /** Пока профиль &lt; 78% — обязательный онбординг: только переход в «Данные». */
   const profileGateActive =
     isLoaded &&
     isSiteUserSignedIn(user, isLoaded) &&
@@ -1994,7 +2072,10 @@ function TestPage() {
 
   const buyerWelcomeCompleted = hasCompletedBuyerCabinetWelcome(resolvedNumericUserId)
 
-  const showTileDataOnboarding = false
+  const showTileDataOnboarding =
+    buyerWelcomeEligible &&
+    buyerWelcomeCompleted &&
+    !buyerWelcomeOpen
 
   /** Чеклист в тосте — только пока гейт онбординга (&lt;78%); иначе прогресс внутри листа. */
   const showProfileCompletionWidget =
@@ -2290,8 +2371,17 @@ function TestPage() {
 
   const toastGuideSpotlightActive = false
 
-  /** Пока профиль <78% — блокируем клики по кабинету, кроме «Данные». */
-  const onboardingGateUiLocked = false
+  /** Пока профиль <78% — блокируем клики по кабинету, кроме «Данные» (после welcome-drawer). */
+  const onboardingGateUiLocked =
+    buyerWelcomeEligible &&
+    buyerWelcomeCompleted &&
+    !showProfileCompleteCelebration &&
+    !showServiceQuickLinksTour
+
+  useEffect(() => {
+    if (!resolvedNumericUserId) return
+    writeBuyerOnboardingGateFlag(resolvedNumericUserId, onboardingGateUiLocked)
+  }, [resolvedNumericUserId, onboardingGateUiLocked])
 
   useEffect(() => {
     const bodyClass = 'profile-onboarding-gate-locked'
@@ -2331,6 +2421,19 @@ function TestPage() {
       delete window.__resetBuyerCabinetWelcome
     }
   }, [resolvedNumericUserId])
+
+  /** При подсветке «Данные» — к началу страницы и к первой карточке в ленте. */
+  useEffect(() => {
+    if (!showTileDataOnboarding) return
+    scrollMainTo(0, 0, 'instant')
+    const t = window.setTimeout(() => {
+      const rail = foldersRailRef.current
+      if (!rail) return
+      rail.scrollTo({ left: 0, behavior: 'auto' })
+      setFoldersDotIndex(0)
+    }, 40)
+    return () => window.clearTimeout(t)
+  }, [showTileDataOnboarding])
 
   /** Подсветка персонального менеджера после VIP — прокрутить к блоку. */
   useEffect(() => {
@@ -2468,7 +2571,11 @@ function TestPage() {
   const profileStatProfile = `${profileCompletionStats.pct}%`
 
   return (
-    <div className="test-page test-page--cabinet-v2">
+    <div
+      className={`test-page test-page--cabinet-v2${
+        onboardingGateUiLocked ? ' test-page--onboarding-gate' : ''
+      }`}
+    >
 
       <div className="test-page__ambient" aria-hidden="true">
         <span className="test-page__blob test-page__blob--a" />
@@ -2594,7 +2701,9 @@ function TestPage() {
                       (card.to === '/deposit' && showDepositAttentionDot)
                     const className = `profile-folder-card profile-folder-card--${card.accent || 'teal'}${
                       active ? ' profile-folder-card--active' : ''
-                    }${showAttentionDot ? ' profile-folder-card--attention' : ''}`
+                    }${showAttentionDot ? ' profile-folder-card--attention' : ''}${
+                      isData && onboardingGateUiLocked ? ' profile-folder-card--gate-data' : ''
+                    }`
                     const attentionLabel = isData
                       ? t('buyerCabinet_cardDataAttentionAria')
                       : t('buyerCabinet_cardDepositAttentionAria')
@@ -2672,10 +2781,11 @@ function TestPage() {
                   </div>
                 </div>
                 <ul className="profile-cabinet__rows">
-                  {directionSummaries.map((item) => {
-                    const isBecomeSeller = item.action === 'becomeSeller'
+                  {directionSummaries
+                    .filter((item) => item.action !== 'becomeSeller')
+                    .map((item) => {
                     const isManagerChat = item.action === 'vipPersonalManager'
-                    const DirectionIcon = isBecomeSeller ? FiHome : isManagerChat ? FiMessageCircle : null
+                    const DirectionIcon = isManagerChat ? FiMessageCircle : null
                     const rowClass = `profile-cabinet-row profile-cabinet-row--${item.variant}`
                     const inner = (
                       <>
@@ -2691,16 +2801,7 @@ function TestPage() {
                     )
                     return (
                       <li key={item.action || item.headline}>
-                        {isBecomeSeller ? (
-                          <button
-                            type="button"
-                            className={rowClass}
-                            onClick={() => void handleBecomeSellerRegister()}
-                            disabled={sellPurchasedPropertyRoleFlow.loading}
-                          >
-                            {inner}
-                          </button>
-                        ) : isManagerChat ? (
+                        {isManagerChat ? (
                           <button
                             type="button"
                             className={rowClass}
@@ -2742,6 +2843,30 @@ function TestPage() {
                       </li>
                     )
                   })}
+                  {directionSummaries
+                    .filter((item) => item.action === 'becomeSeller')
+                    .map((item) => {
+                      const rowClass = `profile-cabinet-row profile-cabinet-row--${item.variant}`
+                      return (
+                        <li key={item.action || item.headline}>
+                          <button
+                            type="button"
+                            className={rowClass}
+                            onClick={() => void handleBecomeSellerRegister()}
+                            disabled={sellPurchasedPropertyRoleFlow.loading}
+                          >
+                            <span className={`profile-cabinet-row__icon profile-cabinet-row__icon--${item.variant}`} aria-hidden>
+                              <FiHome size={20} />
+                            </span>
+                            <span className="profile-cabinet-row__copy">
+                              <strong>{item.subCardTitle || item.headline}</strong>
+                              <span>{item.subCardSubtitle || item.areaLabel}</span>
+                            </span>
+                            <FiArrowRight className="profile-cabinet-row__chev" size={18} aria-hidden />
+                          </button>
+                        </li>
+                      )
+                    })}
                 </ul>
               </section>
 
@@ -2844,10 +2969,11 @@ function TestPage() {
                       </div>
                     </div>
                     <div className="test-quick-row test-quick-row--primary">
-                      {directionSummaries.map((item) => {
-                        const isBecomeSeller = item.action === 'becomeSeller'
+                      {directionSummaries
+                        .filter((item) => item.action !== 'becomeSeller')
+                        .map((item) => {
                         const isManagerChat = item.action === 'vipPersonalManager'
-                        const DirectionIcon = isBecomeSeller ? FiHome : isManagerChat ? FiMessageCircle : null
+                        const DirectionIcon = isManagerChat ? FiMessageCircle : null
                         if (!DirectionIcon) return null
                         const inner = (
                           <>
@@ -2861,19 +2987,6 @@ function TestPage() {
                             <FiArrowRight size={15} className="test-quick-pill__arrow" aria-hidden />
                           </>
                         )
-                        if (isBecomeSeller) {
-                          return (
-                            <button
-                              key={item.action}
-                              type="button"
-                              className="test-quick-pill"
-                              onClick={() => void handleBecomeSellerRegister()}
-                              disabled={sellPurchasedPropertyRoleFlow.loading}
-                            >
-                              {inner}
-                            </button>
-                          )
-                        }
                         if (isManagerChat) {
                           return (
                             <button
@@ -2921,6 +3034,26 @@ function TestPage() {
                           </Link>
                         )
                       })}
+                      {directionSummaries
+                        .filter((item) => item.action === 'becomeSeller')
+                        .map((item) => (
+                          <button
+                            key={item.action}
+                            type="button"
+                            className="test-quick-pill"
+                            onClick={() => void handleBecomeSellerRegister()}
+                            disabled={sellPurchasedPropertyRoleFlow.loading}
+                          >
+                            <span className="test-quick-pill__icon">
+                              <FiHome size={17} aria-hidden />
+                            </span>
+                            <span className="test-quick-pill__body">
+                              <span className="test-quick-pill__title">{item.subCardTitle || item.headline}</span>
+                              <span className="test-quick-pill__sub">{item.subCardSubtitle || item.areaLabel}</span>
+                            </span>
+                            <FiArrowRight size={15} className="test-quick-pill__arrow" aria-hidden />
+                          </button>
+                        ))}
                     </div>
                     <div className="test-cabinet-home-discover" aria-label={t('buyerData_profileDiscoverAria')}>
                       <Link to="/bonuses" className="test-cabinet-home-discover__bonuses-cta">
@@ -3024,6 +3157,15 @@ function TestPage() {
         onConfirm={handlePassportRecognitionConfirm}
         extractedData={extractedPassportData}
         isSaving={isSavingExtractPatch}
+      />
+
+      <PassportUploadSourceSheet
+        isOpen={showPassportUploadSourceSheet}
+        onClose={() => setShowPassportUploadSourceSheet(false)}
+        busy={isRecognizingPassport || isSavingExtractPatch}
+        onPickGallery={() => passportInputRef.current?.click()}
+        onPickCamera={() => passportCameraInputRef.current?.click()}
+        onPickFile={handlePassportRecognition}
       />
 
 
@@ -3286,7 +3428,9 @@ function TestPage() {
                                     aria-expanded={countryDropdownOpen}
                                   >
                                     <span className="test-country-select__value">
-                                      {profileForm[key] ? profileForm[key] : t('buyerData_placeholderCountry')}
+                                      {profileForm[key]
+                                        ? getLocalizedCountryName(profileForm[key], countryLocale)
+                                        : t('buyerData_placeholderCountry')}
                                     </span>
                                     <span className="test-country-select__chevron" aria-hidden>
                                       <FiChevronDown size={18} />
@@ -3321,7 +3465,9 @@ function TestPage() {
                                             <span className="test-country-select__option-flag" aria-hidden>
                                               {country.flag}
                                             </span>
-                                            <span className="test-country-select__option-name">{country.name}</span>
+                                            <span className="test-country-select__option-name">
+                                              {getLocalizedCountryName(country.code, countryLocale)}
+                                            </span>
                                           </button>
                                         )
                                       })}
@@ -3405,7 +3551,7 @@ function TestPage() {
                             type="button"
                             className="test-passport-ocr-card"
                             disabled={profileFieldsLocked || isRecognizingPassport || isSavingExtractPatch}
-                            onClick={() => passportInputRef.current?.click()}
+                            onClick={openPassportUploadSource}
                           >
                             <img
                               className="test-passport-ocr-card__image"
@@ -3436,6 +3582,21 @@ function TestPage() {
                             ref={passportInputRef}
                             type="file"
                             accept="image/*"
+                            className="test-passport-file-input"
+                            aria-hidden
+                            tabIndex={-1}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0]
+                              if (!file) return
+                              await handlePassportRecognition(file)
+                              e.target.value = ''
+                            }}
+                          />
+                          <input
+                            ref={passportCameraInputRef}
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
                             className="test-passport-file-input"
                             aria-hidden
                             tabIndex={-1}
@@ -3559,10 +3720,15 @@ function TestPage() {
                               <ul className="test-data-review-list">
                                 {blockRows.map((row) => {
                                   const rawValue = profileForm[row.key]
-                                  const displayValue =
+                                  const trimmed =
                                     rawValue && String(rawValue).trim()
                                       ? String(rawValue).trim()
-                                      : '—'
+                                      : ''
+                                  const displayValue = !trimmed
+                                    ? '—'
+                                    : row.key === 'country'
+                                      ? getLocalizedCountryName(trimmed, countryLocale)
+                                      : trimmed
                                   const rowClass = `test-data-review-list__row${
                                     row.filled
                                       ? ' test-data-review-list__row--done'
@@ -3872,6 +4038,21 @@ function TestPage() {
         targetRef={managerRowRef}
         message={t('buyerCabinet_vipManagerSpotlightHint')}
         bubbleMaxWidth={260}
+      />
+
+      <ProfileSpotlightOnboarding
+        active={showTileDataOnboarding && !showVipManagerSpotlight}
+        targetRef={dataTileRef}
+        message={t('buyerData_spotlightFillHint')}
+      />
+
+      <BiometricSecurityDrawer
+        open={biometricOfferOpen}
+        mode="offer"
+        busy={biometricOfferBusy}
+        error={biometricOfferError}
+        onPrimary={handleBiometricOfferAdd}
+        onSecondary={handleBiometricOfferLater}
       />
 
     </div>

@@ -70,11 +70,11 @@ export function getOwnerPropertyAuctionTimer(row) {
 }
 
 const TRAFFIC_SOURCES = [
-  { label: 'Поиск', pct: 45, color: '#3b82f6' },
-  { label: 'Соцсети', pct: 25, color: '#0099a9' },
-  { label: 'Прямые заходы', pct: 15, color: '#6366f1' },
-  { label: 'Реклама', pct: 10, color: '#f59e0b' },
-  { label: 'Другие', pct: 5, color: '#a855f7' },
+  { label: 'Search', pct: 45, color: '#3b82f6' },
+  { label: 'Social', pct: 25, color: '#0099a9' },
+  { label: 'Direct', pct: 15, color: '#6366f1' },
+  { label: 'Ads', pct: 10, color: '#f59e0b' },
+  { label: 'Other', pct: 5, color: '#a855f7' },
 ]
 
 function parseMetric(value) {
@@ -128,11 +128,11 @@ export function buildOwnerPropertyAnalytics(property, locale) {
   ) ?? parseMetric(property.bids)
   const bookings = firstFiniteMetric(property.bookingsCount, property.raw?.booking_count) ?? parseMetric(property.bookings)
   const hasStats = views > 0 || likes > 0 || bids > 0 || bookings > 0
-  const chartLabelsDesktop = ['1 мая', '8 мая', '15 мая', '22 мая', '28 мая', '31 мая']
-  const chartLabelsMobile = ['1 мая', '16 мая', '31 мая']
+  const chartLabelsDesktop = ['May 1', 'May 8', 'May 15', 'May 22', 'May 28', 'May 31']
+  const chartLabelsMobile = ['May 1', 'May 16', 'May 31']
 
   return {
-    period: '1 мая — 31 мая 2024',
+    period: 'May 1 — May 31, 2024',
     views: formatMetric(views, intlLocale),
     viewsRaw: views,
     likes: formatMetric(likes, intlLocale),
@@ -148,7 +148,7 @@ export function buildOwnerPropertyAnalytics(property, locale) {
     leads: formatMetric(bookings, intlLocale),
     leadsDelta: '',
     leadsUp: null,
-    avgTime: hasStats ? '3:45 мин' : '—',
+    avgTime: hasStats ? '3:45 min' : '—',
     bounceRate: hasStats ? '32%' : '—',
     addedToFavorites: formatMetric(likes, intlLocale),
     shares: '—',
@@ -168,10 +168,10 @@ export function buildOwnerPropertyAnalytics(property, locale) {
 const RAW_PROPERTIES = [
   {
     id: 'OB-1024',
-    title: 'Вилла у моря',
-    location: 'Майами, США',
+    title: 'Seaside villa',
+    location: 'Miami, USA',
     image: OWNER_PROP_IMAGES.thumbVilla,
-    status: 'Активный',
+    status: 'Active',
     statusKey: 'active',
     views: '1 245',
     viewsDelta: '+12.5%',
@@ -182,16 +182,16 @@ const RAW_PROPERTIES = [
     price: '$2 450 000',
     currentBid: '$2 380 000',
     listingType: 'auction',
-    auctionTimer: '1д 08:45:12',
+    auctionTimer: '1d 08:45:12',
     raw: { test_drive: 1 },
     date: '12.03.2024',
   },
   {
     id: 'OB-1025',
-    title: 'Апартаменты в центре',
-    location: 'Нью-Йорк, США',
+    title: 'Downtown apartment',
+    location: 'New York, USA',
     image: OWNER_PROP_IMAGES.thumbApartment,
-    status: 'Забронирован',
+    status: 'Booked',
     statusKey: 'booked',
     views: '892',
     viewsDelta: '+5.1%',
@@ -205,10 +205,10 @@ const RAW_PROPERTIES = [
   },
   {
     id: 'OB-1026',
-    title: 'Лофт с террасой',
-    location: 'Барселона, Испания',
+    title: 'Loft with terrace',
+    location: 'Barcelona, Spain',
     image: OWNER_PROP_IMAGES.thumbLoft,
-    status: 'Черновик',
+    status: 'Draft',
     statusKey: 'draft',
     views: '—',
     viewsDelta: '',
@@ -222,10 +222,10 @@ const RAW_PROPERTIES = [
   },
   {
     id: 'OB-1027',
-    title: 'Пентхаус с видом',
-    location: 'Дубай, ОАЭ',
+    title: 'Penthouse with a view',
+    location: 'Dubai, UAE',
     image: OWNER_PROP_IMAGES.thumbPenthouse,
-    status: 'Продан',
+    status: 'Sold',
     statusKey: 'sold',
     views: '2 104',
     viewsDelta: '+18.2%',
@@ -239,10 +239,10 @@ const RAW_PROPERTIES = [
   },
   {
     id: 'OB-1028',
-    title: 'Коттедж у озера',
-    location: 'Женева, Швейцария',
+    title: 'Lake cottage',
+    location: 'Geneva, Switzerland',
     image: OWNER_PROP_IMAGES.thumbVilla,
-    status: 'Активный',
+    status: 'Active',
     statusKey: 'active',
     views: '756',
     viewsDelta: '−2.3%',
@@ -265,10 +265,10 @@ const RAW_PROPERTIES = [
   },
   {
     id: 'OB-1029',
-    title: 'Студия у парка',
-    location: 'Берлин, Германия',
+    title: 'Studio by the park',
+    location: 'Berlin, Germany',
     image: OWNER_PROP_IMAGES.thumbApartment,
-    status: 'Забронирован',
+    status: 'Booked',
     statusKey: 'booked',
     views: '534',
     viewsDelta: '+4.0%',
@@ -282,10 +282,10 @@ const RAW_PROPERTIES = [
   },
   {
     id: 'OB-1030',
-    title: 'Таунхаус',
-    location: 'Лондон, Великобритания',
+    title: 'Townhouse',
+    location: 'London, UK',
     image: OWNER_PROP_IMAGES.thumbLoft,
-    status: 'Активный',
+    status: 'Active',
     statusKey: 'active',
     views: '1 012',
     viewsDelta: '+9.8%',
@@ -296,15 +296,15 @@ const RAW_PROPERTIES = [
     price: '$1 650 000',
     currentBid: '$1 620 000',
     listingType: 'auction',
-    auctionTimer: '3д 02:11:08',
+    auctionTimer: '3d 02:11:08',
     date: '14.02.2024',
   },
   {
     id: 'OB-1031',
-    title: 'Вилла с бассейном',
-    location: 'Ницца, Франция',
+    title: 'Villa with pool',
+    location: 'Nice, France',
     image: OWNER_PROP_IMAGES.thumbPenthouse,
-    status: 'Продан',
+    status: 'Sold',
     statusKey: 'sold',
     views: '1 876',
     viewsDelta: '+14.1%',

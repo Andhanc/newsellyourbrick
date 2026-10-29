@@ -1,4 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { createShowcaseScroller } from '../utils/showcaseScroller'
 import { FiArrowRight, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import AuctionPropertyCard from './AuctionPropertyCard'
@@ -50,6 +51,7 @@ export default function InvestorPropertyShowcaseSection({
   ensureCanOpenProperty,
   showPropertyAuthRequiredToast,
 }) {
+  const { t } = useTranslation()
   const scrollerRef = useRef(null)
   const paginationRef = useRef(null)
   const [{ activePage, pageCount, canScrollPrev, canScrollNext }, setPagination] = useState({
@@ -202,7 +204,7 @@ export default function InvestorPropertyShowcaseSection({
             className="invest-showcase__cta-pill liquid-glass--skip"
             onClick={onCtaClick}
           >
-            <span className="invest-showcase__cta-pill-text">{ctaLabel || 'Перейти'}</span>
+            <span className="invest-showcase__cta-pill-text">{ctaLabel || t('goTo')}</span>
             <span className="invest-showcase__cta-pill-icon" aria-hidden>
               <FiArrowRight size={14} />
             </span>
@@ -214,7 +216,7 @@ export default function InvestorPropertyShowcaseSection({
             <button
               type="button"
               className={`invest-showcase__nav-btn invest-showcase__nav-btn--prev invest-showcase__nav-btn--side${canScrollPrev ? ' is-visible' : ''}`}
-              aria-label="Предыдущие объекты"
+              aria-label={t('investShowcase_prevAria')}
               aria-hidden={!canScrollPrev}
               tabIndex={canScrollPrev ? 0 : -1}
               onClick={() => scrollByDirection(-1)}
@@ -234,7 +236,7 @@ export default function InvestorPropertyShowcaseSection({
             <button
               type="button"
               className={`invest-showcase__nav-btn invest-showcase__nav-btn--next invest-showcase__nav-btn--side${canScrollNext ? ' is-visible' : ''}`}
-              aria-label="Следующие объекты"
+              aria-label={t('investShowcase_nextAria')}
               aria-hidden={!canScrollNext}
               tabIndex={canScrollNext ? 0 : -1}
               onClick={() => scrollByDirection(1)}
@@ -245,11 +247,11 @@ export default function InvestorPropertyShowcaseSection({
           </div>
 
           <div className="invest-showcase__footer">
-            <div className="invest-showcase__nav invest-showcase__nav--footer" role="group" aria-label="Навигация по карточкам">
+            <div className="invest-showcase__nav invest-showcase__nav--footer" role="group" aria-label={t('privateClubLanding_storiesNavAria')}>
               <button
                 type="button"
                 className="invest-showcase__nav-btn"
-                aria-label="Предыдущие объекты"
+                aria-label={t('investShowcase_prevAria')}
                 onClick={() => scrollByDirection(-1)}
                 disabled={loading}
               >
@@ -258,7 +260,7 @@ export default function InvestorPropertyShowcaseSection({
               <button
                 type="button"
                 className="invest-showcase__nav-btn"
-                aria-label="Следующие объекты"
+                aria-label={t('investShowcase_nextAria')}
                 onClick={() => scrollByDirection(1)}
                 disabled={loading}
               >
@@ -267,7 +269,7 @@ export default function InvestorPropertyShowcaseSection({
             </div>
 
             {showDots ? (
-              <div className="invest-showcase__dots" role="tablist" aria-label="Страницы карусели">
+              <div className="invest-showcase__dots" role="tablist" aria-label={t('investShowcase_pagesAria')}>
                 {Array.from({ length: pageCount }, (_, index) => (
                   <button
                     key={index}

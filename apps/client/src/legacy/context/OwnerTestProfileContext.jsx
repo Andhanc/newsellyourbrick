@@ -32,7 +32,7 @@ export function OwnerTestProfileProvider({ children }) {
 
       setProfile(nextProfile)
     } catch (error) {
-      console.warn('OwnerTestProfile: не удалось загрузить профиль', error)
+      console.warn('OwnerTestProfile: failed to load profile', error)
       setProfile(mapOwnerTestProfileFromLocal(getUserData()))
     } finally {
       setLoading(false)
@@ -48,11 +48,11 @@ export function OwnerTestProfileProvider({ children }) {
   }, [])
 
   const saveProfile = useCallback(async () => {
-    if (!profile) return { success: false, error: 'Профиль не загружен' }
+    if (!profile) return { success: false, error: ownerTestT('ownerTest_profileNotLoaded') }
 
     const dbUserId = localStorage.getItem('userId')
     if (!dbUserId || !/^\d+$/.test(dbUserId)) {
-      return { success: false, error: 'Пользователь не авторизован' }
+      return { success: false, error: ownerTestT('ownerTest_profileNotAuthorized') }
     }
 
     setSaving(true)
@@ -67,7 +67,7 @@ export function OwnerTestProfileProvider({ children }) {
       if (!response.ok || !result.success) {
         return {
           success: false,
-          error: result.error || 'Не удалось сохранить профиль',
+          error: result.error || ownerTestT('ownerTest_profileSaveError'),
         }
       }
 
@@ -95,8 +95,8 @@ export function OwnerTestProfileProvider({ children }) {
 
       return { success: true }
     } catch (error) {
-      console.error('OwnerTestProfile: ошибка сохранения', error)
-      return { success: false, error: 'Ошибка сети при сохранении' }
+      console.error('OwnerTestProfile: save failed', error)
+      return { success: false, error: ownerTestT('ownerTest_profileNetworkSaveError') }
     } finally {
       setSaving(false)
     }

@@ -21,14 +21,14 @@ export default function PropertyDetailInfoSection({
             Number(displayProperty.land_area) > 0 && (
               <div className="property-detail-info-item property-detail-info-item--horizontal">
                 <span className="property-detail-info-label">{t('addPropertyDetailsLandAreaLabel')}:</span>
-                <span className="property-detail-info-value">{displayProperty.land_area} м²</span>
+                <span className="property-detail-info-value">{displayProperty.land_area} {t('propertyDetailAreaUnit')}</span>
               </div>
             )}
           <div className="property-detail-info-item property-detail-info-item--horizontal">
             <span className="property-detail-info-label">{t('addPropertyDetailsAreaLabel')}:</span>
             <span className="property-detail-info-value">
               {displayProperty.area || displayProperty.sqft
-                ? `${displayProperty.area || displayProperty.sqft} м²`
+                ? `${displayProperty.area || displayProperty.sqft} ${t('propertyDetailAreaUnit')}`
                 : '—'}
             </span>
           </div>
@@ -37,7 +37,7 @@ export default function PropertyDetailInfoSection({
             Number(displayProperty.living_area) > 0 && (
               <div className="property-detail-info-item property-detail-info-item--horizontal">
                 <span className="property-detail-info-label">{t('addPropertyDetailsLivingAreaLabel')}:</span>
-                <span className="property-detail-info-value">{displayProperty.living_area} м²</span>
+                <span className="property-detail-info-value">{displayProperty.living_area} {t('propertyDetailAreaUnit')}</span>
               </div>
             )}
           <div className="property-detail-info-item property-detail-info-item--horizontal">
@@ -92,7 +92,7 @@ export default function PropertyDetailInfoSection({
           <span className="property-detail-info-label">{t('addPropertyDetailsAreaLabel')}:</span>
           <span className="property-detail-info-value">
             {displayProperty.area || displayProperty.sqft
-              ? `${displayProperty.area || displayProperty.sqft} м²`
+              ? `${displayProperty.area || displayProperty.sqft} ${t('propertyDetailAreaUnit')}`
               : '—'}
           </span>
         </div>
@@ -101,7 +101,7 @@ export default function PropertyDetailInfoSection({
           Number(displayProperty.living_area) > 0 && (
             <div className="property-detail-info-item property-detail-info-item--horizontal">
               <span className="property-detail-info-label">{t('addPropertyDetailsLivingAreaLabel')}:</span>
-              <span className="property-detail-info-value">{displayProperty.living_area} м²</span>
+              <span className="property-detail-info-value">{displayProperty.living_area} {t('propertyDetailAreaUnit')}</span>
             </div>
           )}
         <div className="property-detail-info-item property-detail-info-item--horizontal">
@@ -151,7 +151,7 @@ export default function PropertyDetailInfoSection({
       amenities: sourceProperty?.amenities ?? displayProperty?.amenities,
       tz_amenities_json: sourceProperty?.tz_amenities_json ?? displayProperty?.tz_amenities_json,
     }
-    const amenities = getResolvedAmenityLabels(merged)
+    const amenities = getResolvedAmenityLabels(merged, t)
 
     if (amenities.length === 0) {
       return (

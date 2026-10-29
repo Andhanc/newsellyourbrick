@@ -100,6 +100,6 @@ export function applyFormattedPropertyAmenities(formatted) {
 }
 
 export function formatAmenitiesListForCompare(keys) {
-  if (!keys?.length) return 'Не указано'
+  if (!keys?.length) return 'Not specified'
   return keys.map((k) => getAmenityLabelRu(k)).join(', ')
 }

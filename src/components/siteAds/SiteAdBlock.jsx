@@ -1,16 +1,19 @@
 import { Link } from 'react-router-dom'
 import { FiX } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 import { isExternalAdUrl } from '@/utils/siteAdIcons'
 import SiteAdIcon from './SiteAdIcon'
 import './SiteAdBlock.css'
 
 export default function SiteAdBlock({ ad, onClose }) {
+  const { t } = useTranslation()
   if (!ad) return null
 
   const buttonUrl = String(ad.buttonUrl || '').trim()
   const showButton = Boolean(ad.buttonEnabled && buttonUrl)
   const external = showButton && isExternalAdUrl(buttonUrl)
-  const buttonLabel = String(ad.buttonLabel || 'Подробнее').trim() || 'Подробнее'
+  const defaultLabel = t('createSiteAd_learnMore')
+  const buttonLabel = String(ad.buttonLabel || defaultLabel).trim() || defaultLabel
 
   const cta = showButton ? (
     external ? (
@@ -40,7 +43,7 @@ export default function SiteAdBlock({ ad, onClose }) {
         type="button"
         className="site-ad-block__close"
         onClick={onClose}
-        aria-label="Закрыть рекламу"
+        aria-label={t('siteAdCloseAria')}
       >
         <FiX size={18} />
       </button>
@@ -51,7 +54,7 @@ export default function SiteAdBlock({ ad, onClose }) {
         </div>
 
         <div className="site-ad-block__content">
-          <span className="site-ad-block__label">Реклама</span>
+          <span className="site-ad-block__label">{t('siteAdLabel')}</span>
           <h3 className="site-ad-block__title">{ad.title}</h3>
           <p className="site-ad-block__description">{ad.description}</p>
         </div>

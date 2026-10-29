@@ -30,10 +30,10 @@ const STEPS = [
   { id: 'publish', icon: Sparkles },
 ]
 
-const RESERVATION_STEPS = [
-  { id: 'reserve', icon: CheckCircle2, title: 'Резерв оплачен', text: 'Stripe подтвердил платёж, объект закреплён за вами на время оформления.' },
-  { id: 'processing', icon: FileText, title: 'Идёт оформление', text: 'Менеджер проверяет документы, согласует сроки и оставшуюся оплату.' },
-  { id: 'complete', icon: Home, title: 'Сделка завершена', text: 'После полной оплаты и подтверждения объект станет доступен для новой продажи.' },
+const RESERVATION_STEP_DEFS = [
+  { id: 'reserve', icon: CheckCircle2, titleKey: 'purchasedGuide_reserveStepTitle', textKey: 'purchasedGuide_reserveStepText' },
+  { id: 'processing', icon: FileText, titleKey: 'purchasedGuide_processingStepTitle', textKey: 'purchasedGuide_processingStepText' },
+  { id: 'complete', icon: Home, titleKey: 'purchasedGuide_completeStepTitle', textKey: 'purchasedGuide_completeStepText' },
 ]
 
 export default function PurchasedObjectGuidePage() {
@@ -95,7 +95,14 @@ export default function PurchasedObjectGuidePage() {
 
   const title = property?.title || property?.name || t('purchasedGuide_defaultTitle')
   const dealCompleted = Boolean(property?.buy_now_completed_at || property?.buyNowCompletedAt)
-  const displayedSteps = dealCompleted ? STEPS : RESERVATION_STEPS
+  const displayedSteps = dealCompleted
+    ? STEPS
+    : RESERVATION_STEP_DEFS.map((step) => ({
+        id: step.id,
+        icon: step.icon,
+        title: t(step.titleKey),
+        text: t(step.textKey),
+      }))
 
   return (
     <div className="purchased-guide-page">
@@ -116,11 +123,11 @@ export default function PurchasedObjectGuidePage() {
               <section className="purchased-guide__hero">
                 <div className="purchased-guide__hero-copy">
                   <p className="purchased-guide__eyebrow">{t('purchasedGuide_eyebrow')}</p>
-                  <h1>{dealCompleted ? t('purchasedGuide_title') : 'Резерв подтверждён — сделка продолжается'}</h1>
+                  <h1>{dealCompleted ? t('purchasedGuide_title') : t('purchasedGuide_reserveConfirmedTitle')}</h1>
                   <p className="purchased-guide__lead">
                     {dealCompleted
                       ? t('purchasedGuide_lead')
-                      : 'Сейчас оплачен только резерв. Здесь можно следить за оформлением; мы сообщим, когда продажа будет завершена полностью.'}
+                      : t('purchasedGuide_reserveLead')}
                   </p>
                 </div>
                 <article className="purchased-guide__property-card">
@@ -180,8 +187,8 @@ export default function PurchasedObjectGuidePage() {
                 <section className="purchased-guide__waiting">
                   <CheckCircle2 size={22} aria-hidden />
                   <div>
-                    <h2>Следующий шаг — оформление сделки</h2>
-                    <p>Кнопка продажи появится после статуса «Сделка завершена».</p>
+                    <h2>{t('purchasedGuide_waitingTitle')}</h2>
+                    <p>{t('purchasedGuide_waitingText')}</p>
                   </div>
                 </section>
               )}

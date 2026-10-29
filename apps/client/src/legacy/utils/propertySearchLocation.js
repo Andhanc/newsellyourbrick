@@ -1,3 +1,5 @@
+import { getLocalizedCountryName } from './localizeCountryName.js'
+
 const COUNTRY_ALIASES = {
   spain: ['spain', 'españa', 'espana', 'испания'],
   belarus: ['belarus', 'беларусь', 'белоруссия', 'by'],
@@ -178,9 +180,11 @@ export function getCanonicalRegionLabel(regionKey = '', fallback = '') {
   return fallback || regionKey
 }
 
-export function getCountryLabel(countryKeyOrSlug = '', fallback = '') {
+export function getCountryLabel(countryKeyOrSlug = '', fallback = '', locale = null) {
   const key = matchCountryKey(countryKeyOrSlug) || String(countryKeyOrSlug || '').trim().toLowerCase()
-  return COUNTRY_LABELS[key] || fallback || String(countryKeyOrSlug || '').trim()
+  const ruLabel = COUNTRY_LABELS[key] || fallback || String(countryKeyOrSlug || '').trim()
+  if (!locale) return ruLabel
+  return getLocalizedCountryName(key || ruLabel, locale) || ruLabel
 }
 
 export function isRecognizedCountry(raw = '') {

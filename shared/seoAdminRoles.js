@@ -1,9 +1,9 @@
 /** @typedef {'editor' | 'marketer' | 'admin'} SeoRole */
 
 export const SEO_ROLES = [
-  { id: 'editor', label: 'Редактор' },
-  { id: 'marketer', label: 'Маркетолог' },
-  { id: 'admin', label: 'Админ SEO' },
+  { id: 'editor', labelKey: 'seoRole_editor', label: 'Editor' },
+  { id: 'marketer', labelKey: 'seoRole_marketer', label: 'Marketer' },
+  { id: 'admin', labelKey: 'seoRole_admin', label: 'SEO Admin' },
 ];
 
 /**

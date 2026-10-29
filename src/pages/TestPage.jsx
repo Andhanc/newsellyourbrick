@@ -61,6 +61,10 @@ import { getBiometricErrorMessage } from '../utils/biometricMessages'
 import { countries as countryList } from '../components/CountrySelect'
 import { COUNTRY_CODES as phoneCountryCodes } from '../components/PhoneInput'
 import PhoneInput from '../components/PhoneInput'
+import {
+  getLocalizedCountryName,
+  normalizeCountryLocale,
+} from '../utils/localizeCountryName'
 import '../components/PhoneInput.css'
 import AuctionCategoryCtaCards, {
   preloadProfilePageCtaImages,
@@ -277,7 +281,7 @@ function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(String(reader.result || ''))
-    reader.onerror = () => reject(new Error('Не удалось прочитать файл'))
+    reader.onerror = () => reject(new Error('Could not read file'))
     reader.readAsDataURL(file)
   })
 }
@@ -854,13 +858,22 @@ function TestPage() {
     }
     return map
   }, [])
+  const countryLocale = useMemo(
+    () => normalizeCountryLocale(i18n.language || 'ru'),
+    [i18n.language],
+  )
   const filteredCountries = useMemo(() => {
     const q = countrySearchQuery.trim().toLowerCase()
     if (!q) return sortedCountries
-    return sortedCountries.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q),
-    )
-  }, [countrySearchQuery, sortedCountries])
+    return sortedCountries.filter((c) => {
+      const localized = getLocalizedCountryName(c.code, countryLocale).toLowerCase()
+      return (
+        localized.includes(q) ||
+        c.name.toLowerCase().includes(q) ||
+        c.code.toLowerCase().includes(q)
+      )
+    })
+  }, [countrySearchQuery, sortedCountries, countryLocale])
 
   /** Подсказка на тост: один раз за открытие панели «Данные»; сбрасывается при закрытии панели. */
   const toastHintShownThisDataOpenRef = useRef(false)
@@ -1664,9 +1677,11 @@ function TestPage() {
       setPassportRecognitionMode('confirm')
       try {
         const photoValidation = await validatePassportImageFile(file)
-        setPassportPhotoHints(photoValidation.hints)
+        const hintKeys = photoValidation.hintKeys || photoValidation.hints || []
+        const localizedHints = hintKeys.map((key) => t(key, { defaultValue: key }))
+        setPassportPhotoHints(localizedHints)
         if (photoValidation.shouldBlock) {
-          throw new Error(photoValidation.hints[0] || t('buyerData_passportPhotoQuality'))
+          throw new Error(localizedHints[0] || t('buyerData_passportPhotoQuality'))
         }
 
         const dataUrl = await readFileAsDataUrl(file)
@@ -1691,34 +1706,34 @@ function TestPage() {
             setShowPassportRecognitionModal(true)
             return
           }
-          throw new Error(result?.error || 'Ошибка при извлечении данных из паспорта')
+          throw new Error(result?.error || t('buyerData_passportExtractFailed'))
         }
 
         setPassportRecognitionMode('confirm')
         setExtractedPassportData(result.data)
         setShowPassportRecognitionModal(true)
       } catch (error) {
-        console.error('Ошибка распознавания паспорта:', error)
-        showNotification(error.message || 'Не удалось распознать паспорт', 'error')
+        console.error('Passport recognition error:', error)
+        showNotification(error.message || t('buyerData_passportRecognizeFailed'), 'error')
         setExtractedPassportData(null)
       } finally {
         setIsRecognizingPassport(false)
       }
     },
-    [numericUserId],
+    [numericUserId, t],
   )
 
   const handlePassportRecognitionConfirm = useCallback(
     async (extracted) => {
       const uid = numericUserId ?? getStoredNumericUserId()
       if (!uid || !dbUserRowRef.current) {
-        showNotification('Сначала дождитесь загрузки профиля', 'error')
+        showNotification(t('buyerData_waitProfileLoad'), 'error')
         return
       }
 
       const body = extractedPassportDataToApiPayload(extracted)
       if (Object.keys(body).length === 0) {
-        showNotification('Не удалось извлечь поля с фото — попробуйте другое изображение', 'info')
+        showNotification(t('buyerData_passportFieldsEmpty'), 'info')
         setShowPassportRecognitionModal(false)
         setExtractedPassportData(null)
         return
@@ -3413,7 +3428,9 @@ function TestPage() {
                                     aria-expanded={countryDropdownOpen}
                                   >
                                     <span className="test-country-select__value">
-                                      {profileForm[key] ? profileForm[key] : t('buyerData_placeholderCountry')}
+                                      {profileForm[key]
+                                        ? getLocalizedCountryName(profileForm[key], countryLocale)
+                                        : t('buyerData_placeholderCountry')}
                                     </span>
                                     <span className="test-country-select__chevron" aria-hidden>
                                       <FiChevronDown size={18} />
@@ -3448,7 +3465,9 @@ function TestPage() {
                                             <span className="test-country-select__option-flag" aria-hidden>
                                               {country.flag}
                                             </span>
-                                            <span className="test-country-select__option-name">{country.name}</span>
+                                            <span className="test-country-select__option-name">
+                                              {getLocalizedCountryName(country.code, countryLocale)}
+                                            </span>
                                           </button>
                                         )
                                       })}
@@ -3701,10 +3720,15 @@ function TestPage() {
                               <ul className="test-data-review-list">
                                 {blockRows.map((row) => {
                                   const rawValue = profileForm[row.key]
-                                  const displayValue =
+                                  const trimmed =
                                     rawValue && String(rawValue).trim()
                                       ? String(rawValue).trim()
-                                      : '—'
+                                      : ''
+                                  const displayValue = !trimmed
+                                    ? '—'
+                                    : row.key === 'country'
+                                      ? getLocalizedCountryName(trimmed, countryLocale)
+                                      : trimmed
                                   const rowClass = `test-data-review-list__row${
                                     row.filled
                                       ? ' test-data-review-list__row--done'

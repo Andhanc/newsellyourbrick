@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiExternalLink, FiCheck, FiX, FiGift } from 'react-icons/fi';
 import { getApiBaseUrl } from '../../utils/apiConfig';
 import { notifyBonusSubmissionsChanged } from '../../utils/bonusSubmissionsSync';
@@ -7,13 +8,14 @@ import { showNotification } from '../../utils/toastHelper';
 import './BonusesSubmissions.css';
 
 const TASK_LABELS = {
-  1: 'Пост в Instagram #sellyoubrick',
-  2: 'Видео в TikTok #sellyoubrick',
-  3: 'Ссылка в описании профиля',
-  4: 'Ссылка в посте в Instagram',
+  1: t('admin_post_v_nstagram_sellyoubrick_96e64ecc'),
+  2: t('admin_video_v_ikok_sellyoubrick_cebaed41'),
+  3: t('admin_ssylka_v_opisanii_profilya_65be6a39'),
+  4: t('admin_ssylka_v_poste_v_cb5b413a'),
 };
 
 const BonusesSubmissions = ({ onAdminSectionBadgeRefresh }) => {
+  const { t } = useTranslation();
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);
@@ -30,7 +32,7 @@ const BonusesSubmissions = ({ onAdminSectionBadgeRefresh }) => {
       }
     } catch (e) {
       console.error(e);
-      showNotification('Ошибка загрузки заявок');
+      showNotification(t('admin_bonus_loadError'));
     } finally {
       setLoading(false);
     }
@@ -47,16 +49,16 @@ const BonusesSubmissions = ({ onAdminSectionBadgeRefresh }) => {
       const res = await fetch(`${API_BASE_URL}/bonus-submissions/${id}/approve`, { method: 'PUT' });
       const data = await res.json();
       if (data.success) {
-        showNotification('Заявка одобрена');
+        showNotification(t('admin_bonus_approved'));
         notifyBonusSubmissionsChanged();
         const nextCount = Math.max(0, list.length - 1);
         requestAdminSidebarBadgesRefresh({ patch: { bonuses: nextCount } });
         await fetchPending();
       } else {
-        showNotification(data.message || 'Ошибка', 'error');
+        showNotification(data.message || t('admin_error'), 'error');
       }
     } catch (e) {
-      showNotification('Ошибка сети', 'error');
+      showNotification(t('admin_networkError'), 'error');
     } finally {
       setActionId(null);
     }
@@ -69,16 +71,16 @@ const BonusesSubmissions = ({ onAdminSectionBadgeRefresh }) => {
       const res = await fetch(`${API_BASE_URL}/bonus-submissions/${id}/reject`, { method: 'PUT' });
       const data = await res.json();
       if (data.success) {
-        showNotification('Заявка отклонена');
+        showNotification(t('admin_bonus_rejected'));
         notifyBonusSubmissionsChanged();
         const nextCount = Math.max(0, list.length - 1);
         requestAdminSidebarBadgesRefresh({ patch: { bonuses: nextCount } });
         await fetchPending();
       } else {
-        showNotification(data.message || 'Ошибка', 'error');
+        showNotification(data.message || t('admin_error'), 'error');
       }
     } catch (e) {
-      showNotification('Ошибка сети', 'error');
+      showNotification(t('admin_networkError'), 'error');
     } finally {
       setActionId(null);
     }
@@ -88,21 +90,21 @@ const BonusesSubmissions = ({ onAdminSectionBadgeRefresh }) => {
     <div className="bonuses-submissions-admin">
       <div className="bonuses-submissions-admin__header">
         <FiGift size={24} />
-        <h2>Бонусные задания</h2>
-        <p>Проверьте ссылки пользователей и одобрите или отклоните заявки.</p>
+        <h2>{t('admin_panel_bonuses')}</h2>
+        <p>{t('admin_proverte_ssylki_polzovateley_i_276b9df3')}</p>
       </div>
 
       {loading ? (
-        <div className="bonuses-submissions-admin__loading">Загрузка...</div>
+        <div className="bonuses-submissions-admin__loading">{t('admin_loading')}</div>
       ) : list.length === 0 ? (
-        <div className="bonuses-submissions-admin__empty">Нет заявок на проверке.</div>
+        <div className="bonuses-submissions-admin__empty">{t('admin_net_zayavok_na_proverke_9a94be21')}</div>
       ) : (
         <div className="bonuses-submissions-admin__list">
           {list.map((item) => (
             <div key={item.id} className="bonuses-submissions-admin__card">
               <div className="bonuses-submissions-admin__card-row">
                 <span className="bonuses-submissions-admin__task">
-                  Задание {item.task_id}: {TASK_LABELS[item.task_id] || `Задание ${item.task_id}`}
+                  {t('admin_zadanie_id_label_bfa0da70', { id: item.task_id, label: TASK_LABELS[item.task_id] || t('admin_zadanie_id_84be8fdf', { id: item.task_id }) })}
                 </span>
                 <span className="bonuses-submissions-admin__user">User ID: {item.user_id}</span>
               </div>
@@ -113,7 +115,7 @@ const BonusesSubmissions = ({ onAdminSectionBadgeRefresh }) => {
                   rel="noopener noreferrer"
                   className="bonuses-submissions-admin__link"
                 >
-                  <FiExternalLink size={16} /> Открыть ссылку
+                  <FiExternalLink size={16} /> {t('admin_otkryt_ssylku_768854fe')}
                 </a>
               </div>
               <div className="bonuses-submissions-admin__actions">
@@ -123,7 +125,7 @@ const BonusesSubmissions = ({ onAdminSectionBadgeRefresh }) => {
                   disabled={actionId === item.id}
                   onClick={() => handleApprove(item.id)}
                 >
-                  {actionId === item.id ? '...' : <><FiCheck size={16} /> Одобрить</>}
+                  {actionId === item.id ? '...' : <><FiCheck size={16} /> {t('admin_approve')}</>}
                 </button>
                 <button
                   type="button"
@@ -131,7 +133,7 @@ const BonusesSubmissions = ({ onAdminSectionBadgeRefresh }) => {
                   disabled={actionId === item.id}
                   onClick={() => handleReject(item.id)}
                 >
-                  {actionId === item.id ? '...' : <><FiX size={16} /> Отклонить</>}
+                  {actionId === item.id ? '...' : <><FiX size={16} /> {t('admin_reject')}</>}
                 </button>
               </div>
             </div>

@@ -1,55 +1,61 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaLinkedinIn, FaTwitter, FaBehance, FaInstagram } from 'react-icons/fa';
 import './TeamShowcase.css';
 
-const DEFAULT_MEMBERS = [
-  {
-    id: '1',
-    name: 'Максим',
-    role: 'Основатель',
-    image: '/images/external/ffffff-d111fc2cb8.svg',
-    social: { twitter: '#', linkedin: '#', behance: '#' },
-  },
-  {
-    id: '2',
-    name: 'Владислав',
-    role: 'Ведущий разработчик',
-    image: '/images/external/ffffff-4d018dee93.svg',
-    social: { twitter: '#', linkedin: '#' },
-  },
-  {
-    id: '3',
-    name: 'Андрей',
-    role: 'Ведущий разработчик',
-    image: '/images/external/ffffff-e095ad925b.svg',
-    social: { twitter: '#', linkedin: '#' },
-  },
-  {
-    id: '4',
-    name: 'Кто-то 1',
-    role: 'Команда',
-    image: '/images/external/ffffff-0d5ee8be02.svg',
-    social: { linkedin: '#' },
-  },
-  {
-    id: '5',
-    name: 'Кто-то 2',
-    role: 'Команда',
-    image: '/images/external/ffffff-bdd04fe6b7.svg',
-    social: { twitter: '#', linkedin: '#' },
-  },
-  {
-    id: '6',
-    name: 'Кто-то 3',
-    role: 'Команда',
-    image: '/images/external/ffffff-6d912ebed2.svg',
-    social: { instagram: '#' },
-  },
-];
+function buildDefaultMembers(t) {
+  return [
+    {
+      id: '1',
+      name: t('teamShowcase_nameMaxim'),
+      role: t('teamShowcase_roleFounder'),
+      image: '/images/external/ffffff-d111fc2cb8.svg',
+      social: { twitter: '#', linkedin: '#', behance: '#' },
+    },
+    {
+      id: '2',
+      name: t('teamShowcase_nameVladislav'),
+      role: t('teamShowcase_roleLeadDeveloper'),
+      image: '/images/external/ffffff-4d018dee93.svg',
+      social: { twitter: '#', linkedin: '#' },
+    },
+    {
+      id: '3',
+      name: t('teamShowcase_nameAndrei'),
+      role: t('teamShowcase_roleLeadDeveloper'),
+      image: '/images/external/ffffff-e095ad925b.svg',
+      social: { twitter: '#', linkedin: '#' },
+    },
+    {
+      id: '4',
+      name: t('teamShowcase_someone', { n: 1 }),
+      role: t('teamShowcase_roleTeam'),
+      image: '/images/external/ffffff-0d5ee8be02.svg',
+      social: { linkedin: '#' },
+    },
+    {
+      id: '5',
+      name: t('teamShowcase_someone', { n: 2 }),
+      role: t('teamShowcase_roleTeam'),
+      image: '/images/external/ffffff-bdd04fe6b7.svg',
+      social: { twitter: '#', linkedin: '#' },
+    },
+    {
+      id: '6',
+      name: t('teamShowcase_someone', { n: 3 }),
+      role: t('teamShowcase_roleTeam'),
+      image: '/images/external/ffffff-6d912ebed2.svg',
+      social: { instagram: '#' },
+    },
+  ];
+}
 
-export default function TeamShowcase({ members = DEFAULT_MEMBERS }) {
+export default function TeamShowcase({ members: membersProp }) {
+  const { t } = useTranslation();
+  const defaultMembers = useMemo(() => buildDefaultMembers(t), [t]);
+  const members = membersProp ?? defaultMembers;
   const [hoveredId, setHoveredId] = useState(null);
 
   const col1 = members.filter((_, i) => i % 3 === 0);

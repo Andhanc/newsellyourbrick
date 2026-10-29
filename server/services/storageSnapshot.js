@@ -19,7 +19,7 @@ function sanitizeRow(row) {
   const out = { ...row };
   for (const k of SENSITIVE_KEYS) {
     if (Object.prototype.hasOwnProperty.call(out, k) && out[k] != null) {
-      out[k] = '[скрыто]';
+      out[k] = '[redacted]';
     }
   }
   return out;

@@ -1,4 +1,4 @@
-/** Подписи удобств по TZ (ключи из tz.txt / AddProperty tzKey) */
+/** TZ amenity labels (keys from tz.txt / AddProperty tzKey) — RU pack for `ru` locale fallback */
 export const TZ_AMENITY_LABELS_RU = {
   underground_parking: 'Подземный паркинг',
   private_garage: 'Отдельный гараж',
@@ -107,9 +107,167 @@ const LEGACY_AMENITY_LABELS_RU = {
   feature26: 'Грузовой лифт / канализация',
 }
 
+/** i18n keys for user-visible amenity labels (mainPage namespace) */
+export const TZ_AMENITY_LABEL_KEYS = {
+  underground_parking: 'addPropertyAmenityUndergroundParking',
+  private_garage: 'addPropertyAmenityPrivateGarage',
+  covered_parking: 'addPropertyAmenityCoveredParking',
+  open_parking: 'addPropertyAmenityOpenParking',
+  ev_charging: 'addPropertyAmenityEvCharging',
+  storage_room: 'addPropertyAmenityStorageRoom',
+  bike_storage: 'addPropertyAmenityBikeStorage',
+  pool_private: 'addPropertyAmenityPoolPrivate',
+  pool_communal: 'addPropertyAmenityPoolCommunal',
+  jacuzzi: 'addPropertyAmenityJacuzzi',
+  tennis_court: 'addPropertyAmenityTennisCourt',
+  padel_court: 'addPropertyAmenityPadelCourt',
+  basketball_court: 'addPropertyAmenityBasketballCourt',
+  garden: 'propertyDetailAmenityGarden',
+  rooftop_terrace: 'addPropertyAmenityRooftopTerrace',
+  balcony: 'addPropertyAmenitiesBalcony',
+  bbq_area: 'addPropertyAmenityBbqArea',
+  beach_access: 'addPropertyAmenityBeachAccess',
+  playground: 'addPropertyAmenityPlayground',
+  golf_course_on_site: 'addPropertyAmenityGolfCourseOnSite',
+  security_24_7: 'addPropertyAmenitySecurity247',
+  cctv: 'addPropertyAmenityCctv',
+  video_intercom: 'addPropertyAmenityVideoIntercom',
+  gated_community: 'addPropertyAmenityGatedCommunity',
+  elevator: 'addPropertyAmenitiesElevator',
+  wheelchair_accessible: 'addPropertyAmenityWheelchairAccessible',
+  smart_home: 'addPropertyAmenitySmartHome',
+  smart_lighting: 'addPropertyAmenitySmartLighting',
+  smart_climate: 'addPropertyAmenitySmartClimate',
+  smart_security: 'addPropertyAmenitySmartSecurity',
+  solar_panels: 'addPropertyAmenitySolarPanels',
+  fibre_internet: 'addPropertyAmenityFibreInternet',
+  air_conditioning: 'addPropertyAmenityAirConditioning',
+  central_heating: 'addPropertyAmenityCentralHeating',
+  underfloor_heating: 'addPropertyAmenityUnderfloorHeating',
+  fireplace: 'addPropertyAmenityFireplace',
+  double_glazing: 'addPropertyAmenityDoubleGlazing',
+  energy_certificate: 'addPropertyAmenityEnergyCertificate',
+  gym: 'addPropertyAmenityGym',
+  spa: 'addPropertyAmenitySpa',
+  spa_wellness: 'addPropertyAmenitySpa',
+  sauna: 'addPropertyAmenitySauna',
+  cinema_room: 'addPropertyAmenityCinemaRoom',
+  wine_cellar: 'addPropertyAmenityWineCellar',
+  sea_view: 'addPropertyAmenitySeaView',
+  mountain_view: 'addPropertyAmenityMountainView',
+  golf_view: 'addPropertyAmenityGolfView',
+  city_view: 'addPropertyAmenityCityView',
+  garden_view: 'addPropertyAmenityGardenView',
+  surface_parking: 'addPropertyAmenitySurfaceParking',
+  loading_dock: 'addPropertyAmenityLoadingDock',
+  raised_floor: 'addPropertyAmenityRaisedFloor',
+  suspended_ceiling: 'addPropertyAmenitySuspendedCeiling',
+  three_phase_power: 'addPropertyAmenityThreePhasePower',
+  backup_generator: 'addPropertyAmenityBackupGenerator',
+  hvac_system: 'addPropertyAmenityHvacSystem',
+  reception_lobby: 'addPropertyAmenityReceptionLobby',
+  access_control: 'addPropertyAmenityAccessControl',
+  freight_elevator: 'addPropertyAmenityFreightElevator',
+  conference_rooms: 'addPropertyAmenityConferenceRooms',
+  parking: 'addPropertyAmenitiesParkingSpace',
+  garage: 'propertyDetailAmenityGarage',
+  pool: 'propertyDetailAmenityPool',
+  electricity: 'propertyDetailAmenityElectricity',
+  internet: 'addPropertyAmenitiesInternet',
+  security: 'addPropertyAmenitiesSecurity',
+  furniture: 'addPropertyAmenitiesBuiltInFurniture',
+  // OAP / land / hotel extras
+  electricity_connected: 'addPropertyAmenityElectricityConnected',
+  internet_connected: 'addPropertyAmenityInternetConnected',
+  water_connected: 'addPropertyAmenityWaterConnected',
+  gas_connected: 'addPropertyAmenityGasConnected',
+  sewage_connected: 'addPropertyAmenitySewageConnected',
+  road_access_paved: 'addPropertyAmenityRoadAccessPaved',
+  road_access_dirt: 'addPropertyAmenityRoadAccessDirt',
+  sea_frontage: 'addPropertyAmenitySeaFrontage',
+  trees_on_plot: 'addPropertyAmenityTreesOnPlot',
+  existing_structures: 'addPropertyAmenityExistingStructures',
+  pool_outdoor: 'addPropertyAmenityPoolOutdoor',
+  restaurant: 'addPropertyAmenityRestaurant',
+  bar_lounge: 'addPropertyAmenityBarLounge',
+  parking_onsite: 'addPropertyAmenityParkingOnsite',
+  helipad: 'addPropertyAmenityHelipad',
+  smart_building_bms: 'addPropertyAmenitySmartBuildingBms',
+}
+
+const LEGACY_AMENITY_LABEL_KEYS = {
+  feature1: 'propertyDetailFeature1',
+  feature2: 'propertyDetailFeature2',
+  feature3: 'propertyDetailFeature3',
+  feature4: 'propertyDetailFeature4',
+  feature5: 'propertyDetailFeature5',
+  feature6: 'propertyDetailFeature6',
+  feature7: 'propertyDetailFeature7',
+  feature8: 'propertyDetailFeature8',
+  feature9: 'propertyDetailFeature9',
+  feature10: 'propertyDetailFeature10',
+  feature11: 'propertyDetailFeature11',
+  feature12: 'propertyDetailFeature12',
+  feature13: 'propertyDetailFeature13',
+  feature14: 'propertyDetailFeature14',
+  feature15: 'propertyDetailFeature15',
+  feature16: 'propertyDetailFeature16',
+  feature17: 'propertyDetailFeature17',
+  feature18: 'propertyDetailFeature18',
+  feature19: 'propertyDetailFeature19',
+  feature20: 'propertyDetailFeature20',
+  feature21: 'propertyDetailFeature21',
+  feature22: 'propertyDetailFeature22',
+  feature23: 'propertyDetailFeature23',
+  feature24: 'propertyDetailFeature24',
+  feature25: 'propertyDetailFeature25',
+  feature26: 'propertyDetailFeature26',
+}
+
+function amenityKeyToCamelI18n(key) {
+  if (key === 'security_24_7') return 'addPropertyAmenitySecurity247'
+  const camel = String(key)
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('')
+  return camel ? `addPropertyAmenity${camel}` : null
+}
+
+export function getAmenityLabelKey(key) {
+  if (!key) return null
+  if (/^feature\d+$/.test(key)) {
+    return LEGACY_AMENITY_LABEL_KEYS[key] || `propertyDetailFeature${key.slice(7)}`
+  }
+  return TZ_AMENITY_LABEL_KEYS[key] || amenityKeyToCamelI18n(key)
+}
+
 export function getAmenityLabelRu(key) {
   if (!key) return ''
   return TZ_AMENITY_LABELS_RU[key] || LEGACY_AMENITY_LABELS_RU[key] || String(key).replace(/_/g, ' ')
+}
+
+/** English fallback when i18n key is missing (non-ru locales must not show Russian). */
+export function getAmenityLabelEn(key) {
+  if (!key) return ''
+  return String(key)
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (ch) => ch.toUpperCase())
+}
+
+/** Localized label via i18n `t`; falls back to English humanized key (or RU if language is ru). */
+export function getAmenityLabel(t, key, language = 'en') {
+  if (!key) return ''
+  if (typeof t === 'function') {
+    const labelKey = getAmenityLabelKey(key)
+    if (labelKey) {
+      const translated = t(labelKey)
+      if (translated && translated !== labelKey) return translated
+    }
+  }
+  const lang = String(language || 'en').split(/[-_]/)[0]
+  if (lang === 'ru') return getAmenityLabelRu(key)
+  return getAmenityLabelEn(key)
 }
 
 function parseJsonArray(value) {
@@ -160,7 +318,7 @@ export function collectAmenityKeys(property) {
   return Array.from(keys)
 }
 
-/** Человекочитаемые подписи для отображения в UI */
-export function getResolvedAmenityLabels(property) {
-  return collectAmenityKeys(property).map((key) => getAmenityLabelRu(key))
+/** Человекочитаемые подписи для отображения в UI (передайте `t` из useTranslation) */
+export function getResolvedAmenityLabels(property, t) {
+  return collectAmenityKeys(property).map((key) => getAmenityLabel(t, key))
 }

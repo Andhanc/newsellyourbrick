@@ -754,13 +754,15 @@ export default function OwnerTestDriveSplitView({
       {paginatedPropertyOptions.map((property) => {
         const active = property.key === selectedKey
         const count = bookingCountByKey.get(property.key) || 0
+        const rawLocation = String(property.location || '').trim()
         const locationLabel =
-          property.location &&
-          property.location &&
-          property.location !== t('buyerData_notSpecified') &&
-          property.location !== 'Не указано' &&
-          property.location !== t('ownerTest_locationFallback')
-            ? property.location
+          rawLocation &&
+          rawLocation !== t('buyerData_notSpecified') &&
+          rawLocation !== t('admin_notSpecified') &&
+          rawLocation !== t('ownerTest_locationFallback') &&
+          rawLocation !== t('ownerSales_locationUnknown') &&
+          rawLocation !== t('ownerTdLocationUnknown')
+            ? rawLocation
             : null
         return (
           <li key={property.key}>
@@ -780,7 +782,7 @@ export default function OwnerTestDriveSplitView({
                 }}
               />
               <span className="otd-split-card__body">
-                <span className="otd-split-card__title">{property.title}</span>
+                <span className="otd-split-card__title">{property.title || t('ownerPropertyFallback')}</span>
                 {locationLabel ? (
                   <span className="otd-split-card__meta">{locationLabel}</span>
                 ) : property.displayId ? (
@@ -918,12 +920,14 @@ export default function OwnerTestDriveSplitView({
                 onClick={() => setSelectedRow(row)}
               >
                 <span className="otd-split-request__main">
-                  <span className="otd-split-request__buyer">{row.buyer}</span>
+                  <span className="otd-split-request__buyer">
+                    {row.buyer || t(row.buyerFallbackKey || 'ownerTdBuyerFallback')}
+                  </span>
                   <span className="otd-split-request__dates">{row.datesShort || row.dates}</span>
                 </span>
                 <span className="otd-split-request__aside">
                   <span className={`otd-split-request__status otd-split-request__status--${row.statusKey}`}>
-                    {row.status}
+                    {t(row.statusLabelKey || row.status || 'ownerTdStatusPending')}
                   </span>
                   <span className="otd-split-request__amount">{row.amount}</span>
                 </span>
@@ -973,11 +977,11 @@ export default function OwnerTestDriveSplitView({
                   <CalendarDays size={17} strokeWidth={2.1} />
                 </span>
                 <span className="otd-property-drawer__booking-main">
-                  <strong>{row.buyer}</strong>
+                  <strong>{row.buyer || t(row.buyerFallbackKey || 'ownerTdBuyerFallback')}</strong>
                   <small>{row.datesShort || row.dates}</small>
                 </span>
                 <span className="otd-property-drawer__booking-side">
-                  <em className={`is-${row.statusKey}`}>{row.status}</em>
+                  <em className={`is-${row.statusKey}`}>{t(row.statusLabelKey || row.status || 'ownerTdStatusPending')}</em>
                   <strong>{row.amount}</strong>
                 </span>
                 <ChevronRight size={17} strokeWidth={2.2} aria-hidden />
@@ -1073,16 +1077,26 @@ export default function OwnerTestDriveSplitView({
               <span className="otd-property-drawer__eyebrow">
                 {t('ownerTestDriveSplitPropertyLabel')}
               </span>
-              <h2 className="otd-property-drawer__title">{selectedProperty.title}</h2>
-              {selectedProperty.location &&
-              selectedProperty.location &&
-              selectedProperty.location !== t('buyerData_notSpecified') &&
-              selectedProperty.location !== 'Не указано' &&
-              selectedProperty.location !== t('ownerTest_locationFallback') ? (
-                <p className="otd-property-drawer__meta">{selectedProperty.location}</p>
-              ) : selectedProperty.displayId ? (
-                <p className="otd-property-drawer__meta">{selectedProperty.displayId}</p>
-              ) : null}
+              <h2 className="otd-property-drawer__title">
+                {selectedProperty.title || t('ownerPropertyFallback')}
+              </h2>
+              {(() => {
+                const rawLocation = String(selectedProperty.location || '').trim()
+                const locationLabel =
+                  rawLocation &&
+                  rawLocation !== t('buyerData_notSpecified') &&
+                  rawLocation !== t('admin_notSpecified') &&
+                  rawLocation !== t('ownerTest_locationFallback') &&
+                  rawLocation !== t('ownerSales_locationUnknown') &&
+                  rawLocation !== t('ownerTdLocationUnknown')
+                    ? rawLocation
+                    : null
+                return locationLabel ? (
+                  <p className="otd-property-drawer__meta">{locationLabel}</p>
+                ) : selectedProperty.displayId ? (
+                  <p className="otd-property-drawer__meta">{selectedProperty.displayId}</p>
+                ) : null
+              })()}
             </div>
             <button
               type="button"

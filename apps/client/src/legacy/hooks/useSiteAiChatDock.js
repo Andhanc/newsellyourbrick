@@ -289,7 +289,7 @@ export function useSiteAiChatDock({
         lastChatUserIdRef.current = chatUserId
         chatHistoryLoadedRef.current = true
       } catch (error) {
-        console.error('Ошибка при загрузке истории чата:', error)
+        console.error('Failed to load chat history:', error)
         lastChatUserIdRef.current = chatUserId
         chatHistoryLoadedRef.current = true
         setChatMessages([createAssistantIntroMessage(introText)])
@@ -297,7 +297,7 @@ export function useSiteAiChatDock({
       return
     }
 
-    // Смена языка UI: обновляем локализованные системные реплики помощника.
+    // UI language change: refresh localized system assistant lines.
     setChatMessages((prev) => {
       if (!Array.isArray(prev) || prev.length === 0) {
         return [createAssistantIntroMessage(introText)]
@@ -324,7 +324,7 @@ export function useSiteAiChatDock({
         const historyKey = `aiChatHistory_${getChatUserId}`
         localStorage.setItem(historyKey, JSON.stringify(createAssistantCacheEnvelope(chatMessages)))
       } catch (error) {
-        console.error('Ошибка при сохранении истории чата:', error)
+        console.error('Failed to save chat history:', error)
       }
     }
   }, [chatMessages, getChatUserId])
@@ -341,7 +341,7 @@ export function useSiteAiChatDock({
         const preferencesKey = `aiChatPreferences_${getChatUserId}`
         localStorage.setItem(preferencesKey, JSON.stringify(userPreferences))
       } catch (error) {
-        console.error('Ошибка при сохранении предпочтений:', error)
+        console.error('Failed to save chat preferences:', error)
       }
     }
   }, [userPreferences, getChatUserId])
@@ -391,7 +391,7 @@ export function useSiteAiChatDock({
       localStorage.removeItem(`aiChatHistory_${getChatUserId}`)
       localStorage.removeItem(`aiChatPreferences_${getChatUserId}`)
     } catch (error) {
-      console.error('Ошибка при очистке истории чата:', error)
+      console.error('Failed to clear chat history:', error)
     }
     setUserPreferences({ ...EMPTY_ASSISTANT_PREFERENCES })
     setChatInput('')
@@ -407,7 +407,7 @@ export function useSiteAiChatDock({
     const session = getAssistantChatSession(getChatUserId, sessionId)
     if (!session?.messages?.length) return
     try {
-      // Текущий диалог тоже сохраняем, чтобы его можно было вернуть.
+      // Archive the current dialogue so it can be restored later.
       archiveAssistantChatSession(getChatUserId, chatMessages, userPreferences)
       const introText = t('assistantIntroMessage')
       const restored = hydrateMessages(session.messages, introText)
@@ -432,7 +432,7 @@ export function useSiteAiChatDock({
         )
       }
     } catch (error) {
-      console.error('Ошибка при восстановлении истории чата:', error)
+      console.error('Failed to restore chat session:', error)
     }
     refreshChatSessions()
   }, [chatMessages, getChatUserId, hydrateMessages, refreshChatSessions, t, userPreferences])
@@ -594,22 +594,27 @@ export function useSiteAiChatDock({
       lowerMessage.includes('для себя') ||
       lowerMessage === 'для себя' ||
       lowerMessage.includes('сам') ||
-      lowerMessage.includes('личн')
+      lowerMessage.includes('личн') ||
+      lowerMessage.includes('for myself') ||
+      lowerMessage.includes('personal use')
     ) {
-      nextPreferences.purpose = 'для себя'
+      nextPreferences.purpose = 'for_self'
     } else if (
       lowerMessage.includes('под сдачу') ||
       lowerMessage === 'под сдачу' ||
       lowerMessage.includes('сдачу') ||
-      lowerMessage.includes('аренд')
+      lowerMessage.includes('аренд') ||
+      lowerMessage.includes('for rent') ||
+      lowerMessage.includes('rental')
     ) {
-      nextPreferences.purpose = 'под сдачу'
+      nextPreferences.purpose = 'for_rent'
     } else if (
       lowerMessage.includes('инвестиц') ||
       lowerMessage === 'инвестиции' ||
-      lowerMessage.includes('инвест')
+      lowerMessage.includes('инвест') ||
+      lowerMessage.includes('invest')
     ) {
-      nextPreferences.purpose = 'инвестиции'
+      nextPreferences.purpose = 'investment'
     }
 
     const budgetMatch = userMessage.match(/(\d+[\s,.]?\d*)\s*(тыс|млн|k|m|€|\$|eur|usd|евро|доллар|рубл|₽|rub)/i)
@@ -636,16 +641,16 @@ export function useSiteAiChatDock({
       lowerMessage.includes('апартамент') ||
       lowerMessage.includes('apartment')
     ) {
-      nextPreferences.propertyType = 'квартира'
+      nextPreferences.propertyType = 'apartment'
     } else if (lowerMessage.includes('вилл') || lowerMessage.includes('villa')) {
-      nextPreferences.propertyType = 'вилла'
+      nextPreferences.propertyType = 'villa'
     } else if (
       lowerMessage.includes('дом') ||
       lowerMessage.includes('таунхаус') ||
       lowerMessage.includes('townhouse') ||
       lowerMessage.includes('house')
     ) {
-      nextPreferences.propertyType = 'дом'
+      nextPreferences.propertyType = 'house'
     }
 
     const roomsMatch = userMessage.match(/(\d+)\s*(комнат|room|bed)/i)
@@ -752,6 +757,7 @@ export function useSiteAiChatDock({
           assistantSessionId: getChatUserId,
           userContext,
           assistantMode: nextPreferences.assistantMode || options?.assistantMode || null,
+          t,
         },
       )
 
@@ -794,7 +800,7 @@ export function useSiteAiChatDock({
 
       setChatMessages((prev) => [...prev, botReply])
     } catch (error) {
-      console.error('Ошибка при обращении к AI:', error)
+      console.error('AI assistant request failed:', error)
       setChatMessages((prev) => [
         ...prev,
         {

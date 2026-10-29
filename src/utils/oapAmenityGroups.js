@@ -1,179 +1,179 @@
-/** Группы удобств по типу объекта (как в AddProperty / TZ) */
+/** Группы удобств по типу объекта (как в AddProperty / TZ). Подписи — через labelKey/titleKey + t(). */
 
 const BY_TYPE = {
   apartment: [
     {
       id: 'residential-parking',
-      title: 'Парковка и хранение',
+      titleKey: 'addPropertyAmenitiesGroupResidentialParkingStorage',
       items: [
-        { label: 'Подземный паркинг', tzKey: 'underground_parking' },
-        { label: 'Крытая парковка', tzKey: 'covered_parking' },
-        { label: 'Велостоянка', tzKey: 'bike_storage' },
-        { label: 'Кладовая', tzKey: 'storage_room' },
+        { labelKey: 'addPropertyAmenityUndergroundParking', tzKey: 'underground_parking' },
+        { labelKey: 'addPropertyAmenityCoveredParking', tzKey: 'covered_parking' },
+        { labelKey: 'addPropertyAmenityBikeStorage', tzKey: 'bike_storage' },
+        { labelKey: 'addPropertyAmenityStorageRoom', tzKey: 'storage_room' },
       ],
     },
     {
       id: 'residential-security',
-      title: 'Здание и безопасность',
+      titleKey: 'addPropertyAmenitiesGroupResidentialSecurity',
       items: [
-        { label: 'Круглосуточная охрана', tzKey: 'security_24_7' },
-        { label: 'Видеонаблюдение', tzKey: 'cctv' },
-        { label: 'Видеодомофон', tzKey: 'video_intercom' },
-        { label: 'Лифт', tzKey: 'elevator' },
+        { labelKey: 'addPropertyAmenitySecurity247', tzKey: 'security_24_7' },
+        { labelKey: 'addPropertyAmenityCctv', tzKey: 'cctv' },
+        { labelKey: 'addPropertyAmenityVideoIntercom', tzKey: 'video_intercom' },
+        { labelKey: 'addPropertyAmenitiesElevator', tzKey: 'elevator' },
       ],
     },
     {
       id: 'residential-comfort',
-      title: 'Технологии и комфорт',
+      titleKey: 'addPropertyAmenitiesGroupResidentialComfort',
       items: [
-        { label: 'Кондиционирование', tzKey: 'air_conditioning' },
-        { label: 'Камин', tzKey: 'fireplace' },
-        { label: 'Умный дом', tzKey: 'smart_home' },
-        { label: 'Солнечные панели', tzKey: 'solar_panels' },
-        { label: 'Оптоволоконный интернет', tzKey: 'fibre_internet' },
+        { labelKey: 'addPropertyAmenityAirConditioning', tzKey: 'air_conditioning' },
+        { labelKey: 'addPropertyAmenityFireplace', tzKey: 'fireplace' },
+        { labelKey: 'addPropertyAmenitySmartHome', tzKey: 'smart_home' },
+        { labelKey: 'addPropertyAmenitySolarPanels', tzKey: 'solar_panels' },
+        { labelKey: 'addPropertyAmenityFibreInternet', tzKey: 'fibre_internet' },
       ],
     },
     {
       id: 'residential-outdoor',
-      title: 'Территория и отдых',
+      titleKey: 'addPropertyAmenitiesGroupResidentialOutdoor',
       items: [
-        { label: 'Общий бассейн', tzKey: 'pool_communal' },
-        { label: 'Сад / территория', tzKey: 'garden' },
-        { label: 'Балкон', tzKey: 'balcony' },
-        { label: 'Эксплуатируемая кровля', tzKey: 'rooftop_terrace' },
+        { labelKey: 'addPropertyAmenityPoolCommunal', tzKey: 'pool_communal' },
+        { labelKey: 'addPropertyAmenityGarden', tzKey: 'garden' },
+        { labelKey: 'addPropertyAmenitiesBalcony', tzKey: 'balcony' },
+        { labelKey: 'addPropertyAmenityRooftopTerrace', tzKey: 'rooftop_terrace' },
       ],
     },
   ],
   house: [
     {
       id: 'residential-parking',
-      title: 'Парковка и хранение',
+      titleKey: 'addPropertyAmenitiesGroupResidentialParkingStorage',
       items: [
-        { label: 'Подземный паркинг', tzKey: 'underground_parking' },
-        { label: 'Отдельный гараж', tzKey: 'private_garage' },
-        { label: 'Открытая парковка', tzKey: 'open_parking' },
-        { label: 'Кладовая', tzKey: 'storage_room' },
+        { labelKey: 'addPropertyAmenityUndergroundParking', tzKey: 'underground_parking' },
+        { labelKey: 'addPropertyAmenityPrivateGarage', tzKey: 'private_garage' },
+        { labelKey: 'addPropertyAmenityOpenParking', tzKey: 'open_parking' },
+        { labelKey: 'addPropertyAmenityStorageRoom', tzKey: 'storage_room' },
       ],
     },
     {
       id: 'residential-comfort',
-      title: 'Технологии и комфорт',
+      titleKey: 'addPropertyAmenitiesGroupResidentialComfort',
       items: [
-        { label: 'Кондиционирование', tzKey: 'air_conditioning' },
-        { label: 'Камин', tzKey: 'fireplace' },
-        { label: 'Умный дом', tzKey: 'smart_home' },
-        { label: 'Солнечные панели', tzKey: 'solar_panels' },
-        { label: 'Оптоволоконный интернет', tzKey: 'fibre_internet' },
+        { labelKey: 'addPropertyAmenityAirConditioning', tzKey: 'air_conditioning' },
+        { labelKey: 'addPropertyAmenityFireplace', tzKey: 'fireplace' },
+        { labelKey: 'addPropertyAmenitySmartHome', tzKey: 'smart_home' },
+        { labelKey: 'addPropertyAmenitySolarPanels', tzKey: 'solar_panels' },
+        { labelKey: 'addPropertyAmenityFibreInternet', tzKey: 'fibre_internet' },
       ],
     },
     {
       id: 'residential-outdoor',
-      title: 'Территория и отдых',
+      titleKey: 'addPropertyAmenitiesGroupResidentialOutdoor',
       items: [
-        { label: 'Частный бассейн', tzKey: 'pool_private' },
-        { label: 'Сад / территория', tzKey: 'garden' },
-        { label: 'Сауна', tzKey: 'sauna' },
-        { label: 'SPA / велнес', tzKey: 'spa' },
-        { label: 'Эксплуатируемая кровля', tzKey: 'rooftop_terrace' },
+        { labelKey: 'addPropertyAmenityPoolPrivate', tzKey: 'pool_private' },
+        { labelKey: 'addPropertyAmenityGarden', tzKey: 'garden' },
+        { labelKey: 'addPropertyAmenitySauna', tzKey: 'sauna' },
+        { labelKey: 'addPropertyAmenitySpa', tzKey: 'spa' },
+        { labelKey: 'addPropertyAmenityRooftopTerrace', tzKey: 'rooftop_terrace' },
       ],
     },
   ],
   commercial: [
     {
       id: 'commercial-parking',
-      title: 'Парковка и логистика',
+      titleKey: 'addPropertyAmenitiesGroupCommercialParking',
       items: [
-        { label: 'Наземная парковка', tzKey: 'surface_parking' },
-        { label: 'Подземный паркинг', tzKey: 'underground_parking' },
-        { label: 'Зарядка для электромобиля', tzKey: 'ev_charging' },
-        { label: 'Погрузочная зона', tzKey: 'loading_dock' },
+        { labelKey: 'addPropertyAmenitySurfaceParking', tzKey: 'surface_parking' },
+        { labelKey: 'addPropertyAmenityUndergroundParking', tzKey: 'underground_parking' },
+        { labelKey: 'addPropertyAmenityEvCharging', tzKey: 'ev_charging' },
+        { labelKey: 'addPropertyAmenityLoadingDock', tzKey: 'loading_dock' },
       ],
     },
     {
       id: 'commercial-tech',
-      title: 'Технические характеристики',
+      titleKey: 'addPropertyAmenitiesGroupCommercialTech',
       items: [
-        { label: 'Фальшпол', tzKey: 'raised_floor' },
-        { label: 'Система вентиляции и климата', tzKey: 'hvac_system' },
-        { label: 'Трехфазная электросеть', tzKey: 'three_phase_power' },
-        { label: 'Резервный генератор', tzKey: 'backup_generator' },
-        { label: 'Оптоволоконный интернет', tzKey: 'fibre_internet' },
+        { labelKey: 'addPropertyAmenityRaisedFloor', tzKey: 'raised_floor' },
+        { labelKey: 'addPropertyAmenityHvacSystem', tzKey: 'hvac_system' },
+        { labelKey: 'addPropertyAmenityThreePhasePower', tzKey: 'three_phase_power' },
+        { labelKey: 'addPropertyAmenityBackupGenerator', tzKey: 'backup_generator' },
+        { labelKey: 'addPropertyAmenityFibreInternet', tzKey: 'fibre_internet' },
       ],
     },
     {
       id: 'commercial-building',
-      title: 'Здание и безопасность',
+      titleKey: 'addPropertyAmenitiesGroupCommercialBuilding',
       items: [
-        { label: 'Круглосуточная охрана', tzKey: 'security_24_7' },
-        { label: 'Видеонаблюдение', tzKey: 'cctv' },
-        { label: 'Система контроля доступа', tzKey: 'access_control' },
-        { label: 'Лифт', tzKey: 'elevator' },
-        { label: 'Грузовой лифт', tzKey: 'freight_elevator' },
+        { labelKey: 'addPropertyAmenitySecurity247', tzKey: 'security_24_7' },
+        { labelKey: 'addPropertyAmenityCctv', tzKey: 'cctv' },
+        { labelKey: 'addPropertyAmenityAccessControl', tzKey: 'access_control' },
+        { labelKey: 'addPropertyAmenitiesElevator', tzKey: 'elevator' },
+        { labelKey: 'addPropertyAmenityFreightElevator', tzKey: 'freight_elevator' },
       ],
     },
   ],
   land: [
     {
       id: 'land-utilities',
-      title: 'Подключенные коммуникации',
+      titleKey: 'addPropertyAmenitiesGroupLandUtilities',
       items: [
-        { label: 'Электричество подключено', tzKey: 'electricity_connected' },
-        { label: 'Интернет подключен', tzKey: 'internet_connected' },
-        { label: 'Водопровод подключен', tzKey: 'water_connected' },
-        { label: 'Газ подключен', tzKey: 'gas_connected' },
-        { label: 'Канализация подключена', tzKey: 'sewage_connected' },
+        { labelKey: 'addPropertyAmenityElectricityConnected', tzKey: 'electricity_connected' },
+        { labelKey: 'addPropertyAmenityInternetConnected', tzKey: 'internet_connected' },
+        { labelKey: 'addPropertyAmenityWaterConnected', tzKey: 'water_connected' },
+        { labelKey: 'addPropertyAmenityGasConnected', tzKey: 'gas_connected' },
+        { labelKey: 'addPropertyAmenitySewageConnected', tzKey: 'sewage_connected' },
       ],
     },
     {
       id: 'land-access',
-      title: 'Подъезд и рельеф',
+      titleKey: 'addPropertyAmenitiesGroupLandAccess',
       items: [
-        { label: 'Асфальтированный подъезд', tzKey: 'road_access_paved' },
-        { label: 'Грунтовая дорога', tzKey: 'road_access_dirt' },
-        { label: 'Выход к береговой линии', tzKey: 'sea_frontage' },
-        { label: 'Деревья на участке', tzKey: 'trees_on_plot' },
-        { label: 'Существующие постройки', tzKey: 'existing_structures' },
+        { labelKey: 'addPropertyAmenityRoadAccessPaved', tzKey: 'road_access_paved' },
+        { labelKey: 'addPropertyAmenityRoadAccessDirt', tzKey: 'road_access_dirt' },
+        { labelKey: 'addPropertyAmenitySeaFrontage', tzKey: 'sea_frontage' },
+        { labelKey: 'addPropertyAmenityTreesOnPlot', tzKey: 'trees_on_plot' },
+        { labelKey: 'addPropertyAmenityExistingStructures', tzKey: 'existing_structures' },
       ],
     },
   ],
   other: [
     {
       id: 'hotel-guest',
-      title: 'Инфраструктура для гостей',
+      titleKey: 'addPropertyAmenitiesGroupHotelGuest',
       items: [
-        { label: 'Открытый бассейн', tzKey: 'pool_outdoor' },
-        { label: 'Фитнес-центр', tzKey: 'gym' },
-        { label: 'Сауна', tzKey: 'sauna' },
-        { label: 'SPA / велнес', tzKey: 'spa_wellness' },
-        { label: 'Теннисный корт', tzKey: 'tennis_court' },
+        { labelKey: 'addPropertyAmenityPoolOutdoor', tzKey: 'pool_outdoor' },
+        { labelKey: 'addPropertyAmenityGym', tzKey: 'gym' },
+        { labelKey: 'addPropertyAmenitySauna', tzKey: 'sauna' },
+        { labelKey: 'addPropertyAmenitySpa', tzKey: 'spa_wellness' },
+        { labelKey: 'addPropertyAmenityTennisCourt', tzKey: 'tennis_court' },
       ],
     },
     {
       id: 'hotel-fb',
-      title: 'Ресторанная инфраструктура',
+      titleKey: 'addPropertyAmenitiesGroupHotelFood',
       items: [
-        { label: 'Ресторан', tzKey: 'restaurant' },
-        { label: 'Бар / лаундж', tzKey: 'bar_lounge' },
+        { labelKey: 'addPropertyAmenityRestaurant', tzKey: 'restaurant' },
+        { labelKey: 'addPropertyAmenityBarLounge', tzKey: 'bar_lounge' },
       ],
     },
     {
       id: 'hotel-transport',
-      title: 'Парковка и транспорт',
+      titleKey: 'addPropertyAmenitiesGroupHotelParking',
       items: [
-        { label: 'Парковка на территории', tzKey: 'parking_onsite' },
-        { label: 'Подземный паркинг', tzKey: 'underground_parking' },
-        { label: 'Зарядка для электромобиля', tzKey: 'ev_charging' },
-        { label: 'Вертолетная площадка', tzKey: 'helipad' },
+        { labelKey: 'addPropertyAmenityParkingOnsite', tzKey: 'parking_onsite' },
+        { labelKey: 'addPropertyAmenityUndergroundParking', tzKey: 'underground_parking' },
+        { labelKey: 'addPropertyAmenityEvCharging', tzKey: 'ev_charging' },
+        { labelKey: 'addPropertyAmenityHelipad', tzKey: 'helipad' },
       ],
     },
     {
       id: 'hotel-tech',
-      title: 'Технологии и энергоэффективность',
+      titleKey: 'addPropertyAmenitiesGroupHotelTech',
       items: [
-        { label: 'Система управления зданием (BMS)', tzKey: 'smart_building_bms' },
-        { label: 'Солнечные панели', tzKey: 'solar_panels' },
-        { label: 'Класс энергоэффективности', tzKey: 'energy_certificate' },
-        { label: 'Резервный генератор', tzKey: 'backup_generator' },
+        { labelKey: 'addPropertyAmenitySmartBuildingBms', tzKey: 'smart_building_bms' },
+        { labelKey: 'addPropertyAmenitySolarPanels', tzKey: 'solar_panels' },
+        { labelKey: 'addPropertyAmenityEnergyCertificate', tzKey: 'energy_certificate' },
+        { labelKey: 'addPropertyAmenityBackupGenerator', tzKey: 'backup_generator' },
       ],
     },
   ],
@@ -190,4 +190,24 @@ export function getAmenityTzKeysForProfile(typeProfile) {
   return getAmenityGroupsForProfile(typeProfile).flatMap((group) =>
     group.items.map((item) => item.tzKey)
   )
+}
+
+/** Localized group title */
+export function getAmenityGroupTitle(t, group) {
+  if (!group) return ''
+  if (group.titleKey && typeof t === 'function') {
+    const translated = t(group.titleKey)
+    if (translated && translated !== group.titleKey) return translated
+  }
+  return group.title || group.titleKey || ''
+}
+
+/** Localized amenity item label */
+export function getAmenityItemLabel(t, item) {
+  if (!item) return ''
+  if (item.labelKey && typeof t === 'function') {
+    const translated = t(item.labelKey)
+    if (translated && translated !== item.labelKey) return translated
+  }
+  return item.label || item.labelKey || ''
 }

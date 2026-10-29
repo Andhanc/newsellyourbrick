@@ -1,4 +1,5 @@
 import React, { useMemo, useId } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Area,
   AreaChart,
@@ -11,6 +12,7 @@ import {
   YAxis,
 } from 'recharts'
 import './property-bid-analytics-chart.css'
+import { getUiIntlLocale } from '../../utils/uiIntlLocale'
 
 export type BidChartPoint = {
   time: string
@@ -61,7 +63,7 @@ function ChartTooltipContent({
   const when = label ? formatTooltipTime(label) : ''
   const priceStr =
     typeof p === 'number' && !Number.isNaN(p)
-      ? `${currencySymbol}${p.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      ? `${currencySymbol}${p.toLocaleString(getUiIntlLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       : '—'
   return (
     <div className="pba-tooltip">
@@ -78,12 +80,13 @@ function LineAreaTabs({
   value: ChartType
   onChange: (v: ChartType) => void
 }) {
+  const { t } = useTranslation()
   const opts: { value: ChartType; label: string }[] = [
-    { value: 'line', label: 'Линия' },
-    { value: 'area', label: 'Область' },
+    { value: 'line', label: t('bidChart_line') },
+    { value: 'area', label: t('bidChart_area') },
   ]
   return (
-    <div className="pba-tabs" role="tablist" aria-label="Тип графика">
+    <div className="pba-tabs" role="tablist" aria-label={t('bidChart_typeAria')}>
       {opts.map((opt) => {
         const active = value === opt.value
         return (
@@ -126,6 +129,7 @@ export function PropertyBidAnalyticsChart({
   data: BidChartPoint[]
   currencySymbol?: string
 }) {
+  const { t } = useTranslation()
   const uid = useId().replace(/:/g, '')
   const gradId = `bidFill-${uid}`
 
@@ -144,7 +148,7 @@ export function PropertyBidAnalyticsChart({
   const n = data.length
 
   const fmtPrice = (v: number) =>
-    `${currencySymbol}${Number(v).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    `${currencySymbol}${Number(v).toLocaleString(getUiIntlLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
   return (
     <div className="pba-card">
@@ -152,17 +156,17 @@ export function PropertyBidAnalyticsChart({
       <div className="pba-card__body">
         <div className="pba-toolbar">
           <div className="pba-toolbar__left">
-            <span className="pba-eyebrow">Ставки · время</span>
+            <span className="pba-eyebrow">{t('bidChart_bidsTime')}</span>
           </div>
           <LineAreaTabs value={chartType} onChange={setChartType} />
         </div>
 
         <div className="pba-kpi">
-          <span className="pba-kpi__label">Актуальная сумма</span>
+          <span className="pba-kpi__label">{t('bidChart_currentAmount')}</span>
           <div className="pba-kpi__row">
             <span className="pba-kpi__value">
               {currencySymbol}
-              {latestPrice.toLocaleString('ru-RU', {
+              {latestPrice.toLocaleString(getUiIntlLocale(), {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
@@ -170,11 +174,11 @@ export function PropertyBidAnalyticsChart({
             <span className={`pba-kpi__chip ${isPriceUp ? 'pba-kpi__chip--up' : 'pba-kpi__chip--down'}`}>
               <span aria-hidden>{isPriceUp ? '▲' : '▼'}</span>
               {currencySymbol}
-              {Math.abs(priceChange).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
+              {Math.abs(priceChange).toLocaleString(getUiIntlLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
               <span className="opacity-80">({percentChange.toFixed(2)}%)</span>
             </span>
           </div>
-          <p className="pba-kpi__hint">Относительно предыдущей точки на графике (время × сумма ставки).</p>
+          <p className="pba-kpi__hint">{t('bidChart_relativeHint')}</p>
         </div>
 
         <div className="pba-chart-well">
@@ -271,7 +275,7 @@ export function PropertyBidAnalyticsChart({
 
         <footer className="pba-foot">
           <span className="pba-foot__dot" aria-hidden />
-          <p className="pba-foot__text">Данные · история ставок · Recharts</p>
+          <p className="pba-foot__text">{t('bidChart_dataCaption')}</p>
         </footer>
       </div>
     </div>

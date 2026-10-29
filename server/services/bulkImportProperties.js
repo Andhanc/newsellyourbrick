@@ -364,12 +364,12 @@ export function parseBulkImportFile(fileBuffer, originalName = '') {
       sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], { header: 1, defval: '' });
     }
   } catch (e) {
-    errors.push({ row: 0, message: 'Не удалось прочитать файл: ' + (e.message || 'неизвестная ошибка') });
+    errors.push({ row: 0, message: 'Could not read the file: ' + (e.message || 'unknown error') });
     return { rows: [], errors };
   }
 
   if (!sheetData || sheetData.length < 2) {
-    errors.push({ row: 0, message: 'В файле нет данных (нужна строка заголовков и хотя бы одна строка данных)' });
+    errors.push({ row: 0, message: 'File has no data (need a header row and at least one data row)' });
     return { rows: [], errors };
   }
 
@@ -391,7 +391,7 @@ export function parseBulkImportFile(fileBuffer, originalName = '') {
 
     const propertyType = (data.property_type || '').toString().toLowerCase().trim();
     if (!propertyType) {
-      errors.push({ row: rowIndex, message: 'Не указан тип объекта (тип_объекта)' });
+      errors.push({ row: rowIndex, message: 'Property type is missing (property_type / тип_объекта)' });
       continue;
     }
     const titleLower = (data.title || '').toString().toLowerCase().trim();
@@ -407,12 +407,12 @@ export function parseBulkImportFile(fileBuffer, originalName = '') {
     }
 
     if (!VALID_TYPES.includes(normalizedType)) {
-      errors.push({ row: rowIndex, message: `Недопустимый тип объекта: ${propertyType}. Допустимы: квартира/дом/вилла/коммерческая или apartment/house/villa/commercial` });
+      errors.push({ row: rowIndex, message: `Invalid property type: ${propertyType}. Allowed: apartment/house/villa/commercial (or Russian labels: квартира/дом/вилла/коммерческая)` });
       continue;
     }
 
     if (!data.title || !String(data.title).trim()) {
-      errors.push({ row: rowIndex, message: 'Не указано название объекта' });
+      errors.push({ row: rowIndex, message: 'Property title is missing' });
       continue;
     }
 

@@ -7,7 +7,7 @@ export {
   CO_INVESTMENT_LEGACY_PATH,
 } from './sectionRoutes'
 
-function isShareListing(property) {
+export function isShareListing(property) {
   if (!property) return false
   return (
     property.pricePerShare != null ||
@@ -16,7 +16,8 @@ function isShareListing(property) {
     property.is_share === true ||
     property.sale_type === 'share' ||
     property.is_shared_ownership === 1 ||
-    property.is_shared_ownership === true
+    property.is_shared_ownership === true ||
+    property.is_shared_ownership === '1'
   )
 }
 

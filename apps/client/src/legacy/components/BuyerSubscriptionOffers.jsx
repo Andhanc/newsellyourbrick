@@ -6,7 +6,11 @@ import { PricingInteraction } from './ui/pricing-interaction'
 import { SubscriptionScreen } from './ui/subscription-screen'
 import { getUserData } from '../services/authService'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
-import { startProSubscriptionCheckout, startVipSubscriptionCheckout } from '../utils/subscriptionCheckout'
+import {
+  startProSubscriptionCheckout,
+  startVipSubscriptionCheckout,
+  translateBillingError,
+} from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
 import './BuyerSubscriptionOffers.css'
 
@@ -96,7 +100,7 @@ export default function BuyerSubscriptionOffers({ currentPlanVisual = 'starter',
           ? t('privateClubVipAlready')
           : result.error === 'already_subscribed_pro'
             ? t('buyerCabinet_toastDuplicateSubscription')
-            : result.error || t('buyerCabinet_checkoutError')
+            : translateBillingError(result.error, t, 'buyerCabinet_checkoutError')
         showNotification(message, 'error')
       }
     } catch (error) {

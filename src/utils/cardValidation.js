@@ -86,10 +86,18 @@ export const maskCardNumber = (cardNumber) => {
   return `**** **** **** ${lastFour}`;
 };
 
+/** Stable i18n keys returned by validateCardExpiryRealtime. */
+export const CARD_EXPIRY_ERROR_KEYS = Object.freeze({
+  monthRange: 'cardExpiry_monthRange',
+  yearRequired: 'cardExpiry_yearRequired',
+  expired: 'cardExpiry_expired',
+})
+
 /**
- * Проверка срока MM/YY по мере ввода (без ожидания сабмита).
- * @param {string} expiry — значение поля, например "12/25"
- * @returns {string | null} — текст ошибки или null если ок / ещё неполный ввод
+ * Realtime MM/YY expiry check while typing (before submit).
+ * Returns an i18n key (not a localized string) so callers can `t(key)`.
+ * @param {string} expiry — field value, e.g. "12/25"
+ * @returns {string | null} — i18n key or null if ok / incomplete
  */
 export const validateCardExpiryRealtime = (expiry) => {
   const raw = (expiry || '').replace(/\D/g, '');
@@ -98,7 +106,7 @@ export const validateCardExpiryRealtime = (expiry) => {
   if (raw.length >= 2) {
     const mm = parseInt(raw.slice(0, 2), 10);
     if (Number.isNaN(mm) || mm < 1 || mm > 12) {
-      return 'Месяц от 01 до 12';
+      return CARD_EXPIRY_ERROR_KEYS.monthRange;
     }
   }
 
@@ -106,18 +114,17 @@ export const validateCardExpiryRealtime = (expiry) => {
     const mm = parseInt(raw.slice(0, 2), 10);
     const yy = parseInt(raw.slice(2, 4), 10);
     if (Number.isNaN(mm) || mm < 1 || mm > 12) {
-      return 'Месяц от 01 до 12';
+      return CARD_EXPIRY_ERROR_KEYS.monthRange;
     }
-    if (Number.isNaN(yy)) return 'Укажите год (YY)';
+    if (Number.isNaN(yy)) return CARD_EXPIRY_ERROR_KEYS.yearRequired;
 
     const now = new Date();
     const currentYear = now.getFullYear() % 100;
     const currentMonth = now.getMonth() + 1;
     if (yy < currentYear || (yy === currentYear && mm < currentMonth)) {
-      return 'Срок действия карты истёк';
+      return CARD_EXPIRY_ERROR_KEYS.expired;
     }
   }
 
   return null;
 };
-

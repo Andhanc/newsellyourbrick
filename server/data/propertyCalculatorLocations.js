@@ -1,143 +1,143 @@
 /**
- * Города и районы для калькулятора цены (slug'и для Fotocasa / Idealista / Pisos).
- * Район: keywords — фильтрация объявлений по тексту адреса, если портал отдал весь город.
+ * Cities and districts for the price calculator (Fotocasa / Idealista / Pisos slugs).
+ * District keywords filter listings by address text when a portal returns the whole city.
  */
 
 export const SPAIN_CITIES = [
-  { value: 'barcelona', label: 'Барселона', region: 'Каталония', fotocasa: 'barcelona', idealista: 'barcelona', pisos: 'barcelona' },
-  { value: 'madrid', label: 'Мадрид', region: 'Мадрид и регион', fotocasa: 'madrid', idealista: 'madrid', pisos: 'madrid' },
-  { value: 'valencia', label: 'Валенсия', region: 'Валенсийское сообщество', fotocasa: 'valencia', idealista: 'valencia', pisos: 'valencia' },
-  { value: 'sevilla', label: 'Севилья', region: 'Андалусия', fotocasa: 'sevilla', idealista: 'sevilla', pisos: 'sevilla' },
-  { value: 'malaga', label: 'Малага', region: 'Андалусия', fotocasa: 'malaga', idealista: 'malaga', pisos: 'malaga' },
-  { value: 'marbella', label: 'Марбелья', region: 'Андалусия', fotocasa: 'marbella', idealista: 'marbella', pisos: 'marbella' },
-  { value: 'bilbao', label: 'Бильбао', region: 'Страна Басков', fotocasa: 'bilbao', idealista: 'bilbao', pisos: 'bilbao' },
-  { value: 'alicante', label: 'Аликанте', region: 'Валенсийское сообщество', fotocasa: 'alicante', idealista: 'alicante', pisos: 'alicante' },
-  { value: 'granada', label: 'Гранада', region: 'Андалусия', fotocasa: 'granada', idealista: 'granada', pisos: 'granada' },
-  { value: 'murcia', label: 'Мурсия', region: 'Мурсия', fotocasa: 'murcia', idealista: 'murcia', pisos: 'murcia' },
-  { value: 'castellon', label: 'Кастельон', region: 'Валенсийское сообщество', fotocasa: 'castellon', idealista: 'castellon', pisos: 'castellon-de-la-plana' },
-  { value: 'torrevieja', label: 'Торревьеха', region: 'Валенсийское сообщество', fotocasa: 'torrevieja', idealista: 'torrevieja', pisos: 'torrevieja' },
-  { value: 'benidorm', label: 'Бенидорм', region: 'Валенсийское сообщество', fotocasa: 'benidorm', idealista: 'benidorm', pisos: 'benidorm' },
-  { value: 'denia', label: 'Дения', region: 'Валенсийское сообщество', fotocasa: 'denia', idealista: 'denia', pisos: 'denia' },
-  { value: 'javea', label: 'Хавеа', region: 'Валенсийское сообщество', fotocasa: 'javea', idealista: 'javea', pisos: 'javea' },
-  { value: 'calpe', label: 'Калпе', region: 'Валенсийское сообщество', fotocasa: 'calpe', idealista: 'calpe', pisos: 'calpe' },
-  { value: 'altea', label: 'Альтеа', region: 'Валенсийское сообщество', fotocasa: 'altea', idealista: 'altea', pisos: 'altea' },
-  { value: 'santa-pola', label: 'Санта-Пола', region: 'Валенсийское сообщество', fotocasa: 'santa-pola', idealista: 'santa-pola', pisos: 'santa-pola' },
-  { value: 'villajoyosa', label: 'Виллахойоса', region: 'Валенсийское сообщество', fotocasa: 'villajoyosa', idealista: 'villajoyosa', pisos: 'villajoyosa' },
-  { value: 'gandia', label: 'Гандия', region: 'Валенсийское сообщество', fotocasa: 'gandia', idealista: 'gandia', pisos: 'gandia' },
-  { value: 'oliva', label: 'Олива', region: 'Валенсийское сообщество', fotocasa: 'oliva', idealista: 'oliva', pisos: 'oliva' },
-  { value: 'piles', label: 'Пилес', region: 'Валенсийское сообщество', fotocasa: 'piles', idealista: 'piles', pisos: 'piles' },
-  { value: 'zaragoza', label: 'Сарагоса', region: 'Арагон', fotocasa: 'zaragoza', idealista: 'zaragoza', pisos: 'zaragoza' },
-  { value: 'palma-de-mallorca', label: 'Пальма (Мальорка)', region: 'Балеарские острова', fotocasa: 'palma-de-mallorca', idealista: 'palma-de-mallorca', pisos: 'palma-de-mallorca' },
-  { value: 'ibiza', label: 'Ибица', region: 'Балеарские острова', fotocasa: 'eivissa', idealista: 'eivissa', pisos: 'eivissa' },
-  { value: 'cordoba', label: 'Кордова', region: 'Андалусия', fotocasa: 'cordoba', idealista: 'cordoba', pisos: 'cordoba' },
-  { value: 'vigo', label: 'Виго', region: 'Галисия', fotocasa: 'vigo', idealista: 'vigo', pisos: 'vigo' },
-  { value: 'gijon', label: 'Хихон', region: 'Астурия', fotocasa: 'gijon', idealista: 'gijon', pisos: 'gijon' },
-  { value: 'a-coruna', label: 'Ла-Корунья', region: 'Галисия', fotocasa: 'a-coruna', idealista: 'a-coruna', pisos: 'a-coruna' },
-  { value: 'vitoria-gasteiz', label: 'Витория-Гастейс', region: 'Страна Басков', fotocasa: 'vitoria', idealista: 'vitoria-gasteiz', pisos: 'vitoria' },
-  { value: 'oviedo', label: 'Овьедо', region: 'Астурия', fotocasa: 'oviedo', idealista: 'oviedo', pisos: 'oviedo' },
-  { value: 'santander', label: 'Сантандер', region: 'Кантабрия', fotocasa: 'santander', idealista: 'santander', pisos: 'santander' },
-  { value: 'pamplona', label: 'Памплона', region: 'Наварра', fotocasa: 'pamplona', idealista: 'pamplona', pisos: 'pamplona' },
-  { value: 'logrono', label: 'Логроньо', region: 'Риоха', fotocasa: 'logrono', idealista: 'logrono', pisos: 'logrono' },
-  { value: 'badajoz', label: 'Бадахос', region: 'Эстремадура', fotocasa: 'badajoz', idealista: 'badajoz', pisos: 'badajoz' },
-  { value: 'cartagena', label: 'Картахена', region: 'Мурсия', fotocasa: 'cartagena', idealista: 'cartagena', pisos: 'cartagena' },
-  { value: 'jerez-de-la-frontera', label: 'Херес-де-ла-Фронтера', region: 'Андалусия', fotocasa: 'jerez-de-la-frontera', idealista: 'jerez-de-la-frontera', pisos: 'jerez-de-la-frontera' },
-  { value: 'cadiz', label: 'Кадис', region: 'Андалусия', fotocasa: 'cadiz', idealista: 'cadiz', pisos: 'cadiz' },
-  { value: 'tarragona', label: 'Таррагона', region: 'Каталония', fotocasa: 'tarragona', idealista: 'tarragona', pisos: 'tarragona' },
-  { value: 'lleida', label: 'Льейда', region: 'Каталония', fotocasa: 'lleida', idealista: 'lleida', pisos: 'lleida' },
-  { value: 'salamanca', label: 'Саламанка', region: 'Кастилия и Леон', fotocasa: 'salamanca', idealista: 'salamanca', pisos: 'salamanca' },
-  { value: 'toledo', label: 'Толедо', region: 'Кастилия — Ла-Манча', fotocasa: 'toledo', idealista: 'toledo', pisos: 'toledo' },
-  { value: 'almeria', label: 'Альмерия', region: 'Андалусия', fotocasa: 'almeria', idealista: 'almeria', pisos: 'almeria' },
-  { value: 'huelva', label: 'Уэльва', region: 'Андалусия', fotocasa: 'huelva', idealista: 'huelva', pisos: 'huelva' },
-  { value: 'sabadell', label: 'Сабадель', region: 'Каталония', fotocasa: 'sabadell', idealista: 'barcelona', pisos: 'sabadell' },
-  { value: 'mostoles', label: 'Мостолес', region: 'Мадрид и регион', fotocasa: 'mostoles', idealista: 'madrid', pisos: 'mostoles' },
-  { value: 'alcorcon', label: 'Алькоркон', region: 'Мадрид и регион', fotocasa: 'alcorcon', idealista: 'madrid', pisos: 'alcorcon' },
-  { value: 'fuenlabrada', label: 'Фуэнлабрада', region: 'Мадрид и регион', fotocasa: 'fuenlabrada', idealista: 'madrid', pisos: 'fuenlabrada' },
-  { value: 'getafe', label: 'Хетафе', region: 'Мадрид и регион', fotocasa: 'getafe', idealista: 'madrid', pisos: 'getafe' },
-  { value: 'leganes', label: 'Леганес', region: 'Мадрид и регион', fotocasa: 'leganes', idealista: 'madrid', pisos: 'leganes' },
-  // Канарские острова — основные рынки вторички (муниципалитеты = slug’и порталов)
+  { value: 'barcelona', label: 'Barcelona', region: 'Catalonia', fotocasa: 'barcelona', idealista: 'barcelona', pisos: 'barcelona' },
+  { value: 'madrid', label: 'Madrid', region: 'Madrid region', fotocasa: 'madrid', idealista: 'madrid', pisos: 'madrid' },
+  { value: 'valencia', label: 'Valencia', region: 'Valencian Community', fotocasa: 'valencia', idealista: 'valencia', pisos: 'valencia' },
+  { value: 'sevilla', label: 'Seville', region: 'Andalusia', fotocasa: 'sevilla', idealista: 'sevilla', pisos: 'sevilla' },
+  { value: 'malaga', label: 'Malaga', region: 'Andalusia', fotocasa: 'malaga', idealista: 'malaga', pisos: 'malaga' },
+  { value: 'marbella', label: 'Marbella', region: 'Andalusia', fotocasa: 'marbella', idealista: 'marbella', pisos: 'marbella' },
+  { value: 'bilbao', label: 'Bilbao', region: 'Basque Country', fotocasa: 'bilbao', idealista: 'bilbao', pisos: 'bilbao' },
+  { value: 'alicante', label: 'Alicante', region: 'Valencian Community', fotocasa: 'alicante', idealista: 'alicante', pisos: 'alicante' },
+  { value: 'granada', label: 'Granada', region: 'Andalusia', fotocasa: 'granada', idealista: 'granada', pisos: 'granada' },
+  { value: 'murcia', label: 'Murcia', region: 'Murcia', fotocasa: 'murcia', idealista: 'murcia', pisos: 'murcia' },
+  { value: 'castellon', label: 'Castellon', region: 'Valencian Community', fotocasa: 'castellon', idealista: 'castellon', pisos: 'castellon-de-la-plana' },
+  { value: 'torrevieja', label: 'Torrevieja', region: 'Valencian Community', fotocasa: 'torrevieja', idealista: 'torrevieja', pisos: 'torrevieja' },
+  { value: 'benidorm', label: 'Benidorm', region: 'Valencian Community', fotocasa: 'benidorm', idealista: 'benidorm', pisos: 'benidorm' },
+  { value: 'denia', label: 'Denia', region: 'Valencian Community', fotocasa: 'denia', idealista: 'denia', pisos: 'denia' },
+  { value: 'javea', label: 'Javea', region: 'Valencian Community', fotocasa: 'javea', idealista: 'javea', pisos: 'javea' },
+  { value: 'calpe', label: 'Calpe', region: 'Valencian Community', fotocasa: 'calpe', idealista: 'calpe', pisos: 'calpe' },
+  { value: 'altea', label: 'Altea', region: 'Valencian Community', fotocasa: 'altea', idealista: 'altea', pisos: 'altea' },
+  { value: 'santa-pola', label: 'Santa Pola', region: 'Valencian Community', fotocasa: 'santa-pola', idealista: 'santa-pola', pisos: 'santa-pola' },
+  { value: 'villajoyosa', label: 'Villajoyosa', region: 'Valencian Community', fotocasa: 'villajoyosa', idealista: 'villajoyosa', pisos: 'villajoyosa' },
+  { value: 'gandia', label: 'Gandia', region: 'Valencian Community', fotocasa: 'gandia', idealista: 'gandia', pisos: 'gandia' },
+  { value: 'oliva', label: 'Oliva', region: 'Valencian Community', fotocasa: 'oliva', idealista: 'oliva', pisos: 'oliva' },
+  { value: 'piles', label: 'Piles', region: 'Valencian Community', fotocasa: 'piles', idealista: 'piles', pisos: 'piles' },
+  { value: 'zaragoza', label: 'Zaragoza', region: 'Aragon', fotocasa: 'zaragoza', idealista: 'zaragoza', pisos: 'zaragoza' },
+  { value: 'palma-de-mallorca', label: 'Palma (Mallorca)', region: 'Balearic Islands', fotocasa: 'palma-de-mallorca', idealista: 'palma-de-mallorca', pisos: 'palma-de-mallorca' },
+  { value: 'ibiza', label: 'Ibiza', region: 'Balearic Islands', fotocasa: 'eivissa', idealista: 'eivissa', pisos: 'eivissa' },
+  { value: 'cordoba', label: 'Cordoba', region: 'Andalusia', fotocasa: 'cordoba', idealista: 'cordoba', pisos: 'cordoba' },
+  { value: 'vigo', label: 'Vigo', region: 'Galicia', fotocasa: 'vigo', idealista: 'vigo', pisos: 'vigo' },
+  { value: 'gijon', label: 'Gijon', region: 'Asturias', fotocasa: 'gijon', idealista: 'gijon', pisos: 'gijon' },
+  { value: 'a-coruna', label: 'A Coruna', region: 'Galicia', fotocasa: 'a-coruna', idealista: 'a-coruna', pisos: 'a-coruna' },
+  { value: 'vitoria-gasteiz', label: 'Vitoria-Gasteiz', region: 'Basque Country', fotocasa: 'vitoria', idealista: 'vitoria-gasteiz', pisos: 'vitoria' },
+  { value: 'oviedo', label: 'Oviedo', region: 'Asturias', fotocasa: 'oviedo', idealista: 'oviedo', pisos: 'oviedo' },
+  { value: 'santander', label: 'Santander', region: 'Cantabria', fotocasa: 'santander', idealista: 'santander', pisos: 'santander' },
+  { value: 'pamplona', label: 'Pamplona', region: 'Navarre', fotocasa: 'pamplona', idealista: 'pamplona', pisos: 'pamplona' },
+  { value: 'logrono', label: 'Logrono', region: 'La Rioja', fotocasa: 'logrono', idealista: 'logrono', pisos: 'logrono' },
+  { value: 'badajoz', label: 'Badajoz', region: 'Extremadura', fotocasa: 'badajoz', idealista: 'badajoz', pisos: 'badajoz' },
+  { value: 'cartagena', label: 'Cartagena', region: 'Murcia', fotocasa: 'cartagena', idealista: 'cartagena', pisos: 'cartagena' },
+  { value: 'jerez-de-la-frontera', label: 'Jerez de la Frontera', region: 'Andalusia', fotocasa: 'jerez-de-la-frontera', idealista: 'jerez-de-la-frontera', pisos: 'jerez-de-la-frontera' },
+  { value: 'cadiz', label: 'Cadiz', region: 'Andalusia', fotocasa: 'cadiz', idealista: 'cadiz', pisos: 'cadiz' },
+  { value: 'tarragona', label: 'Tarragona', region: 'Catalonia', fotocasa: 'tarragona', idealista: 'tarragona', pisos: 'tarragona' },
+  { value: 'lleida', label: 'Lleida', region: 'Catalonia', fotocasa: 'lleida', idealista: 'lleida', pisos: 'lleida' },
+  { value: 'salamanca', label: 'Salamanca', region: 'Castile and León', fotocasa: 'salamanca', idealista: 'salamanca', pisos: 'salamanca' },
+  { value: 'toledo', label: 'Toledo', region: 'Castile-La Mancha', fotocasa: 'toledo', idealista: 'toledo', pisos: 'toledo' },
+  { value: 'almeria', label: 'Almeria', region: 'Andalusia', fotocasa: 'almeria', idealista: 'almeria', pisos: 'almeria' },
+  { value: 'huelva', label: 'Huelva', region: 'Andalusia', fotocasa: 'huelva', idealista: 'huelva', pisos: 'huelva' },
+  { value: 'sabadell', label: 'Sabadell', region: 'Catalonia', fotocasa: 'sabadell', idealista: 'barcelona', pisos: 'sabadell' },
+  { value: 'mostoles', label: 'Mostoles', region: 'Madrid region', fotocasa: 'mostoles', idealista: 'madrid', pisos: 'mostoles' },
+  { value: 'alcorcon', label: 'Alcorcon', region: 'Madrid region', fotocasa: 'alcorcon', idealista: 'madrid', pisos: 'alcorcon' },
+  { value: 'fuenlabrada', label: 'Fuenlabrada', region: 'Madrid region', fotocasa: 'fuenlabrada', idealista: 'madrid', pisos: 'fuenlabrada' },
+  { value: 'getafe', label: 'Getafe', region: 'Madrid region', fotocasa: 'getafe', idealista: 'madrid', pisos: 'getafe' },
+  { value: 'leganes', label: 'Leganes', region: 'Madrid region', fotocasa: 'leganes', idealista: 'madrid', pisos: 'leganes' },
+  // Canary Islands — основные рынки вторички (муниципалитеты = slug’и порталов)
   {
     value: 'adeje',
-    label: 'Адехе (Costa Adeje)',
-    region: 'Канарские острова',
+    label: 'Adeje (Costa Adeje)',
+    region: 'Canary Islands',
     fotocasa: 'adeje',
     idealista: 'adeje-santa-cruz-de-tenerife',
     pisos: 'adeje'
   },
   {
     value: 'arona',
-    label: 'Арона (Playa de las Américas, Los Cristianos)',
-    region: 'Канарские острова',
+    label: 'Arona (Playa de las Americas, Los Cristianos)',
+    region: 'Canary Islands',
     fotocasa: 'arona',
     idealista: 'arona-santa-cruz-de-tenerife',
     pisos: 'arona'
   },
   {
     value: 'santa-cruz-de-tenerife',
-    label: 'Санта-Крус-де-Тенерифе',
-    region: 'Канарские острова',
+    label: 'Santa Cruz de Tenerife',
+    region: 'Canary Islands',
     fotocasa: 'santa-cruz-de-tenerife',
     idealista: 'santa-cruz-de-tenerife-santa-cruz-de-tenerife',
     pisos: 'santa-cruz-de-tenerife'
   },
   {
     value: 'la-laguna',
-    label: 'Ла-Лагуна (San Cristóbal de La Laguna)',
-    region: 'Канарские острова',
+    label: 'La Laguna (San Cristobal de La Laguna)',
+    region: 'Canary Islands',
     fotocasa: 'la-laguna',
     idealista: 'la-laguna-santa-cruz-de-tenerife',
     pisos: 'la-laguna'
   },
   {
     value: 'puerto-de-la-cruz',
-    label: 'Пуэрто-де-ла-Крус',
-    region: 'Канарские острова',
+    label: 'Puerto de la Cruz',
+    region: 'Canary Islands',
     fotocasa: 'puerto-de-la-cruz',
     idealista: 'puerto-de-la-cruz-santa-cruz-de-tenerife',
     pisos: 'puerto-de-la-cruz-de-tenerife'
   },
   {
     value: 'las-palmas-de-gran-canaria',
-    label: 'Лас-Пальмас-де-Гран-Канария',
-    region: 'Канарские острова',
+    label: 'Las Palmas de Gran Canaria',
+    region: 'Canary Islands',
     fotocasa: 'las-palmas-de-gran-canaria',
     idealista: 'las-palmas-de-gran-canaria-las-palmas',
     pisos: 'las_palmas_de_gran_canaria'
   },
   {
     value: 'san-bartolome-de-tirajana',
-    label: 'Сан-Бартоломе-де-Тирахана (Maspalomas, Playa del Inglés)',
-    region: 'Канарские острова',
+    label: 'San Bartolome de Tirajana (Maspalomas, Playa del Ingles)',
+    region: 'Canary Islands',
     fotocasa: 'san-bartolome-de-tirajana',
     idealista: 'san-bartolome-de-tirajana-las-palmas',
     pisos: 'san_bartolome_de_tirajana'
   },
   {
     value: 'telde',
-    label: 'Тельде',
-    region: 'Канарские острова',
+    label: 'Telde',
+    region: 'Canary Islands',
     fotocasa: 'telde',
     idealista: 'telde-las-palmas',
     pisos: 'telde'
   },
   {
     value: 'arrecife',
-    label: 'Арресифе (Лансароте)',
-    region: 'Канарские острова',
+    label: 'Arrecife (Lanzarote)',
+    region: 'Canary Islands',
     fotocasa: 'arrecife',
     idealista: 'arrecife-las-palmas',
     pisos: 'arrecife'
   },
   {
     value: 'corralejo',
-    label: 'Корральехо (Фуэртевентура)',
-    region: 'Канарские острова',
+    label: 'Corralejo (Fuerteventura)',
+    region: 'Canary Islands',
     fotocasa: 'corralejo',
     idealista: 'corralejo-las-palmas',
     pisos: 'corralejo'
   }
 ]
 
-/** Ключевые слова для фильтрации по городу (адрес объявления) */
+/** Keywords for city filtering (listing address) */
 export const CITY_KEYWORDS = {
   barcelona: ['barcelona', 'барселона', 'hospitalet', 'l\'hospitalet'],
   madrid: ['madrid', 'мадрид', 'fuenlabrada', 'getafe', 'leganes', 'mostoles', 'alcorcon', 'pozuelo'],
@@ -243,59 +243,59 @@ export const CITY_KEYWORDS = {
 }
 
 /**
- * Районы: value — id; fotocasaZone — сегмент URL Fotocasa; keywords — для отбора по адресу с любых порталов
+ * Districts: value — id; fotocasaZone — Fotocasa URL segment; keywords — address matching across portals
  */
 export const DISTRICTS_BY_CITY = {
   barcelona: [
-    { value: 'all', label: 'Весь город', fotocasaZone: 'todas-las-zonas', keywords: [] },
-    { value: 'eixample', label: 'Эшампле (Eixample)', fotocasaZone: 'eixample', keywords: ['eixample', 'eixample esquerra', 'eixample dreta'] },
-    { value: 'gracia', label: 'Грасия (Gràcia)', fotocasaZone: 'gracia', keywords: ['gràcia', 'gracia'] },
-    { value: 'les-corts', label: 'Лес Кортс', fotocasaZone: 'les-corts', keywords: ['les corts', 'corts'] },
-    { value: 'sarria', label: 'Саррия — Сан-Жерваси', fotocasaZone: 'sarria-sant-gervasi', keywords: ['sarrià', 'sarria', 'sant gervasi'] },
-    { value: 'ciutat-vella', label: 'Старый город (Ciutat Vella)', fotocasaZone: 'ciutat-vella', keywords: ['ciutat vella', 'gòtic', 'gotic', 'born', 'raval'] },
-    { value: 'sant-marti', label: 'Сант-Марти (22@)', fotocasaZone: 'sant-marti', keywords: ['sant martí', 'sant marti', 'poblenou', 'diagonal mar'] },
-    { value: 'horta-guinardo', label: 'Орта — Гинардо', fotocasaZone: 'horta-guinardo', keywords: ['horta', 'guinardó', 'guinardo'] }
+    { value: 'all', label: 'Entire city', fotocasaZone: 'todas-las-zonas', keywords: [] },
+    { value: 'eixample', label: 'Eixample', fotocasaZone: 'eixample', keywords: ['eixample', 'eixample esquerra', 'eixample dreta'] },
+    { value: 'gracia', label: 'Gracia', fotocasaZone: 'gracia', keywords: ['gràcia', 'gracia'] },
+    { value: 'les-corts', label: 'Les Corts', fotocasaZone: 'les-corts', keywords: ['les corts', 'corts'] },
+    { value: 'sarria', label: 'Sarria — Sant Gervasi', fotocasaZone: 'sarria-sant-gervasi', keywords: ['sarrià', 'sarria', 'sant gervasi'] },
+    { value: 'ciutat-vella', label: 'Old Town (Ciutat Vella)', fotocasaZone: 'ciutat-vella', keywords: ['ciutat vella', 'gòtic', 'gotic', 'born', 'raval'] },
+    { value: 'sant-marti', label: 'Sant Marti (22@)', fotocasaZone: 'sant-marti', keywords: ['sant martí', 'sant marti', 'poblenou', 'diagonal mar'] },
+    { value: 'horta-guinardo', label: 'Horta — Guinardo', fotocasaZone: 'horta-guinardo', keywords: ['horta', 'guinardó', 'guinardo'] }
   ],
   madrid: [
-    { value: 'all', label: 'Весь город', fotocasaZone: 'todas-las-zonas', keywords: [] },
-    { value: 'salamanca', label: 'Саламанка', fotocasaZone: 'salamanca', keywords: ['salamanca', 'salamanca district'] },
-    { value: 'centro', label: 'Центр (Sol, Palacio)', fotocasaZone: 'centro', keywords: ['centro', 'sol', 'palacio', 'malasaña', 'malasana', 'lavapiés', 'lavapies'] },
-    { value: 'chamartin', label: 'Чамартин', fotocasaZone: 'chamartin', keywords: ['chamartín', 'chamartin', 'tetuán', 'tetuan'] },
-    { value: 'retiro', label: 'Ретиро', fotocasaZone: 'retiro', keywords: ['retiro'] },
-    { value: 'chamberi', label: 'Чамбери', fotocasaZone: 'chamberi', keywords: ['chamberí', 'chamberi'] },
-    { value: 'moncloa', label: 'Монклоа — Аргуэльес', fotocasaZone: 'moncloa-aravaca', keywords: ['moncloa', 'argüelles', 'arguelles'] },
-    { value: 'tetuan', label: 'Тетуан', fotocasaZone: 'tetuan', keywords: ['tetuán', 'tetuan', 'cuatro caminos'] }
+    { value: 'all', label: 'Entire city', fotocasaZone: 'todas-las-zonas', keywords: [] },
+    { value: 'salamanca', label: 'Salamanca', fotocasaZone: 'salamanca', keywords: ['salamanca', 'salamanca district'] },
+    { value: 'centro', label: 'Centre (Sol, Palacio)', fotocasaZone: 'centro', keywords: ['centro', 'sol', 'palacio', 'malasaña', 'malasana', 'lavapiés', 'lavapies'] },
+    { value: 'chamartin', label: 'Chamartin', fotocasaZone: 'chamartin', keywords: ['chamartín', 'chamartin', 'tetuán', 'tetuan'] },
+    { value: 'retiro', label: 'Retiro', fotocasaZone: 'retiro', keywords: ['retiro'] },
+    { value: 'chamberi', label: 'Chamberi', fotocasaZone: 'chamberi', keywords: ['chamberí', 'chamberi'] },
+    { value: 'moncloa', label: 'Moncloa — Arguelles', fotocasaZone: 'moncloa-aravaca', keywords: ['moncloa', 'argüelles', 'arguelles'] },
+    { value: 'tetuan', label: 'Tetuan', fotocasaZone: 'tetuan', keywords: ['tetuán', 'tetuan', 'cuatro caminos'] }
   ],
   valencia: [
-    { value: 'all', label: 'Весь город', fotocasaZone: 'todas-las-zonas', keywords: [] },
-    { value: 'ciutat-vella', label: 'Старый город', fotocasaZone: 'ciutat-vella', keywords: ['ciutat vella', 'carmen', 'carme'] },
-    { value: 'eixample', label: 'Энсанш (Eixample)', fotocasaZone: 'eixample', keywords: ['eixample', 'ensanche'] },
-    { value: 'russafa', label: 'Русафа (Ruzafa)', fotocasaZone: 'russafa', keywords: ['russafa', 'ruzafa'] },
-    { value: 'el-pla-del-real', label: 'Пла-дель-Реаль', fotocasaZone: 'el-pla-del-real', keywords: ['pla del real', 'mestalla'] },
-    { value: 'campanar', label: 'Кампанар', fotocasaZone: 'campanar', keywords: ['campanar'] },
-    { value: 'benimaclet', label: 'Бенимаклет', fotocasaZone: 'benimaclet', keywords: ['benimaclet'] }
+    { value: 'all', label: 'Entire city', fotocasaZone: 'todas-las-zonas', keywords: [] },
+    { value: 'ciutat-vella', label: 'Old Town', fotocasaZone: 'ciutat-vella', keywords: ['ciutat vella', 'carmen', 'carme'] },
+    { value: 'eixample', label: 'Eixample (Ensanche)', fotocasaZone: 'eixample', keywords: ['eixample', 'ensanche'] },
+    { value: 'russafa', label: 'Russafa (Ruzafa)', fotocasaZone: 'russafa', keywords: ['russafa', 'ruzafa'] },
+    { value: 'el-pla-del-real', label: 'Pla del Real', fotocasaZone: 'el-pla-del-real', keywords: ['pla del real', 'mestalla'] },
+    { value: 'campanar', label: 'Campanar', fotocasaZone: 'campanar', keywords: ['campanar'] },
+    { value: 'benimaclet', label: 'Benimaclet', fotocasaZone: 'benimaclet', keywords: ['benimaclet'] }
   ],
   malaga: [
-    { value: 'all', label: 'Весь город', fotocasaZone: 'todas-las-zonas', keywords: [] },
-    { value: 'centro', label: 'Центр', fotocasaZone: 'centro', keywords: ['centro', 'centre'] },
-    { value: 'malaga-este', label: 'Малага-Эсте', fotocasaZone: 'malaga-este', keywords: ['este', 'el palo', 'pedregalejo'] },
-    { value: 'carretera-de-cadiz', label: 'Кадисское шоссе', fotocasaZone: 'carretera-de-cadiz', keywords: ['cadiz', 'huelin'] },
-    { value: 'teatinos', label: 'Театинос — Университет', fotocasaZone: 'teatinos-universidad', keywords: ['teatinos', 'universidad'] }
+    { value: 'all', label: 'Entire city', fotocasaZone: 'todas-las-zonas', keywords: [] },
+    { value: 'centro', label: 'Centre', fotocasaZone: 'centro', keywords: ['centro', 'centre'] },
+    { value: 'malaga-este', label: 'Malaga East', fotocasaZone: 'malaga-este', keywords: ['este', 'el palo', 'pedregalejo'] },
+    { value: 'carretera-de-cadiz', label: 'Cadiz Road', fotocasaZone: 'carretera-de-cadiz', keywords: ['cadiz', 'huelin'] },
+    { value: 'teatinos', label: 'Teatinos — University', fotocasaZone: 'teatinos-universidad', keywords: ['teatinos', 'universidad'] }
   ],
   sevilla: [
-    { value: 'all', label: 'Весь город', fotocasaZone: 'todas-las-zonas', keywords: [] },
-    { value: 'casco-antiguo', label: 'Исторический центр', fotocasaZone: 'casco-antiguo', keywords: ['casco antiguo', 'centro', 'triana', 'alfalfa', 'santa cruz'] },
-    { value: 'nervion', label: 'Нервион', fotocasaZone: 'nervion', keywords: ['nervión', 'nervion'] },
-    { value: 'triana', label: 'Триана', fotocasaZone: 'triana', keywords: ['triana'] },
-    { value: 'los-remedios', label: 'Лос-Ремедиос', fotocasaZone: 'los-remedios', keywords: ['remedios'] },
-    { value: 'macarena', label: 'Макарена', fotocasaZone: 'macarena', keywords: ['macarena'] }
+    { value: 'all', label: 'Entire city', fotocasaZone: 'todas-las-zonas', keywords: [] },
+    { value: 'casco-antiguo', label: 'Historic centre', fotocasaZone: 'casco-antiguo', keywords: ['casco antiguo', 'centro', 'triana', 'alfalfa', 'santa cruz'] },
+    { value: 'nervion', label: 'Nervion', fotocasaZone: 'nervion', keywords: ['nervión', 'nervion'] },
+    { value: 'triana', label: 'Triana', fotocasaZone: 'triana', keywords: ['triana'] },
+    { value: 'los-remedios', label: 'Los Remedios', fotocasaZone: 'los-remedios', keywords: ['remedios'] },
+    { value: 'macarena', label: 'Macarena', fotocasaZone: 'macarena', keywords: ['macarena'] }
   ],
   alicante: [
-    { value: 'all', label: 'Весь город', fotocasaZone: 'todas-las-zonas', keywords: [] },
-    { value: 'centro', label: 'Центр', fotocasaZone: 'centro', keywords: ['centro', 'centre'] },
-    { value: 'playa-san-juan', label: 'Пля Сан-Хуан', fotocasaZone: 'playa-de-san-juan', keywords: ['san juan', 'sant joan'] },
-    { value: 'albufereta', label: 'Альбуферета', fotocasaZone: 'albufereta', keywords: ['albufereta'] },
-    { value: 'campello', label: 'Эль-Кампельо (рядом)', fotocasaZone: 'el-campello', keywords: ['campello', 'campello'] }
+    { value: 'all', label: 'Entire city', fotocasaZone: 'todas-las-zonas', keywords: [] },
+    { value: 'centro', label: 'Centre', fotocasaZone: 'centro', keywords: ['centro', 'centre'] },
+    { value: 'playa-san-juan', label: 'San Juan Beach', fotocasaZone: 'playa-de-san-juan', keywords: ['san juan', 'sant joan'] },
+    { value: 'albufereta', label: 'Albufereta', fotocasaZone: 'albufereta', keywords: ['albufereta'] },
+    { value: 'campello', label: 'El Campello (nearby)', fotocasaZone: 'el-campello', keywords: ['campello', 'campello'] }
   ]
 }
 
@@ -304,7 +304,7 @@ export function getCityConfig(cityValue) {
 }
 
 export function getDistrictOptions(cityValue) {
-  return DISTRICTS_BY_CITY[cityValue] || [{ value: 'all', label: 'Весь город', fotocasaZone: 'todas-las-zonas', keywords: [] }]
+  return DISTRICTS_BY_CITY[cityValue] || [{ value: 'all', label: 'Entire city', fotocasaZone: 'todas-las-zonas', keywords: [] }]
 }
 
 export function getDistrictRecord(cityValue, districtValue) {

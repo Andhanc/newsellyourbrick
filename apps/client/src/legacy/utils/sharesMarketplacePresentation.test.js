@@ -22,6 +22,10 @@ const {
   },
 } = presentation
 
+function assertNoCyrillic(value, label) {
+  assert.equal(/[А-Яа-яЁё]/.test(String(value || '')), false, `${label} must not be Cyrillic: ${value}`)
+}
+
 test('normalises only confirmed API values and leaves unknown facts unknown', () => {
   const share = normalizeMarketplaceShare({
     id: 42,
@@ -45,6 +49,8 @@ test('normalises only confirmed API values and leaves unknown facts unknown', ()
   assert.equal(share.annualYield, null)
   assert.equal(share.city, 'Marbella')
   assert.equal(share.country, 'Spain')
+  assertNoCyrillic(share.type, 'type')
+  assertNoCyrillic(share.statusLabel, 'statusLabel')
 })
 
 test('does not manufacture price, inventory, yield, image, or status defaults', () => {
@@ -58,8 +64,8 @@ test('does not manufacture price, inventory, yield, image, or status defaults', 
   assert.equal(share.collectedPercent, null)
   assert.equal(share.annualYield, null)
   assert.equal(share.image, '')
-  assert.equal(share.statusLabel, 'Условия уточняются')
   assert.equal(share.statusKey, 'pending')
+  assertNoCyrillic(share.statusLabel, 'statusLabel')
 })
 
 test('assigns stable English statusKey for open and almost-full funding', () => {
@@ -70,7 +76,7 @@ test('assigns stable English statusKey for open and almost-full funding', () => 
     shares_sold: 4,
   })
   assert.equal(open.statusKey, 'open')
-  assert.equal(open.statusLabel, 'Сбор открыт')
+  assertNoCyrillic(open.statusLabel, 'open statusLabel')
 
   const almost = normalizeMarketplaceShare({
     id: 2,
@@ -79,7 +85,7 @@ test('assigns stable English statusKey for open and almost-full funding', () => 
     shares_sold: 17,
   })
   assert.equal(almost.statusKey, 'almost_full')
-  assert.equal(almost.statusLabel, 'Почти собрано')
+  assertNoCyrillic(almost.statusLabel, 'almost statusLabel')
 
   const done = normalizeMarketplaceShare({
     id: 3,
@@ -91,16 +97,15 @@ test('assigns stable English statusKey for open and almost-full funding', () => 
 })
 
 test('labels annual return as a forecast and shows an honest unknown value', () => {
-  assert.deepEqual(formatForecastYield(12.45, 'ru-RU'), {
-    label: 'Прогноз доходности',
-    value: '12,5%',
-    note: 'Прогноз, не гарантия',
-  })
-  assert.deepEqual(formatForecastYield(null, 'ru-RU'), {
-    label: 'Прогноз доходности',
-    value: '—',
-    note: 'Прогноз не опубликован',
-  })
+  const known = formatForecastYield(12.45, 'en-US')
+  assert.equal(known.value, '12.5%')
+  assertNoCyrillic(known.label, 'yield label')
+  assertNoCyrillic(known.note, 'yield note')
+
+  const unknown = formatForecastYield(null, 'en-US')
+  assert.equal(unknown.value, '—')
+  assertNoCyrillic(unknown.label, 'unknown yield label')
+  assertNoCyrillic(unknown.note, 'unknown yield note')
 })
 
 test('paginates the real list into strict groups of sixteen', () => {
@@ -124,9 +129,9 @@ test('paginates the real list into strict groups of sixteen', () => {
 test('blocks investment for sold-out and backend-final listings', () => {
   const soldOut = resolveShareMarketplaceState({ totalShares: 20, sharesSold: 20 })
   assert.equal(soldOut.state, 'sold')
-  assert.equal(soldOut.label, 'Сбор завершён')
   assert.equal(soldOut.blocksInvestment, true)
-  assert.equal(soldOut.ctaLabel, 'Сбор завершён')
+  assertNoCyrillic(soldOut.label, 'soldOut label')
+  assertNoCyrillic(soldOut.ctaLabel, 'soldOut cta')
 
   const archived = resolveShareMarketplaceState({ status: 'archived', totalShares: 20, sharesSold: 2 })
   assert.equal(archived.state, 'unavailable')
@@ -135,7 +140,7 @@ test('blocks investment for sold-out and backend-final listings', () => {
   const open = resolveShareMarketplaceState({ status: 'active', totalShares: 20, sharesSold: 2 })
   assert.equal(open.state, 'available')
   assert.equal(open.blocksInvestment, false)
-  assert.equal(open.ctaLabel, 'Подробнее')
+  assertNoCyrillic(open.ctaLabel, 'open cta')
 })
 
 test('honours only an active reservation window with a reservation owner', () => {

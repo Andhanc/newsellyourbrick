@@ -102,13 +102,14 @@
 
 .admin-chat__filters {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.4rem;
   padding: 0.75rem 1.5rem;
   border-bottom: 1px solid #e5e7eb;
 }
 
 .admin-chat__filter {
-  flex: 1;
+  flex: 1 1 calc(50% - 0.2rem);
   min-width: 0;
   padding: 0.45rem 0.5rem;
   border: 1px solid #e5e7eb;
@@ -146,6 +147,13 @@
   text-align: center;
 }
 
+.admin-chat__directory-hint {
+  margin: 0.35rem 1.5rem 0.65rem;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  line-height: 1.35;
+}
+
 .admin-chat__item {
   display: flex;
   align-items: center;
@@ -154,6 +162,15 @@
   transition: all 0.2s;
   border-left: 3px solid transparent;
   gap: 1rem;
+}
+
+.admin-chat__item--new {
+  background: #f8fafc;
+}
+
+.admin-chat__item--opening {
+  opacity: 0.72;
+  pointer-events: none;
 }
 
 .admin-chat__item:hover {
@@ -298,6 +315,15 @@
   color: #9ca3af;
   flex-shrink: 0;
   margin-left: 0.5rem;
+}
+
+.admin-chat__item-preview {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .admin-chat__item--unread .admin-chat__item-time {

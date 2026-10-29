@@ -255,26 +255,26 @@ function validatePassword(password) {
 
   // Проверка наличия заглавной буквы
   if (!/[A-ZА-Я]/.test(password)) {
-    errors.push('Пароль должен содержать хотя бы одну заглавную букву');
-    missing.push('заглавную букву');
+    errors.push('Password must contain at least one uppercase letter');
+    missing.push('an uppercase letter');
   } else {
-    present.push('заглавную букву');
+    present.push('an uppercase letter');
   }
 
   // Проверка наличия спецсимволов
   if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password)) {
-    errors.push('Пароль должен содержать хотя бы один спецсимвол (!@#$%^&*()_+-=[]{}|;:,.<>?)');
-    missing.push('спецсимвол');
+    errors.push('Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)');
+    missing.push('a special character');
   } else {
-    present.push('спецсимвол');
+    present.push('a special character');
   }
 
   // Проверка наличия цифры
   if (!/[0-9]/.test(password)) {
-    errors.push('Пароль должен содержать хотя бы одну цифру');
-    missing.push('цифру');
+    errors.push('Password must contain at least one digit');
+    missing.push('a digit');
   } else {
-    present.push('цифру');
+    present.push('a digit');
   }
 
   return {
@@ -283,8 +283,8 @@ function validatePassword(password) {
     missing,
     present,
     message: errors.length > 0 
-      ? `Пароль не соответствует требованиям. Добавьте: ${missing.join(', ')}. ${present.length > 0 ? `Уже есть: ${present.join(', ')}.` : ''}`
-      : 'Пароль соответствует всем требованиям'
+      ? `Password does not meet the requirements. Add: ${missing.join(', ')}. ${present.length > 0 ? `Already present: ${present.join(', ')}.` : ''}`
+      : 'Password meets all requirements'
   };
 }
 
@@ -542,7 +542,7 @@ async function notifyUserBidOutbid({
   const pid = Number(propertyId);
   if (!Number.isFinite(uid) || uid <= 0 || !Number.isFinite(pid) || pid <= 0) return;
 
-  const propertyTitle = (property && property.title) || 'объект';
+  const propertyTitle = (property && property.title) || 'property';
   const currency = (property && property.currency) || 'EUR';
   const amount = Number(newBidAmount);
   const formattedNewBid = new Intl.NumberFormat('ru-RU', {
@@ -552,15 +552,15 @@ async function notifyUserBidOutbid({
     maximumFractionDigits: 0,
   }).format(Number.isFinite(amount) ? amount : 0);
   // In-app: коротко — название объекта уже в карточке уведомления.
-  const message = `Новая максимальная ставка: ${formattedNewBid}.`;
+  const message = `New highest bid: ${formattedNewBid}.`;
   const pushBody =
-    `Ваша ставка на объект «${propertyTitle}» была перебита. ` +
-    `Новая максимальная ставка: ${formattedNewBid}.`;
+    `Your bid on «${propertyTitle}» was outbid. ` +
+    `New highest bid: ${formattedNewBid}.`;
 
   await notificationQueries.create({
     user_id: uid,
     type: 'bid_outbid',
-    title: 'Вашу ставку перебили',
+    title: 'You were outbid',
     message,
     data: JSON.stringify({
       property_id: pid,
@@ -579,7 +579,7 @@ async function notifyUserBidOutbid({
   await sendPushToUserSafely(
     uid,
     {
-      title: 'Вашу ставку перебили',
+      title: 'You were outbid',
       body: pushBody,
       data: { type: 'bid_outbid', propertyId: pid, path: `/property/${pid}` },
       channelId: 'auctions',
@@ -597,7 +597,7 @@ async function notifyUserBidOutbid({
   }
 
   const link = buildPropertyPublicLink(pid, property?.slug || property?.url_slug || null);
-  const fullText = `${pushBody}\n\nВернуться к торгам: ${link}`;
+  const fullText = `${pushBody}\n\nBack to bidding: ${link}`;
 
   // Email на каждую перебитую ставку быстро исчерпывает квоту EmailJS — только in-app, push и WhatsApp.
   try {
@@ -841,9 +841,9 @@ async function notifyBuyerVerificationApproved(userId, userRecord = null) {
     await notificationQueries.create({
       user_id: uid,
       type: 'verification_success',
-      title: 'Верификация пройдена',
+      title: 'Verification approved',
       message:
-        'Ваши документы одобрены администратором. Теперь вы можете делать ставки на аукционах и пользоваться всеми функциями покупателя.',
+        'Your documents were approved by an administrator. You can now place auction bids and use all buyer features.',
       is_read: 0,
       view_count: 0,
     });
@@ -869,12 +869,12 @@ async function notifyBuyerVerificationRejected(userId, rejectionReason, userReco
     if (!uid) return;
     const reason = rejectionReason && String(rejectionReason).trim() ? String(rejectionReason).trim() : null;
     const message = reason
-      ? `Документы отклонены. Причина: ${reason}. Загрузите документы заново для повторной проверки.`
-      : 'Документы отклонены. Загрузите документы заново для повторной проверки.';
+      ? `Documents rejected. Reason: ${reason}. Please upload the documents again for review.`
+      : 'Documents rejected. Please upload the documents again for review.';
     await notificationQueries.create({
       user_id: uid,
       type: 'verification_rejected',
-      title: 'Верификация отклонена',
+      title: 'Verification rejected',
       message,
       data: { rejection_reason: reason },
       is_read: 0,
@@ -896,7 +896,7 @@ async function notifyBuyerVerificationRejected(userId, rejectionReason, userReco
 app.get('/api/events/user-updates', async (req, res) => {
   const raw = req.query.user_id;
   if (raw === undefined || raw === null || String(raw).trim() === '' || !/^\d+$/.test(String(raw).trim())) {
-    return res.status(400).json({ success: false, error: 'Нужен корректный user_id' });
+    return res.status(400).json({ success: false, error: 'A valid user_id is required' });
   }
   const uid = String(parseInt(String(raw).trim(), 10));
   res.setHeader('Content-Type', 'text/event-stream');
@@ -952,7 +952,7 @@ function broadcastPropertyBidEvent(propertyId, payload) {
 app.get('/api/events/property-bids', async (req, res) => {
   const raw = req.query.property_id;
   if (raw === undefined || raw === null || String(raw).trim() === '' || !/^\d+$/.test(String(raw).trim())) {
-    return res.status(400).json({ success: false, error: 'Нужен корректный property_id' });
+    return res.status(400).json({ success: false, error: 'A valid property_id is required' });
   }
   const pid = String(parseInt(String(raw).trim(), 10));
   res.setHeader('Content-Type', 'text/event-stream');
@@ -1950,7 +1950,7 @@ async function sendTestDriveSurveyWhatsAppForBooking(bookingId, options = {}) {
   const sentAlready = String(booking.survey_whatsapp_status || '').toLowerCase() === 'sent';
 
   const user = await userQueries.getById(booking.user_id);
-  let propertyTitle = `Объект #${booking.property_id}`;
+  let propertyTitle = `Property #${booking.property_id}`;
   try {
     const prop = await propertyQueries.getById(booking.property_id, booking.property_table || null);
     if (prop?.title) propertyTitle = prop.title;
@@ -2012,8 +2012,8 @@ async function sendTestDriveExitFeedbackWhatsAppForBooking(bookingId, options = 
   if (!digits) return { ok: false, error: 'no_phone' };
 
   const url = `${getFrontendBaseUrl()}/test-drive/feedback/${booking.exit_feedback_token}`;
-  const hello = user?.first_name ? `Здравствуйте, ${user.first_name}! ` : '';
-  const text = `${hello}Как всё прошло после проживания? Оцените объект по ссылке: ${url}`;
+  const hello = user?.first_name ? `Hello, ${user.first_name}! ` : '';
+  const text = `${hello}How was your stay? Rate the property here: ${url}`;
 
   const wa = await trySendWhatsAppDigits(digits, text);
   if (!wa.ok) return { ok: false, error: wa.error || 'wa_failed' };
@@ -2028,9 +2028,9 @@ const checkClientState = async () => {
     if (waClient && waClient.info) {
       const info = waClient.info;
       console.log('📊 Состояние WhatsApp клиента:', {
-        wid: info.wid ? info.wid.user : 'не определен',
-        platform: info.platform || 'не определен',
-        pushname: info.pushname || 'не определен'
+        wid: info.wid ? info.wid.user : 'unknown',
+        platform: info.platform || 'unknown',
+        pushname: info.pushname || 'unknown'
       });
       
       // Если клиент имеет информацию, значит он авторизован
@@ -2232,7 +2232,7 @@ app.get('/api/users/:id', async (req, res) => {
   try {
     const user = await userQueries.getById(req.params.id);
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     // Удаляем пароль перед отправкой (для безопасности)
     const userWithoutPassword = removePasswordFromUser(user);
@@ -2251,14 +2251,14 @@ app.post('/api/users/:userId/private-club/redeem-promo', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
     if (!Number.isFinite(userId) || userId < 1) {
-      return res.status(400).json({ success: false, error: 'Некорректный user id' });
+      return res.status(400).json({ success: false, error: 'Invalid user id' });
     }
     if (!(await userQueries.getById(userId))) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     const code = typeof req.body?.code === 'string' ? req.body.code.trim() : '';
     if (!code) {
-      return res.status(400).json({ success: false, error: 'Укажите промокод' });
+      return res.status(400).json({ success: false, error: 'Enter a promo code' });
     }
     const envCodes = (process.env.VIP_CLUB_PROMO_CODES || '1111')
       .split(/[\s,;]+/)
@@ -2291,7 +2291,7 @@ app.get('/api/admin/private-club/members', async (req, res) => {
     return res.json({ success: true, data });
   } catch (error) {
     console.error('GET /api/admin/private-club/members:', error);
-    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+    return res.status(500).json({ success: false, error: error.message || 'Server error' });
   }
 });
 
@@ -2303,11 +2303,11 @@ app.post('/api/admin/private-club/members/:userId/revoke', async (req, res) => {
   try {
     const userId = parseInt(String(req.params.userId), 10);
     if (!Number.isFinite(userId) || userId < 1) {
-      return res.status(400).json({ success: false, error: 'Некорректный user id' });
+      return res.status(400).json({ success: false, error: 'Invalid user id' });
     }
     const before = await userQueries.getById(userId);
     if (!before) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     const hadDbVip = Boolean(before.vip_until && new Date(before.vip_until).getTime() > Date.now());
     await userQueries.revokePrivateClubDbVip(userId);
@@ -2332,7 +2332,7 @@ app.post('/api/admin/private-club/members/:userId/revoke', async (req, res) => {
     });
   } catch (error) {
     console.error('POST /api/admin/private-club/members/:userId/revoke:', error);
-    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+    return res.status(500).json({ success: false, error: error.message || 'Server error' });
   }
 });
 
@@ -2343,10 +2343,10 @@ app.get('/api/users/:userId/favorites', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
     if (!userId) {
-      return res.status(400).json({ success: false, error: 'Некорректный user id' });
+      return res.status(400).json({ success: false, error: 'Invalid user id' });
     }
     if (!await userQueries.getById(userId)) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     const data = await favoriteQueries.listForUser(userId);
     res.json({ success: true, data });
@@ -2364,14 +2364,14 @@ app.post('/api/users/:userId/favorites', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
     if (!userId) {
-      return res.status(400).json({ success: false, error: 'Некорректный user id' });
+      return res.status(400).json({ success: false, error: 'Invalid user id' });
     }
     if (!await userQueries.getById(userId)) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     const { property_id, property_table } = req.body || {};
     if (property_id == null) {
-      return res.status(400).json({ success: false, error: 'Укажите property_id' });
+      return res.status(400).json({ success: false, error: 'property_id is required' });
     }
     const result = await favoriteQueries.add(userId, property_id, property_table);
     if (result.changes > 0) {
@@ -2405,11 +2405,11 @@ app.delete('/api/users/:userId/favorites', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
     if (!userId) {
-      return res.status(400).json({ success: false, error: 'Некорректный user id' });
+      return res.status(400).json({ success: false, error: 'Invalid user id' });
     }
     const { property_id, property_table } = req.body || {};
     if (property_id == null) {
-      return res.status(400).json({ success: false, error: 'Укажите property_id' });
+      return res.status(400).json({ success: false, error: 'property_id is required' });
     }
     const result = await favoriteQueries.remove(userId, property_id, property_table);
     if (result.changes > 0) {
@@ -2443,10 +2443,10 @@ app.post('/api/users/:userId/auction-reminders', express.json(), async (req, res
   try {
     const userId = parseInt(req.params.userId, 10);
     if (!userId) {
-      return res.status(400).json({ success: false, error: 'Некорректный user id' });
+      return res.status(400).json({ success: false, error: 'Invalid user id' });
     }
     if (!await userQueries.getById(userId)) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     const {
       property_id: propertyId,
@@ -2456,10 +2456,10 @@ app.post('/api/users/:userId/auction-reminders', express.json(), async (req, res
       scheduled_at: scheduledAt,
     } = req.body || {};
     if (propertyId == null) {
-      return res.status(400).json({ success: false, error: 'Укажите property_id' });
+      return res.status(400).json({ success: false, error: 'property_id is required' });
     }
     if (!notifyEmail && !notifyWhatsapp) {
-      return res.status(400).json({ success: false, error: 'Выберите хотя бы один канал: почта или WhatsApp' });
+      return res.status(400).json({ success: false, error: 'Choose at least one channel: email or WhatsApp' });
     }
     const profile = await userQueries.getById(userId);
     const profileEmail = profile?.email && String(profile.email).trim();
@@ -2468,32 +2468,32 @@ app.post('/api/users/:userId/auction-reminders', express.json(), async (req, res
       return res.status(400).json({
         success: false,
         error:
-          'В профиле не сохранён email — укажите почту в личном кабинете, иначе напоминание на почту отправить некуда.',
+          'No email saved in your profile — add an email in your account, otherwise we cannot send the reminder.',
       });
     }
     if (notifyWhatsapp && !profilePhone) {
       return res.status(400).json({
         success: false,
-        error: 'В профиле не сохранён телефон — укажите номер для WhatsApp.',
+        error: 'No phone saved in your profile — add a number for WhatsApp.',
       });
     }
     const schedMs = parsePropertyDateMs(scheduledAt);
     if (schedMs == null) {
-      return res.status(400).json({ success: false, error: 'Некорректная дата напоминания' });
+      return res.status(400).json({ success: false, error: 'Invalid reminder date' });
     }
     const minMs = Date.now() + 55 * 1000;
     if (schedMs < minMs) {
-      return res.status(400).json({ success: false, error: 'Время напоминания должно быть в будущем' });
+      return res.status(400).json({ success: false, error: 'Reminder time must be in the future' });
     }
     const row = await loadPropertyRowForReminder(propertyId, propertyTable);
     if (!row) {
-      return res.status(404).json({ success: false, error: 'Объект не найден' });
+      return res.status(404).json({ success: false, error: 'Property not found' });
     }
     if (propertyRowHasCircularTestTimer(row)) {
       return res.status(400).json({
         success: false,
         error:
-          'Напоминание доступно только в преаукционе (линейный таймер). Во время кругового таймера оно недоступно.',
+          'Reminders are only available in the pre-auction (linear timer). They are unavailable during the circular timer.',
       });
     }
     const startMs = parsePropertyDateMs(row.auction_start_date);
@@ -2501,14 +2501,14 @@ app.post('/api/users/:userId/auction-reminders', express.json(), async (req, res
     if (endMs != null && schedMs > endMs) {
       return res.status(400).json({
         success: false,
-        error: 'Напоминание не может быть позже окончания аукциона',
+        error: 'Reminder cannot be after the auction ends',
       });
     }
     // Пока дата старта в будущем — напоминание только до неё. Если старт уже прошёл, линейный этап идёт до конца — ограничение только по дате окончания выше.
     if (startMs != null && startMs > Date.now() && schedMs >= startMs) {
       return res.status(400).json({
         success: false,
-        error: 'Напоминание должно быть до начала аукциона',
+        error: 'Reminder must be before the auction starts',
       });
     }
     const nowForStart = Date.now();
@@ -2518,7 +2518,7 @@ app.post('/api/users/:userId/auction-reminders', express.json(), async (req, res
       row.title ||
       row.name ||
       row.property_title ||
-      `Объект #${propertyId}`;
+      `Property #${propertyId}`;
     await auctionReminderQueries.upsert({
       userId,
       propertyId,
@@ -2553,21 +2553,21 @@ app.post('/api/users/:userId/auction-reminders/send-test', express.json(), async
   try {
     const userId = parseInt(req.params.userId, 10);
     if (!userId) {
-      return res.status(400).json({ success: false, error: 'Некорректный user id' });
+      return res.status(400).json({ success: false, error: 'Invalid user id' });
     }
     const user = await userQueries.getById(userId);
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     const em = user.email && String(user.email).trim();
     if (!em) {
       return res.status(400).json({
         success: false,
-        error: 'В профиле не сохранён email — тестовое письмо отправить некуда.',
+        error: 'No email saved in your profile — nowhere to send the test email.',
       });
     }
     const { property_id: propertyId, property_table: propertyTable } = req.body || {};
-    let title = 'Объект';
+    let title = 'Property';
     let link = buildPropertyPublicLink(propertyId != null ? Number(propertyId) : 0);
     if (propertyId != null && propertyTable) {
       const row = await loadPropertyRowForReminder(propertyId, propertyTable);
@@ -2576,14 +2576,14 @@ app.post('/api/users/:userId/auction-reminders/send-test', express.json(), async
         link = buildPropertyPublicLink(propertyId);
       }
     }
-    const subject = `[Тест] Напоминание об аукционе — ${title}`;
-    const body = `Это тестовое письмо с сервера Sellyourbrick.\n\nЕсли вы его видите, доставка напоминаний на почту настроена верно.\n\nОбъект: ${title}\nСсылка:\n${link}\n\nС уважением, Sellyourbrick`;
+    const subject = `[Test] Auction reminder — ${title}`;
+    const body = `This is a test email from Sellyourbrick.\n\nIf you received it, auction reminder email delivery is configured correctly.\n\nProperty: ${title}\nLink:\n${link}\n\nBest regards, Sellyourbrick`;
     await sendCrmEmailViaEmailJS(em, subject, body);
     console.log(`[auction-reminder] Тестовое письмо отправлено → ${em} (user_id=${userId}) объект «${title}»`);
     res.json({ success: true });
   } catch (error) {
     console.error('POST auction-reminders/send-test:', error.message);
-    res.status(500).json({ success: false, error: error.message || 'Ошибка отправки' });
+    res.status(500).json({ success: false, error: error.message || 'Send failed' });
   }
 });
 
@@ -2594,12 +2594,12 @@ app.get('/api/users/:userId/auction-reminders', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
     if (!userId) {
-      return res.status(400).json({ success: false, error: 'Некорректный user id' });
+      return res.status(400).json({ success: false, error: 'Invalid user id' });
     }
     const pid = req.query.property_id != null ? parseInt(String(req.query.property_id), 10) : 0;
     const ptable = req.query.property_table;
     if (!pid || !ptable) {
-      return res.status(400).json({ success: false, error: 'Нужны property_id и property_table' });
+      return res.status(400).json({ success: false, error: 'property_id and property_table are required' });
     }
     const row = await auctionReminderQueries.getForUserProperty(userId, pid, ptable);
     res.json({ success: true, data: row || null });
@@ -2619,7 +2619,7 @@ app.get('/api/users/:id/verification-status', async (req, res) => {
     const user = await userQueries.getById(userId);
     
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     
     // Получаем документы пользователя
@@ -2710,11 +2710,11 @@ app.post('/api/users/:id/clear-rejected-documents', async (req, res) => {
   try {
     const id = parseInt(String(req.params.id), 10);
     if (!id || id <= 0) {
-      return res.status(400).json({ success: false, error: 'Некорректный id пользователя' });
+      return res.status(400).json({ success: false, error: 'Invalid user id' });
     }
     const user = await userQueries.getById(id);
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     const result = await documentQueries.deleteAllRejectedForUser(id);
     try {
@@ -2737,7 +2737,7 @@ app.put('/api/users/:id/card-bound', async (req, res) => {
     const userId = req.params.id;
     const { cardBound } = req.body;
     const result = await userQueries.update(userId, { has_card: cardBound ? 1 : 0 });
-    if (!result || result.changes === 0) return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    if (!result || result.changes === 0) return res.status(404).json({ success: false, error: 'User not found' });
     
     const updatedUser = await userQueries.getById(userId);
     
@@ -2772,7 +2772,7 @@ app.get('/api/users/email/:email', async (req, res) => {
     }
 
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     // Удаляем пароль перед отправкой (для безопасности)
     const userWithoutPassword = removePasswordFromUser(user);
@@ -2794,7 +2794,7 @@ app.get('/api/users/phone/:phone', async (req, res) => {
       // 404 - это нормально, пользователь просто не существует (для регистрации)
       return res.status(404).json({ 
         success: false, 
-        error: 'Пользователь не найден',
+        error: 'User not found',
         exists: false
       });
     }
@@ -2818,7 +2818,7 @@ app.get('/api/users/role/:role', async (req, res) => {
   try {
     const { role } = req.params;
     if (!['buyer', 'seller', 'admin', 'manager'].includes(role)) {
-      return res.status(400).json({ success: false, error: 'Недопустимая роль' });
+      return res.status(400).json({ success: false, error: 'Invalid role' });
     }
     const users = await userQueries.getByRole(role);
     // Удаляем пароли из всех пользователей перед отправкой
@@ -2843,7 +2843,7 @@ app.post('/api/users', async (req, res) => {
     if (!userData.first_name) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать имя (first_name)' 
+        error: 'first_name is required' 
       });
     }
     
@@ -2851,7 +2851,7 @@ app.post('/api/users', async (req, res) => {
     if (!userData.email && !userData.phone_number) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать email или номер телефона' 
+        error: 'email or phone number is required' 
       });
     }
     
@@ -2906,7 +2906,7 @@ app.post('/api/users', async (req, res) => {
     if (error.message.includes('UNIQUE constraint')) {
       return res.status(409).json({ 
         success: false, 
-        error: 'Пользователь с таким email или номером телефона уже существует' 
+        error: 'A user with this email or phone number already exists' 
       });
     }
     res.status(500).json({ success: false, error: error.message });
@@ -2923,12 +2923,12 @@ app.put('/api/users/:id/approve', async (req, res) => {
     const { reviewed_by } = req.body;
 
     if (!reviewed_by) {
-      return res.status(400).json({ success: false, error: 'Необходимо указать reviewed_by' });
+      return res.status(400).json({ success: false, error: 'reviewed_by is required' });
     }
 
     const user = await userQueries.getById(id);
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
 
     // Получаем все pending документы пользователя
@@ -2936,7 +2936,7 @@ app.put('/api/users/:id/approve', async (req, res) => {
     const pendingDocuments = userDocuments.filter(doc => doc.verification_status === 'pending');
 
     if (pendingDocuments.length === 0) {
-      return res.status(400).json({ success: false, error: 'У пользователя нет документов на верификацию' });
+      return res.status(400).json({ success: false, error: 'User has no documents pending verification' });
     }
 
     // Одобряем все pending документы
@@ -2964,7 +2964,7 @@ app.put('/api/users/:id/approve', async (req, res) => {
     res.json({ 
       success: true, 
       data: updatedUser,
-      message: `Пользователь верифицирован. Одобрено документов: ${pendingDocuments.length}`
+      message: `User verified. Documents approved: ${pendingDocuments.length}`
     });
   } catch (error) {
     console.error('Ошибка при одобрении пользователя:', error);
@@ -2982,12 +2982,12 @@ app.put('/api/users/:id/reject', async (req, res) => {
     const { reviewed_by, rejection_reason } = req.body;
 
     if (!reviewed_by) {
-      return res.status(400).json({ success: false, error: 'Необходимо указать reviewed_by' });
+      return res.status(400).json({ success: false, error: 'reviewed_by is required' });
     }
 
     const user = await userQueries.getById(id);
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
 
     // Получаем все pending документы пользователя
@@ -2995,17 +2995,17 @@ app.put('/api/users/:id/reject', async (req, res) => {
     const pendingDocuments = userDocuments.filter(doc => doc.verification_status === 'pending');
 
     if (pendingDocuments.length === 0) {
-      return res.status(400).json({ success: false, error: 'У пользователя нет документов на верификацию' });
+      return res.status(400).json({ success: false, error: 'User has no documents pending verification' });
     }
 
     // Отклоняем все pending документы
     for (const doc of pendingDocuments) {
-      await documentQueries.updateStatus(doc.id, 'rejected', reviewed_by, rejection_reason || 'Документы не прошли проверку');
+      await documentQueries.updateStatus(doc.id, 'rejected', reviewed_by, rejection_reason || 'Documents did not pass verification');
     }
 
     await userQueries.update(id, { is_verified: 0 });
     try {
-      await notifyBuyerVerificationRejected(id, rejection_reason || 'Документы не прошли проверку', user);
+      await notifyBuyerVerificationRejected(id, rejection_reason || 'Documents did not pass verification', user);
     } catch (notifErr) {
       console.warn('⚠️ verification_rejected notification:', notifErr.message);
     }
@@ -3019,7 +3019,7 @@ app.put('/api/users/:id/reject', async (req, res) => {
     res.json({ 
       success: true, 
       data: updatedUser,
-      message: `Пользователь отклонен. Отклонено документов: ${pendingDocuments.length}`
+      message: `User rejected. Documents rejected: ${pendingDocuments.length}`
     });
   } catch (error) {
     console.error('Ошибка при отклонении пользователя:', error);
@@ -3036,7 +3036,7 @@ app.put('/api/users/:id/block', async (req, res) => {
     const user = await userQueries.getById(userId);
     
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     
     await userQueries.update(userId, { is_blocked: 1 });
@@ -3046,7 +3046,7 @@ app.put('/api/users/:id/block', async (req, res) => {
     res.json({ 
       success: true, 
       data: userWithoutPassword,
-      message: 'Пользователь заблокирован'
+      message: 'User is blocked'
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -3062,7 +3062,7 @@ app.put('/api/users/:id/unblock', async (req, res) => {
     const user = await userQueries.getById(userId);
     
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     
     await userQueries.update(userId, { is_blocked: 0 });
@@ -3072,7 +3072,7 @@ app.put('/api/users/:id/unblock', async (req, res) => {
     res.json({ 
       success: true, 
       data: userWithoutPassword,
-      message: 'Пользователь разблокирован'
+      message: 'User unblocked'
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -3089,14 +3089,14 @@ app.put('/api/users/:id', async (req, res) => {
     
     console.log(`📥 PUT /api/users/${userId} - Получен запрос на обновление:`, {
       userId,
-      updateData: { ...updateData, password: updateData.password ? '***скрыт***' : undefined }
+      updateData: { ...updateData, password: updateData.password ? '***hidden***' : undefined }
     });
     
     // Получаем текущего пользователя
     const currentUser = await userQueries.getById(userId);
     if (!currentUser) {
       console.error(`❌ Пользователь с ID ${userId} не найден`);
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     
     // Проверяем, обновляется ли email и требуется ли его подтверждение
@@ -3108,7 +3108,7 @@ app.put('/api/users/:id', async (req, res) => {
       if (emailConflict) {
         return res.status(409).json({
           success: false,
-          error: 'Пользователь с таким email уже существует',
+          error: 'A user with this email already exists',
         });
       }
 
@@ -3121,7 +3121,7 @@ app.put('/api/users/:id', async (req, res) => {
       if (phoneOwner && phoneOwner.id !== parseInt(userId, 10)) {
         return res.status(409).json({
           success: false,
-          error: 'Этот номер телефона уже привязан к другому кабинету. Используйте другой номер или войдите в тот кабинет.',
+          error: 'This phone number is already linked to another cabinet. Use another number or sign in to that cabinet.',
         });
       }
     }
@@ -3159,14 +3159,14 @@ app.put('/api/users/:id', async (req, res) => {
     
     console.log(`💾 Обновление пользователя ${userId} с данными:`, {
       fields: Object.keys(updateData),
-      updateData: { ...updateData, password: updateData.password ? '***скрыт***' : undefined }
+      updateData: { ...updateData, password: updateData.password ? '***hidden***' : undefined }
     });
     
     const result = await userQueries.update(userId, updateData);
     
     if (result.changes === 0) {
       console.warn(`⚠️ Пользователь ${userId} не обновлен (changes = 0)`);
-      return res.status(404).json({ success: false, error: 'Пользователь не найден или данные не изменились' });
+      return res.status(404).json({ success: false, error: 'User not found or data unchanged' });
     }
     
     console.log(`✅ Пользователь ${userId} успешно обновлен (changes: ${result.changes})`);
@@ -3188,18 +3188,18 @@ app.put('/api/users/:id', async (req, res) => {
       if (target.includes('phone_number') || error.message.includes('phone_number')) {
         return res.status(409).json({
           success: false,
-          error: 'Этот номер телефона уже привязан к другому кабинету. Используйте другой номер или войдите в тот кабинет.',
+          error: 'This phone number is already linked to another cabinet. Use another number or sign in to that cabinet.',
         });
       }
       return res.status(409).json({ 
         success: false, 
-        error: 'Пользователь с таким email или номером телефона уже существует' 
+        error: 'A user with this email or phone number already exists' 
       });
     }
     
     res.status(500).json({ 
       success: false, 
-      error: error.message || 'Внутренняя ошибка сервера при обновлении пользователя' 
+      error: error.message || 'Internal server error while updating the user' 
     });
   }
 });
@@ -3211,9 +3211,9 @@ app.delete('/api/users/:id', async (req, res) => {
   try {
     const result = await userQueries.delete(req.params.id);
     if (result.changes === 0) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
-    res.json({ success: true, message: 'Пользователь успешно удален' });
+    res.json({ success: true, message: 'User deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -3232,7 +3232,7 @@ app.delete('/api/users/clear', async (req, res) => {
     
     res.json({ 
       success: true, 
-      message: `База данных очищена. Удалено пользователей: ${result.count}`,
+      message: `Database cleared. Users deleted: ${result.count}`,
       deletedCount: result.count
     });
   } catch (error) {
@@ -3247,14 +3247,14 @@ app.delete('/api/users/clear', async (req, res) => {
 app.post('/api/users/:id/upload-photo', upload.single('user_photo'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, error: 'Файл не загружен' });
+      return res.status(400).json({ success: false, error: 'File not uploaded' });
     }
     
     const filePath = `/uploads/${req.file.filename}`;
     const result = await userQueries.update(req.params.id, { user_photo: filePath });
     
     if (result.changes === 0) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     
     res.json({ success: true, data: { user_photo: filePath } });
@@ -3269,14 +3269,14 @@ app.post('/api/users/:id/upload-photo', upload.single('user_photo'), async (req,
 app.post('/api/users/:id/upload-passport', upload.single('passport_photo'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, error: 'Файл не загружен' });
+      return res.status(400).json({ success: false, error: 'File not uploaded' });
     }
     
     const filePath = `/uploads/${req.file.filename}`;
     const result = await userQueries.update(req.params.id, { passport_photo: filePath });
     
     if (result.changes === 0) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     
     res.json({ success: true, data: { passport_photo: filePath } });
@@ -3391,7 +3391,7 @@ app.post('/api/passport/extract', async (req, res) => {
     if (!recognizedText || !String(recognizedText).trim()) {
       return res.status(400).json({
         success: false,
-        error: 'Загрузите фото паспорта или передайте распознанный текст',
+        error: 'Upload a passport photo or provide recognized text',
       });
     }
 
@@ -3402,7 +3402,7 @@ app.post('/api/passport/extract', async (req, res) => {
       return res.status(422).json({
         success: false,
         error:
-          'Не удалось распознать MRZ-зону паспорта. Попробуйте фото более высокого качества (нижние 2 строки паспорта должны быть видны полностью).',
+          'Could not recognize the passport MRZ zone. Try a higher-quality photo (the bottom 2 passport lines must be fully visible).',
       });
     }
 
@@ -3726,7 +3726,7 @@ app.get('/api/documents/:id', async (req, res) => {
   try {
     const document = await documentQueries.getById(req.params.id);
     if (!document) {
-      return res.status(404).json({ success: false, error: 'Документ не найден' });
+      return res.status(404).json({ success: false, error: 'Document not found' });
     }
     res.json({ success: true, data: document });
   } catch (error) {
@@ -3740,30 +3740,30 @@ app.get('/api/documents/:id', async (req, res) => {
 app.post('/api/documents', upload.single('document_photo'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, error: 'Файл документа не загружен' });
+      return res.status(400).json({ success: false, error: 'Document file not uploaded' });
     }
     
     if (!req.body.user_id) {
-      return res.status(400).json({ success: false, error: 'Необходимо указать user_id' });
+      return res.status(400).json({ success: false, error: 'user_id is required' });
     }
     
     // Преобразуем user_id в число и проверяем валидность
     const userIdStr = String(req.body.user_id).trim();
     if (userIdStr === '' || userIdStr === 'null' || userIdStr === 'undefined') {
       console.error('❌ Получен невалидный user_id:', req.body.user_id);
-      return res.status(400).json({ success: false, error: 'Неверный формат user_id. Ожидается положительное число' });
+      return res.status(400).json({ success: false, error: 'Invalid user_id format. A positive number is expected' });
     }
     
     const userId = parseInt(userIdStr, 10);
     if (isNaN(userId) || userId <= 0) {
       console.error('❌ Не удалось преобразовать user_id в число:', req.body.user_id);
-      return res.status(400).json({ success: false, error: 'Неверный формат user_id. Ожидается положительное число' });
+      return res.status(400).json({ success: false, error: 'Invalid user_id format. A positive number is expected' });
     }
     
     // Проверяем, существует ли пользователь с таким ID
     const user = await userQueries.getById(userId);
     if (!user) {
-      return res.status(404).json({ success: false, error: `Пользователь с ID ${userId} не найден` });
+      return res.status(404).json({ success: false, error: `User with ID ${userId} not found` });
     }
     
     const filePath = `/uploads/${req.file.filename}`;
@@ -3811,7 +3811,7 @@ app.post('/api/documents', upload.single('document_photo'), async (req, res) => 
     if (error.message && error.message.includes('FOREIGN KEY constraint failed')) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Ошибка внешнего ключа: пользователь не найден. Убедитесь, что user_id корректен.' 
+        error: 'Foreign key error: user not found. Make sure user_id is correct.' 
       });
     }
     res.status(500).json({ success: false, error: error.message });
@@ -3824,12 +3824,12 @@ app.post('/api/documents', upload.single('document_photo'), async (req, res) => 
 app.put('/api/documents/:id/review', async (req, res) => {
   try {
     if (!req.body.reviewed_by) {
-      return res.status(400).json({ success: false, error: 'Необходимо указать reviewed_by (ID админа/менеджера)' });
+      return res.status(400).json({ success: false, error: 'reviewed_by (admin/manager ID) is required' });
     }
     
     const result = await documentQueries.markAsReviewed(req.params.id, req.body.reviewed_by);
     if (result.changes === 0) {
-      return res.status(404).json({ success: false, error: 'Документ не найден' });
+      return res.status(404).json({ success: false, error: 'Document not found' });
     }
     
     const updatedDocument = await documentQueries.getById(req.params.id);
@@ -3845,24 +3845,24 @@ app.put('/api/documents/:id/review', async (req, res) => {
 app.put('/api/documents/:id/approve', async (req, res) => {
   try {
     if (!req.body.reviewed_by) {
-      return res.status(400).json({ success: false, error: 'Необходимо указать reviewed_by (ID админа/менеджера)' });
+      return res.status(400).json({ success: false, error: 'reviewed_by (admin/manager ID) is required' });
     }
     
     const document = await documentQueries.getById(req.params.id);
     if (!document) {
-      return res.status(404).json({ success: false, error: 'Документ не найден' });
+      return res.status(404).json({ success: false, error: 'Document not found' });
     }
     
     // Одобряем документ
     const result = await documentQueries.approveDocument(req.params.id, req.body.reviewed_by);
     if (result.changes === 0) {
-      return res.status(404).json({ success: false, error: 'Документ не найден' });
+      return res.status(404).json({ success: false, error: 'Document not found' });
     }
     
     // Получаем пользователя
     const user = await userQueries.getById(document.user_id);
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     
     // Проверяем, все ли документы пользователя одобрены
@@ -3887,7 +3887,7 @@ app.put('/api/documents/:id/approve', async (req, res) => {
     }
 
     const updatedDocument = await documentQueries.getById(req.params.id);
-    res.json({ success: true, data: updatedDocument, message: 'Документ одобрен' });
+    res.json({ success: true, data: updatedDocument, message: 'Document approved' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -3899,25 +3899,25 @@ app.put('/api/documents/:id/approve', async (req, res) => {
 app.put('/api/documents/:id/reject', async (req, res) => {
   try {
     if (!req.body.reviewed_by) {
-      return res.status(400).json({ success: false, error: 'Необходимо указать reviewed_by (ID админа/менеджера)' });
+      return res.status(400).json({ success: false, error: 'reviewed_by (admin/manager ID) is required' });
     }
     
     const document = await documentQueries.getById(req.params.id);
     if (!document) {
-      return res.status(404).json({ success: false, error: 'Документ не найден' });
+      return res.status(404).json({ success: false, error: 'Document not found' });
     }
     
     // Отклоняем документ
     const rejectionReason = req.body.rejection_reason || null;
     const result = await documentQueries.rejectDocument(req.params.id, req.body.reviewed_by, rejectionReason);
     if (result.changes === 0) {
-      return res.status(404).json({ success: false, error: 'Документ не найден' });
+      return res.status(404).json({ success: false, error: 'Document not found' });
     }
     
     // Получаем пользователя
     const user = await userQueries.getById(document.user_id);
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
 
     try {
@@ -3941,7 +3941,7 @@ app.put('/api/documents/:id/reject', async (req, res) => {
     }
 
     const updatedDocument = await documentQueries.getById(req.params.id);
-    res.json({ success: true, data: updatedDocument, message: 'Документ отклонен' });
+    res.json({ success: true, data: updatedDocument, message: 'Document rejected' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -3954,7 +3954,7 @@ app.delete('/api/documents/:id', async (req, res) => {
   try {
     const document = await documentQueries.getById(req.params.id);
     if (!document) {
-      return res.status(404).json({ success: false, error: 'Документ не найден' });
+      return res.status(404).json({ success: false, error: 'Document not found' });
     }
     
     // Удаляем файл с диска
@@ -3966,7 +3966,7 @@ app.delete('/api/documents/:id', async (req, res) => {
     }
     
     const result = await documentQueries.delete(req.params.id);
-    res.json({ success: true, message: 'Документ успешно удален' });
+    res.json({ success: true, message: 'Document deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -3986,7 +3986,7 @@ app.post('/api/auth/whatsapp', async (req, res) => {
     const { phone, code, mode = 'register', role, referrer_id: referrerId } = req.body;
     
     if (!phone) {
-      return res.status(400).json({ success: false, error: 'Необходимо указать номер телефона' });
+      return res.status(400).json({ success: false, error: 'Phone number is required' });
     }
     
     // Проверяем, существует ли пользователь с таким номером
@@ -3997,7 +3997,7 @@ app.post('/api/auth/whatsapp', async (req, res) => {
       if (mode === 'register') {
         return res.status(409).json({
           success: false,
-          error: 'Вы уже зарегистрированы с этим номером. Войдите в аккаунт.',
+          error: 'You are already registered with this number. Sign in to your account.',
           code: 'ALREADY_REGISTERED',
         });
       }
@@ -4005,7 +4005,7 @@ app.post('/api/auth/whatsapp', async (req, res) => {
       if (user.is_blocked === 1) {
         return res.status(403).json({ 
           success: false, 
-          error: 'Пользователь заблокирован',
+          error: 'User is blocked',
           is_blocked: true
         });
       }
@@ -4036,18 +4036,18 @@ app.post('/api/auth/whatsapp', async (req, res) => {
     if (mode === 'login') {
       return res.status(404).json({
         success: false,
-        error: 'Пользователь с таким номером не найден. Сначала зарегистрируйтесь через WhatsApp.',
+        error: 'No user found with this number. Register via WhatsApp first.',
         code: 'NEED_REGISTER',
       });
     }
     
     // Режим регистрации: создаем нового пользователя
-    const country = phone.startsWith('375') ? 'Беларусь' : 
-                   phone.startsWith('7') ? 'Россия' : 
-                   phone.startsWith('380') ? 'Украина' : 'Неизвестно';
+    const country = phone.startsWith('375') ? 'Belarus' : 
+                   phone.startsWith('7') ? 'Russia' : 
+                   phone.startsWith('380') ? 'Ukraine' : 'Unknown';
     
     // Разбиваем имя из номера (будет обновлено позже)
-    const nameParts = (req.body.name || `Пользователь ${phone.substring(phone.length - 4)}`).split(' ');
+    const nameParts = (req.body.name || `User ${phone.substring(phone.length - 4)}`).split(' ');
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
     
@@ -4094,7 +4094,7 @@ app.post('/api/auth/whatsapp', async (req, res) => {
     if (error.message.includes('UNIQUE constraint')) {
       return res.status(409).json({ 
         success: false, 
-        error: 'Пользователь с таким номером телефона уже существует' 
+        error: 'A user with this phone number already exists' 
       });
     }
     res.status(500).json({ success: false, error: error.message });
@@ -4275,7 +4275,7 @@ app.post('/api/auth/whatsapp/send-code', async (req, res) => {
     if (!phone || !code) {
       return res.status(400).json({
         success: false,
-        error: 'Необходимо указать номер телефона и код'
+        error: 'Phone number and code are required'
       });
     }
 
@@ -4290,7 +4290,7 @@ app.post('/api/auth/whatsapp/send-code', async (req, res) => {
           console.warn('⚠️ Попытка отправить код через WhatsApp, но клиент не готов. Статус waClientReady:', waClientReady);
           return res.status(503).json({
             success: false,
-            error: 'WhatsApp сервис временно недоступен. Пожалуйста, подождите несколько секунд и попробуйте снова. Если проблема сохраняется, убедитесь, что WhatsApp Web авторизован на сервере.',
+            error: 'WhatsApp service is temporarily unavailable. Wait a few seconds and try again. If the problem persists, make sure WhatsApp Web is authorized in admin.',
             code: 'WHATSAPP_NOT_READY'
           });
         }
@@ -4298,7 +4298,7 @@ app.post('/api/auth/whatsapp/send-code', async (req, res) => {
         console.warn('⚠️ Попытка отправить код через WhatsApp, но клиент не готов. Статус waClientReady:', waClientReady);
         return res.status(503).json({
           success: false,
-          error: 'WhatsApp сервис временно недоступен. Пожалуйста, подождите несколько секунд и попробуйте снова. Если проблема сохраняется, убедитесь, что WhatsApp Web авторизован на сервере.',
+          error: 'WhatsApp service is temporarily unavailable. Wait a few seconds and try again. If the problem persists, make sure WhatsApp Web is authorized in admin.',
           code: 'WHATSAPP_NOT_READY'
         });
       }
@@ -4308,7 +4308,7 @@ app.post('/api/auth/whatsapp/send-code', async (req, res) => {
     if (!digits) {
       return res.status(400).json({
         success: false,
-        error: 'Неверный формат номера телефона'
+        error: 'Invalid phone number format'
       });
     }
 
@@ -4351,7 +4351,7 @@ app.post('/api/auth/whatsapp/send-code', async (req, res) => {
         console.warn('⚠️ Сессия WhatsApp устарела (detached Frame). Требуется повторная привязка по QR-коду.');
         return res.status(503).json({
           success: false,
-          error: 'Сессия WhatsApp устарела. Зайдите в админ-панель → WhatsApp и заново отсканируйте QR-код, либо перезапустите сервер.',
+          error: 'WhatsApp session expired. Open admin → WhatsApp and scan the QR code again, or restart the server.',
           code: 'WHATSAPP_SESSION_EXPIRED'
         });
       }
@@ -4388,12 +4388,12 @@ app.post('/api/auth/whatsapp/send-code', async (req, res) => {
                 // Возвращаем успех, так как сообщение, вероятно, было отправлено
                 return res.json({
                   success: true,
-                  message: 'Код отправлен в WhatsApp',
+                  message: 'Code sent to WhatsApp',
                   contact: {
                     name: contactName,
                     picture: profilePicUrl
                   },
-                  warning: 'Сообщение отправлено, но возникла техническая ошибка при отметке прочтения'
+                  warning: 'Message sent, but marking as read failed due to a technical error'
                 });
               }
             } catch (contactError) {
@@ -4412,7 +4412,7 @@ app.post('/api/auth/whatsapp/send-code', async (req, res) => {
 
     return res.json({
       success: true,
-      message: 'Код отправлен в WhatsApp',
+      message: 'Code sent to WhatsApp',
       contact: {
         name: contactName,
         picture: profilePicUrl
@@ -4425,14 +4425,14 @@ app.post('/api/auth/whatsapp/send-code', async (req, res) => {
       console.warn('⚠️ Сессия WhatsApp устарела (detached Frame). Требуется повторная привязка по QR-коду.');
       return res.status(503).json({
         success: false,
-        error: 'Сессия WhatsApp устарела. Зайдите в админ-панель → WhatsApp и заново отсканируйте QR-код, либо перезапустите сервер.',
+        error: 'WhatsApp session expired. Open admin → WhatsApp and scan the QR code again, or restart the server.',
         code: 'WHATSAPP_SESSION_EXPIRED'
       });
     }
     console.error('Ошибка отправки кода через WhatsApp:', error);
     return res.status(500).json({
       success: false,
-      error: 'Не удалось отправить код через WhatsApp'
+      error: 'Could not send the code via WhatsApp'
     });
   }
 });
@@ -4447,14 +4447,14 @@ app.post('/api/whatsapp/send-message', async (req, res) => {
     if (!phone || !message) {
       return res.status(400).json({
         success: false,
-        error: 'Необходимо указать номер телефона и сообщение'
+        error: 'Phone number and message are required'
       });
     }
 
     if (!message.trim()) {
       return res.status(400).json({
         success: false,
-        error: 'Сообщение не может быть пустым'
+        error: 'Message cannot be empty'
       });
     }
 
@@ -4469,7 +4469,7 @@ app.post('/api/whatsapp/send-message', async (req, res) => {
           console.warn('⚠️ Попытка отправить сообщение через WhatsApp, но клиент не готов. Статус waClientReady:', waClientReady);
           return res.status(503).json({
             success: false,
-            error: 'WhatsApp сервис временно недоступен. Пожалуйста, подождите несколько секунд и попробуйте снова. Если проблема сохраняется, убедитесь, что WhatsApp Web авторизован на сервере.',
+            error: 'WhatsApp service is temporarily unavailable. Wait a few seconds and try again. If the problem persists, make sure WhatsApp Web is authorized in admin.',
             code: 'WHATSAPP_NOT_READY'
           });
         }
@@ -4477,7 +4477,7 @@ app.post('/api/whatsapp/send-message', async (req, res) => {
         console.warn('⚠️ Попытка отправить сообщение через WhatsApp, но клиент не готов. Статус waClientReady:', waClientReady);
         return res.status(503).json({
           success: false,
-          error: 'WhatsApp сервис временно недоступен. Пожалуйста, подождите несколько секунд и попробуйте снова. Если проблема сохраняется, убедитесь, что WhatsApp Web авторизован на сервере.',
+          error: 'WhatsApp service is temporarily unavailable. Wait a few seconds and try again. If the problem persists, make sure WhatsApp Web is authorized in admin.',
           code: 'WHATSAPP_NOT_READY'
         });
       }
@@ -4487,7 +4487,7 @@ app.post('/api/whatsapp/send-message', async (req, res) => {
     if (!digits) {
       return res.status(400).json({
         success: false,
-        error: 'Неверный формат номера телефона'
+        error: 'Invalid phone number format'
       });
     }
 
@@ -4553,12 +4553,12 @@ app.post('/api/whatsapp/send-message', async (req, res) => {
                 // Возвращаем успех, так как сообщение, вероятно, было отправлено
                 return res.json({
                   success: true,
-                  message: 'Сообщение отправлено в WhatsApp',
+                  message: 'Message sent to WhatsApp',
                   contact: {
                     name: contactName,
                     picture: profilePicUrl
                   },
-                  warning: 'Сообщение отправлено, но возникла техническая ошибка при отметке прочтения'
+                  warning: 'Message sent, but marking as read failed due to a technical error'
                 });
               }
             } catch (contactError) {
@@ -4590,7 +4590,7 @@ app.post('/api/whatsapp/send-message', async (req, res) => {
 
     return res.json({
       success: true,
-      message: 'Сообщение отправлено в WhatsApp',
+      message: 'Message sent to WhatsApp',
       contact: {
         name: contactName,
         picture: profilePicUrl
@@ -4600,7 +4600,7 @@ app.post('/api/whatsapp/send-message', async (req, res) => {
     console.error('Ошибка отправки сообщения через WhatsApp:', error);
     return res.status(500).json({
       success: false,
-      error: 'Не удалось отправить сообщение через WhatsApp'
+      error: 'Could not send the message via WhatsApp'
     });
   }
 });
@@ -4629,11 +4629,11 @@ app.post('/api/purchase-requests', async (req, res) => {
 
     // Валидация обязательных полей
     if (!buyerName) {
-      return res.status(400).json({ success: false, error: 'Необходимо указать имя покупателя' });
+      return res.status(400).json({ success: false, error: 'Buyer name is required' });
     }
 
     if (!propertyTitle) {
-      return res.status(400).json({ success: false, error: 'Необходимо указать название объекта' });
+      return res.status(400).json({ success: false, error: 'Property title is required' });
     }
 
     // Создаем запрос со всеми данными об объекте
@@ -4714,7 +4714,7 @@ app.post('/api/purchase-requests', async (req, res) => {
       
       if (digits && digits.length >= 10) {
         // Формируем сообщение
-        const whatsappMessage = `Вы отправили запрос на покупку объекта "${propertyTitle}". Наш менеджер скоро с вами свяжется.`;
+        const whatsappMessage = `You submitted a purchase request for "${propertyTitle}". Our manager will contact you soon.`;
         
         // Отправляем сообщение асинхронно, не ожидая результата
         setImmediate(async () => {
@@ -4743,7 +4743,7 @@ app.post('/api/purchase-requests', async (req, res) => {
       }
     }
 
-    res.json({ success: true, data: newRequest, message: 'Запрос на покупку успешно создан' });
+    res.json({ success: true, data: newRequest, message: 'Purchase request created successfully' });
   } catch (error) {
     console.error('❌ Ошибка создания запроса на покупку:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -4824,7 +4824,7 @@ app.get('/api/purchase-requests/:id', async (req, res) => {
   try {
     const request = await purchaseRequestQueries.getById(req.params.id);
     if (!request) {
-      return res.status(404).json({ success: false, error: 'Запрос не найден' });
+      return res.status(404).json({ success: false, error: 'Request not found' });
     }
     res.json({ success: true, data: request });
   } catch (error) {
@@ -4855,12 +4855,12 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
     const { status, adminNotes } = req.body;
     
     if (!status) {
-      return res.status(400).json({ success: false, error: 'Необходимо указать статус' });
+      return res.status(400).json({ success: false, error: 'Status is required' });
     }
 
     const request = await purchaseRequestQueries.getById(req.params.id);
     if (!request) {
-      return res.status(404).json({ success: false, error: 'Запрос не найден' });
+      return res.status(404).json({ success: false, error: 'Request not found' });
     }
 
     // Сделку нельзя завершить по неподтверждённой заявке: проверяем именно запись,
@@ -4875,7 +4875,7 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
         return res.status(409).json({
           success: false,
           code: 'RESERVATION_PAYMENT_REQUIRED',
-          error: 'Нельзя завершить сделку: Stripe не подтвердил оплату резерва.',
+          error: 'Cannot complete the deal: Stripe has not confirmed the reserve payment.',
         });
       }
     }
@@ -4891,7 +4891,7 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
         return res.status(409).json({
           success: false,
           code: 'AUCTION_WINNER_LINK_INVALID',
-          error: 'Оплаченная аукционная заявка не связана с покупателем или объектом.',
+          error: 'Paid auction request is not linked to a buyer or property.',
         });
       }
       auctionWinnerForStatus = await getPrisma().auction_winners.findFirst({
@@ -4903,7 +4903,7 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
         return res.status(409).json({
           success: false,
           code: 'AUCTION_WINNER_NOT_FOUND',
-          error: 'Не найдена запись победителя для оплаченной аукционной заявки.',
+          error: 'Winner record not found for the paid auction request.',
         });
       }
     }
@@ -4917,7 +4917,7 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
           success: false,
           code: 'BUYER_EMAIL_REQUIRED',
           error:
-            'У покупателя нет email в заявке и в профиле. Укажите email в профиле пользователя или в заявке — без него нельзя отправить письмо.',
+            'Buyer has no email in the request or profile. Add an email in the user profile or request — otherwise the email cannot be sent.',
         });
       }
     }
@@ -4999,26 +4999,26 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
         // Формируем сообщение для покупателя
         const currencySymbol = getCurrencySymbol(request.property_currency);
         const propertyPrice = request.property_price ? 
-          `${currencySymbol}${parseFloat(request.property_price).toLocaleString('ru-RU')}` : 
+          `${currencySymbol}${parseFloat(request.property_price).toLocaleString('en-US')}` : 
           'не указана';
         
-        const message = `Здравствуйте, ${request.buyer_name || 'Покупатель'}!
+        const message = `Hello, ${request.buyer_name || 'Buyer'}!
 
-Мы рассмотрели ваш запрос на покупку объекта недвижимости.
+We have reviewed your property purchase request.
 
-📋 Детали запроса:
-🏠 Объект: ${request.property_title || 'Не указан'}
-💰 Цена: ${propertyPrice}
-📍 Местоположение: ${request.property_location || 'Не указано'}
+📋 Request details:
+🏠 Property: ${request.property_title || 'Not specified'}
+💰 Price: ${propertyPrice}
+📍 Location: ${request.property_location || 'Not specified'}
 
-Для продолжения необходимо совершить первоначальный платеж по следующим реквизитам:
+To continue, please make the initial payment using the details below:
 
-💳 Номер счета: ${paymentAccount}
+💳 Account number: ${paymentAccount}
 
-После получения платежа наш менеджер свяжется с вами для дальнейших действий.
+After we receive the payment, our manager will contact you about next steps.
 
-С уважением,
-Команда Sellyourbrick`;
+Best regards,
+The Sellyourbrick Team`;
 
         // Отправляем WhatsApp сообщение
         if (request.buyer_phone) {
@@ -5038,7 +5038,7 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
           try {
             await sendCrmEmailViaEmailJS(
               resolvedBuyerEmailForMails,
-              'Поздравляем! Запрос на покупку одобрен — Sellyourbrick',
+              'Congratulations! Your purchase request was approved — Sellyourbrick',
               message
             );
           } catch (emailJsErr) {
@@ -5056,7 +5056,7 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
       try {
         const propertyIdNum = request.property_id ? parseInt(request.property_id, 10) : null;
         const safePropertyId = Number.isFinite(propertyIdNum) ? propertyIdNum : null;
-        const propertyTitle = request.property_title || 'Объект недвижимости';
+        const propertyTitle = request.property_title || 'Property';
         const requestIdNum = parseInt(req.params.id, 10);
         const buyerIdForNotif = parseInt(String(request.buyer_id).trim(), 10);
 
@@ -5065,8 +5065,8 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
             await notificationQueries.create({
               user_id: buyerIdForNotif,
               type: 'buy_now_approved',
-              title: 'Покупка одобрена',
-              message: `Ваш запрос на покупку "${propertyTitle}" одобрен. Перейдите к оформлению.`,
+              title: 'Purchase approved',
+              message: `Your purchase request for "${propertyTitle}" was approved. Proceed to checkout.`,
               data: {
                 request_id: Number.isFinite(requestIdNum) ? requestIdNum : null,
                 property_id: safePropertyId
@@ -5078,8 +5078,8 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
             await notificationQueries.create({
               user_id: buyerIdForNotif,
               type: 'buy_now_completed',
-              title: 'Объект ваш!',
-              message: `Сделка по объекту «${propertyTitle}» завершена. Теперь вы можете выставить его на продажу как продавец.`,
+              title: 'The property is yours!',
+              message: `The deal for «${propertyTitle}» is complete. You can now list it for sale as a seller.`,
               data: {
                 request_id: Number.isFinite(requestIdNum) ? requestIdNum : null,
                 property_id: safePropertyId,
@@ -5093,8 +5093,8 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
             await sendPushToUserSafely(
               buyerIdForNotif,
               {
-                title: 'Покупка завершена',
-                body: `Сделка по объекту «${propertyTitle}» успешно завершена. Объект уже в вашем кабинете.`,
+                title: 'Purchase completed',
+                body: `The deal for «${propertyTitle}» completed successfully. The property is already in your cabinet.`,
                 data: {
                   type: 'purchase_success',
                   propertyId: safePropertyId,
@@ -5108,8 +5108,8 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
             await notificationQueries.create({
               user_id: buyerIdForNotif,
               type: 'buy_now_rejected',
-              title: 'Покупка отклонена',
-              message: `Ваш запрос на покупку "${propertyTitle}" был отклонен.`,
+              title: 'Purchase rejected',
+              message: `Your purchase request for "${propertyTitle}" was rejected.`,
               data: {
                 request_id: Number.isFinite(requestIdNum) ? requestIdNum : null,
                 property_id: safePropertyId
@@ -5142,23 +5142,23 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
 
     if (status === 'completed' && resolvedBuyerEmailForMails) {
       try {
-        const name = updatedRequest.buyer_name || 'Покупатель';
-        const pTitle = updatedRequest.property_title || 'Объект недвижимости';
+        const name = updatedRequest.buyer_name || 'Buyer';
+        const pTitle = updatedRequest.property_title || 'Property';
         const pLoc = updatedRequest.property_location || 'Не указано';
-        const congratsBody = `Здравствуйте, ${name}!
+        const congratsBody = `Hello, ${name}!
 
-Поздравляем с покупкой объекта недвижимости!
+Congratulations on purchasing the property!
 
-🏠 Объект: ${pTitle}
-📍 Местоположение: ${pLoc}
+🏠 Property: ${pTitle}
+📍 Location: ${pLoc}
 
-Сделка по запросу #${req.params.id} отмечена как завершена. Спасибо, что выбрали нас.
+Purchase request #${req.params.id} is marked as completed. Thank you for choosing us.
 
-С уважением,
-Команда Sellyourbrick`;
+Best regards,
+The Sellyourbrick Team`;
         await sendCrmEmailViaEmailJS(
           resolvedBuyerEmailForMails,
-          `Поздравляем! Объект «${pTitle}» ваш — Sellyourbrick`,
+          `Congratulations! «${pTitle}» is yours — Sellyourbrick`,
           congratsBody
         );
       } catch (completeMailErr) {
@@ -5166,7 +5166,7 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
       }
     }
     
-    res.json({ success: true, data: updatedRequest, message: 'Статус обновлен' });
+    res.json({ success: true, data: updatedRequest, message: 'Status updated' });
   } catch (error) {
     console.error('❌ Ошибка обновления статуса:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -5180,7 +5180,7 @@ app.delete('/api/purchase-requests/:id', async (req, res) => {
   try {
     const request = await purchaseRequestQueries.getById(req.params.id);
     if (!request) {
-      return res.status(404).json({ success: false, error: 'Запрос не найден' });
+      return res.status(404).json({ success: false, error: 'Request not found' });
     }
 
     // Снимаем резервацию объекта при удалении запроса
@@ -5199,7 +5199,7 @@ app.delete('/api/purchase-requests/:id', async (req, res) => {
     await purchaseRequestQueries.delete(req.params.id);
     console.log(`✅ Запрос #${req.params.id} удален`);
     
-    res.json({ success: true, message: 'Запрос успешно удален' });
+    res.json({ success: true, message: 'Request deleted successfully' });
   } catch (error) {
     console.error('❌ Ошибка удаления запроса:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -5219,7 +5219,7 @@ app.get('/api/investment/market-data', async (req, res) => {
     console.error('❌ GET /api/investment/market-data:', error);
     return res.status(500).json({ 
       success: false, 
-      error: error.message || 'Ошибка получения данных о рынке' 
+      error: error.message || 'Error fetching market data' 
     });
   }
 });
@@ -5235,7 +5235,7 @@ app.get('/api/investment/mortgage-rates', async (req, res) => {
     console.error('❌ GET /api/investment/mortgage-rates:', error);
     return res.status(500).json({ 
       success: false, 
-      error: error.message || 'Ошибка получения ипотечных ставок' 
+      error: error.message || 'Error fetching mortgage rates' 
     });
   }
 });
@@ -5246,14 +5246,14 @@ app.get('/api/investment/mortgage-rates', async (req, res) => {
  */
 app.get('/api/investment/rental-yield', async (req, res) => {
   try {
-    const region = req.query.region || 'Москва';
+    const region = req.query.region || 'Madrid';
     const result = await getRentalYieldByRegion(region);
     return res.json(result);
   } catch (error) {
     console.error('❌ GET /api/investment/rental-yield:', error);
     return res.status(500).json({ 
       success: false, 
-      error: error.message || 'Ошибка получения данных о доходности аренды' 
+      error: error.message || 'Error fetching rental yield data' 
     });
   }
 });
@@ -5267,7 +5267,7 @@ app.post('/api/assistant-leads', async (req, res) => {
   try {
     const { sessionId, userId, messages, preferences, email, phone } = req.body || {};
     if (!sessionId || typeof sessionId !== 'string' || !sessionId.trim()) {
-      return res.status(400).json({ success: false, error: 'sessionId обязателен' });
+      return res.status(400).json({ success: false, error: 'sessionId is required' });
     }
     const result = await assistantLeadQueries.upsert({
       sessionId: sessionId.trim(),
@@ -5280,7 +5280,7 @@ app.post('/api/assistant-leads', async (req, res) => {
     return res.json({ success: true, id: result.id, created: result.created });
   } catch (error) {
     console.error('❌ POST /api/assistant-leads:', error);
-    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+    return res.status(500).json({ success: false, error: error.message || 'Server error' });
   }
 });
 
@@ -5293,7 +5293,7 @@ app.get('/api/assistant-leads', async (req, res) => {
     return res.json({ success: true, data: list });
   } catch (error) {
     console.error('❌ GET /api/assistant-leads:', error);
-    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+    return res.status(500).json({ success: false, error: error.message || 'Server error' });
   }
 });
 
@@ -5303,13 +5303,13 @@ app.get('/api/assistant-leads', async (req, res) => {
 app.get('/api/assistant-leads/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ success: false, error: 'Некорректный id' });
+    if (isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid id' });
     const lead = await assistantLeadQueries.getById(id);
-    if (!lead) return res.status(404).json({ success: false, error: 'Лид не найден' });
+    if (!lead) return res.status(404).json({ success: false, error: 'Lead not found' });
     return res.json({ success: true, data: lead });
   } catch (error) {
     console.error('❌ GET /api/assistant-leads/:id:', error);
-    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+    return res.status(500).json({ success: false, error: error.message || 'Server error' });
   }
 });
 
@@ -5368,7 +5368,7 @@ app.post('/api/live-chat/sessions', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ POST /api/live-chat/sessions:', error);
-    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+    return res.status(500).json({ success: false, error: error.message || 'Server error' });
   }
 });
 
@@ -5379,13 +5379,13 @@ app.get('/api/live-chat/sessions/:token/messages', async (req, res) => {
   try {
     const token = req.params.token;
     const session = await liveChatQueries.getSessionByToken(token);
-    if (!session) return res.status(404).json({ success: false, error: 'Сессия не найдена' });
+    if (!session) return res.status(404).json({ success: false, error: 'Session not found' });
     const since = parseInt(req.query.since, 10) || 0;
     const messages = await liveChatQueries.getMessages(session.id, since);
     return res.json({ success: true, data: messages });
   } catch (error) {
     console.error('❌ GET live-chat messages:', error);
-    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+    return res.status(500).json({ success: false, error: error.message || 'Server error' });
   }
 });
 
@@ -5396,11 +5396,11 @@ app.post('/api/live-chat/sessions/:token/messages', async (req, res) => {
   try {
     const token = req.params.token;
     const session = await liveChatQueries.getSessionByToken(token);
-    if (!session) return res.status(404).json({ success: false, error: 'Сессия не найдена' });
+    if (!session) return res.status(404).json({ success: false, error: 'Session not found' });
     const text = req.body && req.body.text != null ? String(req.body.text).trim() : '';
-    if (!text) return res.status(400).json({ success: false, error: 'Пустое сообщение' });
+    if (!text) return res.status(400).json({ success: false, error: 'Empty message' });
     const msgId = await liveChatQueries.addMessage(session.id, 'user', text);
-    if (!msgId) return res.status(400).json({ success: false, error: 'Не удалось сохранить сообщение' });
+    if (!msgId) return res.status(400).json({ success: false, error: 'Could not save the message' });
     const row = await liveChatQueries.getMessageRow(session.id, msgId);
     broadcastLiveChatAdminEvent({ type: 'live_chat_message', sessionId: session.id, message: row });
     fireOpsAlert(async () => {
@@ -5426,7 +5426,7 @@ app.post('/api/live-chat/sessions/:token/messages', async (req, res) => {
     return res.json({ success: true, data: row });
   } catch (error) {
     console.error('❌ POST live-chat user message:', error);
-    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+    return res.status(500).json({ success: false, error: error.message || 'Server error' });
   }
 });
 
@@ -5439,7 +5439,7 @@ app.get('/api/admin/live-chat/sessions', async (req, res) => {
     return res.json({ success: true, data: list });
   } catch (error) {
     console.error('❌ GET /api/admin/live-chat/sessions:', error);
-    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+    return res.status(500).json({ success: false, error: error.message || 'Server error' });
   }
 });
 
@@ -5449,14 +5449,14 @@ app.get('/api/admin/live-chat/sessions', async (req, res) => {
 app.get('/api/admin/live-chat/sessions/:id/messages', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ success: false, error: 'Некорректный id' });
+    if (isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid id' });
     const session = await liveChatQueries.getSessionById(id);
-    if (!session) return res.status(404).json({ success: false, error: 'Сессия не найдена' });
+    if (!session) return res.status(404).json({ success: false, error: 'Session not found' });
     const messages = await liveChatQueries.getMessages(id, 0);
     return res.json({ success: true, data: messages });
   } catch (error) {
     console.error('❌ GET admin live-chat messages:', error);
-    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+    return res.status(500).json({ success: false, error: error.message || 'Server error' });
   }
 });
 
@@ -5466,18 +5466,18 @@ app.get('/api/admin/live-chat/sessions/:id/messages', async (req, res) => {
 app.post('/api/admin/live-chat/sessions/:id/messages', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ success: false, error: 'Некорректный id' });
+    if (isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid id' });
     const session = await liveChatQueries.getSessionById(id);
-    if (!session) return res.status(404).json({ success: false, error: 'Сессия не найдена' });
+    if (!session) return res.status(404).json({ success: false, error: 'Session not found' });
     const text = req.body && req.body.text != null ? String(req.body.text).trim() : '';
-    if (!text) return res.status(400).json({ success: false, error: 'Пустое сообщение' });
+    if (!text) return res.status(400).json({ success: false, error: 'Empty message' });
     const msgId = await liveChatQueries.addMessage(id, 'manager', text);
     const row = await liveChatQueries.getMessageRow(id, msgId);
     broadcastLiveChatAdminEvent({ type: 'live_chat_message', sessionId: id, message: row });
     return res.json({ success: true, data: row });
   } catch (error) {
     console.error('❌ POST admin live-chat message:', error);
-    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+    return res.status(500).json({ success: false, error: error.message || 'Server error' });
   }
 });
 
@@ -5487,14 +5487,14 @@ app.post('/api/admin/live-chat/sessions/:id/messages', async (req, res) => {
 app.post('/api/admin/live-chat/sessions/:id/read', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).json({ success: false, error: 'Некорректный id' });
+    if (isNaN(id)) return res.status(400).json({ success: false, error: 'Invalid id' });
     const session = await liveChatQueries.getSessionById(id);
-    if (!session) return res.status(404).json({ success: false, error: 'Сессия не найдена' });
+    if (!session) return res.status(404).json({ success: false, error: 'Session not found' });
     const row = await liveChatQueries.markSessionRead(id);
     return res.json({ success: true, data: row });
   } catch (error) {
     console.error('❌ POST admin live-chat read:', error);
-    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+    return res.status(500).json({ success: false, error: error.message || 'Server error' });
   }
 });
 
@@ -5507,7 +5507,7 @@ app.post('/api/admin/live-chat/read-all', async (req, res) => {
     return res.json({ success: true, data: { count: 0 } });
   } catch (error) {
     console.error('❌ POST admin live-chat read-all:', error);
-    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+    return res.status(500).json({ success: false, error: error.message || 'Server error' });
   }
 });
 
@@ -5520,7 +5520,7 @@ app.get('/api/admin/live-chat/user-messages-since', async (req, res) => {
     return res.json({ success: true, data: { count } });
   } catch (error) {
     console.error('❌ GET /api/admin/live-chat/user-messages-since:', error);
-    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+    return res.status(500).json({ success: false, error: error.message || 'Server error' });
   }
 });
 
@@ -5565,11 +5565,11 @@ app.post('/api/bonus-submissions', async (req, res) => {
     const prisma = getPrisma();
     const { user_id, task_id, link, promo_code } = req.body || {};
     if (!user_id || !task_id || !link || typeof link !== 'string' || !link.trim()) {
-      return res.status(400).json({ success: false, message: 'Укажите user_id, task_id и ссылку.' });
+      return res.status(400).json({ success: false, message: 'Provide user_id, task_id, and the link.' });
     }
     const linkTrim = link.trim();
     if (!/^https?:\/\/.+/i.test(linkTrim)) {
-      return res.status(400).json({ success: false, message: 'Некорректная ссылка.' });
+      return res.status(400).json({ success: false, message: 'Invalid link.' });
     }
     const created = await prisma.bonus_task_submissions.create({
       data: {
@@ -5585,7 +5585,7 @@ app.post('/api/bonus-submissions', async (req, res) => {
     return res.status(201).json({ success: true, data: { id, status: 'pending' } });
   } catch (error) {
     console.error('❌ POST /api/bonus-submissions:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Ошибка сервера.' });
+    return res.status(500).json({ success: false, message: error.message || 'Server error.' });
   }
 });
 
@@ -5613,7 +5613,7 @@ app.get('/api/bonus-submissions/user/:userId', async (req, res) => {
     return res.json({ success: true, data: rows });
   } catch (error) {
     console.error('❌ GET /api/bonus-submissions/user/:userId:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Ошибка сервера.' });
+    return res.status(500).json({ success: false, message: error.message || 'Server error.' });
   }
 });
 
@@ -5639,7 +5639,7 @@ app.get('/api/bonus-submissions/pending', async (req, res) => {
     return res.json({ success: true, data: rows });
   } catch (error) {
     console.error('❌ GET /api/bonus-submissions/pending:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Ошибка сервера.' });
+    return res.status(500).json({ success: false, message: error.message || 'Server error.' });
   }
 });
 
@@ -5654,9 +5654,9 @@ app.put('/api/bonus-submissions/:id/approve', async (req, res) => {
       where: { id: Number(id) },
       select: { id: true, status: true, promo_code: true },
     });
-    if (!row) return res.status(404).json({ success: false, message: 'Заявка не найдена.' });
+    if (!row) return res.status(404).json({ success: false, message: 'Application not found.' });
     if (row.status !== 'pending') {
-      return res.status(400).json({ success: false, message: 'Заявка уже обработана.' });
+      return res.status(400).json({ success: false, message: 'Application already processed.' });
     }
     await prisma.bonus_task_submissions.update({
       where: { id: Number(id) },
@@ -5665,7 +5665,7 @@ app.put('/api/bonus-submissions/:id/approve', async (req, res) => {
     return res.json({ success: true, data: { id, status: 'approved', promo_code: row.promo_code } });
   } catch (error) {
     console.error('❌ PUT /api/bonus-submissions/:id/approve:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Ошибка сервера.' });
+    return res.status(500).json({ success: false, message: error.message || 'Server error.' });
   }
 });
 
@@ -5680,9 +5680,9 @@ app.put('/api/bonus-submissions/:id/reject', async (req, res) => {
       where: { id: Number(id) },
       select: { id: true, status: true },
     });
-    if (!row) return res.status(404).json({ success: false, message: 'Заявка не найдена.' });
+    if (!row) return res.status(404).json({ success: false, message: 'Application not found.' });
     if (row.status !== 'pending') {
-      return res.status(400).json({ success: false, message: 'Заявка уже обработана.' });
+      return res.status(400).json({ success: false, message: 'Application already processed.' });
     }
     await prisma.bonus_task_submissions.update({
       where: { id: Number(id) },
@@ -5691,7 +5691,7 @@ app.put('/api/bonus-submissions/:id/reject', async (req, res) => {
     return res.json({ success: true, data: { id, status: 'rejected' } });
   } catch (error) {
     console.error('❌ PUT /api/bonus-submissions/:id/reject:', error);
-    return res.status(500).json({ success: false, message: error.message || 'Ошибка сервера.' });
+    return res.status(500).json({ success: false, message: error.message || 'Server error.' });
   }
 });
 
@@ -5709,11 +5709,11 @@ app.post('/api/bonus-submissions/use-promo', async (req, res) => {
     const prisma = getPrisma();
     const { user_id, promo_code } = req.body || {};
     if (!user_id || !promo_code || typeof promo_code !== 'string') {
-      return res.status(400).json({ success: false, reason: 'invalid', message: 'Укажите user_id и промокод.' });
+      return res.status(400).json({ success: false, reason: 'invalid', message: 'Provide user_id and the promo code.' });
     }
     const codeTrim = String(promo_code).trim().toUpperCase();
     if (!codeTrim) {
-      return res.status(400).json({ success: false, reason: 'invalid', message: 'Введите промокод.' });
+      return res.status(400).json({ success: false, reason: 'invalid', message: 'Enter a promo code.' });
     }
 
     // Специальный "супер" промокод ADMIN, который всегда проходит без каких‑либо проверок
@@ -5738,13 +5738,13 @@ app.post('/api/bonus-submissions/use-promo', async (req, res) => {
     });
 
     if (!row) {
-      return res.json({ success: false, reason: 'invalid', message: 'Промокод не найден или не подходит.' });
+      return res.json({ success: false, reason: 'invalid', message: 'Promo code not found or not applicable.' });
     }
     if (!SELLER_PROMO_TASK_IDS.includes(row.task_id)) {
-      return res.json({ success: false, reason: 'invalid', message: 'Этот промокод не для оплаты публикации объекта.' });
+      return res.json({ success: false, reason: 'invalid', message: 'This promo code is not for listing publication payment.' });
     }
     if (row.used_at) {
-      return res.json({ success: false, reason: 'used', message: 'Этот промокод уже был использован.' });
+      return res.json({ success: false, reason: 'used', message: 'This promo code has already been used.' });
     }
 
     await prisma.bonus_task_submissions.update({
@@ -5754,7 +5754,7 @@ app.post('/api/bonus-submissions/use-promo', async (req, res) => {
     return res.json({ success: true, data: { submission_id: row.id, promo_code: row.promo_code } });
   } catch (error) {
     console.error('❌ POST /api/bonus-submissions/use-promo:', error);
-    return res.status(500).json({ success: false, reason: 'error', message: error.message || 'Ошибка сервера.' });
+    return res.status(500).json({ success: false, reason: 'error', message: error.message || 'Server error.' });
   }
 });
 
@@ -5770,7 +5770,7 @@ app.get('/api/owner/:sellerId/interest-count', async (req, res) => {
     // Проверяем, существует ли продавец
     const seller = await userQueries.getById(sellerId);
     if (!seller) {
-      return res.status(404).json({ success: false, error: 'Продавец не найден' });
+      return res.status(404).json({ success: false, error: 'Seller not found' });
     }
     
     // Получаем все объекты продавца
@@ -5838,7 +5838,7 @@ app.post('/api/auth/email/check-seller-registration', async (req, res) => {
   try {
     const { email } = req.body;
     if (!email || typeof email !== 'string') {
-      return res.status(400).json({ success: false, error: 'Укажите email' });
+      return res.status(400).json({ success: false, error: 'Enter email' });
     }
     const emailLower = email.toLowerCase().trim();
     const rows = await userQueries.getAllByEmail(emailLower);
@@ -5851,7 +5851,7 @@ app.post('/api/auth/email/check-seller-registration', async (req, res) => {
       return res.status(409).json({
         success: false,
         status: 'already_seller',
-        error: 'Этот email уже зарегистрирован как продавец. Войдите в кабинет продавца.',
+        error: 'This email is already registered as a seller. Sign in to the seller cabinet.',
       });
     }
     const buyers = rows.filter((u) => isBuyerLike(u.role));
@@ -5859,7 +5859,7 @@ app.post('/api/auth/email/check-seller-registration', async (req, res) => {
       return res.status(409).json({
         success: false,
         status: 'email_unavailable',
-        error: 'Этот email уже используется в системе.',
+        error: 'This email is already used in the system.',
       });
     }
     const buyer = buyers[0];
@@ -5869,7 +5869,7 @@ app.post('/api/auth/email/check-seller-registration', async (req, res) => {
         status: 'buyer_password_required',
         buyerId: buyer.id,
         error:
-          'Сначала задайте пароль для кабинета покупателя — затем создайте кабинет продавца с другим паролем.',
+          'First set a password for the buyer cabinet — then create the seller cabinet with a different password.',
       });
     }
     const { password } = req.body;
@@ -5880,7 +5880,7 @@ app.post('/api/auth/email/check-seller-registration', async (req, res) => {
           success: false,
           status: 'password_same_as_buyer',
           error:
-            'Пароль кабинета продавца должен отличаться от пароля кабинета покупателя. Укажите другой пароль.',
+            'The seller cabinet password must differ from the buyer cabinet password. Enter a different password.',
         });
       }
     }
@@ -5902,7 +5902,7 @@ function linkedRolePublicUser(u) {
   if (!u) return null;
   return {
     id: u.id,
-    name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email || 'Пользователь',
+    name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email || 'User',
     email: u.email,
     role: u.role,
     hasPassword: Boolean(u.password),
@@ -5916,7 +5916,7 @@ function linkedRolePublicUser(u) {
 }
 
 function buildLinkedRoleProfileFromUser(sourceUser) {
-  const firstName = (sourceUser.first_name || '').trim() || 'Пользователь';
+  const firstName = (sourceUser.first_name || '').trim() || 'User';
   return {
     first_name: firstName,
     last_name: sourceUser.last_name ?? null,
@@ -5948,13 +5948,13 @@ app.get('/api/auth/linked-roles', async (req, res) => {
     if (userIdRaw) {
       const user = await userQueries.getById(parseInt(String(userIdRaw), 10));
       if (!user) {
-        return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+        return res.status(404).json({ success: false, error: 'User not found' });
       }
       emailLower = (user.email || '').toLowerCase();
     }
 
     if (!emailLower) {
-      return res.status(400).json({ success: false, error: 'Укажите userId или email' });
+      return res.status(400).json({ success: false, error: 'Provide userId or email' });
     }
 
     const rows = await userQueries.getAllByEmail(emailLower);
@@ -5986,7 +5986,7 @@ app.post('/api/auth/linked-roles/set-password', async (req, res) => {
     if (!userId || !password) {
       return res.status(400).json({
         success: false,
-        error: 'Укажите userId и password',
+        error: 'Provide userId and password',
       });
     }
 
@@ -6004,14 +6004,14 @@ app.post('/api/auth/linked-roles/set-password', async (req, res) => {
 
     const user = await userQueries.getById(userId);
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
 
     if (user.password) {
       return res.status(400).json({
         success: false,
         status: 'already_has_password',
-        error: 'Пароль для этого кабинета уже установлен',
+        error: 'A password is already set for this cabinet',
         user: linkedRolePublicUser(user),
       });
     }
@@ -6026,7 +6026,7 @@ app.post('/api/auth/linked-roles/set-password', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ linked-roles/set-password:', error);
-    res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+    res.status(500).json({ success: false, error: error.message || 'Server error' });
   }
 });
 
@@ -6042,14 +6042,14 @@ app.post('/api/auth/linked-roles/create', async (req, res) => {
     if (!userId || !password || !targetRole) {
       return res.status(400).json({
         success: false,
-        error: 'Укажите userId, targetRole и password',
+        error: 'Provide userId, targetRole, and password',
       });
     }
 
     if (targetRole !== 'buyer' && targetRole !== 'seller') {
       return res.status(400).json({
         success: false,
-        error: 'targetRole должен быть buyer или seller',
+        error: 'targetRole must be buyer or seller',
       });
     }
 
@@ -6067,14 +6067,14 @@ app.post('/api/auth/linked-roles/create', async (req, res) => {
 
     const sourceUser = await userQueries.getById(userId);
     if (!sourceUser) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
 
     const emailLower = (sourceUser.email || '').toLowerCase();
     if (!emailLower) {
       return res.status(400).json({
         success: false,
-        error: 'Для создания связанного кабинета нужен email в профиле',
+        error: 'An email in the profile is required to create a linked cabinet',
       });
     }
 
@@ -6085,13 +6085,13 @@ app.post('/api/auth/linked-roles/create', async (req, res) => {
     if (wantsBuyer && !isSellerCabinetRole(sourceRole)) {
       return res.status(400).json({
         success: false,
-        error: 'Кабинет покупателя можно создать только из кабинета продавца',
+        error: 'A buyer cabinet can only be created from a seller cabinet',
       });
     }
     if (wantsSeller && !isBuyerCabinetRole(sourceRole)) {
       return res.status(400).json({
         success: false,
-        error: 'Кабинет продавца можно создать только из кабинета покупателя',
+        error: 'A seller cabinet can only be created from a buyer cabinet',
       });
     }
 
@@ -6100,7 +6100,7 @@ app.post('/api/auth/linked-roles/create', async (req, res) => {
         success: false,
         status: 'buyer_password_required',
         error:
-          'Сначала задайте пароль для кабинета покупателя — затем создайте кабинет продавца с другим паролем.',
+          'First set a password for the buyer cabinet — then create the seller cabinet with a different password.',
       });
     }
 
@@ -6112,7 +6112,7 @@ app.post('/api/auth/linked-roles/create', async (req, res) => {
       return res.status(409).json({
         success: false,
         status: 'already_exists',
-        error: 'Кабинет покупателя для этого email уже существует',
+        error: 'A buyer cabinet for this email already exists',
         user: linkedRolePublicUser(existingBuyer),
       });
     }
@@ -6120,7 +6120,7 @@ app.post('/api/auth/linked-roles/create', async (req, res) => {
       return res.status(409).json({
         success: false,
         status: 'already_exists',
-        error: 'Кабинет продавца для этого email уже существует',
+        error: 'A seller cabinet for this email already exists',
         user: linkedRolePublicUser(existingSeller),
       });
     }
@@ -6133,7 +6133,7 @@ app.post('/api/auth/linked-roles/create', async (req, res) => {
           success: false,
           status: 'password_same_as_other',
           error:
-            'Пароль нового кабинета должен отличаться от пароля другого кабинета. Укажите другой пароль.',
+            'The new cabinet password must differ from the other cabinet password. Enter a different password.',
         });
       }
     }
@@ -6148,7 +6148,7 @@ app.post('/api/auth/linked-roles/create', async (req, res) => {
     const result = await userQueries.create(newUser);
     const createdUser = await userQueries.getById(result.lastInsertRowid);
     if (!createdUser) {
-      return res.status(500).json({ success: false, error: 'Ошибка при создании пользователя' });
+      return res.status(500).json({ success: false, error: 'Error creating user' });
     }
 
     const createdUserFinal = await userQueries.getById(createdUser.id);
@@ -6168,12 +6168,12 @@ app.post('/api/auth/linked-roles/create', async (req, res) => {
       if (msg.includes('phone_number') || error?.meta?.target?.includes?.('phone_number')) {
         return res.status(409).json({
           success: false,
-          error: 'Не удалось создать кабинет: телефон уже привязан к другому аккаунту. Повторите попытку.',
+          error: 'Could not create the cabinet: phone is already linked to another account. Try again.',
         });
       }
       return res.status(409).json({
         success: false,
-        error: 'Аккаунт с такими данными уже существует',
+        error: 'An account with these details already exists',
       });
     }
     console.error('❌ linked-roles/create:', error);
@@ -6191,7 +6191,7 @@ app.post('/api/auth/email/register', async (req, res) => {
     if (!email || !password || !name) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать email, пароль и имя' 
+        error: 'email, password, and name are required' 
       });
     }
     
@@ -6217,21 +6217,21 @@ app.post('/api/auth/email/register', async (req, res) => {
       if (regRole !== 'seller' && regRole !== 'owner') {
         return res.status(400).json({
           success: false,
-          error: 'Привязка к покупателю допустима только при регистрации продавца',
+          error: 'Linking to a buyer is only allowed when registering a seller',
         });
       }
       linkBuyer = await userQueries.getById(linkBuyerId);
       if (!linkBuyer || (linkBuyer.email || '').toLowerCase() !== emailLower) {
         return res.status(400).json({
           success: false,
-          error: 'Не удалось подтвердить аккаунт покупателя для этого email',
+          error: 'Could not confirm the buyer account for this email',
         });
       }
       const br = linkBuyer.role || 'buyer';
       if (br === 'seller' || br === 'owner') {
         return res.status(409).json({
           success: false,
-          error: 'Аккаунт уже оформлен как продавец',
+          error: 'Account is already registered as a seller',
         });
       }
       if (!linkBuyer.password) {
@@ -6239,14 +6239,14 @@ app.post('/api/auth/email/register', async (req, res) => {
           success: false,
           status: 'buyer_password_required',
           error:
-            'Сначала задайте пароль для кабинета покупателя — затем создайте кабинет продавца с другим паролем.',
+            'First set a password for the buyer cabinet — then create the seller cabinet with a different password.',
         });
       }
       const others = await userQueries.getAllByEmail(emailLower);
       if (others.some((u) => u.id !== linkBuyerId && (u.role === 'seller' || u.role === 'owner'))) {
         return res.status(409).json({
           success: false,
-          error: 'Для этого email уже есть кабинет продавца',
+          error: 'A seller cabinet already exists for this email',
         });
       }
     }
@@ -6257,7 +6257,7 @@ app.post('/api/auth/email/register', async (req, res) => {
       if (existingUser) {
         return res.status(409).json({
           success: false,
-          error: 'Пользователь с таким email уже существует',
+          error: 'A user with this email already exists',
         });
       }
     }
@@ -6279,7 +6279,7 @@ app.post('/api/auth/email/register', async (req, res) => {
         success: false,
         status: 'password_same_as_buyer',
         error:
-          'Пароль кабинета продавца должен отличаться от пароля кабинета покупателя. Укажите другой пароль.',
+          'The seller cabinet password must differ from the buyer cabinet password. Enter a different password.',
       });
     }
     
@@ -6305,7 +6305,7 @@ app.post('/api/auth/email/register', async (req, res) => {
       console.error('❌ Ошибка: Пользователь не найден после создания, ID:', result.lastInsertRowid);
       return res.status(500).json({
         success: false,
-        error: 'Ошибка при создании пользователя'
+        error: 'Error creating user'
       });
     }
 
@@ -6348,7 +6348,7 @@ app.post('/api/auth/email/register', async (req, res) => {
     if (error.message.includes('UNIQUE constraint')) {
       return res.status(409).json({ 
         success: false, 
-        error: 'Пользователь с таким email уже существует' 
+        error: 'A user with this email already exists' 
       });
     }
     res.status(500).json({ success: false, error: error.message });
@@ -6365,7 +6365,7 @@ app.post('/api/auth/email/login', async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать email/username и пароль' 
+        error: 'email/username and password are required' 
       });
     }
     
@@ -6378,7 +6378,7 @@ app.post('/api/auth/email/login', async (req, res) => {
       console.log('❌ Пользователь не найден:', identifier);
       return res.status(401).json({
         success: false,
-        error: 'Неверный email или пароль',
+        error: 'Invalid email or password',
       });
     }
 
@@ -6390,7 +6390,7 @@ app.post('/api/auth/email/login', async (req, res) => {
         console.log('❌ Кабинет не найден для email:', { identifier, role: roleNorm });
         return res.status(401).json({
           success: false,
-          error: 'Неверный email или пароль',
+          error: 'Invalid email or password',
         });
       }
     }
@@ -6412,13 +6412,13 @@ app.post('/api/auth/email/login', async (req, res) => {
         return res.status(401).json({
           success: false,
           error:
-            'Пароль не установлен. Установите пароль в настройках профиля (вкладка "Данные").',
+            'Password is not set. Set a password in profile settings (the "Details" tab).',
         });
       }
       console.log('❌ Неверный пароль для email:', identifier);
       return res.status(401).json({
         success: false,
-        error: 'Неверный email или пароль',
+        error: 'Invalid email or password',
       });
     }
 
@@ -6429,7 +6429,7 @@ app.post('/api/auth/email/login', async (req, res) => {
       console.log('🚫 Пользователь заблокирован:', { id: user.id, email: user.email });
       return res.status(403).json({ 
         success: false, 
-        error: 'Пользователь заблокирован',
+        error: 'User is blocked',
         is_blocked: true
       });
     }
@@ -6446,7 +6446,7 @@ app.post('/api/auth/email/login', async (req, res) => {
       authToken,
       user: {
         id: refreshedUser.id,
-        name: `${refreshedUser.first_name} ${refreshedUser.last_name}`.trim() || refreshedUser.email || 'Пользователь',
+        name: `${refreshedUser.first_name} ${refreshedUser.last_name}`.trim() || refreshedUser.email || 'User',
         email: refreshedUser.email,
         role: refreshedUser.role,
         phone: refreshedUser.phone_number,
@@ -6461,7 +6461,7 @@ app.post('/api/auth/email/login', async (req, res) => {
     console.error('❌ Ошибка при входе:', error);
     res.status(500).json({
       success: false,
-      error: 'Не удалось войти. Попробуйте позже.',
+      error: 'Could not sign in. Try again later.',
     });
   }
 });
@@ -6508,7 +6508,7 @@ async function sendPasswordResetEmail(email, code) {
       verification_code: code,
       code,
       passcode: code,
-      subject: 'Восстановление пароля — Sellyourbrick',
+      subject: 'Password recovery — Sellyourbrick',
     },
   };
   await axios.post('https://api.emailjs.com/api/v1.0/email/send', emailData, {
@@ -6542,7 +6542,7 @@ function mobilePublicUser(user, fallback = {}) {
       `${user.first_name || ''} ${user.last_name || ''}`.trim() ||
       fallback.name ||
       user.email ||
-      'Пользователь',
+      'User',
     email: user.email,
     phone: user.phone_number,
     picture: user.user_photo || fallback.picture || null,
@@ -6616,7 +6616,7 @@ app.post('/api/auth/clerk/mobile', async (req, res) => {
     if (!secretKey && !localJwksFallback) {
       return res.status(503).json({
         success: false,
-        error: 'Clerk backend не настроен: добавьте CLERK_SECRET_KEY в Railway Variables',
+        error: 'Clerk backend is not configured: add CLERK_SECRET_KEY to Railway Variables',
         code: 'CLERK_BACKEND_NOT_CONFIGURED',
       });
     }
@@ -6636,13 +6636,13 @@ app.post('/api/auth/clerk/mobile', async (req, res) => {
       if (!Number.isInteger(localUserId) || localUserId < 1) {
         return res.status(422).json({
           success: false,
-          error: 'Локальная Clerk-сессия не связана с пользователем БД. Перезайдите в профиль.',
+          error: 'Local Clerk session is not linked to a DB user. Sign in to your profile again.',
           code: 'LOCAL_DB_USER_REQUIRED',
         });
       }
       const localUser = await userQueries.getById(localUserId);
       if (!localUser || localUser.is_blocked === 1) {
-        return res.status(403).json({ success: false, error: 'Пользователь недоступен' });
+        return res.status(403).json({ success: false, error: 'User unavailable' });
       }
       const authToken = await issueMobileAuthSession(localUser.id);
       return res.json({
@@ -6663,7 +6663,7 @@ app.post('/api/auth/clerk/mobile', async (req, res) => {
     if (!email) {
       return res.status(422).json({
         success: false,
-        error: 'Clerk не вернул email. Разрешите email для выбранного провайдера.',
+        error: 'Clerk did not return an email. Allow email for the selected provider.',
       });
     }
 
@@ -6677,14 +6677,14 @@ app.post('/api/auth/clerk/mobile', async (req, res) => {
     if (user && mode === 'register') {
       return res.status(409).json({
         success: false,
-        error: 'Этот аккаунт уже зарегистрирован. Выберите «Вход».',
+        error: 'This account is already registered. Choose “Sign in”.',
         code: 'ALREADY_REGISTERED',
       });
     }
     if (!user && mode === 'login') {
       return res.status(404).json({
         success: false,
-        error: 'Аккаунт не найден. Выберите «Регистрация» и войдите тем же способом.',
+        error: 'Account not found. Choose “Sign up” and sign in the same way.',
         code: 'NEED_REGISTER',
       });
     }
@@ -6698,7 +6698,7 @@ app.post('/api/auth/clerk/mobile', async (req, res) => {
     if (!user) {
       const nameParts = fullName.split(/\s+/).filter(Boolean);
       const result = await userQueries.create({
-        first_name: nameParts[0] || 'Пользователь',
+        first_name: nameParts[0] || 'User',
         last_name: nameParts.slice(1).join(' '),
         email,
         phone_number: null,
@@ -6710,7 +6710,7 @@ app.post('/api/auth/clerk/mobile', async (req, res) => {
       user = await userQueries.getById(result.lastInsertRowid);
     } else {
       if (user.is_blocked === 1) {
-        return res.status(403).json({ success: false, error: 'Пользователь заблокирован' });
+        return res.status(403).json({ success: false, error: 'User is blocked' });
       }
       await userQueries.update(user.id, {
         is_online: 1,
@@ -6739,14 +6739,14 @@ app.post('/api/auth/email/forgot-password/send-code', async (req, res) => {
   try {
     const emailRaw = req.body.email;
     if (!emailRaw || typeof emailRaw !== 'string') {
-      return res.status(400).json({ success: false, error: 'Укажите email' });
+      return res.status(400).json({ success: false, error: 'Enter email' });
     }
     const emailLower = emailRaw.toLowerCase().trim();
     const users = await userQueries.getAllByEmail(emailLower);
     if (!users.length) {
       return res.status(404).json({
         success: false,
-        error: 'Аккаунт с таким email не найден',
+        error: 'No account found with this email',
       });
     }
 
@@ -6764,7 +6764,7 @@ app.post('/api/auth/email/forgot-password/send-code', async (req, res) => {
       const mailResult = await sendPasswordResetEmail(emailLower, code);
       res.json({
         success: true,
-        message: 'Код отправлен на email',
+        message: 'Code sent to email',
         roles,
         hasMultipleRoles: roles.length > 1,
         ...(mailResult.devCode && process.env.NODE_ENV !== 'production' ? { devCode: mailResult.devCode } : {}),
@@ -6774,7 +6774,7 @@ app.post('/api/auth/email/forgot-password/send-code', async (req, res) => {
       if (process.env.NODE_ENV !== 'production') {
         return res.json({
           success: true,
-          message: 'Email не отправлен (dev). Используйте код из ответа.',
+          message: 'Email was not sent (dev). Use the code from the response.',
           roles,
           hasMultipleRoles: roles.length > 1,
           devCode: code,
@@ -6782,7 +6782,7 @@ app.post('/api/auth/email/forgot-password/send-code', async (req, res) => {
       }
       return res.status(500).json({
         success: false,
-        error: 'Не удалось отправить письмо. Попробуйте позже.',
+        error: 'Could not send the email. Try again later.',
       });
     }
   } catch (error) {
@@ -6799,19 +6799,19 @@ app.post('/api/auth/email/forgot-password/verify-code', async (req, res) => {
     const emailLower = String(req.body.email || '').toLowerCase().trim();
     const code = String(req.body.code || '').trim();
     if (!emailLower || !code) {
-      return res.status(400).json({ success: false, error: 'Укажите email и код' });
+      return res.status(400).json({ success: false, error: 'Enter email and code' });
     }
     if (!/^\d{4}$/.test(code)) {
-      return res.status(400).json({ success: false, error: 'Код должен содержать 4 цифры' });
+      return res.status(400).json({ success: false, error: 'Code must contain 4 digits' });
     }
 
     const session = passwordResetSessions.get(emailLower);
     if (!session || Date.now() > session.expiresAt) {
       passwordResetSessions.delete(emailLower);
-      return res.status(400).json({ success: false, error: 'Код не найден или истёк. Запросите новый.' });
+      return res.status(400).json({ success: false, error: 'Code not found or expired. Request a new one.' });
     }
     if (session.code !== code) {
-      return res.status(400).json({ success: false, error: 'Неверный код' });
+      return res.status(400).json({ success: false, error: 'Invalid code' });
     }
 
     const resetToken = crypto.randomBytes(24).toString('hex');
@@ -6843,7 +6843,7 @@ app.post('/api/auth/email/forgot-password/reset', async (req, res) => {
     if (!emailLower || !resetToken || !password) {
       return res.status(400).json({
         success: false,
-        error: 'Укажите email, токен и новый пароль',
+        error: 'Enter email, token, and the new password',
       });
     }
 
@@ -6857,7 +6857,7 @@ app.post('/api/auth/email/forgot-password/reset', async (req, res) => {
     ) {
       return res.status(401).json({
         success: false,
-        error: 'Сессия восстановления истекла. Запросите код заново.',
+        error: 'Recovery session expired. Request a new code.',
       });
     }
 
@@ -6875,20 +6875,20 @@ app.post('/api/auth/email/forgot-password/reset', async (req, res) => {
 
     const users = await userQueries.getAllByEmail(emailLower);
     if (!users.length) {
-      return res.status(404).json({ success: false, error: 'Аккаунт не найден' });
+      return res.status(404).json({ success: false, error: 'Account not found' });
     }
 
     let targets = users;
     if (role === 'buyer' || role === 'seller') {
       targets = usersForCabinetRole(users, role);
       if (!targets.length) {
-        return res.status(400).json({ success: false, error: 'Кабинет не найден для этого email' });
+        return res.status(400).json({ success: false, error: 'Cabinet not found for this email' });
       }
     } else if (session.roles.length > 1) {
       return res.status(400).json({
         success: false,
         status: 'needs_role',
-        error: 'Выберите кабинет, для которого меняете пароль',
+        error: 'Choose the cabinet whose password you are changing',
         roles: session.roles,
       });
     }
@@ -6902,7 +6902,7 @@ app.post('/api/auth/email/forgot-password/reset', async (req, res) => {
           success: false,
           status: 'password_same_as_other',
           error:
-            'Пароль должен отличаться от пароля другого кабинета с этим email. Укажите другой пароль.',
+            'Password must differ from the other cabinet password for this email. Enter a different password.',
         });
       }
       await userQueries.update(u.id, { password: hashedPassword });
@@ -6912,7 +6912,7 @@ app.post('/api/auth/email/forgot-password/reset', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Пароль успешно обновлён',
+      message: 'Password updated successfully',
       updatedUserIds: targets.map((u) => u.id),
     });
   } catch (error) {
@@ -6931,14 +6931,14 @@ app.post('/api/auth/email/send-code', async (req, res) => {
     if (!email) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать email' 
+        error: 'email is required' 
       });
     }
     
     if (!code) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать код верификации' 
+        error: 'Verification code is required' 
       });
     }
     
@@ -6970,7 +6970,7 @@ app.post('/api/auth/email/send-code', async (req, res) => {
             email: email,
             verification_code: code,
             code: code,
-            subject: 'Код верификации - Sellyourbrick'
+            subject: 'Verification code - Sellyourbrick'
           }
         };
         
@@ -6988,13 +6988,13 @@ app.post('/api/auth/email/send-code', async (req, res) => {
           console.log(`✅ Email с кодом верификации отправлен на ${email}`);
           return res.json({ 
             success: true, 
-            message: 'Код отправлен на email' 
+            message: 'Code sent to email' 
           });
         } else {
           console.warn(`⚠️ EmailJS вернул статус ${emailResponse.status}`);
           return res.status(500).json({ 
             success: false, 
-            error: `Ошибка отправки email: статус ${emailResponse.status}` 
+            error: `Email send error: status ${emailResponse.status}` 
           });
         }
       } catch (emailError) {
@@ -7002,8 +7002,8 @@ app.post('/api/auth/email/send-code', async (req, res) => {
         // Если EmailJS не работает, все равно возвращаем успех (код может быть отправлен на фронтенде)
         return res.json({ 
           success: true, 
-          message: 'Код отправлен на email',
-          warning: 'EmailJS вернул ошибку, но код может быть отправлен на фронтенде'
+          message: 'Code sent to email',
+          warning: 'EmailJS returned an error, but the code may still be sent from the frontend'
         });
       }
     } else {
@@ -7014,8 +7014,8 @@ app.post('/api/auth/email/send-code', async (req, res) => {
       // Если EmailJS не настроен, все равно возвращаем успех (код может быть отправлен на фронтенде)
       return res.json({ 
         success: true, 
-        message: 'Код отправлен на email',
-        warning: 'EmailJS не настроен на сервере, код может быть отправлен на фронтенде'
+        message: 'Code sent to email',
+        warning: 'EmailJS is not configured on the server; the code may still be sent from the frontend'
       });
     }
   } catch (error) {
@@ -7035,7 +7035,7 @@ app.post('/api/users/:id/verify-email', async (req, res) => {
     if (!email || !code) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать email и код подтверждения' 
+        error: 'email and confirmation code are required' 
       });
     }
     
@@ -7044,7 +7044,7 @@ app.post('/api/users/:id/verify-email', async (req, res) => {
     if (!user) {
       return res.status(404).json({ 
         success: false, 
-        error: 'Пользователь не найден' 
+        error: 'User not found' 
       });
     }
     
@@ -7056,7 +7056,7 @@ app.post('/api/users/:id/verify-email', async (req, res) => {
     if (existingUser && existingUser.id !== parseInt(id)) {
       return res.status(409).json({ 
         success: false, 
-        error: 'Пользователь с таким email уже существует' 
+        error: 'A user with this email already exists' 
       });
     }
     
@@ -7068,7 +7068,7 @@ app.post('/api/users/:id/verify-email', async (req, res) => {
     if (result.changes === 0) {
       return res.status(404).json({ 
         success: false, 
-        error: 'Пользователь не найден' 
+        error: 'User not found' 
       });
     }
     
@@ -7077,7 +7077,7 @@ app.post('/api/users/:id/verify-email', async (req, res) => {
     
     res.json({ 
       success: true, 
-      message: 'Email успешно подтвержден',
+      message: 'Email confirmed successfully',
       data: userWithoutPassword
     });
   } catch (error) {
@@ -7120,7 +7120,7 @@ app.post('/api/auth/google', async (req, res) => {
     if (!googleEmail) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Не удалось получить данные от Google' 
+        error: 'Could not get data from Google' 
       });
     }
     
@@ -7134,7 +7134,7 @@ app.post('/api/auth/google', async (req, res) => {
       if (mode === 'register') {
         return res.status(409).json({ 
           success: false, 
-          error: 'Вы уже зарегистрированы с этим аккаунтом Google. Войдите в аккаунт.',
+          error: 'You are already registered with this Google account. Sign in.',
           code: 'ALREADY_REGISTERED'
         });
       }
@@ -7143,7 +7143,7 @@ app.post('/api/auth/google', async (req, res) => {
       if (user.is_blocked === 1) {
         return res.status(403).json({ 
           success: false, 
-          error: 'Пользователь заблокирован',
+          error: 'User is blocked',
           is_blocked: true
         });
       }
@@ -7173,7 +7173,7 @@ app.post('/api/auth/google', async (req, res) => {
       if (mode === 'login') {
         return res.status(404).json({ 
           success: false, 
-          error: 'Аккаунт с этим Google не найден. Сначала зарегистрируйтесь через Google.',
+          error: 'No account found for this Google account. Sign up with Google first.',
           code: 'NEED_REGISTER'
         });
       }
@@ -7217,7 +7217,7 @@ app.post('/api/auth/google', async (req, res) => {
     if (error.message.includes('UNIQUE constraint')) {
       return res.status(409).json({ 
         success: false, 
-        error: 'Пользователь с таким email уже существует' 
+        error: 'A user with this email already exists' 
       });
     }
     res.status(500).json({ success: false, error: error.message });
@@ -7259,7 +7259,7 @@ app.post('/api/auth/telegram', async (req, res) => {
     if (!botToken) {
       return res.status(503).json({
         success: false,
-        error: 'Telegram-авторизация не настроена (нет TELEGRAM_LOGIN_BOT_TOKEN или TELEGRAM_BOT_TOKEN)',
+        error: 'Telegram auth is not configured (missing TELEGRAM_LOGIN_BOT_TOKEN or TELEGRAM_BOT_TOKEN)',
       });
     }
 
@@ -7268,7 +7268,7 @@ app.post('/api/auth/telegram', async (req, res) => {
     if (!id || !telegramHash) {
       return res.status(400).json({
         success: false,
-        error: 'Не получены данные от Telegram (id и hash обязательны)',
+        error: 'No data received from Telegram (id and hash are required)',
       });
     }
 
@@ -7285,7 +7285,7 @@ app.post('/api/auth/telegram', async (req, res) => {
     if (!verifyTelegramAuthPayload(payload, botToken)) {
       return res.status(400).json({
         success: false,
-        error: 'Неверная подпись данных Telegram',
+        error: 'Invalid Telegram data signature',
       });
     }
 
@@ -7294,7 +7294,7 @@ app.post('/api/auth/telegram', async (req, res) => {
     if (!authDate || authDate < oneDayAgo) {
       return res.status(400).json({
         success: false,
-        error: 'Данные авторизации устарели. Войдите через Telegram снова.',
+        error: 'Auth data expired. Sign in with Telegram again.',
       });
     }
 
@@ -7306,14 +7306,14 @@ app.post('/api/auth/telegram', async (req, res) => {
       if (mode === 'register') {
         return res.status(409).json({
           success: false,
-          error: 'Вы уже зарегистрированы с этим аккаунтом Telegram. Войдите в аккаунт.',
+          error: 'You are already registered with this Telegram account. Sign in.',
           code: 'ALREADY_REGISTERED',
         });
       }
       if (user.is_blocked === 1) {
         return res.status(403).json({
           success: false,
-          error: 'Пользователь заблокирован',
+          error: 'User is blocked',
           is_blocked: true,
         });
       }
@@ -7327,7 +7327,7 @@ app.post('/api/auth/telegram', async (req, res) => {
         success: true,
         user: {
           id: updatedUser.id,
-          name: `${updatedUser.first_name} ${updatedUser.last_name}`.trim() || [first_name, last_name].filter(Boolean).join(' ') || username || 'Пользователь',
+          name: `${updatedUser.first_name} ${updatedUser.last_name}`.trim() || [first_name, last_name].filter(Boolean).join(' ') || username || 'User',
           email: updatedUser.email,
           picture: updatedUser.telegram_photo_url || updatedUser.user_photo || photo_url,
           role: updatedUser.role,
@@ -7345,7 +7345,7 @@ app.post('/api/auth/telegram', async (req, res) => {
     if (mode === 'login') {
       return res.status(404).json({
         success: false,
-        error: 'Аккаунт с этим Telegram не найден. Сначала зарегистрируйтесь через Telegram.',
+        error: 'No account found for this Telegram account. Sign up with Telegram first.',
         code: 'NEED_REGISTER',
       });
     }
@@ -7412,14 +7412,14 @@ app.get('/api/auth/whatsapp/user-info', async (req, res) => {
     if (!phone) {
       return res.status(400).json({
         success: false,
-        error: 'Необходимо указать номер телефона'
+        error: 'Phone number is required'
       });
     }
 
     if (!waClientReady) {
       return res.status(503).json({
         success: false,
-        error: 'WhatsApp клиент еще не готов'
+        error: 'WhatsApp client is not ready yet'
       });
     }
 
@@ -7427,7 +7427,7 @@ app.get('/api/auth/whatsapp/user-info', async (req, res) => {
     if (!digits) {
       return res.status(400).json({
         success: false,
-        error: 'Неверный формат номера телефона'
+        error: 'Invalid phone number format'
       });
     }
 
@@ -7459,7 +7459,7 @@ app.get('/api/auth/whatsapp/user-info', async (req, res) => {
     console.error('Ошибка получения информации о пользователе WhatsApp:', error);
     return res.status(500).json({
       success: false,
-      error: 'Не удалось получить информацию о пользователе WhatsApp'
+      error: 'Could not get WhatsApp user info'
     });
   }
 });
@@ -7476,7 +7476,7 @@ app.post('/api/whatsapp/users', async (req, res) => {
     if (!phone_number) {
       return res.status(400).json({
         success: false,
-        error: 'Номер телефона обязателен'
+        error: 'Phone number is required'
       });
     }
 
@@ -7498,7 +7498,7 @@ app.post('/api/whatsapp/users', async (req, res) => {
       success: true,
       data: {
         id: result.lastInsertRowid || null,
-        message: 'Пользователь сохранен'
+        message: 'User saved'
       }
     });
   } catch (error) {
@@ -7522,7 +7522,7 @@ app.post('/api/whatsapp/users/lead-type', async (req, res) => {
     if (!phone_number || !allowed.has(lt)) {
       return res.status(400).json({
         success: false,
-        error: 'Нужны phone_number и lead_type: hot | warm | cold'
+        error: 'phone_number and lead_type are required: hot | warm | cold'
       });
     }
     const wa = await whatsappUserQueries.updateLeadType(phone_number, lt);
@@ -7637,14 +7637,14 @@ app.post('/api/whatsapp/restart-pairing', async (req, res) => {
       return res.status(403).json({
         success: false,
         error:
-          'Сброс сессии отклонён. Для production задайте WA_PAIRING_RESET_SECRET и заголовок X-WA-Pairing-Reset. Локально: только с localhost в development.',
+          'Session reset rejected. For production set WA_PAIRING_RESET_SECRET and the X-WA-Pairing-Reset header. Locally: localhost only in development.',
       });
     }
     await restartWhatsAppPairingRequest({ resetAutoRecoverCount: true });
     return res.json({
       success: true,
       message:
-        'Сессия сброшена, запущена повторная инициализация. QR обычно появляется за 30–90 с — обновите статус или подождите автообновление.',
+        'Session reset, re-initialization started. The QR usually appears in 30–90 s — refresh the status or wait for auto-refresh.',
     });
   } catch (e) {
     return res.status(500).json({ success: false, error: e?.message || String(e) });
@@ -7713,7 +7713,7 @@ app.get('/api/whatsapp/status', async (req, res) => {
         success: true,
         ready: true,
         state: 'READY',
-        message: 'WhatsApp клиент готов к работе',
+        message: 'WhatsApp client is ready',
         info: clientInfo
       });
     }
@@ -7740,7 +7740,7 @@ app.get('/api/whatsapp/status', async (req, res) => {
             success: true,
             ready: botData.ready,
             state: botData.ready ? 'READY' : 'NOT_READY',
-            message: botData.message || (botData.ready ? 'WhatsApp клиент готов к работе' : 'WhatsApp клиент не готов'),
+            message: botData.message || (botData.ready ? 'WhatsApp client is ready' : 'WhatsApp client is not ready'),
             source: 'bot'
           });
         }
@@ -7756,7 +7756,7 @@ app.get('/api/whatsapp/status', async (req, res) => {
       ready: false,
       state: 'NOT_READY',
       message: freshQr
-        ? `Отсканируйте свежий QR (в админке код держим до ~${Math.round(WA_QR_MAX_AGE_MS / 1000)} с). WhatsApp → Связанные устройства.`
+        ? `Scan a fresh QR (kept in admin for ~${Math.round(WA_QR_MAX_AGE_MS / 1000)} s). WhatsApp → Linked devices.`
         : 'WhatsApp клиент не готов. Дождитесь QR (обычно 30–90 с) или нажмите «Запросить новый QR» и сразу отсканируйте.',
       info: clientInfo
     });
@@ -7799,7 +7799,7 @@ app.get('/api/whatsapp/qr', async (req, res) => {
       return res.status(404).json({
         success: false,
         error:
-          `QR-код недоступен или уже протух (лимит хранения ~${Math.round(WA_QR_MAX_AGE_MS / 1000)} с). Нажмите «Запросить новый QR» и отсканируйте сразу, как появится картинка.`,
+          `QR code is unavailable or expired (storage limit ~${Math.round(WA_QR_MAX_AGE_MS / 1000)} s). Click “Request new QR” and scan it immediately when the card appears.`,
         qrMaxAgeMs: WA_QR_MAX_AGE_MS,
         lastQrAt: waLastQrAt,
         qrWaitMs: waQrWaitStartedAt ? Date.now() - waQrWaitStartedAt : null,
@@ -7857,7 +7857,7 @@ app.get('/api/whatsapp/qr', async (req, res) => {
     console.error('Ошибка генерации QR-кода:', error);
     return res.status(500).json({
       success: false,
-      error: 'Не удалось сгенерировать QR-код'
+      error: 'Could not generate QR code'
     });
   }
 });
@@ -7872,14 +7872,14 @@ app.post('/api/whatsapp/broadcast', async (req, res) => {
     if (!message || !message.trim()) {
       return res.status(400).json({
         success: false,
-        error: 'Сообщение не может быть пустым'
+        error: 'Message cannot be empty'
       });
     }
 
     if (!phoneNumbers || !Array.isArray(phoneNumbers) || phoneNumbers.length === 0) {
       return res.status(400).json({
         success: false,
-        error: 'Необходимо выбрать хотя бы одного получателя'
+        error: 'Select at least one recipient'
       });
     }
 
@@ -7937,11 +7937,11 @@ app.post('/api/whatsapp/broadcast', async (req, res) => {
       return res.json(botData);
     } catch (fetchError) {
       console.error('Ошибка обращения к боту:', fetchError.message);
-      const errorMessage = fetchError.response?.data?.error || fetchError.message || 'Бот недоступен';
+      const errorMessage = fetchError.response?.data?.error || fetchError.message || 'Bot unavailable';
       return res.status(fetchError.response?.status || 503).json({
         success: false,
         error: errorMessage.includes('ECONNREFUSED') || errorMessage.includes('timeout')
-          ? 'Бот недоступен. Убедитесь, что бот запущен на порту 3001.'
+          ? 'Bot unavailable. Make sure the bot is running on port 3001.'
           : errorMessage
       });
     }
@@ -7949,7 +7949,7 @@ app.post('/api/whatsapp/broadcast', async (req, res) => {
     console.error('Ошибка рассылки сообщений:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Не удалось выполнить рассылку'
+      error: error.message || 'Could not run the broadcast'
     });
   }
 });
@@ -8088,7 +8088,7 @@ app.get('/api/notifications/user/:userId/unread', async (req, res) => {
 app.put('/api/notifications/:id/view', async (req, res) => {
   try {
     await notificationQueries.markAsViewed(req.params.id);
-    res.json({ success: true, message: 'Уведомление отмечено как просмотренное' });
+    res.json({ success: true, message: 'Notification marked as viewed' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -8104,7 +8104,7 @@ app.post('/api/notifications', async (req, res) => {
     if (!user_id || !type || !title) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать user_id, type и title' 
+        error: 'user_id, type, and title are required' 
       });
     }
     
@@ -8120,7 +8120,7 @@ app.post('/api/notifications', async (req, res) => {
     
     res.json({ 
       success: true, 
-      message: 'Уведомление создано',
+      message: 'Notification created',
       id: result.lastInsertRowid 
     });
   } catch (error) {
@@ -8135,7 +8135,7 @@ app.post('/api/notifications', async (req, res) => {
 app.delete('/api/notifications/:id', async (req, res) => {
   try {
     await notificationQueries.delete(req.params.id);
-    res.json({ success: true, message: 'Уведомление удалено' });
+    res.json({ success: true, message: 'Notification deleted' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -8151,7 +8151,7 @@ app.post('/api/admin/check-properties-no-bids', async (req, res) => {
     const result = await checkPropertiesWithoutBids();
     res.json({ 
       success: true, 
-      message: 'Проверка завершена',
+      message: 'Check completed',
       data: result
     });
   } catch (error) {
@@ -8297,7 +8297,7 @@ app.post('/api/admin/storage/mirror-push', async (req, res) => {
     return res.status(503).json({
       success: false,
       error:
-        'Не заданы STORAGE_MIRROR_URL и STORAGE_MIRROR_SECRET на сервере (Railway Variables).',
+        'STORAGE_MIRROR_URL and STORAGE_MIRROR_SECRET are not set on the server (Railway Variables).',
     });
   }
   try {
@@ -8323,7 +8323,7 @@ app.post('/api/admin/storage/mirror-push', async (req, res) => {
     const detail = error.response?.data;
     res.status(500).json({
       success: false,
-      error: detail?.error || error.message || 'Ошибка отправки в хранилище',
+      error: detail?.error || error.message || 'Storage upload error',
     });
   }
 });
@@ -8340,7 +8340,7 @@ app.post('/api/admin/auth/login', async (req, res) => {
     if (!username || !password) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать username/email и пароль' 
+        error: 'username/email and password are required' 
       });
     }
 
@@ -8386,7 +8386,7 @@ app.post('/api/admin/auth/login', async (req, res) => {
       console.log('❌ Администратор не найден:', { identifier, searchedBy: 'username and email' });
       return res.status(401).json({ 
         success: false, 
-        error: 'Неверный username/email или пароль' 
+        error: 'Invalid username/email or password' 
       });
     }
     
@@ -8401,7 +8401,7 @@ app.post('/api/admin/auth/login', async (req, res) => {
     if (admin.password !== hashedPassword) {
       return res.status(401).json({ 
         success: false, 
-        error: 'Неверный username/email или пароль' 
+        error: 'Invalid username/email or password' 
       });
     }
 
@@ -8441,7 +8441,7 @@ app.get('/api/admin/administrators/:id', async (req, res) => {
   try {
     const admin = await administratorQueries.getById(req.params.id);
     if (!admin) {
-      return res.status(404).json({ success: false, error: 'Администратор не найден' });
+      return res.status(404).json({ success: false, error: 'Administrator not found' });
     }
     const { password, ...adminWithoutPassword } = admin;
     res.json({ success: true, data: adminWithoutPassword });
@@ -8461,7 +8461,7 @@ app.post('/api/admin/administrators', async (req, res) => {
     if (!username || !password) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать username и пароль' 
+        error: 'username and password are required' 
       });
     }
 
@@ -8470,7 +8470,7 @@ app.post('/api/admin/administrators', async (req, res) => {
     if (existingAdmin) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Администратор с таким username уже существует' 
+        error: 'An administrator with this username already exists' 
       });
     }
 
@@ -8518,7 +8518,7 @@ app.post('/api/admin/administrators', async (req, res) => {
     res.json({ 
       success: true, 
       data: adminWithoutPassword,
-      message: 'Администратор успешно создан' 
+      message: 'Administrator created successfully' 
     });
   } catch (error) {
     console.error('Ошибка при создании администратора:', error);
@@ -8536,14 +8536,14 @@ app.put('/api/admin/administrators/:id', async (req, res) => {
 
     const admin = await administratorQueries.getById(id);
     if (!admin) {
-      return res.status(404).json({ success: false, error: 'Администратор не найден' });
+      return res.status(404).json({ success: false, error: 'Administrator not found' });
     }
 
     // Не позволяем изменять права супер-админа
     if (admin.is_super_admin) {
       return res.status(403).json({ 
         success: false, 
-        error: 'Нельзя изменять права супер-администратора' 
+        error: 'Cannot change super-administrator permissions' 
       });
     }
 
@@ -8569,7 +8569,7 @@ app.put('/api/admin/administrators/:id', async (req, res) => {
     res.json({ 
       success: true, 
       data: adminWithoutPassword,
-      message: 'Администратор успешно обновлен' 
+      message: 'Administrator updated successfully' 
     });
   } catch (error) {
     console.error('Ошибка при обновлении администратора:', error);
@@ -8586,21 +8586,21 @@ app.delete('/api/admin/administrators/:id', async (req, res) => {
 
     const admin = await administratorQueries.getById(id);
     if (!admin) {
-      return res.status(404).json({ success: false, error: 'Администратор не найден' });
+      return res.status(404).json({ success: false, error: 'Administrator not found' });
     }
 
     // Не позволяем удалять супер-админа
     if (admin.is_super_admin) {
       return res.status(403).json({ 
         success: false, 
-        error: 'Нельзя удалить супер-администратора' 
+        error: 'Cannot delete a super-administrator' 
       });
     }
 
     await administratorQueries.delete(id);
     res.json({ 
       success: true, 
-      message: 'Администратор успешно удален' 
+      message: 'Administrator deleted successfully' 
     });
   } catch (error) {
     console.error('Ошибка при удалении администратора:', error);
@@ -8669,9 +8669,9 @@ async function processOneAuctionReminderRow(row) {
     return;
   }
   const link = buildPropertyPublicLink(row.property_id);
-  const title = row.property_title || 'Объект';
-  const subject = `Напоминание: аукцион — ${title}`;
-  const body = `Здравствуйте!\n\nНапоминание об аукционе по объекту: ${title}.\n\nСсылка на объект:\n${link}\n\nС уважением, Sellyourbrick`;
+  const title = row.property_title || 'Property';
+  const subject = `Reminder: auction — ${title}`;
+  const body = `Hello!\n\nThis is a reminder about the auction for: ${title}.\n\nProperty link:\n${link}\n\nBest regards, Sellyourbrick`;
 
   const wantEmail = Number(row.notify_email) === 1;
   const wantWa = Number(row.notify_whatsapp) === 1;
@@ -8740,9 +8740,9 @@ async function processOneAuctionStartedRow(row) {
     return;
   }
   const link = buildPropertyPublicLink(row.property_id);
-  const title = row.property_title || 'Объект';
-  const subject = `Аукцион начался: ${title}`;
-  const body = `Здравствуйте!\n\nАукцион по объекту «${title}» уже начался.\n\nОткрыть карточку:\n${link}\n\nSellyourbrick`;
+  const title = row.property_title || 'Property';
+  const subject = `Auction started: ${title}`;
+  const body = `Hello!\n\nThe auction for «${title}» has started.\n\nOpen the listing:\n${link}\n\nSellyourbrick`;
   try {
     await sendCrmEmailViaEmailJS(em, subject, body);
   } catch (e) {
@@ -8783,9 +8783,9 @@ async function processOneCircularPhaseStartedRow(row) {
     return;
   }
   const link = buildPropertyPublicLink(row.property_id);
-  const title = row.property_title || 'Объект';
-  const subject = `Аукцион — круговой таймер: ${title}`;
-  const body = `Здравствуйте!\n\nПо объекту «${title}» начался этап с круговым таймером аукциона.\n\nОткрыть карточку:\n${link}\n\nSellyourbrick`;
+  const title = row.property_title || 'Property';
+  const subject = `Auction — circular timer: ${title}`;
+  const body = `Hello!\n\nThe circular timer stage has started for «${title}».\n\nOpen the listing:\n${link}\n\nSellyourbrick`;
   try {
     await sendCrmEmailViaEmailJS(em, subject, body);
   } catch (e) {
@@ -8855,7 +8855,7 @@ app.get('/api/admin/crm/leads/:id', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     const lead = await crmQueries.getLeadById(id);
     if (!lead) {
-      return res.status(404).json({ success: false, error: 'Лид не найден' });
+      return res.status(404).json({ success: false, error: 'Lead not found' });
     }
     let userSummary = null;
     if (lead.user_id) {
@@ -8896,7 +8896,7 @@ app.post('/api/admin/crm/leads', async (req, res) => {
   } catch (error) {
     console.error('CRM lead create:', error);
     if (String(error.message).includes('UNIQUE')) {
-      return res.status(409).json({ success: false, error: 'Лид с таким пользователем или лидом помощника уже есть' });
+      return res.status(409).json({ success: false, error: 'A lead with this user or assistant lead already exists' });
     }
     res.status(500).json({ success: false, error: error.message });
   }
@@ -8907,7 +8907,7 @@ app.patch('/api/admin/crm/leads/:id', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     const existing = await crmQueries.getLeadById(id);
     if (!existing) {
-      return res.status(404).json({ success: false, error: 'Лид не найден' });
+      return res.status(404).json({ success: false, error: 'Lead not found' });
     }
     await crmQueries.updateLead(id, req.body || {});
     const lead = await crmQueries.getLeadById(id);
@@ -8923,10 +8923,10 @@ app.delete('/api/admin/crm/leads/:id', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     const existing = await crmQueries.getLeadById(id);
     if (!existing) {
-      return res.status(404).json({ success: false, error: 'Лид не найден' });
+      return res.status(404).json({ success: false, error: 'Lead not found' });
     }
     await crmQueries.deleteLead(id);
-    res.json({ success: true, message: 'Удалено' });
+    res.json({ success: true, message: 'Deleted' });
   } catch (error) {
     console.error('CRM lead delete:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -8940,7 +8940,7 @@ app.post('/api/admin/crm/leads/:id/move', async (req, res) => {
     const toStage = parseInt(stageId, 10);
     const toIndex = parseInt(index, 10);
     if (!Number.isFinite(toStage) || !Number.isFinite(toIndex)) {
-      return res.status(400).json({ success: false, error: 'Нужны stageId и index' });
+      return res.status(400).json({ success: false, error: 'stageId and index are required' });
     }
     await crmQueries.moveLead(id, toStage, toIndex);
     const lead = await crmQueries.getLeadById(id);
@@ -8967,11 +8967,11 @@ app.post('/api/admin/crm/leads/:id/activities', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     const lead = await crmQueries.getLeadById(id);
     if (!lead) {
-      return res.status(404).json({ success: false, error: 'Лид не найден' });
+      return res.status(404).json({ success: false, error: 'Lead not found' });
     }
     const { kind, title, body, createdBy } = req.body || {};
     if (!kind || !String(kind).trim()) {
-      return res.status(400).json({ success: false, error: 'Укажите тип активности (kind)' });
+      return res.status(400).json({ success: false, error: 'Provide activity type (kind)' });
     }
     await crmQueries.addActivity(id, {
       kind: String(kind).trim(),
@@ -8993,14 +8993,14 @@ app.post('/api/admin/crm/leads/:id/email', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     const lead = await crmQueries.getLeadById(id);
     if (!lead) {
-      return res.status(404).json({ success: false, error: 'Лид не найден' });
+      return res.status(404).json({ success: false, error: 'Lead not found' });
     }
     const { subject, body, createdBy } = req.body || {};
     const toEmail = lead.email && String(lead.email).trim();
     if (!toEmail) {
-      return res.status(400).json({ success: false, error: 'У лида нет email' });
+      return res.status(400).json({ success: false, error: 'Lead has no email' });
     }
-    const subj = subject != null && String(subject).trim() ? String(subject).trim() : 'Сообщение от Sellyourbrick';
+    const subj = subject != null && String(subject).trim() ? String(subject).trim() : 'Message from Sellyourbrick';
     const text = body != null ? String(body) : '';
     await sendCrmEmailViaEmailJS(toEmail, subj, text);
     await crmQueries.addActivity(id, {
@@ -9010,7 +9010,7 @@ app.post('/api/admin/crm/leads/:id/email', async (req, res) => {
       meta: { to: toEmail },
       createdBy: createdBy != null ? String(createdBy) : null,
     });
-    res.json({ success: true, message: 'Письмо отправлено' });
+    res.json({ success: true, message: 'Email sent' });
   } catch (error) {
     console.error('CRM email:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -9022,20 +9022,20 @@ app.post('/api/admin/crm/import-user', async (req, res) => {
     const { userId } = req.body || {};
     const uid = parseInt(userId, 10);
     if (!Number.isFinite(uid)) {
-      return res.status(400).json({ success: false, error: 'Нужен userId' });
+      return res.status(400).json({ success: false, error: 'userId is required' });
     }
     const existing = await crmQueries.findLeadByUserId(uid);
     if (existing) {
-      return res.json({ success: true, data: existing, message: 'Уже в воронке' });
+      return res.json({ success: true, data: existing, message: 'Already in the funnel' });
     }
     const u = await userQueries.getById(uid);
     if (!u) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     const displayName = [u.first_name, u.last_name].filter(Boolean).join(' ').trim() || u.email || `User #${u.id}`;
     const interests = [];
-    if (u.country) interests.push(`Страна: ${u.country}`);
-    if (u.role) interests.push(`Роль: ${u.role}`);
+    if (u.country) interests.push(`Country: ${u.country}`);
+    if (u.role) interests.push(`Role: ${u.role}`);
     const newId = await crmQueries.createLead({
       user_id: u.id,
       display_name: displayName,
@@ -9048,15 +9048,15 @@ app.post('/api/admin/crm/import-user', async (req, res) => {
     const lead = await crmQueries.getLeadById(newId);
     await crmQueries.addActivity(newId, {
       kind: 'note',
-      title: 'Импорт из пользователей',
-      body: `Добавлен из базы пользователей ID ${u.id}`,
+      title: 'Import from users',
+      body: `Added from users database ID ${u.id}`,
       createdBy: req.body?.createdBy || null,
     });
     res.status(201).json({ success: true, data: lead });
   } catch (error) {
     console.error('CRM import user:', error);
     if (String(error.message).includes('UNIQUE')) {
-      return res.status(409).json({ success: false, error: 'Лид для этого пользователя уже существует' });
+      return res.status(409).json({ success: false, error: 'A lead for this user already exists' });
     }
     res.status(500).json({ success: false, error: error.message });
   }
@@ -9067,22 +9067,22 @@ app.post('/api/admin/crm/import-assistant', async (req, res) => {
     const { assistantLeadId } = req.body || {};
     const aid = parseInt(assistantLeadId, 10);
     if (!Number.isFinite(aid)) {
-      return res.status(400).json({ success: false, error: 'Нужен assistantLeadId' });
+      return res.status(400).json({ success: false, error: 'assistantLeadId is required' });
     }
     const existing = await crmQueries.findLeadByAssistantId(aid);
     if (existing) {
-      return res.json({ success: true, data: existing, message: 'Уже в воронке' });
+      return res.json({ success: true, data: existing, message: 'Already in the funnel' });
     }
     const al = await assistantLeadQueries.getById(aid);
     if (!al) {
-      return res.status(404).json({ success: false, error: 'Лид помощника не найден' });
+      return res.status(404).json({ success: false, error: 'Assistant lead not found' });
     }
     const displayName =
-      [al.email, al.phone].filter(Boolean).join(' / ') || `Лид чата #${al.id}`;
+      [al.email, al.phone].filter(Boolean).join(' / ') || `Chat lead #${al.id}`;
     const interests = [];
-    if (al.region) interests.push(`Регион: ${al.region}`);
-    if (al.property_type) interests.push(`Тип: ${al.property_type}`);
-    if (al.country) interests.push(`Страна: ${al.country}`);
+    if (al.region) interests.push(`Region: ${al.region}`);
+    if (al.property_type) interests.push(`Type: ${al.property_type}`);
+    if (al.country) interests.push(`Country: ${al.country}`);
     if (al.summary) interests.push(al.summary.slice(0, 200));
     const newId = await crmQueries.createLead({
       user_id: al.user_id || null,
@@ -9093,12 +9093,12 @@ app.post('/api/admin/crm/import-assistant', async (req, res) => {
       source: 'assistant_import',
       assistant_lead_id: al.id,
       temperature: al.lead_type === 'hot' ? 'hot' : al.lead_type === 'warm' ? 'warm' : 'cold',
-      internal_notes: al.summary ? `Сводка помощника: ${al.summary}` : null,
+      internal_notes: al.summary ? `Assistant summary: ${al.summary}` : null,
     });
     const lead = await crmQueries.getLeadById(newId);
     await crmQueries.addActivity(newId, {
       kind: 'note',
-      title: 'Импорт из умного помощника',
+      title: 'Import from smart assistant',
       body: `assistant_lead id=${al.id}`,
       createdBy: req.body?.createdBy || null,
     });
@@ -9106,7 +9106,7 @@ app.post('/api/admin/crm/import-assistant', async (req, res) => {
   } catch (error) {
     console.error('CRM import assistant:', error);
     if (String(error.message).includes('UNIQUE')) {
-      return res.status(409).json({ success: false, error: 'Этот лид помощника уже в CRM' });
+      return res.status(409).json({ success: false, error: 'This assistant lead is already in CRM' });
     }
     res.status(500).json({ success: false, error: error.message });
   }
@@ -9131,7 +9131,7 @@ app.post('/api/admin/debt-reasons', async (req, res) => {
   try {
     const { title_ru, code, sort_order } = req.body || {};
     if (!title_ru || !String(title_ru).trim()) {
-      return res.status(400).json({ success: false, error: 'Укажите название причины (title_ru)' });
+      return res.status(400).json({ success: false, error: 'Provide a reason title (title_ru)' });
     }
     const result = await debtReasonQueries.create({
       title_ru: String(title_ru).trim(),
@@ -9151,7 +9151,7 @@ app.put('/api/admin/debt-reasons/:id', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     const existing = await debtReasonQueries.getById(id);
     if (!existing) {
-      return res.status(404).json({ success: false, error: 'Причина долга не найдена' });
+      return res.status(404).json({ success: false, error: 'Debt reason not found' });
     }
     const { title_ru, code, sort_order } = req.body || {};
     await debtReasonQueries.update(id, {
@@ -9172,10 +9172,10 @@ app.delete('/api/admin/debt-reasons/:id', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     const existing = await debtReasonQueries.getById(id);
     if (!existing) {
-      return res.status(404).json({ success: false, error: 'Причина долга не найдена' });
+      return res.status(404).json({ success: false, error: 'Debt reason not found' });
     }
     await debtReasonQueries.delete(id);
-    res.json({ success: true, message: 'Причина долга удалена' });
+    res.json({ success: true, message: 'Debt reason deleted' });
   } catch (error) {
     console.error('Ошибка при удалении причины долга:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -9210,12 +9210,12 @@ app.post('/api/properties/upload-photo', async (req, res) => {
       console.error('POST /api/properties/upload-photo multer:', err);
       const msg =
         err.code === 'LIMIT_FILE_SIZE'
-          ? 'Файл слишком большой (макс. 10 МБ)'
-          : err.message || 'Ошибка загрузки файла';
+          ? 'File too large (max 10 MB)'
+          : err.message || 'File upload error';
       return res.status(400).json({ success: false, error: msg });
     }
     if (!req.file) {
-      return res.status(400).json({ success: false, error: 'Файл не передан' });
+      return res.status(400).json({ success: false, error: 'File not provided' });
     }
     const url = `/uploads/${req.file.filename}`;
     return res.json({ success: true, data: { url } });
@@ -9262,7 +9262,7 @@ app.post('/api/properties', upload.fields([
     if (!property_type || !['apartment', 'commercial', 'house', 'villa'].includes(property_type)) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать корректный property_type: apartment, commercial, house или villa' 
+        error: 'Provide a valid property_type: apartment, commercial, house, or villa' 
       });
     }
     
@@ -9411,7 +9411,7 @@ app.post('/api/properties', upload.fields([
     if (!user_id || !property_type || !title) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать user_id, property_type и title' 
+        error: 'user_id, property_type, and title are required' 
       });
     }
 
@@ -9586,14 +9586,14 @@ app.post('/api/properties', upload.fields([
       if (bn && bn > 0 && st != null && !Number.isNaN(st) && st > 0 && st > bn * 0.3 + 1e-9) {
         return res.status(400).json({
           success: false,
-          error: 'Стартовая ставка не может превышать 30% от цены «Купить сейчас».'
+          error: 'Starting bid cannot exceed 30% of the Buy Now price.'
         })
       }
       const minS = propertyData.minimum_sale_price
       if (minS != null && minS > 0 && bn != null && bn > 0 && minS > bn * 0.9 + 1e-9) {
         return res.status(400).json({
           success: false,
-          error: 'Минимальная цена продажи не может превышать 90% от цены «Купить сейчас».'
+          error: 'Minimum sale price cannot exceed 90% of the Buy Now price.'
         })
       }
     }
@@ -9602,7 +9602,7 @@ app.post('/api/properties', upload.fields([
       return res.status(400).json({
         success: false,
         error:
-          'Тест-драйв доступен только в формате «Аукцион + Продать сейчас»: укажите старт торгов и цену мгновенной покупки выше старта.',
+          'Test drive is only available in the “Auction + Sell now” format: set the auction start and a buy-now price above the start.',
       });
     }
 
@@ -9610,14 +9610,14 @@ app.post('/api/properties', upload.fields([
     if (!user_id) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать user_id' 
+        error: 'user_id is required' 
       });
     }
     
     if (!title || !title.trim()) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать название объявления' 
+        error: 'Listing title is required' 
       });
     }
     
@@ -9629,7 +9629,7 @@ app.post('/api/properties', upload.fields([
     console.log('🔍 POST /api/properties - propertyData перед сохранением:', {
       property_type: propertyData.property_type,
       user_id: propertyData.user_id,
-      title: propertyData.title ? propertyData.title.substring(0, 50) + '...' : 'нет',
+      title: propertyData.title ? propertyData.title.substring(0, 50) + '...' : 'none',
       has_photos: !!propertyData.photos,
       photos_count: propertyData.photos ? (Array.isArray(propertyData.photos) ? propertyData.photos.length : 0) : 0
     });
@@ -9652,7 +9652,7 @@ app.post('/api/properties', upload.fields([
           console.error('❌ Ошибка: объект не был создан, result.lastInsertRowid отсутствует');
           return res.status(500).json({ 
             success: false, 
-            error: 'Не удалось создать объявление. Ошибка при сохранении в базу данных.' 
+            error: 'Could not create the listing. Database save failed.' 
           });
         }
         
@@ -9661,7 +9661,7 @@ app.post('/api/properties', upload.fields([
           console.error('❌ Ошибка: объект создан, но не найден при получении, ID:', result.lastInsertRowid);
           return res.status(500).json({ 
             success: false, 
-            error: 'Объявление создано, но не найдено в базе данных. Обратитесь к администратору.' 
+            error: 'Listing was created but not found in the database. Contact an administrator.' 
           });
         }
         console.log('✅ Квартира/коммерческая недвижимость создана с ID:', result.lastInsertRowid);
@@ -9675,7 +9675,7 @@ app.post('/api/properties', upload.fields([
           console.error('❌ Ошибка: объект не был создан, result.lastInsertRowid отсутствует');
           return res.status(500).json({ 
             success: false, 
-            error: 'Не удалось создать объявление. Ошибка при сохранении в базу данных.' 
+            error: 'Could not create the listing. Database save failed.' 
           });
         }
         
@@ -9684,7 +9684,7 @@ app.post('/api/properties', upload.fields([
           console.error('❌ Ошибка: объект создан, но не найден при получении, ID:', result.lastInsertRowid);
           return res.status(500).json({ 
             success: false, 
-            error: 'Объявление создано, но не найдено в базе данных. Обратитесь к администратору.' 
+            error: 'Listing was created but not found in the database. Contact an administrator.' 
           });
         }
         console.log('✅ Дом/вилла создана с ID:', result.lastInsertRowid);
@@ -9693,7 +9693,7 @@ app.post('/api/properties', upload.fields([
       } else {
         return res.status(400).json({ 
           success: false, 
-          error: 'Неизвестный тип недвижимости' 
+          error: 'Unknown property type' 
         });
       }
     } catch (createError) {
@@ -9741,7 +9741,7 @@ app.post('/api/properties', upload.fields([
       console.error('❌ КРИТИЧЕСКАЯ ОШИБКА: property равен null или undefined после создания!');
       return res.status(500).json({ 
         success: false, 
-        error: 'Объявление создано, но не удалось получить данные. Обратитесь к администратору.' 
+        error: 'Listing was created but data could not be loaded. Contact an administrator.' 
       });
     }
     
@@ -9810,7 +9810,7 @@ app.post('/api/properties', upload.fields([
         created_at: property.created_at,
         ...property // Включаем все остальные поля
       },
-      message: 'Объявление успешно отправлено на модерацию'
+      message: 'Listing successfully submitted for moderation'
     };
     
     // Мгновенно обновляем кабинет продавца без ожидания polling/focus.
@@ -9863,7 +9863,7 @@ app.post('/api/properties', upload.fields([
     }
     
     // Отправляем более детальную ошибку
-    const errorMessage = error.message || 'Внутренняя ошибка сервера';
+    const errorMessage = error.message || 'Internal server error';
     const errorDetails = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production' 
       ? {
           message: errorMessage,
@@ -9887,11 +9887,11 @@ app.post('/api/properties/bulk-import', uploadMemory.single('file'), async (req,
   try {
     const user_id = req.body.user_id ? parseInt(req.body.user_id, 10) : null;
     if (!user_id || isNaN(user_id)) {
-      return res.status(400).json({ success: false, error: 'Необходимо указать user_id' });
+      return res.status(400).json({ success: false, error: 'user_id is required' });
     }
 
     if (!req.file || !req.file.buffer) {
-      return res.status(400).json({ success: false, error: 'Файл не загружен' });
+      return res.status(400).json({ success: false, error: 'File not uploaded' });
     }
 
     const fileBuffer = req.file.buffer;
@@ -9925,7 +9925,7 @@ app.post('/api/properties/bulk-import', uploadMemory.single('file'), async (req,
       } catch (err) {
         errors.push({
           row: row.rowIndex,
-          message: err.message || 'Ошибка сохранения в базу'
+          message: err.message || 'Database save error'
         });
       }
     }
@@ -9942,7 +9942,7 @@ app.post('/api/properties/bulk-import', uploadMemory.single('file'), async (req,
     console.error('❌ Ошибка bulk-import:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Ошибка при обработке файла'
+      error: error.message || 'File processing error'
     });
   }
 });
@@ -9960,7 +9960,7 @@ app.put('/api/properties/:id/delete-request', async (req, res) => {
     if (!reason || !reason.trim()) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать причину удаления' 
+        error: 'Deletion reason is required' 
       });
     }
 
@@ -9968,7 +9968,7 @@ app.put('/api/properties/:id/delete-request', async (req, res) => {
     if (!property) {
       return res.status(404).json({ 
         success: false, 
-        error: 'Объявление не найдено' 
+        error: 'Listing not found' 
       });
     }
 
@@ -9983,7 +9983,7 @@ app.put('/api/properties/:id/delete-request', async (req, res) => {
     if (existingDeleteRequest) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Запрос на удаление уже отправлен и ожидает модерации' 
+        error: 'Deletion request already submitted and awaiting moderation' 
       });
     }
 
@@ -10044,14 +10044,14 @@ app.put('/api/properties/:id/delete-request', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Запрос на удаление отправлен на модерацию',
+      message: 'Deletion request submitted for moderation',
       request_id: newRequestId
     });
   } catch (error) {
     console.error('❌ Ошибка при создании запроса на удаление:', error);
     res.status(500).json({ 
       success: false, 
-      error: error.message || 'Ошибка при создании запроса на удаление' 
+      error: error.message || 'Error creating deletion request' 
     });
   }
 });
@@ -10094,7 +10094,7 @@ app.put('/api/properties/:id', upload.fields([
     if (!originalProperty) {
       return res.status(404).json({
         success: false,
-        error: 'Оригинальное объявление не найдено',
+        error: 'Original listing not found',
       });
     }
 
@@ -10353,7 +10353,7 @@ app.put('/api/properties/:id', upload.fields([
       if (existingEditRequest) {
         return res.status(400).json({
           success: false,
-          error: 'Изменения уже отправлены на модерацию. Дождитесь решения модератора.',
+          error: 'Changes are already submitted for moderation. Wait for the moderator decision.',
         });
       }
 
@@ -10370,7 +10370,7 @@ app.put('/api/properties/:id', upload.fields([
       if (!normalizedUserId) {
         return res.status(400).json({
           success: false,
-          error: 'Некорректный user_id для редактирования объявления'
+          error: 'Invalid user_id for editing the listing'
         });
       }
 
@@ -10491,7 +10491,7 @@ app.put('/api/properties/:id', upload.fields([
         return res.status(400).json({
           success: false,
           error:
-            'Тест-драйв доступен только в формате «Аукцион + Продать сейчас»: цена мгновенной покупки должна быть выше стартовой ставки.',
+            'Test drive is only available in the “Auction + Sell now” format: the buy-now price must be above the starting bid.',
         });
       }
 
@@ -10576,7 +10576,7 @@ app.put('/api/properties/:id', upload.fields([
       res.json({
         success: true,
         data: newProperty,
-        message: 'Изменения отправлены на модерацию',
+        message: 'Changes submitted for moderation',
         is_edit: true,
         original_property_id: originalPropertyId
       });
@@ -10584,14 +10584,14 @@ app.put('/api/properties/:id', upload.fields([
       // Обычное обновление (если не режим редактирования)
       return res.status(400).json({
         success: false,
-        error: 'Используйте POST для создания нового объявления'
+        error: 'Use POST to create a new listing'
       });
     }
   } catch (error) {
     console.error('❌ Ошибка при обновлении объявления:', error);
     res.status(500).json({
       success: false,
-      error: error.message || 'Ошибка при обновлении объявления'
+      error: error.message || 'Error updating listing'
     });
   }
 });
@@ -11544,12 +11544,12 @@ app.post('/api/properties/:id/test-timer', async (req, res) => {
     console.log('📥 POST /api/properties/:id/test-timer - Запрос:', { id, test_timer_end_date, test_timer_duration });
 
     if (!test_timer_end_date) {
-      return res.status(400).json({ success: false, error: 'Не указана дата окончания таймера' });
+      return res.status(400).json({ success: false, error: 'Timer end date is not set' });
     }
 
     const property = await propertyQueries.getById(id);
     if (!property) {
-      return res.status(404).json({ success: false, error: 'Объявление не найдено' });
+      return res.status(404).json({ success: false, error: 'Listing not found' });
     }
 
     const prisma = getPrisma();
@@ -11587,7 +11587,7 @@ app.post('/api/properties/:id/test-timer', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Тестовый таймер успешно установлен'
+      message: 'Test timer set successfully'
     });
     broadcastAuctionSseEvent({
       type: 'test_timer_update',
@@ -11605,7 +11605,7 @@ app.post('/api/properties/:id/test-timer', async (req, res) => {
     console.error('❌ Ошибка при установке тестового таймера:', error);
     res.status(500).json({ 
       success: false, 
-      error: error.message || 'Не удалось сохранить таймер',
+      error: error.message || 'Could not save the timer',
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
@@ -11619,7 +11619,7 @@ app.delete('/api/properties/:id/test-timer', async (req, res) => {
     const { id } = req.params;
     const property = await propertyQueries.getById(id);
     if (!property) {
-      return res.status(404).json({ success: false, error: 'Объявление не найдено' });
+      return res.status(404).json({ success: false, error: 'Listing not found' });
     }
     const prisma = getPrisma();
     const sourceTable =
@@ -11648,7 +11648,7 @@ app.delete('/api/properties/:id/test-timer', async (req, res) => {
     }
     res.json({
       success: true,
-      message: 'Тестовый таймер успешно удален'
+      message: 'Test timer deleted successfully'
     });
     broadcastAuctionSseEvent({
       type: 'test_timer_update',
@@ -11773,16 +11773,16 @@ app.post('/api/properties/:id/translate', async (req, res) => {
     const requestedPropertyType = req.query.property_type || req.body?.property_type || null;
     const property = await propertyQueries.getById(id, requestedPropertyType);
     if (!property) {
-      return sendError(404, 'Объявление не найдено');
+      return sendError(404, 'Listing not found');
     }
     if (req.body?.property_table) {
       property.source_table = req.body.property_table;
     }
     const { translations } = await translateAndPersistProperty(getPrisma(), property);
-    return res.json({ success: true, message: 'Перевод готов', translations: Object.keys(translations) });
+    return res.json({ success: true, message: 'Translation ready', translations: Object.keys(translations) });
   } catch (err) {
     console.error('POST /api/properties/:id/translate error:', err);
-    return sendError(500, err.message || 'Ошибка перевода');
+    return sendError(500, err.message || 'Translation error');
   }
 });
 
@@ -11795,7 +11795,7 @@ app.get('/api/properties/:id/translations', async (req, res) => {
   try {
     const property = await propertyQueries.getById(id);
     if (!property) {
-      return res.status(404).json({ success: false, error: 'Объявление не найдено' });
+      return res.status(404).json({ success: false, error: 'Listing not found' });
     }
     const table = propertyTable || property.source_table || 'properties_apartments';
     const rows = await getPrisma().property_translations.findMany({
@@ -11853,19 +11853,19 @@ function parseTestDrivePricingFromProperty(property) {
 
 function mapAmenityCodeToRuLabel(code) {
   const m = {
-    balcony: 'Балкон',
-    parking: 'Парковка',
-    elevator: 'Лифт',
-    electricity: 'Электричество',
-    internet: 'Интернет',
-    security: 'Охрана',
-    furniture: 'Мебель',
-    pool: 'Бассейн',
-    garden: 'Сад',
-    garage: 'Гараж',
+    balcony: 'Balcony',
+    parking: 'Parking',
+    elevator: 'Elevator',
+    electricity: 'Electricity',
+    internet: 'Internet',
+    security: 'Security',
+    furniture: 'Furniture',
+    pool: 'Pool',
+    garden: 'Garden',
+    garage: 'Garage',
   };
   if (m[code]) return m[code];
-  if (/^feature\d+$/i.test(code)) return code.replace(/^feature/i, 'Удобство #');
+  if (/^feature\d+$/i.test(code)) return code.replace(/^feature/i, 'Amenity #');
   return String(code);
 }
 
@@ -11888,11 +11888,11 @@ app.get('/api/properties/:id/test-drive/eligibility', async (req, res) => {
     const userId = req.query.user_id ? parseInt(req.query.user_id, 10) : null;
     const propertyTable = req.query.property_table || null;
     if (!propertyId || Number.isNaN(propertyId)) {
-      return res.status(400).json({ success: false, error: 'Некорректный id объекта' });
+      return res.status(400).json({ success: false, error: 'Invalid property id' });
     }
     const property = await propertyQueries.getById(String(propertyId), null);
     if (!property) {
-      return res.status(404).json({ success: false, error: 'Объект не найден' });
+      return res.status(404).json({ success: false, error: 'Property not found' });
     }
     const table = property.source_table || propertyTable || 'properties_apartments';
     const td =
@@ -11943,7 +11943,7 @@ app.get('/api/properties/:id/test-drive/bookings', async (req, res) => {
   try {
     const propertyId = await resolvePropertyRouteId(req.params.id, req.query.property_type || null);
     if (!propertyId || Number.isNaN(propertyId)) {
-      return res.status(400).json({ success: false, error: 'Некорректный id объекта' });
+      return res.status(400).json({ success: false, error: 'Invalid property id' });
     }
     const prop = await propertyQueries.getById(String(propertyId), null);
     const propertyTable =
@@ -12004,33 +12004,33 @@ app.get('/api/properties/:id/test-drive/quote', async (req, res) => {
     const propertyId = await resolvePropertyRouteId(req.params.id, req.query.property_type || null);
     const { start_date, end_date } = req.query || {};
     if (!propertyId || Number.isNaN(propertyId)) {
-      return res.status(400).json({ success: false, error: 'Некорректный id объекта' });
+      return res.status(400).json({ success: false, error: 'Invalid property id' });
     }
     if (!start_date || !end_date || typeof start_date !== 'string' || typeof end_date !== 'string') {
-      return res.status(400).json({ success: false, error: 'Укажите start_date и end_date' });
+      return res.status(400).json({ success: false, error: 'Provide start_date and end_date' });
     }
     const property = await propertyQueries.getById(String(propertyId), null);
-    if (!property) return res.status(404).json({ success: false, error: 'Объект не найден' });
+    if (!property) return res.status(404).json({ success: false, error: 'Property not found' });
     const td =
       property.test_drive === 1 || property.test_drive === true || property.test_drive === '1';
     if (!td) {
-      return res.status(400).json({ success: false, error: 'Тест-драйв для этого объекта недоступен' });
+      return res.status(400).json({ success: false, error: 'Test drive is not available for this property' });
     }
     if (!propertyRowAllowsTestDriveListing(property)) {
-      return res.status(400).json({ success: false, error: 'Тест-драйв для этого объекта недоступен' });
+      return res.status(400).json({ success: false, error: 'Test drive is not available for this property' });
     }
     const s = new Date(start_date + 'T12:00:00');
     const e = new Date(end_date + 'T12:00:00');
     if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime()) || e < s) {
-      return res.status(400).json({ success: false, error: 'Некорректный диапазон дат' });
+      return res.status(400).json({ success: false, error: 'Invalid date range' });
     }
     const dayCount = Math.round((e - s) / (24 * 60 * 60 * 1000)) + 1;
     if (dayCount < 5 || dayCount > 21) {
-      return res.status(400).json({ success: false, error: 'Выберите от 5 до 21 дня подряд' });
+      return res.status(400).json({ success: false, error: 'Choose 5 to 21 consecutive days' });
     }
     const pricing = parseTestDrivePricingFromProperty(property);
     if (!(pricing.daily_price > 0)) {
-      return res.status(400).json({ success: false, error: 'Продавец не настроил цену за сутки' });
+      return res.status(400).json({ success: false, error: 'Seller has not set a nightly price' });
     }
     const stayTotal = Number((pricing.daily_price * dayCount).toFixed(2));
     const deposit = Number((pricing.insurance_deposit || 0).toFixed(2));
@@ -12060,14 +12060,14 @@ app.post('/api/properties/:id/test-drive/request', async (req, res) => {
     const { user_id, start_date, end_date, property_table } = req.body || {};
     const userId = parseInt(user_id, 10);
     if (!propertyId || Number.isNaN(propertyId) || !userId || Number.isNaN(userId)) {
-      return res.status(400).json({ success: false, error: 'Нужны корректные property id и user_id' });
+      return res.status(400).json({ success: false, error: 'Valid property id and user_id are required' });
     }
     if (!start_date || !end_date || typeof start_date !== 'string' || typeof end_date !== 'string') {
-      return res.status(400).json({ success: false, error: 'Укажите start_date и end_date (YYYY-MM-DD)' });
+      return res.status(400).json({ success: false, error: 'Provide start_date and end_date (YYYY-MM-DD)' });
     }
     const property = await propertyQueries.getById(String(propertyId), null);
     if (!property) {
-      return res.status(404).json({ success: false, error: 'Объект не найден' });
+      return res.status(404).json({ success: false, error: 'Property not found' });
     }
     const table = property.source_table || property_table || 'properties_apartments';
     const td =
@@ -12075,40 +12075,40 @@ app.post('/api/properties/:id/test-drive/request', async (req, res) => {
       property.test_drive === true ||
       property.test_drive === '1';
     if (!td) {
-      return res.status(400).json({ success: false, error: 'Тест-драйв для этого объекта недоступен' });
+      return res.status(400).json({ success: false, error: 'Test drive is not available for this property' });
     }
     if (!propertyRowAllowsTestDriveListing(property)) {
-      return res.status(400).json({ success: false, error: 'Тест-драйв для этого объекта недоступен' });
+      return res.status(400).json({ success: false, error: 'Test drive is not available for this property' });
     }
     const user = await userQueries.getById(userId);
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     const dep = user.deposit_amount != null ? parseFloat(user.deposit_amount) : 0;
     if (dep <= 0) {
-      return res.status(400).json({ success: false, error: 'Необходим депозит' });
+      return res.status(400).json({ success: false, error: 'Deposit required' });
     }
     if (await testDriveBookingQueries.countPendingForUserProperty(userId, propertyId, table) > 0) {
-      return res.status(400).json({ success: false, error: 'У вас уже есть активная заявка на этот объект' });
+      return res.status(400).json({ success: false, error: 'You already have an active request for this property' });
     }
     const s = new Date(start_date + 'T12:00:00');
     const e = new Date(end_date + 'T12:00:00');
     if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime()) || e < s) {
-      return res.status(400).json({ success: false, error: 'Некорректный диапазон дат' });
+      return res.status(400).json({ success: false, error: 'Invalid date range' });
     }
     const dayCount = Math.round((e - s) / (24 * 60 * 60 * 1000)) + 1;
     if (dayCount < 5 || dayCount > 21) {
-      return res.status(400).json({ success: false, error: 'Выберите от 5 до 21 дня подряд' });
+      return res.status(400).json({ success: false, error: 'Choose 5 to 21 consecutive days' });
     }
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (s < today) {
-      return res.status(400).json({ success: false, error: 'Нельзя выбрать прошедшие даты' });
+      return res.status(400).json({ success: false, error: 'Cannot select past dates' });
     }
     const existing = await testDriveBookingQueries.listActiveForProperty(propertyId, table);
     for (const ex of existing) {
       if (testDriveRangesOverlap(start_date, end_date, ex.start_date, ex.end_date)) {
-        return res.status(409).json({ success: false, error: 'Часть выбранных дат уже занята' });
+        return res.status(409).json({ success: false, error: 'Some of the selected dates are already taken' });
       }
     }
     const insertResult = await testDriveBookingQueries.create({
@@ -12121,10 +12121,10 @@ app.post('/api/properties/:id/test-drive/request', async (req, res) => {
     });
     const bookingId = insertResult.lastInsertRowid;
     const ownerId = property.user_id;
-    const title = 'Запрос на тест-драйв';
+    const title = 'Test drive request';
     const buyerName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.email || `Пользователь #${userId}`;
-    const propTitle = property.title || `Объект #${propertyId}`;
-    const message = `${buyerName} хочет забронировать тест-драйв объекта «${propTitle}» с ${start_date} по ${end_date}. Подтвердите или отклоните в уведомлениях.`;
+    const propTitle = property.title || `Property #${propertyId}`;
+    const message = `${buyerName} wants to book a test drive for «${propTitle}» from ${start_date} to ${end_date}. Confirm or decline in notifications.`;
     const notifData = {
       booking_id: bookingId,
       property_id: propertyId,
@@ -12168,29 +12168,29 @@ app.put('/api/test-drive-bookings/:bookingId/respond', async (req, res) => {
     const { user_id, action, owner_comment } = req.body || {};
     const ownerId = parseInt(user_id, 10);
     if (!bookingId || Number.isNaN(bookingId) || !ownerId || Number.isNaN(ownerId)) {
-      return res.status(400).json({ success: false, error: 'Нужны bookingId и user_id владельца' });
+      return res.status(400).json({ success: false, error: 'bookingId and owner user_id are required' });
     }
     if (action !== 'approve' && action !== 'reject') {
-      return res.status(400).json({ success: false, error: 'action: approve или reject' });
+      return res.status(400).json({ success: false, error: 'action: approve or reject' });
     }
     const booking = await testDriveBookingQueries.getById(bookingId);
     if (!booking) {
-      return res.status(404).json({ success: false, error: 'Заявка не найдена' });
+      return res.status(404).json({ success: false, error: 'Request not found' });
     }
     if (booking.status !== 'pending' && booking.status !== 'paid') {
-      return res.status(400).json({ success: false, error: 'Заявка уже обработана' });
+      return res.status(400).json({ success: false, error: 'Request already processed' });
     }
     const property = await propertyQueries.getById(String(booking.property_id), null);
     if (!property) {
-      return res.status(404).json({ success: false, error: 'Объект не найден' });
+      return res.status(404).json({ success: false, error: 'Property not found' });
     }
     const propertyOwnerId = parseInt(String(property.user_id), 10);
     if (Number.isNaN(propertyOwnerId) || propertyOwnerId !== ownerId) {
-      return res.status(403).json({ success: false, error: 'Только владелец может ответить' });
+      return res.status(403).json({ success: false, error: 'Only the owner can reply' });
     }
     const buyerUserId = parseInt(String(booking.user_id), 10);
     if (Number.isNaN(buyerUserId) || buyerUserId <= 0) {
-      return res.status(500).json({ success: false, error: 'Некорректный user_id в заявке' });
+      return res.status(500).json({ success: false, error: 'Invalid user_id in the request' });
     }
     const newStatus = action === 'approve' ? 'approved' : 'rejected';
     if (action === 'approve') {
@@ -12198,7 +12198,7 @@ app.put('/api/test-drive-bookings/:bookingId/respond', async (req, res) => {
       if (!ownerComment) {
         return res.status(400).json({
           success: false,
-          error: 'Добавьте комментарий для покупателя: заезд, ключи и инструкции',
+          error: 'Add a comment for the buyer: check-in, keys, and instructions',
         });
       }
       await testDriveBookingQueries.approveWithOwnerComment(bookingId, ownerComment);
@@ -12211,13 +12211,13 @@ app.put('/api/test-drive-bookings/:bookingId/respond', async (req, res) => {
     } else {
       await testDriveBookingQueries.updateStatus(bookingId, newStatus);
     }
-    const propTitle = property.title || `Объект #${booking.property_id}`;
+    const propTitle = property.title || `Property #${booking.property_id}`;
     if (action === 'approve') {
       const ins = await notificationQueries.create({
         user_id: buyerUserId,
         type: 'test_drive_result',
-        title: 'Тест-драйв подтверждён',
-        message: `Владелец подтвердил тест-драйв объекта «${propTitle}» с ${booking.start_date} по ${booking.end_date}.`,
+        title: 'Test drive confirmed',
+        message: `The owner confirmed the test drive for «${propTitle}» from ${booking.start_date} to ${booking.end_date}.`,
         data: {
           booking_id: bookingId,
           property_id: booking.property_id,
@@ -12243,8 +12243,8 @@ app.put('/api/test-drive-bookings/:bookingId/respond', async (req, res) => {
       const ins = await notificationQueries.create({
         user_id: buyerUserId,
         type: 'test_drive_result',
-        title: 'Тест-драйв отклонён',
-        message: `Владелец отклонил заявку на тест-драйв объекта «${propTitle}» с ${booking.start_date} по ${booking.end_date}. Вы можете выбрать другие даты.`,
+        title: 'Test drive declined',
+        message: `The owner declined the test-drive request for «${propTitle}» from ${booking.start_date} to ${booking.end_date}. You can choose other dates or another property.`,
         data: {
           booking_id: bookingId,
           property_id: booking.property_id,
@@ -12334,7 +12334,7 @@ async function enrichTestDriveBookingWithPropertyTitle(row) {
   }
   return {
     ...row,
-    property_title: title || `Объект #${row.property_id}`,
+    property_title: title || `Property #${row.property_id}`,
     property_cover_url,
     property_location,
   };
@@ -12542,7 +12542,7 @@ app.get('/api/admin/test-drive/property-bookings', async (req, res) => {
     const propertyId = parseInt(String(req.query.property_id || ''), 10);
     const rawTable = String(req.query.property_table || 'properties_apartments').trim();
     if (!Number.isFinite(propertyId) || propertyId <= 0) {
-      return res.status(400).json({ success: false, error: 'Укажите корректный property_id' });
+      return res.status(400).json({ success: false, error: 'Provide a valid property_id' });
     }
     const allowed = ['properties_apartments', 'properties_houses'];
     const propertyTable = allowed.includes(rawTable) ? rawTable : 'properties_apartments';
@@ -12724,19 +12724,19 @@ app.post('/api/admin/test-drive/broadcasts/:bookingId/send', async (req, res) =>
     await testDriveBookingQueries.ensureTable();
     const bookingId = parseInt(req.params.bookingId, 10);
     if (!Number.isFinite(bookingId) || bookingId <= 0) {
-      return res.status(400).json({ success: false, error: 'Некорректный bookingId' });
+      return res.status(400).json({ success: false, error: 'Invalid bookingId' });
     }
     const result = await sendTestDriveSurveyWhatsAppForBooking(bookingId, { manual: true });
     if (!result.ok && result.error === 'no_phone') {
       return res.status(400).json({
         success: false,
-        error: 'У пользователя не указан телефон в профиле',
+        error: 'User has no phone number in the profile',
       });
     }
     if (!result.ok && result.error === 'wa_failed') {
       return res.status(503).json({
         success: false,
-        error: 'Не удалось отправить WhatsApp (клиент не готов или ошибка сети)',
+        error: 'Could not send WhatsApp (client not ready or network error)',
       });
     }
     if (!result.ok) {
@@ -12757,7 +12757,7 @@ app.post('/api/admin/test-drive/exit-feedback-broadcasts/:bookingId/send', async
     await testDriveBookingQueries.ensureTable();
     const bookingId = parseInt(req.params.bookingId, 10);
     if (!Number.isFinite(bookingId) || bookingId <= 0) {
-      return res.status(400).json({ success: false, error: 'Некорректный bookingId' });
+      return res.status(400).json({ success: false, error: 'Invalid bookingId' });
     }
     const row = await testDriveBookingQueries.getById(bookingId);
     if (row && !String(row.exit_feedback_token || '').trim()) {
@@ -12767,13 +12767,13 @@ app.post('/api/admin/test-drive/exit-feedback-broadcasts/:bookingId/send', async
     if (!result.ok && result.error === 'no_phone') {
       return res.status(400).json({
         success: false,
-        error: 'У пользователя не указан телефон в профиле',
+        error: 'User has no phone number in the profile',
       });
     }
     if (!result.ok && result.error === 'wa_failed') {
       return res.status(503).json({
         success: false,
-        error: 'Не удалось отправить WhatsApp (клиент не готов или ошибка сети)',
+        error: 'Could not send WhatsApp (client not ready or network error)',
       });
     }
     if (!result.ok) {
@@ -12813,27 +12813,27 @@ app.get('/api/admin/test-drive/survey-financial', async (req, res) => {
         if (rep && typeof rep === 'object') {
           if (Number(rep.survey_version) === 2 || String(rep.first_impression || '').trim()) {
             const fi = {
-              better: 'лучше ожиданий',
-              as_photos: 'как на фото',
-              slightly_off: 'немного не совпало',
+              better: 'better than expected',
+              as_photos: 'as in photos',
+              slightly_off: 'slightly off',
             }[String(rep.first_impression)];
-            const cm = { great: 'комфортно', mostly_but_missing: 'не хватало мелочей' }[String(rep.comfort)];
+            const cm = { great: 'comfortable', mostly_but_missing: 'missing small things' }[String(rep.comfort)];
             const pi = {
-              great_value: 'цена/качество отлично',
-              fair: 'цена адекватна',
-              expensive: 'дороговато',
+              great_value: 'great value',
+              fair: 'fair price',
+              expensive: 'expensive',
             }[String(rep.price_impression)];
             const pur = {
-              definitely_yes: 'покупка: да',
-              rather_yes: 'покупка: скорее да',
-              rather_no: 'покупка: скорее нет',
+              definitely_yes: 'purchase: yes',
+              rather_yes: 'purchase: leaning yes',
+              rather_no: 'purchase: leaning no',
             }[String(rep.purchase_intent)];
             const hi = Array.isArray(rep.highlights) ? rep.highlights.filter(Boolean).join(', ') : '';
             const parts = [
-              fi ? `Первое впечатление: ${fi}` : '',
-              cm ? `Комфорт: ${cm}` : '',
-              hi ? `Запомнилось: ${hi}` : '',
-              pi ? `Цена: ${pi}` : '',
+              fi ? `First impression: ${fi}` : '',
+              cm ? `Comfort: ${cm}` : '',
+              hi ? `Highlight: ${hi}` : '',
+              pi ? `Price: ${pi}` : '',
               pur ? pur : '',
             ].filter(Boolean);
             summary = parts.length ? parts.join(' · ') : '—';
@@ -12841,18 +12841,18 @@ app.get('/api/admin/test-drive/survey-financial', async (req, res) => {
             const expLabel =
               rep.property_expectations &&
               {
-                exceeded: 'превзошёл ожидания',
-                matched: 'совпал с ожиданиями',
-                partially: 'частично',
-                below: 'ниже ожиданий',
+                exceeded: 'exceeded expectations',
+                matched: 'matched expectations',
+                partially: 'partially',
+                below: 'below expectations',
               }[String(rep.property_expectations)];
             const parts = [
-              expLabel ? `Объект (ожидания): ${expLabel}` : '',
+              expLabel ? `Property (expectations): ${expLabel}` : '',
               rep.property_feedback
-                ? `Отзыв: ${String(rep.property_feedback).slice(0, 200)}${String(rep.property_feedback).length > 200 ? '…' : ''}`
+                ? `Feedback: ${String(rep.property_feedback).slice(0, 200)}${String(rep.property_feedback).length > 200 ? '…' : ''}`
                 : '',
-              rep.amenities_ok ? `Удобства: ${rep.amenities_ok}` : '',
-              rep.defects_state ? `Дефекты: ${rep.defects_state}` : '',
+              rep.amenities_ok ? `Amenities: ${rep.amenities_ok}` : '',
+              rep.defects_state ? `Defects: ${rep.defects_state}` : '',
               rep.price_acceptable
                 ? `Цена за объект: ${
                     {
@@ -12918,7 +12918,7 @@ app.get('/api/test-drive-bookings/user/:userId', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
     if (!userId || Number.isNaN(userId)) {
-      return res.status(400).json({ success: false, error: 'Некорректный userId' });
+      return res.status(400).json({ success: false, error: 'Invalid userId' });
     }
     await testDriveBookingQueries.ensureTable();
     const rows = await testDriveBookingQueries.listByUserId(userId);
@@ -12940,13 +12940,13 @@ app.put('/api/test-drive-bookings/:bookingId/cancel-by-buyer', async (req, res) 
     const bookingId = parseInt(req.params.bookingId, 10);
     const userId = parseInt(String(req.body?.user_id || ''), 10);
     if (!Number.isFinite(bookingId) || !Number.isFinite(userId)) {
-      return res.status(400).json({ success: false, error: 'Некорректные bookingId или user_id' });
+      return res.status(400).json({ success: false, error: 'Invalid bookingId or user_id' });
     }
     const parsed = parseTestDriveBuyerCancelBody(req.body || {});
     if (!parsed.ok) {
       const errMap = {
-        invalid_reason_code: 'Выберите причину из списка',
-        reason_text_too_short: 'Опишите причину не короче 5 символов',
+        invalid_reason_code: 'Choose a reason from the list',
+        reason_text_too_short: 'Describe the reason in at least 5 characters',
       };
       return res.status(400).json({
         success: false,
@@ -12957,17 +12957,17 @@ app.put('/api/test-drive-bookings/:bookingId/cancel-by-buyer', async (req, res) 
 
     const booking = await testDriveBookingQueries.getById(bookingId);
     if (!booking) {
-      return res.status(404).json({ success: false, error: 'Бронь не найдена' });
+      return res.status(404).json({ success: false, error: 'Booking not found' });
     }
     if (Number(booking.user_id) !== userId) {
-      return res.status(403).json({ success: false, error: 'Можно отменить только свою бронь' });
+      return res.status(403).json({ success: false, error: 'You can only cancel your own booking' });
     }
     const st = String(booking.status || '').toLowerCase();
     if (st === 'rejected') {
-      return res.status(400).json({ success: false, error: 'Эта заявка уже отклонена' });
+      return res.status(400).json({ success: false, error: 'This request was already rejected' });
     }
     if (!['pending', 'approved', 'paid'].includes(st)) {
-      return res.status(400).json({ success: false, error: 'Бронь нельзя отменить в текущем статусе' });
+      return res.status(400).json({ success: false, error: 'Booking cannot be cancelled in the current status' });
     }
 
     const paymentRow = await stripeSubscriptionQueries.findTestDrivePaymentByBookingId(userId, bookingId);
@@ -12978,8 +12978,8 @@ app.put('/api/test-drive-bookings/:bookingId/cancel-by-buyer', async (req, res) 
           success: false,
           error:
             ref.error === 'stripe_not_configured'
-              ? 'Платёжная система временно недоступна — попробуйте позже'
-              : 'Не удалось оформить возврат средств. Обратитесь в поддержку или попробуйте позже.',
+              ? 'Payment system temporarily unavailable — try again later'
+              : 'Could not process the refund. Contact support or try again later.',
           error_code: ref.error,
           message: ref.message,
         });
@@ -12988,16 +12988,16 @@ app.put('/api/test-drive-bookings/:bookingId/cancel-by-buyer', async (req, res) 
 
     const property = await propertyQueries.getById(String(booking.property_id), null);
     if (!property) {
-      return res.status(404).json({ success: false, error: 'Объект не найден' });
+      return res.status(404).json({ success: false, error: 'Property not found' });
     }
     const ownerId = parseInt(String(property.user_id), 10);
-    const propTitle = property.title || `Объект #${booking.property_id}`;
+    const propTitle = property.title || `Property #${booking.property_id}`;
     const reasonLabelRu = {
-      dates_changed: 'Изменились даты поездки',
-      found_alternative: 'Нашёл другой объект',
-      property_not_fit: 'Объект не подошёл',
-      price_concern: 'Вопрос по цене / условиям',
-      personal: 'Личные обстоятельства',
+      dates_changed: 'Travel dates changed',
+      found_alternative: 'Found another property',
+      property_not_fit: 'Property was not a fit',
+      price_concern: 'Price / terms concern',
+      personal: 'Personal circumstances',
       other: parsed.reasonDetail,
     };
     const reasonLine = reasonLabelRu[parsed.reasonCode] || parsed.reasonCode;
@@ -13024,8 +13024,8 @@ app.put('/api/test-drive-bookings/:bookingId/cancel-by-buyer', async (req, res) 
       await notificationQueries.create({
         user_id: ownerId,
         type: 'test_drive_buyer_cancelled',
-        title: 'Покупатель отменил бронь тест-драйва',
-        message: `Покупатель отменил бронь объекта «${propTitle}» с ${booking.start_date} по ${booking.end_date}. Причина: ${reasonLine}.`,
+        title: 'Buyer cancelled the test-drive booking',
+        message: `The buyer cancelled the booking for «${propTitle}» from ${booking.start_date} to ${booking.end_date}. Reason: ${reasonLine}.`,
         data: {
           booking_id: bookingId,
           property_id: booking.property_id,
@@ -13065,15 +13065,15 @@ app.get('/api/test-drive-bookings/:bookingId/detail', async (req, res) => {
     const bookingId = parseInt(req.params.bookingId, 10);
     const userId = parseInt(String(req.query.user_id || ''), 10);
     if (!Number.isFinite(bookingId) || !Number.isFinite(userId)) {
-      return res.status(400).json({ success: false, error: 'Некорректные bookingId/user_id' });
+      return res.status(400).json({ success: false, error: 'Invalid bookingId/user_id' });
     }
     const booking = await testDriveBookingQueries.getById(bookingId);
-    if (!booking) return res.status(404).json({ success: false, error: 'Бронь не найдена' });
+    if (!booking) return res.status(404).json({ success: false, error: 'Booking not found' });
     if (Number(booking.user_id) !== userId) {
-      return res.status(403).json({ success: false, error: 'Доступ запрещен' });
+      return res.status(403).json({ success: false, error: 'Access denied' });
     }
     const property = await propertyQueries.getById(String(booking.property_id), null);
-    if (!property) return res.status(404).json({ success: false, error: 'Объект не найден' });
+    if (!property) return res.status(404).json({ success: false, error: 'Property not found' });
     let amenitiesRaw = [];
     if (Array.isArray(property.amenities)) amenitiesRaw = property.amenities;
     else if (typeof property.amenities === 'string') {
@@ -13117,7 +13117,7 @@ app.get('/api/test-drive-bookings/:bookingId/detail', async (req, res) => {
         },
         property: {
           id: property.id,
-          title: property.title || `Объект #${property.id}`,
+          title: property.title || `Property #${property.id}`,
           location: property.location || '',
           amenities,
         },
@@ -13138,17 +13138,17 @@ app.get('/api/test-drive-survey/:token/detail', async (req, res) => {
     const token = String(req.params.token || '').trim();
     const booking = await testDriveBookingQueries.getBySurveyToken(token);
     if (!booking) {
-      return res.status(404).json({ success: false, error: 'Ссылка недействительна или устарела' });
+      return res.status(404).json({ success: false, error: 'Link is invalid or expired' });
     }
     const st = String(booking.status || '').toLowerCase();
     if (st === 'cancelled') {
-      return res.status(400).json({ success: false, error: 'Бронирование отменено' });
+      return res.status(400).json({ success: false, error: 'Booking cancelled' });
     }
     if (!['paid', 'approved'].includes(st)) {
-      return res.status(400).json({ success: false, error: 'Опрос пока недоступен' });
+      return res.status(400).json({ success: false, error: 'Survey is not available yet' });
     }
     const property = await propertyQueries.getById(String(booking.property_id), null);
-    if (!property) return res.status(404).json({ success: false, error: 'Объект не найден' });
+    if (!property) return res.status(404).json({ success: false, error: 'Property not found' });
     let amenitiesRaw = [];
     if (Array.isArray(property.amenities)) amenitiesRaw = property.amenities;
     else if (typeof property.amenities === 'string') {
@@ -13181,7 +13181,7 @@ app.get('/api/test-drive-survey/:token/detail', async (req, res) => {
         },
         property: {
           id: property.id,
-          title: property.title || `Объект #${property.id}`,
+          title: property.title || `Property #${property.id}`,
           location: property.location || '',
           amenities,
         },
@@ -13222,17 +13222,17 @@ app.put('/api/test-drive-survey/:token/report', async (req, res) => {
     const report = req.body?.report || null;
     const booking = await testDriveBookingQueries.getBySurveyToken(token);
     if (!booking) {
-      return res.status(404).json({ success: false, error: 'Ссылка недействительна' });
+      return res.status(404).json({ success: false, error: 'Link is invalid' });
     }
     if (!report || typeof report !== 'object') {
-      return res.status(400).json({ success: false, error: 'report обязателен' });
+      return res.status(400).json({ success: false, error: 'report is required' });
     }
     const st = String(booking.status || '').toLowerCase();
     if (st === 'cancelled') {
-      return res.status(400).json({ success: false, error: 'Бронирование отменено' });
+      return res.status(400).json({ success: false, error: 'Booking cancelled' });
     }
     if (!['paid', 'approved'].includes(st)) {
-      return res.status(400).json({ success: false, error: 'Опрос недоступен' });
+      return res.status(400).json({ success: false, error: 'Survey unavailable' });
     }
     const ready = testDriveCheckInSurveyPositive(report);
     const checkInStatus = ready ? 'checked_in' : 'issues_reported';
@@ -13257,17 +13257,17 @@ app.get('/api/test-drive-feedback/:token/detail', async (req, res) => {
     const token = String(req.params.token || '').trim();
     const booking = await testDriveBookingQueries.getByExitFeedbackToken(token);
     if (!booking) {
-      return res.status(404).json({ success: false, error: 'Ссылка недействительна или устарела' });
+      return res.status(404).json({ success: false, error: 'Link is invalid or expired' });
     }
     const st = String(booking.status || '').toLowerCase();
     if (st === 'cancelled') {
-      return res.status(400).json({ success: false, error: 'Бронирование отменено' });
+      return res.status(400).json({ success: false, error: 'Booking cancelled' });
     }
     if (!['paid', 'approved'].includes(st)) {
-      return res.status(400).json({ success: false, error: 'Оценка пока недоступна' });
+      return res.status(400).json({ success: false, error: 'Rating is not available yet' });
     }
     const property = await propertyQueries.getById(String(booking.property_id), null);
-    if (!property) return res.status(404).json({ success: false, error: 'Объект не найден' });
+    if (!property) return res.status(404).json({ success: false, error: 'Property not found' });
     const buyer = await userQueries.getById(booking.user_id);
     const prev = parseJsonSafe(booking.exit_feedback_report, null);
     return res.json({
@@ -13285,7 +13285,7 @@ app.get('/api/test-drive-feedback/:token/detail', async (req, res) => {
         },
         property: {
           id: property.id,
-          title: property.title || `Объект #${property.id}`,
+          title: property.title || `Property #${property.id}`,
           location: property.location || '',
         },
         already_submitted: Boolean(prev && prev.submitted_at && Number(prev.rating) >= 1),
@@ -13307,31 +13307,31 @@ app.put('/api/test-drive-feedback/:token/report', async (req, res) => {
     const report = req.body?.report || null;
     const booking = await testDriveBookingQueries.getByExitFeedbackToken(token);
     if (!booking) {
-      return res.status(404).json({ success: false, error: 'Ссылка недействительна' });
+      return res.status(404).json({ success: false, error: 'Link is invalid' });
     }
     if (!report || typeof report !== 'object') {
-      return res.status(400).json({ success: false, error: 'report обязателен' });
+      return res.status(400).json({ success: false, error: 'report is required' });
     }
     const st = String(booking.status || '').toLowerCase();
     if (st === 'cancelled') {
-      return res.status(400).json({ success: false, error: 'Бронирование отменено' });
+      return res.status(400).json({ success: false, error: 'Booking cancelled' });
     }
     if (!['paid', 'approved'].includes(st)) {
-      return res.status(400).json({ success: false, error: 'Оценка недоступна' });
+      return res.status(400).json({ success: false, error: 'Rating unavailable' });
     }
     const prev = parseJsonSafe(booking.exit_feedback_report, null);
     if (prev && prev.submitted_at) {
-      return res.status(409).json({ success: false, error: 'Ответ уже отправлен' });
+      return res.status(409).json({ success: false, error: 'Reply already sent' });
     }
     const rating = Number(report.rating);
     if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
-      return res.status(400).json({ success: false, error: 'Укажите оценку от 1 до 5' });
+      return res.status(400).json({ success: false, error: 'Provide a rating from 1 to 5' });
     }
     const comment = String(report.comment || '').trim();
     if (comment.length < 10) {
       return res.status(400).json({
         success: false,
-        error: 'Опишите впечатление не короче 10 символов',
+        error: 'Describe your impression in at least 10 characters',
       });
     }
     const payload = {
@@ -13357,21 +13357,21 @@ app.put('/api/test-drive-bookings/:bookingId/check-in-report', async (req, res) 
     const userId = parseInt(String(req.body?.user_id || ''), 10);
     const report = req.body?.report || null;
     if (!Number.isFinite(bookingId) || !Number.isFinite(userId)) {
-      return res.status(400).json({ success: false, error: 'Некорректные bookingId/user_id' });
+      return res.status(400).json({ success: false, error: 'Invalid bookingId/user_id' });
     }
     if (!report || typeof report !== 'object') {
-      return res.status(400).json({ success: false, error: 'report обязателен' });
+      return res.status(400).json({ success: false, error: 'report is required' });
     }
     const booking = await testDriveBookingQueries.getById(bookingId);
-    if (!booking) return res.status(404).json({ success: false, error: 'Бронь не найдена' });
+    if (!booking) return res.status(404).json({ success: false, error: 'Booking not found' });
     if (Number(booking.user_id) !== userId) {
-      return res.status(403).json({ success: false, error: 'Доступ запрещен' });
+      return res.status(403).json({ success: false, error: 'Access denied' });
     }
     const bookingStatus = String(booking.status || '').toLowerCase();
     if (!['approved', 'paid'].includes(bookingStatus)) {
       return res.status(400).json({
         success: false,
-        error: 'Опрос доступен только для оплаченной или подтверждённой брони',
+        error: 'Survey is only available for a paid or confirmed booking',
       });
     }
     const ready = testDriveCheckInSurveyPositive(report);
@@ -13395,7 +13395,7 @@ app.get('/api/test-drive-bookings/owner/:ownerUserId', async (req, res) => {
   try {
     const ownerUserId = parseInt(req.params.ownerUserId, 10);
     if (!ownerUserId || Number.isNaN(ownerUserId)) {
-      return res.status(400).json({ success: false, error: 'Некорректный ownerUserId' });
+      return res.status(400).json({ success: false, error: 'Invalid ownerUserId' });
     }
     await testDriveBookingQueries.ensureTable();
     const rows = await testDriveBookingQueries.listByOwnerUserId(ownerUserId);
@@ -13449,7 +13449,7 @@ app.get('/api/properties/:id', async (req, res) => {
   // Игнорируем специальные пути, которые должны обрабатываться другими маршрутами
   if (id === 'test-timers' || id === 'pending' || id === 'approved' || id === 'auctions' || id === 'user' || id === 'shares' || id === 'search-options') {
     console.log('⚠️ GET /api/properties/:id - Игнорируем специальный путь:', id);
-    return res.status(404).json({ success: false, error: 'Маршрут не найден' });
+    return res.status(404).json({ success: false, error: 'Route not found' });
   }
   
   try {
@@ -13459,7 +13459,7 @@ app.get('/api/properties/:id', async (req, res) => {
     
     if (!property) {
       console.log(`❌ GET /api/properties/:id - Объект с ID=${id} не найден`);
-      return res.status(404).json({ success: false, error: 'Объявление не найдено' });
+      return res.status(404).json({ success: false, error: 'Listing not found' });
     }
     
     console.log(`✅ GET /api/properties/:id - Объект найден:`, {
@@ -13720,7 +13720,7 @@ app.get('/api/properties/:id', async (req, res) => {
       if (!isOwner && !vipOk) {
         return res.status(403).json({
           success: false,
-          error: 'Объект доступен только участникам VIP',
+          error: 'Property is available to VIP members only',
           code: 'PRIVATE_CLUB_ONLY',
         });
       }
@@ -13748,7 +13748,7 @@ app.get('/api/properties/user/:userId', async (req, res) => {
     // Получаем информацию о пользователе
     const user = await userQueries.getById(userId);
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     
     // Используем функцию из propertyQueries, которая работает с новыми таблицами
@@ -14026,7 +14026,7 @@ app.get('/api/owner/:userId/my-sales', async (req, res) => {
     await testDriveBookingQueries.ensureTable();
     const uid = parseInt(String(req.params.userId).trim(), 10);
     if (!uid || Number.isNaN(uid)) {
-      return res.status(400).json({ success: false, error: 'Некорректный user_id' });
+      return res.status(400).json({ success: false, error: 'Invalid user_id' });
     }
 
     const parsePhotosField = (raw) => {
@@ -14350,7 +14350,7 @@ app.get('/api/owner/:userId/my-sales', async (req, res) => {
         ...row,
         buyer_display:
           buyerDisplayById.get(Number(row.buyer_user_id)) ||
-          (row.buyer_user_id ? `Покупатель #${row.buyer_user_id}` : null),
+          (row.buyer_user_id ? `Buyer #${row.buyer_user_id}` : null),
       }));
 
     res.json({
@@ -14377,7 +14377,7 @@ app.get('/api/owner/:userId/sale-celebrations', async (req, res) => {
     const prisma = getPrisma();
     const uid = parseInt(String(req.params.userId).trim(), 10);
     if (!uid || Number.isNaN(uid)) {
-      return res.status(400).json({ success: false, error: 'Некорректный user_id' });
+      return res.status(400).json({ success: false, error: 'Invalid user_id' });
     }
     const items = await buildOwnerSaleCelebrations(prisma, uid);
     res.json({ success: true, data: { items } });
@@ -14397,30 +14397,30 @@ app.put('/api/test-drive-bookings/:bookingId/cancel-by-owner', async (req, res) 
     const ownerId = parseInt(String(req.body?.user_id || ''), 10);
     const reason = String(req.body?.reason || '').trim();
     if (!Number.isFinite(bookingId) || !Number.isFinite(ownerId)) {
-      return res.status(400).json({ success: false, error: 'Некорректные bookingId/user_id' });
+      return res.status(400).json({ success: false, error: 'Invalid bookingId/user_id' });
     }
     if (!reason) {
-      return res.status(400).json({ success: false, error: 'Укажите причину снятия брони' });
+      return res.status(400).json({ success: false, error: 'Provide a reason for releasing the booking' });
     }
     const booking = await testDriveBookingQueries.getById(bookingId);
     if (!booking) {
-      return res.status(404).json({ success: false, error: 'Бронь не найдена' });
+      return res.status(404).json({ success: false, error: 'Booking not found' });
     }
     const st = String(booking.status || '').toLowerCase();
     if (!['pending', 'approved', 'paid'].includes(st)) {
-      return res.status(400).json({ success: false, error: 'Бронь нельзя снять в текущем статусе' });
+      return res.status(400).json({ success: false, error: 'Booking cannot be released in the current status' });
     }
     const property = await propertyQueries.getById(String(booking.property_id), null);
     if (!property) {
-      return res.status(404).json({ success: false, error: 'Объект не найден' });
+      return res.status(404).json({ success: false, error: 'Property not found' });
     }
     const propertyOwnerId = parseInt(String(property.user_id), 10);
     if (!Number.isFinite(propertyOwnerId) || propertyOwnerId !== ownerId) {
-      return res.status(403).json({ success: false, error: 'Только владелец может снять бронь' });
+      return res.status(403).json({ success: false, error: 'Only the owner can release the booking' });
     }
     const buyerUserId = parseInt(String(booking.user_id), 10);
     if (!Number.isFinite(buyerUserId)) {
-      return res.status(500).json({ success: false, error: 'Некорректный покупатель в брони' });
+      return res.status(500).json({ success: false, error: 'Invalid buyer in the booking' });
     }
 
     await getPrisma().$executeRaw`
@@ -14442,10 +14442,10 @@ app.put('/api/test-drive-bookings/:bookingId/cancel-by-owner', async (req, res) 
     await notificationQueries.create({
       user_id: buyerUserId,
       type: 'test_drive_cancelled',
-      title: 'Бронь тест-драйва снята',
-      message: `Продавец снял бронь тест-драйва по объекту «${
-        property.title || `Объект #${booking.property_id}`
-      }». Причина: ${reason}`,
+      title: 'Test-drive booking released',
+      message: `The seller released the test-drive booking for «${
+        property.title || `Property #${booking.property_id}`
+      }». Reason: ${reason}`,
       data: {
         booking_id: bookingId,
         property_id: booking.property_id,
@@ -14548,20 +14548,20 @@ app.put('/api/properties/:id/approve', async (req, res) => {
             );
             return res.status(409).json({
               success: false,
-              error: `Конфликт: объявление с ID ${id} найдено в обеих таблицах. Укажите корректный property_type.`
+              error: `Conflict: listing with ID ${id} was found in both tables. Provide a valid property_type.`
             });
           } else {
             // Нигде не найдено
             return res.status(404).json({
               success: false,
-              error: `Объявление с ID ${id} и типом ${requestedPropertyType} не найдено в правильной таблице`
+              error: `Listing with ID ${id} and type ${requestedPropertyType} was not found in the correct table`
             });
           }
         } catch (fallbackError) {
           console.error('❌ Одобрение: ошибка cross-table lookup:', fallbackError);
           return res.status(404).json({
             success: false,
-            error: `Объявление с ID ${id} и типом ${requestedPropertyType} не найдено в правильной таблице`
+            error: `Listing with ID ${id} and type ${requestedPropertyType} was not found in the correct table`
           });
         }
       }
@@ -14570,7 +14570,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
     }
     
     if (!property) {
-      return res.status(404).json({ success: false, error: 'Объявление не найдено' });
+      return res.status(404).json({ success: false, error: 'Listing not found' });
     }
     
     // Если передан тип: он должен совпадать с записью, кроме пары apartment/commercial (одна таблица).
@@ -14590,7 +14590,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         console.error(`   Source table: ${property.source_table || 'unknown'}`);
         return res.status(400).json({
           success: false,
-          error: `Несоответствие типов: запрошен ${requestedPropertyType}, но найден ${property.property_type}. Объект не может быть одобрен.`
+          error: `Type mismatch: requested ${requestedPropertyType}, but found ${property.property_type}. The property cannot be approved.`
         });
       }
     }
@@ -14622,7 +14622,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       if (!originalProperty) {
         return res.status(404).json({ 
           success: false, 
-          error: 'Оригинальное объявление не найдено' 
+          error: 'Original listing not found' 
         });
       }
       
@@ -14639,8 +14639,8 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         await notificationQueries.create({
           user_id: property.user_id,
           type: 'property_deleted',
-          title: 'Объявление удалено',
-          message: `Ваш запрос на удаление объявления "${property.title}" одобрен. Объявление удалено с площадки.`,
+          title: 'Listing deleted',
+          message: `Your request to delete listing "${property.title}" was approved. The listing was removed from the platform.`,
           data: JSON.stringify({ property_id: originalPropertyId })
         });
       } catch (notifError) {
@@ -14649,7 +14649,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       
       res.json({ 
         success: true, 
-        message: 'Объявление удалено',
+        message: 'Listing deleted',
         deleted_property_id: originalPropertyId
       });
       return;
@@ -14658,7 +14658,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       if (!editIdMatch) {
         return res.status(400).json({
           success: false,
-          error: 'Некорректный формат запроса на редактирование (ожидается EDIT:<id>)',
+          error: 'Invalid edit request format (expected EDIT:<id>)',
         });
       }
       originalPropertyId = editIdMatch[1];
@@ -14672,7 +14672,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       if (!originalProperty) {
         return res.status(404).json({
           success: false,
-          error: 'Оригинальное объявление не найдено',
+          error: 'Original listing not found',
         });
       }
 
@@ -14699,7 +14699,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       if (editTargetTable === 'conflict') {
         return res.status(409).json({
           success: false,
-          error: `Конфликт ID ${originalPropertyId}: объект найден и в квартирах, и в домах. Укажите property_type в запросе одобрения.`,
+          error: `ID conflict ${originalPropertyId}: property found in both apartments and houses. Provide property_type in the approval request.`,
         });
       }
 
@@ -14759,7 +14759,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       if (!updatedOriginal) {
         return res.status(500).json({
           success: false,
-          error: 'Оригинальное объявление не найдено после применения изменений'
+          error: 'Original listing not found after applying changes'
         });
       }
       console.log(`✅ Проверка обновленного объекта:`, {
@@ -14778,8 +14778,8 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         await notificationQueries.create({
           user_id: property.user_id,
           type: 'property_approved',
-          title: 'Изменения в объекте одобрены',
-          message: `Изменения в объекте "${property.title}" одобрены и применены к опубликованному объявлению`,
+          title: 'Listing changes approved',
+          message: `Changes to "${property.title}" were approved and applied to the published listing`,
           data: JSON.stringify({ property_id: originalPropertyId, approval_kind: 'edit' })
         });
       } catch (notifError) {
@@ -14819,7 +14819,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       
       res.json({
         success: true,
-        message: 'Изменения одобрены и применены к оригинальному объекту',
+        message: 'Changes approved and applied to the original listing',
         original_property_id: originalPropertyId,
         translated: editTranslation.ok,
         translations: editTranslation.languages || [],
@@ -14856,7 +14856,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       
       if (!result) {
         console.error(`❌ Одобрение: updateModerationStatus вернул null/undefined для ID=${id}`);
-        return res.status(500).json({ success: false, error: 'Ошибка при обновлении статуса модерации' });
+        return res.status(500).json({ success: false, error: 'Error updating moderation status' });
       }
       
       if (result.changes === 0) {
@@ -14873,12 +14873,12 @@ app.put('/api/properties/:id/approve', async (req, res) => {
             console.error(`❌ Объект ID=${id} не был обновлен, текущий статус: ${currentProperty.moderation_status}`);
             return res.status(500).json({ 
               success: false, 
-              error: `Объявление не было обновлено. Текущий статус: ${currentProperty.moderation_status}` 
+              error: `Listing was not updated. Current status: ${currentProperty.moderation_status}` 
             });
           }
         } else {
           console.error(`❌ Объект ID=${id} не найден после попытки обновления`);
-          return res.status(404).json({ success: false, error: 'Объявление не найдено после обновления' });
+          return res.status(404).json({ success: false, error: 'Listing not found after update' });
         }
       } else {
         console.log(`✅ Одобрение: статус обновлен, changes=${result.changes}`);
@@ -14957,10 +14957,10 @@ app.put('/api/properties/:id/approve', async (req, res) => {
           console.error(`❌ КРИТИЧЕСКАЯ ОШИБКА: получен объект с неправильным типом! Запрошен ${propertyTypeForRetrieval}, получен ${fallbackProperty.property_type}`);
           return res.status(500).json({ 
             success: false, 
-            error: `Получен объект с неправильным типом: запрошен ${propertyTypeForRetrieval}, получен ${fallbackProperty.property_type}` 
+            error: `Received property with wrong type: requested ${propertyTypeForRetrieval}, got ${fallbackProperty.property_type}` 
           });
         }
-        return res.status(404).json({ success: false, error: 'Объявление не найдено после обновления' });
+        return res.status(404).json({ success: false, error: 'Listing not found after update' });
       }
       
       // Запускаем таймер для отслеживания ставок (событийная модель)
@@ -14970,7 +14970,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       }
       if (!updatedProperty) {
         console.error(`❌ Одобрение: объект ID=${id} не найден после обновления`);
-        return res.status(404).json({ success: false, error: 'Объявление не найдено после обновления' });
+        return res.status(404).json({ success: false, error: 'Listing not found after update' });
       }
       console.log(`✅ Объявление обновлено:`, {
         id: updatedProperty.id,
@@ -14989,13 +14989,13 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       
       if (updatedProperty.is_auction === 1 || updatedProperty.is_auction === '1' || updatedProperty.is_auction === true) {
         isInList = passesAuctionFilters(updatedProperty);
-        listName = 'аукционных';
+        listName = 'auction';
         if (VERBOSE_HTTP) {
           console.log(`📋 Проверка публикации (аукцион): объявление ${id} ${isInList ? 'проходит фильтр' : 'не проходит фильтр'} списка ${listName}`);
         }
       } else {
         isInList = passesApprovedFilters(updatedProperty);
-        listName = 'одобренных';
+        listName = 'approved';
         if (VERBOSE_HTTP) {
           console.log(`📋 Проверка публикации: объявление ${id} ${isInList ? 'проходит фильтр' : 'не проходит фильтр'} списка ${listName}`);
         }
@@ -15014,8 +15014,8 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         await notificationQueries.create({
           user_id: property.user_id,
           type: 'property_approved',
-          title: 'Ваш объект прошел верификацию',
-          message: `Ваш объект "${property.title}" прошел верификацию, переведён на языки сайта и опубликован на платформе`,
+          title: 'Your listing passed verification',
+          message: `Your listing "${property.title}" passed verification, was translated into site languages, and published on the platform`,
           data: JSON.stringify({ property_id: id, approval_kind: 'publish' })
         });
       } catch (notifError) {
@@ -15059,7 +15059,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         console.error(`   Source table: ${updatedProperty.source_table || 'unknown'}`);
         return res.status(500).json({
           success: false,
-          error: `Получен объект с неправильным типом: ожидался ${property.property_type}, получен ${updatedProperty.property_type}`,
+          error: `Received property with wrong type: expected ${property.property_type}, got ${updatedProperty.property_type}`,
         });
       }
       
@@ -15067,7 +15067,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       
       res.json({ 
         success: true, 
-        message: 'Объявление переведено и опубликовано',
+        message: 'Listing translated and published',
         translated: publishTranslation.ok,
         translations: publishTranslation.languages || [],
         data: {
@@ -15094,7 +15094,7 @@ app.put('/api/properties/:id/toggle-auction', async (req, res) => {
     const prisma = getPrisma();
     const property = await prisma.properties.findUnique({ where: { id: Number(id) } });
     if (!property) {
-      return res.status(404).json({ success: false, error: 'Объявление не найдено' });
+      return res.status(404).json({ success: false, error: 'Listing not found' });
     }
 
     // Переключаем статус аукциона
@@ -15111,7 +15111,7 @@ app.put('/api/properties/:id/toggle-auction', async (req, res) => {
 
     res.json({ 
       success: true, 
-      message: `Статус аукциона изменен на ${newAuctionStatus === 1 ? 'с аукционом' : 'без аукциона'}`,
+      message: `Auction status changed to ${newAuctionStatus === 1 ? 'with auction' : 'without auction'}`,
       data: { is_auction: newAuctionStatus }
     });
   } catch (error) {
@@ -15129,7 +15129,7 @@ app.put('/api/properties/:id/reject', async (req, res) => {
     const { reviewed_by, rejection_reason } = req.body;
     const property = await propertyQueries.getById(id);
     if (!property) {
-      return res.status(404).json({ success: false, error: 'Объявление не найдено' });
+      return res.status(404).json({ success: false, error: 'Listing not found' });
     }
     await propertyQueries.updateModerationStatus(
       id,
@@ -15143,8 +15143,8 @@ app.put('/api/properties/:id/reject', async (req, res) => {
       await notificationQueries.create({
         user_id: property.user_id,
         type: 'property_rejected',
-        title: 'Объявление отклонено',
-        message: `Ваше объявление "${property.title}" было отклонено.${rejection_reason ? ' Причина: ' + rejection_reason : ''}`,
+        title: 'Listing rejected',
+        message: `Your listing "${property.title}" was rejected.${rejection_reason ? ' Reason: ' + rejection_reason : ''}`,
         data: JSON.stringify({ property_id: id, rejection_reason })
       });
     } catch (notifError) {
@@ -15166,7 +15166,7 @@ app.put('/api/properties/:id/reject', async (req, res) => {
 
     res.json({ 
       success: true, 
-      message: 'Объявление отклонено' 
+      message: 'Listing rejected' 
     });
   } catch (error) {
     console.error('Ошибка при отклонении объявления:', error);
@@ -15182,7 +15182,7 @@ app.delete('/api/properties/:id', async (req, res) => {
     const { id } = req.params;
     const property = await propertyQueries.getById(id);
     if (!property) {
-      return res.status(404).json({ success: false, error: 'Объявление не найдено' });
+      return res.status(404).json({ success: false, error: 'Listing not found' });
     }
 
     // Удаляем объявление
@@ -15190,7 +15190,7 @@ app.delete('/api/properties/:id', async (req, res) => {
 
     res.json({ 
       success: true, 
-      message: 'Объявление успешно удалено' 
+      message: 'Listing deleted successfully' 
     });
   } catch (error) {
     console.error('Ошибка при удалении объявления:', error);
@@ -15210,16 +15210,16 @@ app.post('/api/users/:id/card', async (req, res) => {
     const { cardNumber, cardCvv, cardType } = req.body;
     
     console.log('📝 Сохранение карты для пользователя:', userId, {
-      cardNumber: cardNumber ? cardNumber.slice(0, 4) + '****' : 'не указан',
-      cardCvv: cardCvv ? '***' : 'не указан',
-      cardType: cardType || 'не указан'
+      cardNumber: cardNumber ? cardNumber.slice(0, 4) + '****' : 'not specified',
+      cardCvv: cardCvv ? '***' : 'not specified',
+      cardType: cardType || 'not specified'
     });
     
     if (!cardNumber || !cardCvv || !cardType) {
       console.warn('❌ Недостаточно данных для сохранения карты:', { cardNumber: !!cardNumber, cardCvv: !!cardCvv, cardType: !!cardType });
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать номер карты, CVV и тип карты' 
+        error: 'Card number, CVV, and card type are required' 
       });
     }
     
@@ -15250,7 +15250,7 @@ app.post('/api/users/:id/card', async (req, res) => {
       console.error('❌ Ошибка шифрования:', encryptError);
       return res.status(500).json({ 
         success: false, 
-        error: 'Ошибка при шифровании данных карты: ' + encryptError.message 
+        error: 'Card data encryption error: ' + encryptError.message 
       });
     }
     
@@ -15258,7 +15258,7 @@ app.post('/api/users/:id/card', async (req, res) => {
     const user = await userQueries.getById(userId);
     if (!user) {
       console.warn('❌ Пользователь не найден:', userId);
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     
     try {
@@ -15276,7 +15276,7 @@ app.post('/api/users/:id/card', async (req, res) => {
       console.error('❌ Ошибка при обновлении БД:', dbError);
       return res.status(500).json({ 
         success: false, 
-        error: 'Ошибка при сохранении в базу данных: ' + dbError.message 
+        error: 'Database save error: ' + dbError.message 
       });
     }
     
@@ -15293,7 +15293,7 @@ app.post('/api/users/:id/card', async (req, res) => {
   } catch (error) {
     console.error('❌ Ошибка при сохранении карты:', error);
     console.error('❌ Stack trace:', error.stack);
-    res.status(500).json({ success: false, error: error.message || 'Внутренняя ошибка сервера' });
+    res.status(500).json({ success: false, error: error.message || 'Internal server error' });
   }
 });
 
@@ -15306,7 +15306,7 @@ app.get('/api/users/:id/deposit', async (req, res) => {
     const user = await userQueries.getById(userId);
     
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     
     const depositAmount = (user.deposit_amount !== undefined && user.deposit_amount !== null) ? parseFloat(user.deposit_amount) : 0;
@@ -15336,13 +15336,13 @@ app.post('/api/users/:id/deposit/top-up', async (req, res) => {
     
     const user = await userQueries.getById(userId);
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     
     if (user.has_card !== 1) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо сначала добавить карту' 
+        error: 'Add a card first' 
       });
     }
     
@@ -15358,7 +15358,7 @@ app.post('/api/users/:id/deposit/top-up', async (req, res) => {
           user_id: Number(userId),
           type: 'deposit',
           amount: 3000,
-          description: 'Пополнение депозита',
+          description: 'Deposit top-up',
         },
       });
     });
@@ -15366,8 +15366,8 @@ app.post('/api/users/:id/deposit/top-up', async (req, res) => {
     await sendPushToUserSafely(
       userId,
       {
-        title: 'Баланс пополнен',
-        body: 'Депозит успешно пополнен на 3 000 €.',
+        title: 'Balance topped up',
+        body: 'Deposit topped up by €3,000.',
         data: { type: 'deposit_top_up_success', path: '/wallet', amount: 3000 },
         channelId: 'transactions',
       },
@@ -15399,21 +15399,21 @@ app.post('/api/users/:id/deposit/withdraw', async (req, res) => {
     if (!amount || amount <= 0) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать сумму для вывода' 
+        error: 'Withdrawal amount is required' 
       });
     }
     
     const user = await userQueries.getById(userId);
     
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     
     const currentDeposit = (user.deposit_amount !== undefined && user.deposit_amount !== null) ? parseFloat(user.deposit_amount) : 0;
     if (currentDeposit < amount) {
       return res.status(400).json({ 
         success: false, 
-        error: 'Недостаточно средств на депозите' 
+        error: 'Insufficient deposit funds' 
       });
     }
     
@@ -15429,7 +15429,7 @@ app.post('/api/users/:id/deposit/withdraw', async (req, res) => {
           user_id: Number(userId),
           type: 'withdrawal',
           amount: -Number(amount),
-          description: 'Вывод средств',
+          description: 'Withdrawal',
         },
       });
     });
@@ -15437,8 +15437,8 @@ app.post('/api/users/:id/deposit/withdraw', async (req, res) => {
     await sendPushToUserSafely(
       userId,
       {
-        title: 'Вывод оформлен',
-        body: `Заявка на вывод ${Number(amount).toLocaleString('ru-RU')} € успешно оформлена.`,
+        title: 'Withdrawal submitted',
+        body: `Withdrawal request for ${Number(amount).toLocaleString('en-US')} € submitted successfully.`,
         data: { type: 'withdraw_success', path: '/wallet', amount: Number(amount) },
         channelId: 'transactions',
       },
@@ -15488,7 +15488,7 @@ app.get('/api/users/:id/analytics', async (req, res) => {
     
     const user = await userQueries.getById(userId);
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
     
     const depositStats = await prisma.transactions.aggregate({
@@ -15547,7 +15547,7 @@ app.post('/api/bids', async (req, res) => {
       console.error('❌ Отсутствует user_id');
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать user_id' 
+        error: 'user_id is required' 
       });
     }
     
@@ -15555,7 +15555,7 @@ app.post('/api/bids', async (req, res) => {
       console.error('❌ Отсутствует property_id');
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать property_id' 
+        error: 'property_id is required' 
       });
     }
     
@@ -15563,7 +15563,7 @@ app.post('/api/bids', async (req, res) => {
       console.error('❌ Отсутствует bid_amount');
       return res.status(400).json({ 
         success: false, 
-        error: 'Необходимо указать bid_amount' 
+        error: 'bid_amount is required' 
       });
     }
     
@@ -15576,7 +15576,7 @@ app.post('/api/bids', async (req, res) => {
       console.error('❌ Некорректный user_id:', user_id);
       return res.status(400).json({ 
         success: false, 
-        error: `Некорректный user_id: ${user_id}` 
+        error: `Invalid user_id: ${user_id}` 
       });
     }
     
@@ -15584,7 +15584,7 @@ app.post('/api/bids', async (req, res) => {
       console.error('❌ Некорректный property_id:', property_id);
       return res.status(400).json({ 
         success: false, 
-        error: `Некорректный property_id: ${property_id}` 
+        error: `Invalid property_id: ${property_id}` 
       });
     }
     
@@ -15592,7 +15592,7 @@ app.post('/api/bids', async (req, res) => {
       console.error('❌ Некорректный bid_amount:', bid_amount);
       return res.status(400).json({ 
         success: false, 
-        error: `Некорректный bid_amount: ${bid_amount}` 
+        error: `Invalid bid_amount: ${bid_amount}` 
       });
     }
     
@@ -15602,7 +15602,7 @@ app.post('/api/bids', async (req, res) => {
     const user = await userQueries.getById(userIdNum);
     if (!user) {
       console.error(`❌ Пользователь с ID ${userIdNum} не найден в БД`);
-      return res.status(404).json({ success: false, error: `Пользователь с ID ${userIdNum} не найден` });
+      return res.status(404).json({ success: false, error: `User with ID ${userIdNum} not found` });
     }
     console.log('✅ Пользователь найден:', { id: user.id, name: `${user.first_name} ${user.last_name}` });
     
@@ -15615,7 +15615,7 @@ app.post('/api/bids', async (req, res) => {
       console.error(
         `❌ Объект недвижимости с ID ${propertyIdNum} не найден (table=${property_table ?? 'auto'}, type=${property_type ?? 'auto'})`
       );
-      return res.status(404).json({ success: false, error: `Объект недвижимости с ID ${propertyIdNum} не найден` });
+      return res.status(404).json({ success: false, error: `Property with ID ${propertyIdNum} not found` });
     }
 
     console.log('✅ Объект найден:', {
@@ -15630,7 +15630,7 @@ app.post('/api/bids', async (req, res) => {
       return res.status(403).json({
         success: false,
         code: 'OWN_LISTING',
-        error: 'Нельзя делать ставки на свой объект',
+        error: 'You cannot bid on your own listing',
       });
     }
     
@@ -15643,7 +15643,7 @@ app.post('/api/bids', async (req, res) => {
         console.error(`❌ У пользователя ${userIdNum} не заполнена страна`);
         return res.status(400).json({ 
           success: false, 
-          error: 'Для участия в аукционе необходимо указать страну в профиле. Пожалуйста, заполните страну в настройках профиля.' 
+          error: 'To join the auction you must set a country in your profile. Please fill in the country in profile settings.' 
         });
       }
       
@@ -15652,7 +15652,7 @@ app.post('/api/bids', async (req, res) => {
         return res.status(400).json({ 
           success: false,
           code: 'INSUFFICIENT_AUCTION_DEPOSIT',
-          error: `Для участия в аукционе необходим депозит не менее ${AUCTION_DEPOSIT_MIN_EUR} €. Пожалуйста, пополните депозит.`,
+          error: `To join the auction you need a deposit of at least ${AUCTION_DEPOSIT_MIN_EUR} €. Please top up your deposit.`,
         });
       }
 
@@ -15667,7 +15667,7 @@ app.post('/api/bids', async (req, res) => {
             success: false,
             code: 'VERIFICATION_PENDING',
             error:
-              'Верификация профиля на рассмотрении у администратора. После одобрения вы сможете делать ставки на аукционе. Следить за статусом можно в уведомлениях и в разделе «Профиль».',
+              'Your profile verification is under admin review. After approval you will be able to place auction bids. You can track the status in notifications and in the documents section.',
           });
         }
       }
@@ -15685,7 +15685,7 @@ app.post('/api/bids', async (req, res) => {
     //   console.error(`❌ Пользователь ${userIdNum} уже сделал ставку в объекте ${existingBids.property_id}`);
     //   return res.status(400).json({ 
     //     success: false, 
-    //     error: 'Вы уже сделали ставку в другом объекте. Вы можете сделать ставку только в одном объекте.' 
+    //     error: 'You already placed a bid on another property. You can bid on only one property.' 
     //   });
     // }
     console.log('✅ Пользователь может сделать ставку в этом объекте (проверка на несколько объектов отключена)');
@@ -15714,7 +15714,7 @@ app.post('/api/bids', async (req, res) => {
       console.error(`❌ Ставка ${bidAmountNum} меньше минимальной ${minimumBid}`);
       return res.status(400).json({ 
         success: false, 
-        error: `Ставка должна быть не меньше ${minimumBid.toFixed(2)} (текущая ставка + ${minBidStep})` 
+        error: `Bid must be at least ${minimumBid.toFixed(2)} (current bid + ${minBidStep})` 
       });
     }
     console.log('✅ Ставка прошла проверку минимальной суммы');
@@ -15988,7 +15988,7 @@ app.post('/api/bids', async (req, res) => {
     console.error('❌ Stack trace:', error.stack);
     res.status(500).json({ 
       success: false, 
-      error: error.message || 'Внутренняя ошибка сервера' 
+      error: error.message || 'Internal server error' 
     });
   }
 });
@@ -16004,10 +16004,10 @@ app.get('/api/bids/ceiling', async (req, res) => {
       normalizeBidPropertyTableQuery(req.query.property_table) || 'properties_apartments';
 
     if (!Number.isFinite(userId) || userId <= 0) {
-      return res.status(400).json({ success: false, error: 'user_id обязателен' });
+      return res.status(400).json({ success: false, error: 'user_id is required' });
     }
     if (!Number.isFinite(propertyId) || propertyId <= 0) {
-      return res.status(400).json({ success: false, error: 'property_id обязателен' });
+      return res.status(400).json({ success: false, error: 'property_id is required' });
     }
 
     const prisma = getPrisma();
@@ -16046,19 +16046,19 @@ app.put('/api/bids/ceiling', async (req, res) => {
     const maxAmountNum = parseFloat(max_amount);
 
     if (!Number.isFinite(userIdNum) || userIdNum <= 0) {
-      return res.status(400).json({ success: false, error: 'Некорректный user_id' });
+      return res.status(400).json({ success: false, error: 'Invalid user_id' });
     }
     if (!Number.isFinite(propertyIdNum) || propertyIdNum <= 0) {
-      return res.status(400).json({ success: false, error: 'Некорректный property_id' });
+      return res.status(400).json({ success: false, error: 'Invalid property_id' });
     }
     if (!Number.isFinite(maxAmountNum) || maxAmountNum <= 0) {
-      return res.status(400).json({ success: false, error: 'Некорректный max_amount' });
+      return res.status(400).json({ success: false, error: 'Invalid max_amount' });
     }
 
     const prisma = getPrisma();
     const user = await userQueries.getById(userIdNum);
     if (!user) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      return res.status(404).json({ success: false, error: 'User not found' });
     }
 
     const { property, tableName } = await loadPropertyForBid(propertyIdNum, {
@@ -16066,14 +16066,14 @@ app.put('/api/bids/ceiling', async (req, res) => {
       property_type,
     });
     if (!property) {
-      return res.status(404).json({ success: false, error: 'Объект не найден' });
+      return res.status(404).json({ success: false, error: 'Property not found' });
     }
 
     if (await viewerOwnsPropertyRecord(userQueries, user, property)) {
       return res.status(403).json({
         success: false,
         code: 'OWN_LISTING',
-        error: 'Нельзя делать ставки на свой объект',
+        error: 'You cannot bid on your own listing',
       });
     }
 
@@ -16179,7 +16179,7 @@ app.delete('/api/bids/ceiling', async (req, res) => {
       'properties_apartments';
 
     if (!Number.isFinite(userIdNum) || !Number.isFinite(propertyIdNum)) {
-      return res.status(400).json({ success: false, error: 'user_id и property_id обязательны' });
+      return res.status(400).json({ success: false, error: 'user_id and property_id are required' });
     }
 
     const prisma = getPrisma();
@@ -16284,7 +16284,7 @@ app.get('/api/bids/property/:id', async (req, res) => {
         else if (hits.length > 1) {
           return res.status(400).json({
             success: false,
-            error: 'Укажите property_table или property_type — id объекта неоднозначен',
+            error: 'Provide property_table or property_type — property id is ambiguous',
           });
         } else propertyTable = 'properties_apartments';
       }
@@ -16326,7 +16326,7 @@ app.get('/api/admin/auctions/:propertyId/bids', async (req, res) => {
   try {
     const propertyId = Number(req.params.propertyId);
     if (!Number.isFinite(propertyId) || propertyId <= 0) {
-      return res.status(400).json({ success: false, error: 'Некорректный propertyId' });
+      return res.status(400).json({ success: false, error: 'Invalid propertyId' });
     }
     let table = req.query.source_table != null ? String(req.query.source_table).trim() : '';
     if (table === 'apartments') table = 'properties_apartments';
@@ -16681,7 +16681,7 @@ async function insertAuctionWinnerRow(prisma, row) {
     },
   });
 
-  let propertyTitle = 'объект';
+  let propertyTitle = 'property';
   try {
     const propertyTableSafe = ['properties', 'properties_apartments', 'properties_houses'].includes(property_table)
       ? property_table
@@ -16692,13 +16692,13 @@ async function insertAuctionWinnerRow(prisma, row) {
         : propertyTableSafe === 'properties_houses'
           ? await prisma.properties_houses.findUnique({ where: { id: property_id }, select: { id: true, title: true } })
           : await prisma.properties.findUnique({ where: { id: property_id }, select: { id: true, title: true } });
-    propertyTitle = propertyRow?.title || 'объект';
+    propertyTitle = propertyRow?.title || 'property';
 
     await notificationQueries.create({
       user_id,
       type: 'auction_won',
-      title: 'Вы победили в аукционе',
-      message: `Поздравляем! Вы победили в аукционе по объекту "${propertyTitle}".`,
+      title: 'You won the auction',
+      message: `Congratulations! You won the auction for "${propertyTitle}".`,
       data: {
         property_id,
         winner_id: createdWinner.id,
@@ -16710,8 +16710,8 @@ async function insertAuctionWinnerRow(prisma, row) {
     await sendPushToUserSafely(
       user_id,
       {
-        title: 'Вы выиграли аукцион',
-        body: `Поздравляем! Вы победили в аукционе по объекту «${propertyTitle}».`,
+        title: 'You won the auction',
+        body: `Congratulations! You won the auction for «${propertyTitle}».`,
         data: {
           type: 'auction_won',
           propertyId: property_id,
@@ -16726,8 +16726,8 @@ async function insertAuctionWinnerRow(prisma, row) {
     await notificationQueries.create({
       user_id,
       type: 'payment_deadline',
-      title: 'Срок оплаты депозита',
-      message: `Оплатите депозит до ${depositDueDate.toLocaleString('ru-RU')}, чтобы сохранить право на покупку "${propertyTitle}".`,
+      title: 'Deposit payment deadline',
+      message: `Pay the deposit by ${depositDueDate.toLocaleString('en-US')} to keep your purchase right for "${propertyTitle}".`,
       data: {
         property_id,
         winner_id: createdWinner.id,
@@ -16747,8 +16747,8 @@ async function insertAuctionWinnerRow(prisma, row) {
       await notificationQueries.create({
         user_id: bidder.user_id,
         type: 'auction_lost',
-        title: 'Аукцион завершен',
-        message: `Аукцион по объекту "${propertyTitle}" завершен. Победил другой участник.`,
+        title: 'Auction ended',
+        message: `The auction for "${propertyTitle}" has ended. Another participant won.`,
         data: {
           property_id,
         },
@@ -16852,7 +16852,7 @@ app.post('/api/auction-winners', async (req, res) => {
     if (!user_id || !property_id || !property_table || !winning_bid_amount || !auction_end_date) {
       return res.status(400).json({
         success: false,
-        error: 'Необходимо указать: user_id, property_id, property_table, winning_bid_amount, auction_end_date'
+        error: 'Required: user_id, property_id, property_table, winning_bid_amount, auction_end_date'
       });
     }
     
@@ -16866,7 +16866,7 @@ app.post('/api/auction-winners', async (req, res) => {
       console.log('⚠️ Победитель для этого объекта уже сохранен');
       return res.status(409).json({
         success: false,
-        error: 'Победитель для этого объекта уже зарегистрирован'
+        error: 'A winner for this property is already registered'
       });
     }
     
@@ -16906,7 +16906,7 @@ app.post('/api/auction-winners/ensure/:propertyId', async (req, res) => {
   try {
     const propertyId = parseInt(req.params.propertyId, 10);
     if (Number.isNaN(propertyId)) {
-      return res.status(400).json({ success: false, error: 'Некорректный property_id' });
+      return res.status(400).json({ success: false, error: 'Invalid property_id' });
     }
     const result = await ensureAuctionWinnerForPropertyId(propertyId);
     if (!result.ok && result.reason === 'property_not_found') {
@@ -16965,7 +16965,7 @@ app.get('/api/auction-winners/property/:propertyId', async (req, res) => {
   try {
     const propertyId = parseInt(req.params.propertyId, 10);
     if (Number.isNaN(propertyId)) {
-      return res.status(400).json({ success: false, error: 'Некорректный property_id' });
+      return res.status(400).json({ success: false, error: 'Invalid property_id' });
     }
     const row = await getPrisma().auction_winners.findFirst({
       where: { property_id: propertyId },
@@ -16999,7 +16999,7 @@ app.get('/api/auction-winners/user/:id', async (req, res) => {
     if (isNaN(userId)) {
       return res.status(400).json({
         success: false,
-        error: 'Некорректный user_id'
+        error: 'Invalid user_id'
       });
     }
     
@@ -17104,14 +17104,14 @@ app.post('/api/auction-winners/:id/pay-deposit', async (req, res) => {
     if (!winner) {
       return res.status(404).json({
         success: false,
-        error: 'Выигранный объект не найден'
+        error: 'Won property not found'
       });
     }
     
     if (winner.deposit_paid === 1) {
       return res.status(400).json({
         success: false,
-        error: 'Депозит уже оплачен'
+        error: 'Deposit already paid'
       });
     }
     
@@ -17122,7 +17122,7 @@ app.post('/api/auction-winners/:id/pay-deposit', async (req, res) => {
     if (now > dueDate) {
       return res.status(400).json({
         success: false,
-        error: 'Срок оплаты депозита истек'
+        error: 'Deposit payment deadline expired'
       });
     }
     
@@ -17166,7 +17166,7 @@ app.use((err, req, res, next) => {
     console.error('⚠️ Ошибка блокировки БД:', err.message);
     return res.status(503).json({ 
       success: false, 
-      error: 'База данных временно недоступна. Попробуйте позже.',
+      error: 'Database temporarily unavailable. Try again later.',
       retryable: true
     });
   }
@@ -17183,7 +17183,7 @@ app.use((err, req, res, next) => {
   // Общие ошибки
   res.status(500).json({ 
     success: false, 
-    error: 'Внутренняя ошибка сервера',
+    error: 'Internal server error',
     message: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
@@ -17289,7 +17289,7 @@ app.post('/api/properties/detect-district', async (req, res) => {
   if (!address || !city) {
     return res.status(400).json({
       success: false,
-      error: 'Необходимо передать address и city'
+      error: 'address and city are required'
     });
   }
 
@@ -17356,13 +17356,13 @@ app.post('/api/properties/calculate-price', async (req, res) => {
     if (!area || !city) {
         return res.status(400).json({
             success: false,
-            error: 'Необходимо указать площадь (area) и город (city)'
+            error: 'area and city are required'
         });
     }
     if (!noRoomsType && rooms !== 'studio' && (rooms === undefined || rooms === null || rooms === '')) {
         return res.status(400).json({
             success: false,
-            error: 'Укажите количество комнат или выберите тип «Земля»'
+            error: 'Specify the number of rooms or choose the “Land” type'
         });
     }
 
@@ -17370,12 +17370,12 @@ app.post('/api/properties/calculate-price', async (req, res) => {
       area,
       rooms,
       city,
-      country: country || 'не указана',
-      street: street || 'не указана',
+      country: country || 'not specified',
+      street: street || 'not specified',
       district: district || 'all',
       propertyType: pt,
-      maxPrice: maxPrice || 'не указано',
-      minPrice: minPrice || 'не указано'
+      maxPrice: maxPrice || 'not specified',
+      minPrice: minPrice || 'not specified'
     });
 
     try {
@@ -17413,7 +17413,7 @@ app.post('/api/properties/calculate-price', async (req, res) => {
             searchLevel: 'error',
             sources: []
           },
-          note: `Произошла ошибка при поиске объектов. Попробуйте позже или измените параметры поиска.`
+          note: `An error occurred while searching for properties. Try again later or change the search parameters.`
         }
       });
     }
@@ -17460,7 +17460,7 @@ if (process.env.NODE_ENV !== 'production') {
     }
     res.status(404).json({ 
       success: false, 
-      error: 'Маршрут не найден',
+      error: 'Route not found',
       method: req.method,
       path: req.path,
       url: req.url
@@ -17500,15 +17500,15 @@ async function sendNoBidsNotification(propertyId, property) {
       return;
     }
     
-    const propertyTitle = property.title || 'ваш объект';
-    const messageText = `За 45 дней с момента выставления вашего объекта "${propertyTitle}" не произошло ставок и взаимодействия с объявлением, предлагаем вам снизить цену в личном кабинете с помощью функции редактирования, с уважением команда sellyourbrick.`;
+    const propertyTitle = property.title || 'your property';
+    const messageText = `For 45 days since listing "${propertyTitle}", there have been no bids or engagement. We suggest lowering the price in your seller cabinet via edit. Best regards, the Sellyourbrick team.`;
     
     // 1. Создаем уведомление в ЛК
     try {
       await notificationQueries.create({
         user_id: property.user_id,
         type: 'no_bids_45_days', // Тип оставляем как есть для совместимости
-        title: 'Рекомендация по снижению цены',
+        title: 'Price reduction recommendation',
         message: messageText,
         data: JSON.stringify({
           property_id: propertyId,
@@ -17532,7 +17532,7 @@ async function sendNoBidsNotification(propertyId, property) {
         };
         
         if (emailJsConfig.serviceId && emailJsConfig.templateId && emailJsConfig.publicKey) {
-          const emailMessage = `Здравствуйте, ${owner.name || owner.first_name || 'Уважаемый пользователь'}!\n\n${messageText}`;
+          const emailMessage = `Здравствуйте, ${owner.name || owner.first_name || 'Dear user'}!\n\n${messageText}`;
           
           const emailData = {
             service_id: emailJsConfig.serviceId,
@@ -17542,7 +17542,7 @@ async function sendNoBidsNotification(propertyId, property) {
               to_email: owner.email,
               email: owner.email,
               message: emailMessage,
-              subject: 'Рекомендация по снижению цены - Sellyourbrick'
+              subject: 'Price reduction recommendation - Sellyourbrick'
             }
           };
           
@@ -17571,7 +17571,7 @@ async function sendNoBidsNotification(propertyId, property) {
         const digits = String(owner.phone_number).replace(/\D/g, '');
         if (digits) {
           const chatId = `${digits}@c.us`;
-          const whatsappMessage = `Здравствуйте, ${owner.name || owner.first_name || 'Уважаемый пользователь'}!\n\n${messageText}`;
+          const whatsappMessage = `Здравствуйте, ${owner.name || owner.first_name || 'Dear user'}!\n\n${messageText}`;
           
           await waClient.sendMessage(chatId, whatsappMessage);
           console.log(`✅ WhatsApp сообщение отправлено владельцу ${owner.phone_number}, объект ${propertyId}`);
@@ -17758,16 +17758,16 @@ async function checkPropertiesWithoutBids() {
           continue;
         }
         
-        const propertyTitle = property.title || 'ваш объект';
+        const propertyTitle = property.title || 'your property';
         // Для тестирования используем текст про 5 минут, в production заменить на 45 дней
-        const messageText = `За 5 минут с момента выставления вашего объекта "${propertyTitle}" не произошло ставок и взаимодействия с объявлением, предлагаем вам снизить цену в личном кабинете с помощью функции редактирования, с уважением команда sellyourbrick.`;
+        const messageText = `For 5 minutes since listing "${propertyTitle}", there have been no bids or engagement. We suggest lowering the price in your seller cabinet via edit. Best regards, the Sellyourbrick team.`;
         
         // 1. Создаем уведомление в ЛК
         try {
           await notificationQueries.create({
             user_id: property.user_id,
             type: 'no_bids_45_days', // Тип оставляем как есть для совместимости
-            title: 'Рекомендация по снижению цены',
+            title: 'Price reduction recommendation',
             message: messageText,
             data: JSON.stringify({
               property_id: property.id,
@@ -17793,7 +17793,7 @@ async function checkPropertiesWithoutBids() {
             };
             
             if (emailJsConfig.serviceId && emailJsConfig.templateId && emailJsConfig.publicKey) {
-              const emailMessage = `Здравствуйте, ${owner.name || owner.first_name || 'Уважаемый пользователь'}!\n\n${messageText}`;
+              const emailMessage = `Здравствуйте, ${owner.name || owner.first_name || 'Dear user'}!\n\n${messageText}`;
               
               const emailData = {
                 service_id: emailJsConfig.serviceId,
@@ -17803,7 +17803,7 @@ async function checkPropertiesWithoutBids() {
                   to_email: owner.email,
                   email: owner.email,
                   message: emailMessage,
-                  subject: 'Рекомендация по снижению цены - Sellyourbrick'
+                  subject: 'Price reduction recommendation - Sellyourbrick'
                 }
               };
               
@@ -17833,7 +17833,7 @@ async function checkPropertiesWithoutBids() {
             const digits = String(owner.phone_number).replace(/\D/g, '');
             if (digits) {
               const chatId = `${digits}@c.us`;
-              const whatsappMessage = `Здравствуйте, ${owner.name || owner.first_name || 'Уважаемый пользователь'}!\n\n${messageText}`;
+              const whatsappMessage = `Здравствуйте, ${owner.name || owner.first_name || 'Dear user'}!\n\n${messageText}`;
               
               await waClient.sendMessage(chatId, whatsappMessage);
               console.log(`✅ WhatsApp сообщение отправлено владельцу ${owner.phone_number}, объект ${property.id}`);
@@ -17957,7 +17957,7 @@ if (process.env.NODE_ENV === 'production') {
     if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/health')) {
       return res.status(404).json({ 
         success: false, 
-        error: 'Маршрут не найден',
+        error: 'Route not found',
         method: req.method,
         path: req.path,
         url: req.url

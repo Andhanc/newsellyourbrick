@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Image,
   Platform,
@@ -16,6 +16,8 @@ import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { colors, layout, rounded } from '../theme/tokens'
 import { MENU_ITEMS, SALE_CARDS } from '../constants/discover'
+import { nativeT } from '../i18n/nativeStrings'
+import { storage } from '../platform/storage'
 
 const heroImage = require('../assets/images/mobile-discover/hero-townhouses.png')
 const welcomeHouse = require('../assets/images/mobile-discover/welcome-summer.png')
@@ -56,6 +58,13 @@ export default function MobileDiscoverScreen() {
   const [saved, setSaved] = useState<Set<string>>(() => new Set())
   const [stageEntered, setStageEntered] = useState(false)
   const [welcomeQuery, setWelcomeQuery] = useState('')
+  const [locale, setLocale] = useState('en')
+
+  useEffect(() => {
+    void storage.getItem('i18nextLng').then((lng) => {
+      if (lng) setLocale(lng)
+    })
+  }, [])
 
   const busyRef = useRef(false)
   const screenRef = useRef<ScreenKind>('hero')
@@ -222,23 +231,23 @@ export default function MobileDiscoverScreen() {
             showsVerticalScrollIndicator={false}
           >
             <View style={[styles.stageNav, { paddingTop: Math.max(insets.top, 16) }]}>
-              <Pressable style={styles.stageNavCircle} accessibilityLabel="Меню">
+              <Pressable style={styles.stageNavCircle} accessibilityLabel={nativeT('menu', locale)}>
                 <Text style={styles.stageNavMenu}>☰</Text>
               </Pressable>
               <Link href="/" asChild>
-                <Pressable style={styles.stageNavHome} accessibilityLabel="Главная">
-                  <Text style={styles.stageNavHomeText}>Главная</Text>
+                <Pressable style={styles.stageNavHome} accessibilityLabel={nativeT('home', locale)}>
+                  <Text style={styles.stageNavHomeText}>{nativeT('home', locale)}</Text>
                   <Text style={styles.stageNavHomeChevron}>⌄</Text>
                 </Pressable>
               </Link>
               <View style={styles.stageNavActions}>
                 <Link href="/auction" asChild>
-                  <Pressable style={styles.stageNavIcon} accessibilityLabel="Открыть поиск">
+                  <Pressable style={styles.stageNavIcon} accessibilityLabel={nativeT('openSearch', locale)}>
                     <Text style={styles.stageNavIconText}>⌕</Text>
                   </Pressable>
                 </Link>
                 <Link href="/profile" asChild>
-                  <Pressable style={styles.stageNavIcon} accessibilityLabel="Профиль">
+                  <Pressable style={styles.stageNavIcon} accessibilityLabel={nativeT('profile', locale)}>
                     <Text style={styles.stageNavIconText}>♙</Text>
                   </Pressable>
                 </Link>
@@ -284,13 +293,17 @@ export default function MobileDiscoverScreen() {
                           <View style={styles.cardActions}>
                             <Link href={card.to as any} asChild>
                               <Pressable style={styles.cardCta}>
-                                <Text style={styles.cardCtaText}>Подробнее</Text>
+                                <Text style={styles.cardCtaText}>{nativeT('moreDetailsShort', locale)}</Text>
                               </Pressable>
                             </Link>
                             <Pressable
                               style={[styles.cardSave, isSaved && styles.cardSaveOn]}
                               onPress={() => toggleSaved(card.id)}
-                              accessibilityLabel={isSaved ? 'Убрать из избранного' : 'Сохранить'}
+                              accessibilityLabel={
+                                isSaved
+                                  ? nativeT('removeFavoriteAria', locale)
+                                  : nativeT('saveFavoriteAria', locale)
+                              }
                             >
                               <Text style={styles.cardSaveIcon}>{isSaved ? '★' : '☆'}</Text>
                             </Pressable>
@@ -312,7 +325,7 @@ export default function MobileDiscoverScreen() {
               <View style={styles.quickLinks}>
                 <Link href="/news" asChild>
                   <Pressable style={styles.quickLink}>
-                    <Text style={styles.quickLinkText}>Новости</Text>
+                    <Text style={styles.quickLinkText}>{nativeT('discoverQuick_news', locale)}</Text>
                   </Pressable>
                 </Link>
                 <Link href="/about" asChild>
@@ -322,12 +335,12 @@ export default function MobileDiscoverScreen() {
                 </Link>
                 <Link href="/map" asChild>
                   <Pressable style={styles.quickLink}>
-                    <Text style={styles.quickLinkText}>Карта</Text>
+                    <Text style={styles.quickLinkText}>{nativeT('discoverQuick_map', locale)}</Text>
                   </Pressable>
                 </Link>
                 <Link href="/profile" asChild>
                   <Pressable style={styles.quickLink}>
-                    <Text style={styles.quickLinkText}>Кабинет</Text>
+                    <Text style={styles.quickLinkText}>{nativeT('discoverQuick_cabinet', locale)}</Text>
                   </Pressable>
                 </Link>
               </View>

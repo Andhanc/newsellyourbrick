@@ -1,8 +1,40 @@
 const HISTORY_CATEGORY_DEFS = [
-  { key: 'bids', title: 'Ставки', chipTitle: 'Ставки', eyebrow: 'Участие в торгах' },
-  { key: 'properties', title: 'Купленные объекты', chipTitle: 'Объекты', eyebrow: 'Ваша недвижимость' },
-  { key: 'shares', title: 'Купленные доли', chipTitle: 'Доли', eyebrow: 'Совместные инвестиции' },
-  { key: 'debts', title: 'Долги', chipTitle: 'Долги', eyebrow: 'Объекты с обязательствами' },
+  {
+    key: 'bids',
+    titleKey: 'profileHistory_dashBidsTitle',
+    chipTitleKey: 'profileHistory_dashBidsChip',
+    eyebrowKey: 'profileHistory_dashBidsEyebrow',
+    title: 'Bids',
+    chipTitle: 'Bids',
+    eyebrow: 'Auction participation',
+  },
+  {
+    key: 'properties',
+    titleKey: 'profileHistory_dashPropertiesTitle',
+    chipTitleKey: 'profileHistory_dashPropertiesChip',
+    eyebrowKey: 'profileHistory_dashPropertiesEyebrow',
+    title: 'Purchased properties',
+    chipTitle: 'Properties',
+    eyebrow: 'Your real estate',
+  },
+  {
+    key: 'shares',
+    titleKey: 'profileHistory_dashSharesTitle',
+    chipTitleKey: 'profileHistory_dashSharesChip',
+    eyebrowKey: 'profileHistory_dashSharesEyebrow',
+    title: 'Purchased shares',
+    chipTitle: 'Shares',
+    eyebrow: 'Co-investment',
+  },
+  {
+    key: 'debts',
+    titleKey: 'profileHistory_dashDebtsTitle',
+    chipTitleKey: 'profileHistory_dashDebtsChip',
+    eyebrowKey: 'profileHistory_dashDebtsEyebrow',
+    title: 'Debts',
+    chipTitle: 'Debts',
+    eyebrow: 'Distressed properties',
+  },
 ]
 
 function finiteAmount(value) {
@@ -60,27 +92,37 @@ function parseBookingDate(value) {
   return Number.isFinite(date.getTime()) ? date : null
 }
 
-export function buildBookingTicket(booking = {}, locale = 'ru-RU') {
+export function buildBookingTicket(booking = {}, locale = 'en-US') {
   const start = parseBookingDate(booking.start_date)
   const end = parseBookingDate(booking.end_date)
   const days = start && end && end >= start
     ? Math.round((end.getTime() - start.getTime()) / 86400000) + 1
     : 0
   const dateOptions = { day: 'numeric', month: 'short', year: 'numeric' }
+  const propertyId = booking.property_id ?? '—'
 
   return {
     ...booking,
-    title: booking.property_title || `Объект #${booking.property_id ?? '—'}`,
+    titleKey: booking.property_title ? null : 'buyerBookings_propertyFallback',
+    titleParams: booking.property_title ? null : { id: propertyId },
+    title: booking.property_title || `Property #${propertyId}`,
     statusKey: String(booking.status || 'pending').toLowerCase(),
     day: start ? String(start.getDate()).padStart(2, '0') : '—',
+    monthKey: start ? null : 'profileBookings_dateBadge',
     month: start
       ? start.toLocaleDateString(locale, { month: 'short' }).replace('.', '').toUpperCase()
-      : 'ДАТА',
+      : 'DATE',
     year: start ? String(start.getFullYear()) : '',
     days,
+    dateRangeKey:
+      start && end
+        ? null
+        : [booking.start_date, booking.end_date].filter(Boolean).length
+          ? null
+          : 'profileBookings_dateTbd',
     dateRange:
       start && end
         ? `${start.toLocaleDateString(locale, dateOptions)} — ${end.toLocaleDateString(locale, dateOptions)}`
-        : [booking.start_date, booking.end_date].filter(Boolean).join(' — ') || 'Дата уточняется',
+        : [booking.start_date, booking.end_date].filter(Boolean).join(' — ') || 'Date TBD',
   }
 }

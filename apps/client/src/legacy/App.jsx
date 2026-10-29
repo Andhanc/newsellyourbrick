@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect, useLayoutEffect, useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import ClerkAuthSync from './components/ClerkAuthSync'
 import ToastContainer from './components/ToastContainer'
 import VisitorHeartbeat from './components/VisitorHeartbeat'
@@ -125,15 +126,18 @@ const LazyShares = lazyWithRetry(() => import('./pages/Shares'))
 const LazyBuyNow = lazyWithRetry(() => import('./pages/BuyNow'))
 const LazyShareDetailPage = lazyWithRetry(() => import('./pages/ShareDetailPage'))
 const CatalogCityPage = lazyWithRetry(() => import('./pages/CatalogCityPage'))
-const PageFallback = () => (
-  <div
-    className="app-page-fallback app-page-fallback--instant"
-    role="status"
-    aria-live="polite"
-  >
-    <span className="app-page-fallback__sr">Загрузка</span>
-  </div>
-)
+const PageFallback = () => {
+  const { t } = useTranslation()
+  return (
+    <div
+      className="app-page-fallback app-page-fallback--instant"
+      role="status"
+      aria-live="polite"
+    >
+      <span className="app-page-fallback__sr">{t('appPageLoading')}</span>
+    </div>
+  )
+}
 
 /** Только lazy-чанки; без отдельного Suspense вокруг маршрута — при suspend подставлялся бы общий fallback роутера. Здесь fallback — короткий однотонный кадр до появления страницы. */
 function LazyPage({ children, fallback }) {

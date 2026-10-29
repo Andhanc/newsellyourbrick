@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiMail, FiPlus, FiRefreshCw, FiUserPlus } from 'react-icons/fi';
 import { getApiBaseUrl } from '../../utils/apiConfig';
 import { sendCrmEmailFromBrowser } from '../../utils/crmClientEmail';
 import { showNotification } from '../../utils/toastHelper';
 import { useDrawerDismiss } from '../../hooks/useDrawerDismiss';
 import './CrmBoard.css';
+import { getUiIntlLocale } from '../../utils/uiIntlLocale'
 
 function adminLabel() {
   try {
@@ -39,7 +41,7 @@ function fmtCrmShortDate(s) {
   if (s == null || s === '') return '—';
   const d = new Date(String(s).replace(' ', 'T'));
   if (Number.isNaN(d.getTime())) return String(s).slice(0, 16);
-  return d.toLocaleString('ru-RU', {
+  return d.toLocaleString(getUiIntlLocale(), {
     day: '2-digit',
     month: 'short',
     hour: '2-digit',
@@ -47,12 +49,12 @@ function fmtCrmShortDate(s) {
   });
 }
 
-function sourceRu(src) {
+function sourceRu(src, t) {
   const m = {
-    manual: 'Вручную',
-    user_import: 'Импорт',
-    assistant_import: 'Помощник',
-    auto_user_sync: 'База пользователей',
+    manual: t('admin_manual'),
+    user_import: t('admin_import'),
+    assistant_import: t('admin_assistant'),
+    auto_user_sync: t('admin_userBase'),
   };
   return m[src] || src || '—';
 }
@@ -64,6 +66,7 @@ function clip(s, n) {
 }
 
 export default function CrmBoard() {
+  const { t } = useTranslation();
   const [board, setBoard] = useState({ stages: [], leadsByStage: {} });
   const [loading, setLoading] = useState(true);
   const [dragOverStage, setDragOverStage] = useState(null);
@@ -98,11 +101,11 @@ export default function CrmBoard() {
       const base = await getApiBaseUrl();
       const res = await fetch(`${base}/admin/crm/board`);
       const json = await res.json();
-      if (!json.success) throw new Error(json.error || 'Ошибка загрузки');
+      if (!json.success) throw new Error(json.error || t('admin_loadError'));
       setBoard(json.data);
     } catch (err) {
       console.error(err);
-      showNotification(err.message || 'Не удалось загрузить CRM', 'error');
+      showNotification(err.message || t('admin_ne_udalos_zagruzit__7d8bda4d'), 'error');
     } finally {
       setLoading(false);
     }
@@ -149,7 +152,7 @@ export default function CrmBoard() {
     const id = detail?.lead?.id;
     if (!id) return;
     setEmailCompose({
-      subject: 'Персональное предложение Sellyourbrick',
+      subject: t('admin_personalnoe_predlozhenie_ellyourbri_7dd4cf48'),
       body: '',
     });
   }, [detail?.lead?.id]);
@@ -171,7 +174,7 @@ export default function CrmBoard() {
       else throw new Error(j1.error);
       if (j2.success) setActivities(j2.data || []);
     } catch (err) {
-      showNotification(err.message || 'Ошибка', 'error');
+      showNotification(err.message || t('admin_error'), 'error');
       setDrawerLeadId(null);
     } finally {
       setDetailLoading(false);
@@ -203,9 +206,9 @@ export default function CrmBoard() {
         setDetail((d) => ({ ...d, lead: json.data }));
       }
       loadBoard();
-      showNotification('Сохранено', 'success');
+      showNotification(t('admin_sohraneno_f0dff5ab'), 'success');
     } catch (err) {
-      showNotification(err.message || 'Ошибка сохранения', 'error');
+      showNotification(err.message || t('admin_oshibka_sohraneniya_c628b585'), 'error');
     }
   };
 
@@ -233,7 +236,7 @@ export default function CrmBoard() {
       if (j1.success) setDetail(j1.data);
       loadBoard();
     } catch (err) {
-      showNotification(err.message || 'Ошибка', 'error');
+      showNotification(err.message || t('admin_error'), 'error');
     }
   };
 
@@ -242,13 +245,13 @@ export default function CrmBoard() {
     const lead = detail?.lead;
     const toEmail = lead?.email && String(lead.email).trim();
     if (!toEmail) {
-      showNotification('У лида нет email', 'error');
+      showNotification(t('admin_u_lida_net_email_1e5d635b'), 'error');
       return;
     }
     const subj =
       emailCompose.subject != null && String(emailCompose.subject).trim()
         ? String(emailCompose.subject).trim()
-        : 'Сообщение от Sellyourbrick';
+        : t('admin_soobschenie_ot_ellyourbrick_63109ae4');
     const text = emailCompose.body != null ? String(emailCompose.body) : '';
     try {
       await sendCrmEmailFromBrowser({
@@ -257,10 +260,19 @@ export default function CrmBoard() {
         messageBody: text,
         fromName: lead.display_name ? `Sellyourbrick · ${lead.display_name}` : 'Sellyourbrick',
       });
-      showNotification('Письмо отправлено', 'success');
+      showNotification(t('admin_pismo_otpravleno_8eaa0627'), 'success');
       await addActivity('email_sent', subj, text.slice(0, 4000));
     } catch (err) {
-      showNotification(err.message || 'Ошибка отправки', 'error');
+      const msg = String(err?.message || '')
+      const translated =
+        msg === 'crmEmailErr_missingKeys'
+          ? t('crmEmailErr_missingKeys')
+          : msg === 'crmEmailErr_missingTemplate'
+            ? t('crmEmailErr_missingTemplate')
+            : msg.startsWith('crmEmailErr_status:')
+              ? t('crmEmailErr_status', { status: msg.split(':')[1] })
+              : msg || t('admin_oshibka_otpravki_4cf77bf2')
+      showNotification(translated, 'error');
     }
   };
 
@@ -281,13 +293,13 @@ export default function CrmBoard() {
       if (!json.success) throw new Error(json.error);
       await loadBoard();
     } catch (err) {
-      showNotification(err.message || 'Не удалось переместить', 'error');
+      showNotification(err.message || t('admin_ne_udalos_peremestit_c3c44d8e'), 'error');
     }
   };
 
   const createLead = async () => {
     if (!newForm.display_name.trim()) {
-      showNotification('Укажите имя', 'error');
+      showNotification(t('admin_ukazhite_imya_d82e9634'), 'error');
       return;
     }
     try {
@@ -310,7 +322,7 @@ export default function CrmBoard() {
       await loadBoard();
       openDrawer(json.data.id);
     } catch (err) {
-      showNotification(err.message || 'Ошибка', 'error');
+      showNotification(err.message || t('admin_error'), 'error');
     }
   };
 
@@ -328,9 +340,9 @@ export default function CrmBoard() {
       setUserQuery('');
       await loadBoard();
       openDrawer(json.data.id);
-      showNotification(json.message || 'Добавлено', 'success');
+      showNotification(json.message || t('admin_dobavleno_158599b9'), 'success');
     } catch (err) {
-      showNotification(err.message || 'Ошибка', 'error');
+      showNotification(err.message || t('admin_error'), 'error');
     }
   };
 
@@ -347,9 +359,9 @@ export default function CrmBoard() {
       if (!json.success) throw new Error(json.error);
       await loadBoard();
       openDrawer(json.data.id);
-      showNotification(json.message || 'Добавлено', 'success');
+      showNotification(json.message || t('admin_dobavleno_158599b9'), 'success');
     } catch (err) {
-      showNotification(err.message || 'Ошибка', 'error');
+      showNotification(err.message || t('admin_error'), 'error');
     }
   };
 
@@ -359,16 +371,16 @@ export default function CrmBoard() {
     <div className="crm-board">
       <div className="crm-board__toolbar">
         <div className="crm-board__toolbar-group">
-          <label>Новый лид</label>
+          <label>{t('admin_novyy_lid_711dc83d')}</label>
           <button type="button" className="crm-board__btn crm-board__btn--primary" onClick={() => setShowNewModal(true)}>
-            <FiPlus /> Добавить вручную
+            <FiPlus /> {t('admin_dobavit_vruchnuyu_c5e9147e')}
           </button>
         </div>
         <div className="crm-board__toolbar-group crm-board__search-wrap">
-          <label>Импорт пользователя</label>
+          <label>{t('admin_import_polzovatelya_180d466f')}</label>
           <input
             type="search"
-            placeholder="Поиск по email, имени, телефону…"
+            placeholder={t('admin_poisk_po_email_imeni_b4fbc243')}
             value={userQuery}
             onChange={(e) => setUserQuery(e.target.value)}
           />
@@ -387,7 +399,7 @@ export default function CrmBoard() {
                     {[u.first_name, u.last_name].filter(Boolean).join(' ') || '—'}
                   </strong>
                   <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-                    {u.email || 'нет email'} · ID {u.id}
+                    {u.email || t('admin_net_email_7b7bc727')} · ID {u.id}
                   </div>
                 </div>
               ))}
@@ -395,7 +407,7 @@ export default function CrmBoard() {
           )}
         </div>
         <div className="crm-board__toolbar-group">
-          <label>Из умного помощника</label>
+          <label>{t('admin_iz_umnogo_pomoschnika_2f02bdc8')}</label>
           <select
             defaultValue=""
             onChange={(e) => {
@@ -404,10 +416,10 @@ export default function CrmBoard() {
               if (v) importAssistant(parseInt(v, 10));
             }}
           >
-            <option value="">Выберите лид чата…</option>
+            <option value="">{t('admin_vyberite_lid_chata_3e1d4851')}</option>
             {assistantLeads.map((a) => (
               <option key={a.id} value={a.id}>
-                #{a.id} {a.summary ? a.summary.slice(0, 40) : a.email || a.phone || 'без контакта'}
+                #{a.id} {a.summary ? a.summary.slice(0, 40) : a.email || a.phone || t('admin_bez_kontakta_c43b86a4')}
               </option>
             ))}
           </select>
@@ -415,12 +427,12 @@ export default function CrmBoard() {
         <div className="crm-board__toolbar-group">
           <label>&nbsp;</label>
           <button type="button" className="crm-board__btn crm-board__btn--ghost" onClick={loadBoard} disabled={loading}>
-            <FiRefreshCw /> Обновить
+            <FiRefreshCw /> {t('admin_sa_refresh')}
           </button>
         </div>
       </div>
 
-      {loading && <div className="crm-board__empty">Загрузка воронки…</div>}
+      {loading && <div className="crm-board__empty">{t('admin_zagruzka_voronki_031ba10c')}</div>}
 
       {!loading && (
         <div className="crm-board__kanban">
@@ -442,7 +454,7 @@ export default function CrmBoard() {
                   onDragLeave={() => setDragOverStage(null)}
                   onDrop={(e) => handleDrop(e, stage.id)}
                 >
-                  {leads.length === 0 && <div className="crm-board__empty">Перетащите сюда карточку</div>}
+                  {leads.length === 0 && <div className="crm-board__empty">{t('admin_peretaschite_syuda_kartochku_154e1a32')}</div>}
                   {leads.map((L) => (
                     <div
                       key={L.id}
@@ -473,13 +485,13 @@ export default function CrmBoard() {
                         <p className="crm-board__card-title">{L.display_name}</p>
                         {L.off_schedule ? (
                           <span className="crm-board__risk" title={(L.off_schedule_labels || []).join('\n')}>
-                            Не в срок
+                            {t('admin_ne_v_srok_6576310b')}
                           </span>
                         ) : null}
                       </div>
                       <dl className="crm-board__card-dl">
                         <div>
-                          <dt>Этап</dt>
+                          <dt>{t('admin_etap_73557e69')}</dt>
                           <dd>{stage.label}</dd>
                         </div>
                         <div>
@@ -487,19 +499,19 @@ export default function CrmBoard() {
                           <dd>{L.email || '—'}</dd>
                         </div>
                         <div>
-                          <dt>Телефон</dt>
+                          <dt>{t('admin_phone')}</dt>
                           <dd>{L.phone || '—'}</dd>
                         </div>
                         <div>
-                          <dt>Источник</dt>
-                          <dd>{sourceRu(L.source)}</dd>
+                          <dt>{t('admin_istochnik_8290a3db')}</dt>
+                          <dd>{sourceRu(L.source, t)}</dd>
                         </div>
                         <div>
-                          <dt>В системе</dt>
+                          <dt>{t('admin_v_sisteme_73a78588')}</dt>
                           <dd>{fmtCrmShortDate(L.created_at)}</dd>
                         </div>
                         <div>
-                          <dt>След. контакт</dt>
+                          <dt>{t('admin_sled_kontakt_40c1a86a')}</dt>
                           <dd
                             className={
                               L.crm_next_contact_overdue ? 'crm-board__card-dd--warn' : undefined
@@ -509,11 +521,11 @@ export default function CrmBoard() {
                           </dd>
                         </div>
                         <div>
-                          <dt>След. шаг</dt>
+                          <dt>{t('admin_sled_shag_118840f5')}</dt>
                           <dd title={L.next_action || ''}>{clip(L.next_action, 48)}</dd>
                         </div>
                         <div>
-                          <dt>Сделка</dt>
+                          <dt>{t('admin_sdelka_86019125')}</dt>
                           <dd>
                             {L.deal_value != null && String(L.deal_value).trim() !== ''
                               ? `${L.deal_value} ${L.currency || 'EUR'}`
@@ -525,10 +537,10 @@ export default function CrmBoard() {
                         className={`crm-board__temp ${TEMP_CLASS[L.temperature] || TEMP_CLASS.warm}`}
                       >
                         {L.temperature === 'hot'
-                          ? 'Горячий'
+                          ? t('admin_goryachiy_51d92db1')
                           : L.temperature === 'cold'
-                            ? 'Холодный'
-                            : 'Тёплый'}
+                            ? t('admin_cold')
+                            : t('admin_warm')}
                       </span>
                     </div>
                   ))}
@@ -546,9 +558,9 @@ export default function CrmBoard() {
           onClick={() => setShowNewModal(false)}
         >
           <div className="crm-board__modal" role="dialog" onClick={(e) => e.stopPropagation()}>
-            <h4>Новый лид</h4>
+            <h4>{t('admin_novyy_lid_711dc83d')}</h4>
             <div className="crm-board__field">
-              <label>Имя / компания *</label>
+              <label>{t('admin_imya_kompaniya_02e102c4')}</label>
               <input
                 value={newForm.display_name}
                 onChange={(e) => setNewForm((f) => ({ ...f, display_name: e.target.value }))}
@@ -563,29 +575,29 @@ export default function CrmBoard() {
               />
             </div>
             <div className="crm-board__field">
-              <label>Телефон</label>
+              <label>{t('admin_phone')}</label>
               <input
                 value={newForm.phone}
                 onChange={(e) => setNewForm((f) => ({ ...f, phone: e.target.value }))}
               />
             </div>
             <div className="crm-board__field">
-              <label>Интерес</label>
+              <label>{t('admin_interes_595b0c9b')}</label>
               <select
                 value={newForm.temperature}
                 onChange={(e) => setNewForm((f) => ({ ...f, temperature: e.target.value }))}
               >
-                <option value="cold">Холодный</option>
-                <option value="warm">Тёплый</option>
-                <option value="hot">Горячий</option>
+                <option value="cold">{t('admin_cold')}</option>
+                <option value="warm">{t('admin_warm')}</option>
+                <option value="hot">{t('admin_goryachiy_51d92db1')}</option>
               </select>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
               <button type="button" className="crm-board__btn crm-board__btn--primary" onClick={createLead}>
-                Создать
+                {t('admin_sozdat_84370a20')}
               </button>
               <button type="button" className="crm-board__btn crm-board__btn--ghost" onClick={() => setShowNewModal(false)}>
-                Отмена
+                {t('admin_otmena_0ec753be')}
               </button>
             </div>
           </div>
@@ -603,7 +615,7 @@ export default function CrmBoard() {
             role="dialog"
             onClick={(e) => e.stopPropagation()}
           >
-            {detailLoading && <p>Загрузка…</p>}
+            {detailLoading && <p>{t('admin_loadingEllipsis')}</p>}
             {!detailLoading && lead && (
               <>
                 <div className="crm-board__drawer-head">
@@ -611,10 +623,10 @@ export default function CrmBoard() {
                     <h3>{lead.display_name}</h3>
                     <div className="crm-board__stats">
                       <span>
-                        Касаний (действия): <strong>{detail.activityCount ?? 0}</strong>
+                        {t('admin_kasaniy_deystviya_e6d54426')} <strong>{detail.activityCount ?? 0}</strong>
                       </span>
                       <span>
-                        В «продажах»: <strong>{detail.touchCount ?? 0}</strong>
+                        {t('admin_v_prodazhah_d122c30e')} <strong>{detail.touchCount ?? 0}</strong>
                       </span>
                     </div>
                   </div>
@@ -625,17 +637,17 @@ export default function CrmBoard() {
 
                 {detail.userSummary && (
                   <div className="crm-board__hint">
-                    <FiUserPlus size={14} style={{ verticalAlign: 'middle' }} /> Связан с пользователем #{detail.userSummary.id}:{' '}
+                    <FiUserPlus size={14} style={{ verticalAlign: 'middle' }} /> {t('admin_svyazan_s_polzovatelem_id_c9d5cb44', { id: detail.userSummary.id })}{' '}
                     {detail.userSummary.favorites_count != null && (
-                      <>избранных объектов: {detail.userSummary.favorites_count}. </>
+                      <>{t('admin_izbrannyh_obektov_39771b39')} {detail.userSummary.favorites_count}. </>
                     )}
-                    {detail.userSummary.role}, {detail.userSummary.country || 'страна не указана'}
+                    {detail.userSummary.role}, {detail.userSummary.country || t('admin_strana_ne_ukazana_f19757be')}
                   </div>
                 )}
 
                 {lead.off_schedule ? (
                   <div className="crm-board__schedule-alert" role="status">
-                    <strong>Не в срок</strong>
+                    <strong>{t('admin_ne_v_srok_6576310b')}</strong>
                     <ul>
                       {(lead.off_schedule_labels || []).map((t) => (
                         <li key={t}>{t}</li>
@@ -643,41 +655,41 @@ export default function CrmBoard() {
                     </ul>
                   </div>
                 ) : (
-                  <div className="crm-board__schedule-ok">Сроки по данным платформы и CRM — без отклонений</div>
+                  <div className="crm-board__schedule-ok">{t('admin_sroki_po_dannym_platformy_612cda26')}</div>
                 )}
 
                 <div className="crm-board__detail-grid">
                   <div className="crm-board__detail-item">
-                    <span className="crm-board__detail-k">Источник лида</span>
-                    <span className="crm-board__detail-v">{sourceRu(lead.source)}</span>
+                    <span className="crm-board__detail-k">{t('admin_istochnik_lida_f9b990e0')}</span>
+                    <span className="crm-board__detail-v">{sourceRu(lead.source, t)}</span>
                   </div>
                   <div className="crm-board__detail-item">
                     <span className="crm-board__detail-k">User ID</span>
                     <span className="crm-board__detail-v">{lead.user_id ?? '—'}</span>
                   </div>
                   <div className="crm-board__detail-item">
-                    <span className="crm-board__detail-k">Создан</span>
+                    <span className="crm-board__detail-k">{t('admin_sozdan_33415c6a')}</span>
                     <span className="crm-board__detail-v">{fmtCrmShortDate(lead.created_at)}</span>
                   </div>
                   <div className="crm-board__detail-item">
-                    <span className="crm-board__detail-k">Обновлён</span>
+                    <span className="crm-board__detail-k">{t('admin_obnovlen_05df0b42')}</span>
                     <span className="crm-board__detail-v">{fmtCrmShortDate(lead.updated_at)}</span>
                   </div>
                   <div className="crm-board__detail-item">
-                    <span className="crm-board__detail-k">Помощник (лид)</span>
+                    <span className="crm-board__detail-k">{t('admin_pomoschnik_lid_01990459')}</span>
                     <span className="crm-board__detail-v">{lead.assistant_lead_id ?? '—'}</span>
                   </div>
                   <div className="crm-board__detail-item">
-                    <span className="crm-board__detail-k">Просрочен контакт</span>
+                    <span className="crm-board__detail-k">{t('admin_prosrochen_kontakt_ff7233a7')}</span>
                     <span className="crm-board__detail-v">
-                      {lead.crm_next_contact_overdue ? 'Да' : 'Нет'}
+                      {lead.crm_next_contact_overdue ? t('admin_yes') : t('admin_no')}
                     </span>
                   </div>
                 </div>
 
                 <div className="crm-board__field crm-board__field--row2">
                   <div>
-                    <label>Сумма сделки</label>
+                    <label>{t('admin_summa_sdelki_5196b01a')}</label>
                     <input
                       type="number"
                       step="0.01"
@@ -690,7 +702,7 @@ export default function CrmBoard() {
                     />
                   </div>
                   <div>
-                    <label>Валюта</label>
+                    <label>{t('admin_currency')}</label>
                     <input
                       defaultValue={lead.currency || 'EUR'}
                       key={`cur-${lead.id}-${lead.currency}`}
@@ -701,19 +713,19 @@ export default function CrmBoard() {
                 </div>
 
                 <div className="crm-board__field">
-                  <label>Температура</label>
+                  <label>{t('admin_temperatura_56f7653b')}</label>
                   <select
                     value={lead.temperature || 'warm'}
                     onChange={(e) => saveLeadPatch({ temperature: e.target.value })}
                   >
-                    <option value="cold">Холодный</option>
-                    <option value="warm">Тёплый</option>
-                    <option value="hot">Горячий</option>
+                    <option value="cold">{t('admin_cold')}</option>
+                    <option value="warm">{t('admin_warm')}</option>
+                    <option value="hot">{t('admin_goryachiy_51d92db1')}</option>
                   </select>
                 </div>
 
                 <div className="crm-board__field">
-                  <label>Интересы (теги через запятую)</label>
+                  <label>{t('admin_interesy_tegi_cherez_zapyatuyu_bd738415')}</label>
                   <input
                     defaultValue={(lead.interests || []).join(', ')}
                     key={lead.id + (lead.interests || []).join(',')}
@@ -728,7 +740,7 @@ export default function CrmBoard() {
                 </div>
 
                 <div className="crm-board__field">
-                  <label>Следующий шаг</label>
+                  <label>{t('admin_sleduyuschiy_shag_3164c0ab')}</label>
                   <input
                     defaultValue={lead.next_action || ''}
                     key={`na-${lead.id}-${lead.next_action}`}
@@ -736,7 +748,7 @@ export default function CrmBoard() {
                   />
                 </div>
                 <div className="crm-board__field">
-                  <label>Дата следующего контакта</label>
+                  <label>{t('admin_data_sleduyuschego_kontakta_da5cb5e3')}</label>
                   <input
                     type="datetime-local"
                     defaultValue={
@@ -750,7 +762,7 @@ export default function CrmBoard() {
                 </div>
 
                 <div className="crm-board__field">
-                  <label>Внутренние заметки</label>
+                  <label>{t('admin_vnutrennie_zametki_972e3f0b')}</label>
                   <textarea
                     defaultValue={lead.internal_notes || ''}
                     key={`notes-${lead.id}`}
@@ -760,24 +772,24 @@ export default function CrmBoard() {
 
                 <div className="crm-board__field">
                   <label>
-                    <FiMail style={{ verticalAlign: 'middle' }} /> Письмо клиенту (EmailJS из браузера)
+                    <FiMail style={{ verticalAlign: 'middle' }} /> {t('admin_pismo_klientu_mail_iz_a8217a12')}
                   </label>
                   <p className="crm-board__hint" style={{ marginTop: 0 }}>
-                    В .env укажите шаблон CRM, например: <code>VITE_EMAILJS_CRM_TEMPLATE_ID=template_nky2m4i</code>.
-                    В EmailJS в поле «To Email» должно быть{' '}
-                    <code>{'{{to_email}}'}</code> — не личный адрес; иначе письма не приходят на email лида.
-                    Тема: <code>{'{{subject}}'}</code>, тело: <code>{'{{message}}'}</code> или{' '}
-                    <code>{'{{full_message}}'}</code>. Для пресета Contact Us: <code>{'{{name}}'}</code>,{' '}
+                    {t('admin_crm_emailjs_hint_env')} <code>VITE_EMAILJS_CRM_TEMPLATE_ID=template_nky2m4i</code>.
+                    {t('admin_crm_emailjs_hint_to')}{' '}
+                    <code>{'{{to_email}}'}</code> {t('admin_crm_emailjs_hint_to_note')}
+                    {t('admin_crm_emailjs_hint_subject')} <code>{'{{subject}}'}</code>{t('admin_telo_a896f5c5')} <code>{'{{message}}'}</code> {t('admin_crm_emailjs_hint_or')}{' '}
+                    <code>{'{{full_message}}'}</code>{t('admin_dlya_preseta_ontact_s_ce28669f')} <code>{'{{name}}'}</code>,{' '}
                     <code>{'{{time}}'}</code>.
                   </p>
                   <input
-                    placeholder="Тема письма"
+                    placeholder={t('admin_tema_pisma_b75bb30a')}
                     value={emailCompose.subject}
                     onChange={(e) => setEmailCompose((c) => ({ ...c, subject: e.target.value }))}
                   />
                   <textarea
                     style={{ marginTop: '0.5rem' }}
-                    placeholder="Текст письма…"
+                    placeholder={t('admin_tekst_pisma_e68f1a4e')}
                     rows={5}
                     value={emailCompose.body}
                     onChange={(e) => setEmailCompose((c) => ({ ...c, body: e.target.value }))}
@@ -789,51 +801,51 @@ export default function CrmBoard() {
                     disabled={!lead.email}
                     onClick={() => sendEmail()}
                   >
-                    Отправить на {lead.email || '—'}
+                    {t('admin_otpravit_na_256e9589')} {lead.email || '—'}
                   </button>
                   {!lead.email && (
-                    <p className="crm-board__hint">Укажите email у лида или привяжите пользователя с email.</p>
+                    <p className="crm-board__hint">{t('admin_ukazhite_email_u_lida_ecf2ecf6')}</p>
                   )}
                 </div>
 
                 <div className="crm-board__field">
-                  <label>Быстрое касание</label>
+                  <label>{t('admin_bystroe_kasanie_a249333c')}</label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <button
                       type="button"
                       className="crm-board__btn crm-board__btn--ghost"
                       onClick={() => {
-                        const t = window.prompt('Тема звонка / результат');
-                        if (t != null) addActivity('call', t || 'Звонок', '');
+                        const t = window.prompt(t('admin_crm_prompt_call'));
+                        if (t != null) addActivity('call', t || t('admin_zvonok_534d2a33'), '');
                       }}
                     >
-                      Звонок
+                      {t('admin_zvonok_534d2a33')}
                     </button>
                     <button
                       type="button"
                       className="crm-board__btn crm-board__btn--ghost"
                       onClick={() => {
-                        const t = window.prompt('Текст заметки');
-                        if (t != null) addActivity('note', 'Заметка', t);
+                        const t = window.prompt(t('admin_crm_prompt_note'));
+                        if (t != null) addActivity('note', t('admin_zametka_917b5836'), t);
                       }}
                     >
-                      Заметка
+                      {t('admin_zametka_917b5836')}
                     </button>
                     <button
                       type="button"
                       className="crm-board__btn crm-board__btn--ghost"
                       onClick={() => {
-                        const t = window.prompt('WhatsApp / мессенджер');
-                        if (t != null) addActivity('whatsapp', 'Контакт', t);
+                        const t = window.prompt(t('admin_crm_prompt_messenger'));
+                        if (t != null) addActivity('whatsapp', t('admin_kontakt_62f220e3'), t);
                       }}
                     >
-                      Мессенджер
+                      {t('admin_messendzher_138c8006')}
                     </button>
                   </div>
                 </div>
 
-                <h4 style={{ margin: '1.25rem 0 0.5rem', fontSize: '1rem' }}>История</h4>
-                {activities.length === 0 && <p className="crm-board__hint">Пока нет записей</p>}
+                <h4 style={{ margin: '1.25rem 0 0.5rem', fontSize: '1rem' }}>{t('admin_history')}</h4>
+                {activities.length === 0 && <p className="crm-board__hint">{t('admin_poka_net_zapisey_5d9c52da')}</p>}
                 {activities.map((a) => (
                   <div key={a.id} className="crm-board__activity">
                     <div className="crm-board__activity-date">

@@ -27,8 +27,8 @@ export default function TelegramAuthCallback() {
     if (!id || !hash) {
       setStatus('error')
       setErrorVariant('error')
-      setErrorTitle('Не удалось войти через Telegram')
-      setErrorMessage('Данные от Telegram не получены. Попробуйте войти снова или выберите другой способ — email, WhatsApp или Google.')
+      setErrorTitle(t('telegramAuth_errorTitle'))
+      setErrorMessage(t('telegramAuth_errorNoData'))
       return
     }
 
@@ -45,8 +45,8 @@ export default function TelegramAuthCallback() {
     if (!telegramData.auth_date) {
       setStatus('error')
       setErrorVariant('error')
-      setErrorTitle('Не удалось войти через Telegram')
-      setErrorMessage('Данные от Telegram не получены. Попробуйте войти снова или выберите другой способ входа.')
+      setErrorTitle(t('telegramAuth_errorTitle'))
+      setErrorMessage(t('telegramAuth_errorNoAuthDate'))
       return
     }
 
@@ -79,16 +79,16 @@ export default function TelegramAuthCallback() {
           setStatus('error')
           if (result.code === 'ALREADY_REGISTERED') {
             setErrorVariant('already_registered')
-            setErrorTitle('Вы уже зарегистрированы')
-            setErrorMessage('Этот аккаунт Telegram уже привязан к вашему профилю. На главной выберите «Вход» и войдите через Telegram.')
+            setErrorTitle(t('telegramAuth_alreadyRegisteredTitle'))
+            setErrorMessage(t('telegramAuth_alreadyRegisteredText'))
           } else if (result.code === 'NEED_REGISTER') {
             setErrorVariant('need_register')
-            setErrorTitle('Вы не зарегистрированы на сайте')
-            setErrorMessage('Сначала зарегистрируйтесь: на главной выберите «Регистрация», затем снова войдите через Telegram.')
+            setErrorTitle(t('telegramAuth_needRegisterTitle'))
+            setErrorMessage(t('telegramAuth_needRegisterText'))
           } else {
             setErrorVariant('error')
-            setErrorTitle('Не удалось войти через Telegram')
-            setErrorMessage(result.error || 'Попробуйте ещё раз или войдите через email, WhatsApp или другой способ.')
+            setErrorTitle(t('telegramAuth_errorTitle'))
+            setErrorMessage(result.error || t('telegramAuth_errorFallback'))
           }
         }
       })
@@ -96,8 +96,8 @@ export default function TelegramAuthCallback() {
         console.error('TelegramAuthCallback error:', err)
         setStatus('error')
         setErrorVariant('error')
-        setErrorTitle('Не удалось войти через Telegram')
-        setErrorMessage(err.message || 'Попробуйте ещё раз или войдите через email, WhatsApp или Google.')
+        setErrorTitle(t('telegramAuth_errorTitle'))
+        setErrorMessage(err.message || t('telegramAuth_errorFallbackGoogle'))
       })
   }, [navigate, t])
 
@@ -116,7 +116,7 @@ export default function TelegramAuthCallback() {
         padding: 24,
         textAlign: 'center'
       }}>
-        <p style={{ fontSize: 18, color: '#333' }}>Вход через Telegram...</p>
+        <p style={{ fontSize: 18, color: '#333' }}>{t('telegramAuth_signingIn')}</p>
       </div>
     )
   }
@@ -130,7 +130,7 @@ export default function TelegramAuthCallback() {
           variant={errorVariant}
           title={errorTitle}
           message={errorMessage}
-          buttonText="На главную"
+          buttonText={t('featureUnavailableBackHome')}
         />
         <div style={{ minHeight: '40vh' }} />
       </>

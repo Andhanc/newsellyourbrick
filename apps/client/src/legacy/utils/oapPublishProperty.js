@@ -23,7 +23,7 @@ function getTypeProfile(propertyType) {
   return 'apartment'
 }
 
-/** UI-тип OAP → property_type для POST /api/properties (как backendType в AddProperty.jsx). */
+/** OAP UI type → property_type for POST /api/properties (same as backendType in AddProperty.jsx). */
 function mapPropertyTypeToBackend(propertyType) {
   if (propertyType === 'apartments') return 'apartment'
   if (propertyType === 'land') return 'house'
@@ -119,7 +119,7 @@ async function uploadOneListingPhoto(photo, apiBaseUrl) {
     file = new File([blob], photo.name || 'photo.jpg', { type: photo.type || blob.type || 'image/jpeg' })
   }
   if (!(file instanceof File)) {
-    throw new Error('Не удалось подготовить фото для загрузки. Загрузите изображения ещё раз.')
+    throw new Error('addPropertyErr_photoPrepare')
   }
 
   const fd = new FormData()
@@ -127,11 +127,11 @@ async function uploadOneListingPhoto(photo, apiBaseUrl) {
   const response = await fetch(`${apiBaseUrl}/properties/upload-photo`, { method: 'POST', body: fd })
   if (!response.ok) {
     const text = await response.text()
-    throw new Error(text || `Ошибка загрузки фото (${response.status})`)
+    throw new Error(text || `addPropertyErr_photoUpload:${response.status}`)
   }
   const data = await response.json()
   if (!data.success || !data.data?.url) {
-    throw new Error(data.error || 'Сервер не вернул URL фото')
+    throw new Error(data.error || 'addPropertyErr_photoNoUrl')
   }
   return data.data.url
 }
@@ -152,19 +152,19 @@ async function validateUserProfile(userId, apiBaseUrl) {
 
   const missingFields = []
   if (userProfileData) {
-    if (!userProfileData.first_name?.trim()) missingFields.push('Имя')
-    if (!userProfileData.last_name?.trim()) missingFields.push('Фамилия')
-    if (!userProfileData.country?.trim()) missingFields.push('Страна')
-    if (!userProfileData.email?.trim()) missingFields.push('Почта')
-    if (!userProfileData.phone_number?.trim()) missingFields.push('WhatsApp')
+    if (!userProfileData.first_name?.trim()) missingFields.push('oap_profileField_firstName')
+    if (!userProfileData.last_name?.trim()) missingFields.push('oap_profileField_lastName')
+    if (!userProfileData.country?.trim()) missingFields.push('oap_profileField_country')
+    if (!userProfileData.email?.trim()) missingFields.push('oap_profileField_email')
+    if (!userProfileData.phone_number?.trim()) missingFields.push('oap_profileField_whatsapp')
   } else {
     const userData = getUserData()
     if (userData) {
-      if (!userData.firstName?.trim()) missingFields.push('Имя')
-      if (!userData.lastName?.trim()) missingFields.push('Фамилия')
-      if (!userData.country?.trim()) missingFields.push('Страна')
-      if (!userData.email?.trim()) missingFields.push('Почта')
-      if (!userData.phone && !userData.phoneFormatted) missingFields.push('WhatsApp')
+      if (!userData.firstName?.trim()) missingFields.push('oap_profileField_firstName')
+      if (!userData.lastName?.trim()) missingFields.push('oap_profileField_lastName')
+      if (!userData.country?.trim()) missingFields.push('oap_profileField_country')
+      if (!userData.email?.trim()) missingFields.push('oap_profileField_email')
+      if (!userData.phone && !userData.phoneFormatted) missingFields.push('oap_profileField_whatsapp')
     }
   }
 
@@ -172,7 +172,8 @@ async function validateUserProfile(userId, apiBaseUrl) {
 }
 
 /**
- * Публикует объект из OAP-мастера — тот же POST /properties, что и AddProperty.jsx.
+ * Publishes a listing from the OAP wizard — same POST /properties as AddProperty.jsx.
+ * Error codes are i18n keys; callers should show via t(result.error).
  * @returns {Promise<{ ok: boolean, error?: string, missingProfileFields?: string[] }>}
  */
 export async function publishOapProperty({
@@ -194,10 +195,10 @@ export async function publishOapProperty({
     listingMode === 'auction' || listingMode === 'auction_buy_now' || listingMode === 'debt_auction'
 
   if (!form.title?.trim()) {
-    return { ok: false, error: 'Пожалуйста, заполните заголовок' }
+    return { ok: false, error: 'oap_publishTitleRequired' }
   }
   if (!Array.isArray(photos) || photos.length === 0) {
-    return { ok: false, error: 'Пожалуйста, загрузите хотя бы одно фото' }
+    return { ok: false, error: 'oap_publishPhotoRequired' }
   }
 
   if (listingMode === 'development' && Object.keys(validateDevelopment(form.development)).length) return { ok: false, error: 'invalidTerms' }
@@ -205,7 +206,7 @@ export async function publishOapProperty({
   if (isShare) {
     const totalSharesNum = parseInt(String(form.totalShares || '').replace(/\D/g, ''), 10)
     if (!form.totalShares || Number.isNaN(totalSharesNum) || totalSharesNum <= 0) {
-      return { ok: false, error: 'Укажите количество долей (целое число больше 0)' }
+      return { ok: false, error: 'addPropertyErr_sharesCount' }
     }
   }
 
@@ -214,7 +215,7 @@ export async function publishOapProperty({
 
   if (!isDebtProperty) {
     if (!resolvedOwnershipDoc || !resolvedNoDebtsDoc) {
-      return { ok: false, error: 'Пожалуйста, загрузите все необходимые документы' }
+      return { ok: false, error: 'addPropertyErr_docsRequired' }
     }
   }
 
@@ -224,7 +225,7 @@ export async function publishOapProperty({
 
   const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : Number(userId)
   if (!Number.isFinite(numericUserId) || numericUserId <= 0) {
-    return { ok: false, error: 'Ошибка: неверный формат ID пользователя' }
+    return { ok: false, error: 'addPropertyErr_invalidUserId' }
   }
 
   const { userProfileData, missingFields } = await validateUserProfile(numericUserId, API_BASE_URL)
@@ -250,7 +251,7 @@ export async function publishOapProperty({
   try {
     photoUrlsForSubmit = await Promise.all(photos.map((p) => uploadOneListingPhoto(p, API_BASE_URL)))
   } catch (uploadErr) {
-    return { ok: false, error: uploadErr.message || 'Ошибка загрузки фотографий' }
+    return { ok: false, error: uploadErr.message || 'addPropertyErr_photosUpload' }
   }
 
   if (listingMode === 'development') {
@@ -433,7 +434,7 @@ export async function publishOapProperty({
     })
 
     if (!response.ok) {
-      let errorText = 'Неизвестная ошибка'
+      let errorText = 'addPropertyErr_unknown'
       try {
         const raw = await response.text()
         try {
@@ -450,20 +451,20 @@ export async function publishOapProperty({
 
     const data = await response.json()
     if (!data.success) {
-      throw new Error(data.error || 'Ошибка при отправке объявления')
+      throw new Error(data.error || 'oap_publishSubmitError')
     }
 
     return { ok: true, data: data.data, message: data.message }
   } catch (error) {
-    const msg = error?.message || 'Ошибка при отправке объявления'
+    const msg = error?.message || 'oap_publishSubmitError'
     if (msg.includes('Field value too long')) {
       return {
         ok: false,
-        error: 'Размер данных слишком большой. Уменьшите количество фото или размер файлов.',
+        error: 'addPropertyErr_payloadTooLarge',
       }
     }
     if (msg.includes('ERR_CONNECTION_RESET') || msg.includes('Failed to fetch')) {
-      return { ok: false, error: 'Ошибка соединения с сервером. Проверьте, что сервер запущен.' }
+      return { ok: false, error: 'addPropertyErr_connection' }
     }
     return { ok: false, error: msg }
   }

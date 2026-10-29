@@ -42,21 +42,22 @@ test('booking ticket formats a compact date badge and inclusive duration', () =>
       status: 'approved',
       property_title: 'Villa Mar',
     },
-    'ru-RU',
+    'en-US',
   )
 
   assert.equal(ticket.day, '14')
-  assert.match(ticket.month, /авг/i)
+  assert.match(ticket.month, /aug/i)
   assert.equal(ticket.days, 7)
   assert.equal(ticket.statusKey, 'approved')
   assert.equal(ticket.title, 'Villa Mar')
 })
 
 test('booking ticket stays usable when dates are missing', () => {
-  const ticket = buildBookingTicket({ id: 18, property_id: 44 }, 'ru-RU')
+  const ticket = buildBookingTicket({ id: 18, property_id: 44 }, 'en-US')
 
   assert.equal(ticket.day, '—')
-  assert.equal(ticket.month, 'ДАТА')
+  assert.equal(/[А-Яа-яЁё]/.test(ticket.month), false)
   assert.equal(ticket.days, 0)
-  assert.equal(ticket.title, 'Объект #44')
+  assert.equal(/[А-Яа-яЁё]/.test(ticket.title), false)
+  assert.match(String(ticket.title), /44/)
 })

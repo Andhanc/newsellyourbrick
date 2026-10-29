@@ -26,7 +26,7 @@ function extensionOf(name) {
 
 function decodeDataUrl(dataUrl) {
   const match = String(dataUrl || '').match(/^data:([^;,]+)?(;base64)?,([\s\S]*)$/i)
-  if (!match) throw new Error('Некорректный формат вложения')
+  if (!match) throw new Error('Invalid attachment format')
   const mimeType = String(match[1] || 'application/octet-stream').toLowerCase()
   const buffer = match[2]
     ? Buffer.from(match[3], 'base64')

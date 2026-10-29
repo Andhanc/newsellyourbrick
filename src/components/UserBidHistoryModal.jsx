@@ -1,5 +1,6 @@
 import { FiX, FiClock, FiDollarSign, FiTrendingUp, FiTrendingDown } from 'react-icons/fi'
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import './UserBidHistoryModal.css'
 
@@ -7,6 +8,7 @@ import './UserBidHistoryModal.css'
 let API_BASE_URL = getApiBaseUrlSync()
 
 const UserBidHistoryModal = ({ isOpen, onClose, property, userId }) => {
+  const { t, i18n } = useTranslation()
   const [bids, setBids] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
@@ -86,14 +88,14 @@ const UserBidHistoryModal = ({ isOpen, onClose, property, userId }) => {
   const formatPrice = (price) => {
     const num = Number(price)
     if (!num || Number.isNaN(num)) return '—'
-    return `$${num.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    return `$${num.toLocaleString(i18n.language || 'en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
 
   const formatDateTime = (date) => {
     if (!date) return ''
     const d = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date
     if (Number.isNaN(d.getTime())) return ''
-    return d.toLocaleString('ru-RU', {
+    return d.toLocaleString(i18n.language || 'en', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -118,29 +120,29 @@ const UserBidHistoryModal = ({ isOpen, onClose, property, userId }) => {
         <button 
           className="user-bid-history-modal__close" 
           onClick={onClose}
-          aria-label="Закрыть"
+          aria-label={t('close')}
         >
           <FiX size={24} />
         </button>
 
         <div className="user-bid-history-modal__content">
           <div className="user-bid-history-modal__header">
-            <h2 className="user-bid-history-modal__title">История ваших ставок</h2>
-            <p className="user-bid-history-modal__subtitle">{property?.title || 'Объект недвижимости'}</p>
+            <h2 className="user-bid-history-modal__title">{t('userBidHistory_title')}</h2>
+            <p className="user-bid-history-modal__subtitle">{property?.title || t('userBidHistory_defaultProperty')}</p>
           </div>
 
           {isLoading && isInitialLoad ? (
             <div className="user-bid-history-loading">
-              Загрузка истории ставок...
+              {t('userBidHistory_loading')}
             </div>
           ) : bids.length === 0 ? (
             <p className="user-bid-history-placeholder">
-              У вас пока нет ставок на этот объект.
+              {t('userBidHistory_empty')}
             </p>
           ) : (
             <div className="user-bid-history-list">
               <div className="user-bid-history-list__header">
-                <h3 className="user-bid-history-list__title">Ваши ставки ({bids.length})</h3>
+                <h3 className="user-bid-history-list__title">{t('userBidHistory_listTitle', { count: bids.length })}</h3>
               </div>
               <div className="user-bids-list">
                 {bids.map((bid, index) => {
@@ -154,7 +156,7 @@ const UserBidHistoryModal = ({ isOpen, onClose, property, userId }) => {
                         <div className="user-bid-item__header">
                           <div className="user-bid-item__number">
                             #{bids.length - index}
-                            {isLatest && <span className="user-bid-item__badge">Текущая</span>}
+                            {isLatest && <span className="user-bid-item__badge">{t('userBidHistory_currentBadge')}</span>}
                           </div>
                           <div className="user-bid-item__amount">
                             {formatPrice(bid.bid_amount)}

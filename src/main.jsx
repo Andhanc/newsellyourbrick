@@ -10,7 +10,7 @@ import App from './App'
 import './index.css'
 import './styles/drawerDismiss.css'
 /* tiffany-shine подключается в конце App, чтобы перекрывать локальные fill-стили кнопок */
-import { i18nReady } from './i18n/config'
+import i18n, { i18nReady } from './i18n/config'
 import { getClerkPublishableKey, getGoogleClientId } from './utils/env'
 import { registerPwa } from './pwa/registerPwa'
 import { setupPwaInstallCapture } from './pwa/pwaInstall'
@@ -42,17 +42,15 @@ function ConfigErrorFullPage() {
           padding: 24,
         }}
       >
-        <h2 style={{ color: '#856404', marginTop: 0 }}>Ошибка конфигурации</h2>
+        <h2 style={{ color: '#856404', marginTop: 0 }}>{i18n.t('clerkConfigErrorTitle')}</h2>
         <p style={{ color: '#856404', lineHeight: 1.6 }}>
-          <strong>Не задан Clerk Publishable Key</strong>
+          <strong>{i18n.t('clerkConfigErrorMissingKey')}</strong>
         </p>
         <p style={{ color: '#856404', lineHeight: 1.6 }}>
-          Укажите переменную <code>REACT_APP_CLERK_PUBLISHABLE_KEY</code> или{' '}
-          <code>VITE_CLERK_PUBLISHABLE_KEY</code> при сборке{' '}
-          <em>и</em> в окружении сервера (для <code>GET /api/config</code>), затем перезапустите приложение.
+          {i18n.t('clerkConfigErrorBody')}
         </p>
         <p style={{ color: '#856404', lineHeight: 1.6, marginBottom: 0 }}>
-          Откройте консоль браузера для подробностей.
+          {i18n.t('clerkConfigErrorConsole')}
         </p>
       </div>
     </div>
@@ -114,7 +112,7 @@ function ConfigBootFallback() {
         background: '#fafafa',
       }}
       aria-busy="true"
-      aria-label="Загрузка"
+      aria-label={i18n.isInitialized ? i18n.t('loading') : 'Loading...'}
     />
   )
 }

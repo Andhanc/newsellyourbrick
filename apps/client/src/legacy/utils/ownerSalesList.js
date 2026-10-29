@@ -7,25 +7,40 @@ const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 const FALLBACK_IMAGE =
   '/images/external/photo-1568605114967-8130f3a36994-bc29e86e2f.jpg'
 
+/** English fallbacks + i18n keys for owner sales UI. */
+export const OWNER_SALE_TYPE_LABEL_KEYS = {
+  auction: 'ownerSales_typeAuction',
+  buy_now: 'ownerSales_typeBuyNow',
+  share: 'ownerSales_typeShare',
+  debts: 'ownerSales_typeDebts',
+}
+
 export const OWNER_SALE_TYPE_LABELS = {
-  auction: 'Аукцион',
-  buy_now: 'Купить сейчас',
-  share: 'Доля',
-  debts: 'Долги',
+  auction: 'Auction',
+  buy_now: 'Buy now',
+  share: 'Share',
+  debts: 'Debts',
+}
+
+const DEAL_LABEL_KEYS = {
+  auction: 'ownerSales_dealWinningBid',
+  buy_now: 'ownerSales_typeBuyNow',
+  share: 'ownerSales_dealSharePurchase',
+  debts: 'ownerSales_dealWinningBid',
 }
 
 const DEAL_LABELS = {
-  auction: 'Выигрышная ставка',
-  buy_now: 'Купить сейчас',
-  share: 'Покупка доли',
-  debts: 'Выигрышная ставка',
+  auction: 'Winning bid',
+  buy_now: 'Buy now',
+  share: 'Share purchase',
+  debts: 'Winning bid',
 }
 
 function formatSaleAmount(amount, currency = 'USD') {
   const num = Number(amount)
   if (!Number.isFinite(num)) return '—'
   const sym = getCurrencySymbol(currency)
-  return `${sym}${num.toLocaleString('ru-RU', { maximumFractionDigits: 0 })}`
+  return `${sym}${num.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
 }
 
 function mapSaleChannel(channel) {
@@ -69,8 +84,11 @@ export function mapOwnerSaleRow(item, index) {
     id: rowKey,
     propertyId: item.id,
     displayId: `SL-${item.id}`,
-    title: item.title || `Объект #${item.id}`,
-    location: item.location || 'Не указано',
+    titleKey: item.title ? null : 'buyerCabinet_propertyWithId',
+    titleParams: item.title ? null : { id: item.id },
+    title: item.title || `Property #${item.id}`,
+    locationKey: item.location ? null : 'ownerSales_locationUnknown',
+    location: item.location || 'Not specified',
     image: getPropertyCardImage(
       {
         photos: item.photos,
@@ -79,9 +97,11 @@ export function mapOwnerSaleRow(item, index) {
       },
       FALLBACK_IMAGE
     ),
-    buyer: item.buyer_display || 'Покупатель',
+    buyerKey: item.buyer_display ? null : 'ownerSales_buyerFallback',
+    buyer: item.buyer_display || 'Buyer',
     dealAmount: formatSaleAmount(item.sale_amount, item.currency),
-    dealLabel: DEAL_LABELS[saleType] || 'Сумма сделки',
+    dealLabelKey: DEAL_LABEL_KEYS[saleType] || 'ownerSales_dealAmount',
+    dealLabel: DEAL_LABELS[saleType] || 'Deal amount',
     reservePaid: Boolean(item.reserve_paid),
     saleType,
     tab,
@@ -94,7 +114,7 @@ export async function fetchOwnerSales(ownerUserId) {
 
   const response = await fetch(`${API_BASE_URL}/owner/${ownerUserId}/my-sales`)
   if (!response.ok) {
-    throw new Error('Не удалось загрузить продажи')
+    throw new Error('Could not load sales')
   }
 
   const result = await response.json()

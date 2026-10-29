@@ -13,7 +13,7 @@ const mobileDiscoverPage = await readFile(
 test('renders each format as one fully clickable route card', () => {
   assert.match(jsx, /sale-formats__card/)
   assert.match(jsx, /to=\{mode\.to\}/)
-  assert.match(jsx, /Смотреть объекты/)
+  assert.match(jsx, /t\('saleFormats_ctaAria'\)/)
 })
 
 test('uses a flow content wrapper for the card heading', () => {
@@ -72,8 +72,8 @@ test('matches the selected reference with functional rail controls and split car
   assert.match(jsx, /useRef/)
   assert.match(jsx, /railRef/)
   assert.match(jsx, /\.scrollBy\(/)
-  assert.match(jsx, /<button[\s\S]*aria-label="Предыдущие форматы"/)
-  assert.match(jsx, /<button[\s\S]*aria-label="Следующие форматы"/)
+  assert.match(jsx, /<button[\s\S]*aria-label=\{t\('saleFormats_prevAria'\)\}/)
+  assert.match(jsx, /<button[\s\S]*aria-label=\{t\('saleFormats_nextAria'\)\}/)
   assert.match(jsx, /sale-formats__tag/)
   assert.match(jsx, /sale-formats__media/)
   assert.ok(

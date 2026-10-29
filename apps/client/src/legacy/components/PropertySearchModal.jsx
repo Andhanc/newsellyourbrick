@@ -8,6 +8,11 @@ import { fetchDedupe } from '../utils/fetchDedupe'
 import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
 import { CATALOG_PROPERTY_TYPE_OPTIONS } from '../utils/catalogFilters'
 import { getSearchResultsGeoPath } from '../utils/searchResultsGeoUrl'
+import {
+  getLocalizedCountryLabelFromOption,
+  normalizeCountryLocale,
+} from '../utils/localizeCountryName'
+import { getLocalizedRegionLabel } from '../utils/localizeBuyerNotification'
 import './PropertySearchModal.css'
 
 const CATALOG_PROPERTY_TYPE_SELECT_OPTIONS = CATALOG_PROPERTY_TYPE_OPTIONS.filter((opt) => opt.value)
@@ -56,7 +61,11 @@ const STORABLE_FILTER_KEYS = [
 const DRAFT_FILTERS_KEY = 'propertySearchFiltersDraft'
 
 const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const countryLocale = useMemo(
+    () => normalizeCountryLocale(i18n.language),
+    [i18n.language],
+  )
   const navigate = useNavigate()
   const { visible, isClosing, requestClose } = useDrawerDismiss(isOpen, onClose, {
     duration: DRAWER_DISMISS_MS.backdrop,
@@ -380,7 +389,7 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
                           className="property-search-modal__location-chip"
                           onClick={() => handleCountrySelect(country.key)}
                         >
-                          {country.label}
+                          {getLocalizedCountryLabelFromOption(country, countryLocale)}
                           {country.propertyCount > 0 ? ` (${country.propertyCount})` : ''}
                         </button>
                       ))}
@@ -413,7 +422,7 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
                         className={`property-search-modal__location-chip ${filters.region === region.key ? 'is-active' : ''}`}
                         onClick={() => handleRegionSelect(region.key)}
                       >
-                        {region.label}
+                        {getLocalizedRegionLabel(region.key, region.label, t)}
                         {region.propertyCount > 0 ? ` (${region.propertyCount})` : ''}
                       </button>
                     ))}

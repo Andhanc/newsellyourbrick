@@ -32,11 +32,11 @@ export function registerAssistantRoutes(app) {
       console.error('[api/ai/assistant-reply]', error)
       res.status(500).json({
         detail: String(error?.message || error),
-        text: 'Не удалось получить ответ помощника. Попробуйте ещё раз или откройте аукционы на сайте.',
+        text: 'Could not get an assistant reply. Try again or open auctions on the site.',
         buttons: null,
         needsMoreInfo: false,
         recommendations: null,
-        navigation: [{ path: '/auction', label: 'Аукционы' }],
+        navigation: [{ path: '/auction', label: 'Auctions' }],
         actions: null,
         sources: null,
         languageSuggestion: null,

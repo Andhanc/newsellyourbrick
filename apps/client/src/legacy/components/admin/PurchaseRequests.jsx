@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   FiAlertCircle,
   FiCheck,
@@ -27,33 +28,11 @@ import { getCurrencySymbol } from '../../utils/currency'
 import { showNotification } from '../../utils/toastHelper'
 import './PurchaseRequests.css'
 
-const STATUS_LABELS = {
-  pending: 'Ожидает оплаты',
-  processing: 'В обработке',
-  completed: 'Сделка завершена',
-  cancelled: 'Отменён',
-}
-
-const TYPE_LABELS = {
-  apartment: 'Квартира',
-  house: 'Дом',
-  villa: 'Вилла',
-  townhouse: 'Таунхаус',
-  commercial: 'Коммерческая недвижимость',
-}
-
-const SALE_LABELS = {
-  auction: 'Аукцион',
-  auction_buy_now: 'Аукцион + купить сейчас',
-  buy_now: 'Купить сейчас',
-  direct: 'Купить сейчас',
-}
-
-function formatDate(value) {
+function formatDate(value, locale) {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleString('ru-RU', {
+  return date.toLocaleString(locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -62,32 +41,32 @@ function formatDate(value) {
   })
 }
 
-function formatPrice(value, currency = 'EUR') {
+function formatPrice(value, currency = 'EUR', locale = 'en') {
   const number = Number(value)
   if (!Number.isFinite(number)) return '—'
-  return `${getCurrencySymbol(currency)}${number.toLocaleString('ru-RU', {
+  return `${getCurrencySymbol(currency)}${number.toLocaleString(locale, {
     maximumFractionDigits: 2,
   })}`
 }
 
-function ContactCard({ title, icon: Icon, name, email, phone, userId, onOpenChat }) {
+function ContactCard({ title, icon: Icon, name, email, phone, userId, onOpenChat, t }) {
   return (
     <section className="purchase-request-contact-card">
       <div className="purchase-request-contact-card__head">
         <span className="purchase-request-contact-card__icon"><Icon size={18} /></span>
         <div>
           <span>{title}</span>
-          <strong>{name || 'Не указано'}</strong>
+          <strong>{name || t('admin_notSpecified')}</strong>
         </div>
       </div>
       <div className="purchase-request-contact-card__contacts">
         <a className={!email ? 'is-empty' : ''} href={email ? `mailto:${email}` : undefined}>
           <span className="purchase-request-contact-icon" aria-hidden="true"><FiMail size={15} /></span>
-          <span>{email || 'Почта не указана'}</span>
+          <span>{email || t('admin_emailNotSpecified')}</span>
         </a>
         <a className={!phone ? 'is-empty' : ''} href={phone ? `tel:${phone}` : undefined}>
           <span className="purchase-request-contact-icon" aria-hidden="true"><FiPhone size={15} /></span>
-          <span>{phone || 'Телефон не указан'}</span>
+          <span>{phone || t('admin_phoneNotSpecified')}</span>
         </a>
       </div>
       <button
@@ -97,13 +76,14 @@ function ContactCard({ title, icon: Icon, name, email, phone, userId, onOpenChat
         onClick={() => onOpenChat?.(Number(userId))}
       >
         <span className="purchase-request-contact-icon" aria-hidden="true"><FiMessageCircle size={17} /></span>
-        Чат с пользователем
+        {t('admin_pr_chatWithUser')}
       </button>
     </section>
   )
 }
 
 export default function PurchaseRequests({ onAdminSectionBadgeRefresh, onOpenUserChat }) {
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const [requests, setRequests] = useState([])
   const [selectedRequest, setSelectedRequest] = useState(null)
@@ -116,6 +96,30 @@ export default function PurchaseRequests({ onAdminSectionBadgeRefresh, onOpenUse
   const [adminNotes, setAdminNotes] = useState('')
   const [updatingStatus, setUpdatingStatus] = useState(false)
 
+  const dateLocale = (i18n.language || 'ru').startsWith('ru') ? 'ru-RU' : (i18n.language || 'en')
+
+  const statusLabels = {
+    pending: t('admin_pr_statusPending'),
+    processing: t('admin_pr_statusProcessing'),
+    completed: t('admin_pr_statusCompleted'),
+    cancelled: t('admin_pr_statusCancelled'),
+  }
+
+  const typeLabels = {
+    apartment: t('admin_apartment'),
+    house: t('admin_house'),
+    villa: t('admin_villa'),
+    townhouse: t('admin_townhouse'),
+    commercial: t('admin_commercial'),
+  }
+
+  const saleLabels = {
+    auction: t('admin_auction'),
+    auction_buy_now: t('admin_auctionBuyNow'),
+    buy_now: t('admin_buyNow'),
+    direct: t('admin_buyNow'),
+  }
+
   const fetchRequests = async () => {
     try {
       setIsLoading(true)
@@ -124,11 +128,11 @@ export default function PurchaseRequests({ onAdminSectionBadgeRefresh, onOpenUse
       const response = await fetch(`${base}/purchase-requests?limit=1000`)
       const result = await response.json().catch(() => ({}))
       if (!response.ok || !result.success || !Array.isArray(result.data)) {
-        throw new Error(result.error || 'Не удалось загрузить запросы')
+        throw new Error(result.error || t('admin_pr_loadFail'))
       }
       setRequests(result.data)
     } catch (requestError) {
-      setError(requestError?.message || 'Не удалось загрузить запросы')
+      setError(requestError?.message || t('admin_pr_loadFail'))
     } finally {
       setIsLoading(false)
     }
@@ -191,14 +195,14 @@ export default function PurchaseRequests({ onAdminSectionBadgeRefresh, onOpenUse
         body: JSON.stringify({
           assistantSessionId: `user_${numericUserId}`,
           userId: numericUserId,
-          waitMessage: 'Чат по оформлению покупки. Менеджер готов помочь.',
+          waitMessage: t('admin_pr_waitMessage'),
         }),
       })
       const result = await response.json().catch(() => ({}))
-      if (!response.ok || !result.success) throw new Error(result.error || 'Не удалось открыть чат')
+      if (!response.ok || !result.success) throw new Error(result.error || t('admin_pr_openChatFail'))
       onOpenUserChat(numericUserId)
     } catch (chatError) {
-      showNotification(chatError?.message || 'Не удалось открыть чат', 'error')
+      showNotification(chatError?.message || t('admin_pr_openChatFail'), 'error')
     }
   }
 
@@ -214,7 +218,7 @@ export default function PurchaseRequests({ onAdminSectionBadgeRefresh, onOpenUse
       })
       const result = await response.json().catch(() => ({}))
       if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Не удалось обновить статус')
+        throw new Error(result.error || t('admin_pr_updateStatusFail'))
       }
       const updated = requests.map((item) =>
         item.id === selectedRequest.id
@@ -228,12 +232,12 @@ export default function PurchaseRequests({ onAdminSectionBadgeRefresh, onOpenUse
         }),
       })
       void onAdminSectionBadgeRefresh?.()
-      showNotification(status === 'completed' ? 'Сделка завершена' : 'Запрос отменён')
+      showNotification(status === 'completed' ? t('admin_pr_statusCompleted') : t('admin_pr_requestCancelled'))
       setSelectedRequest(null)
       setPropertyDetails(null)
       setAdminNotes('')
     } catch (updateError) {
-      showNotification(updateError?.message || 'Не удалось обновить статус', 'error')
+      showNotification(updateError?.message || t('admin_pr_updateStatusFail'), 'error')
     } finally {
       setUpdatingStatus(false)
     }
@@ -244,8 +248,8 @@ export default function PurchaseRequests({ onAdminSectionBadgeRefresh, onOpenUse
   const propertyType = propertyDetails?.property_type || selectedRequest?.property_type
   const rawSaleType = propertyDetails?.sale_type
   const saleType =
-    SALE_LABELS[rawSaleType] ||
-    (propertyDetails?.is_auction ? 'Аукцион' : 'Купить сейчас')
+    saleLabels[rawSaleType] ||
+    (propertyDetails?.is_auction ? t('admin_auction') : t('admin_buyNow'))
   const finalPrice =
     selectedRequest?.property_price ??
     propertyDetails?.minimum_sale_price ??
@@ -256,9 +260,9 @@ export default function PurchaseRequests({ onAdminSectionBadgeRefresh, onOpenUse
     <div className="purchase-requests-container">
       <div className="purchase-requests-heading">
         <div>
-          <span className="purchase-requests-heading__eyebrow">Сделки</span>
-          <h2>Запросы на покупку</h2>
-          <p>Оплата Stripe проверяется автоматически. Администратор только завершает или отменяет сделку.</p>
+          <span className="purchase-requests-heading__eyebrow">{t('admin_pr_eyebrow')}</span>
+          <h2>{t('admin_pr_title')}</h2>
+          <p>{t('admin_pr_intro')}</p>
         </div>
         <div className="purchase-requests-heading__count">{filteredRequests.length}</div>
       </div>
@@ -269,20 +273,20 @@ export default function PurchaseRequests({ onAdminSectionBadgeRefresh, onOpenUse
           <input
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Имя, почта, телефон или объект"
+            placeholder={t('admin_pr_searchPlaceholder')}
           />
           {searchQuery ? (
-            <button type="button" onClick={() => setSearchQuery('')} aria-label="Очистить поиск">
+            <button type="button" onClick={() => setSearchQuery('')} aria-label={t('admin_clearSearch')}>
               <FiX size={17} />
             </button>
           ) : null}
         </label>
-        <div className="filter-options" role="group" aria-label="Статус запроса">
+        <div className="filter-options" role="group" aria-label={t('admin_pr_statusFilterAria')}>
           {[
-            ['all', 'Все'],
-            ['processing', 'В обработке'],
-            ['completed', 'Завершены'],
-            ['cancelled', 'Отменены'],
+            ['all', t('admin_all')],
+            ['processing', t('admin_pr_statusProcessing')],
+            ['completed', t('admin_pr_filterCompleted')],
+            ['cancelled', t('admin_pr_filterCancelled')],
           ].map(([value, label]) => (
             <button
               type="button"
@@ -297,17 +301,17 @@ export default function PurchaseRequests({ onAdminSectionBadgeRefresh, onOpenUse
       </div>
 
       {isLoading ? (
-        <div className="purchase-requests-state">Загружаем сделки…</div>
+        <div className="purchase-requests-state">{t('admin_pr_loadingDeals')}</div>
       ) : error ? (
         <div className="purchase-requests-state purchase-requests-state--error">
           <FiAlertCircle size={24} />
           <p>{error}</p>
-          <button type="button" onClick={fetchRequests}>Попробовать снова</button>
+          <button type="button" onClick={fetchRequests}>{t('admin_tryAgain')}</button>
         </div>
       ) : filteredRequests.length === 0 ? (
         <div className="purchase-requests-state">
           <FiShoppingCart size={28} />
-          <p>Запросы не найдены</p>
+          <p>{t('admin_pr_notFound')}</p>
         </div>
       ) : (
         <div className="purchase-requests-list">
@@ -323,19 +327,19 @@ export default function PurchaseRequests({ onAdminSectionBadgeRefresh, onOpenUse
                 <span className="purchase-request-card__main">
                   <span className="purchase-request-card__icon"><FiShoppingCart size={19} /></span>
                   <span>
-                    <strong>{request.property_title || `Запрос #${request.id}`}</strong>
-                    <small>{request.buyer_name || 'Покупатель не указан'} · {formatDate(request.request_date || request.created_at)}</small>
+                    <strong>{request.property_title || t('admin_pr_requestN', { id: request.id })}</strong>
+                    <small>{request.buyer_name || t('admin_pr_buyerUnspecified')} · {formatDate(request.request_date || request.created_at, dateLocale)}</small>
                   </span>
                 </span>
                 <span className="purchase-request-card__price">
-                  {formatPrice(request.property_price, request.property_currency)}
+                  {formatPrice(request.property_price, request.property_currency, dateLocale)}
                 </span>
                 <span className={`purchase-request-payment-chip ${verified ? 'is-paid' : 'is-unpaid'}`}>
                   {verified ? <FiCheckCircle size={15} /> : <FiAlertCircle size={15} />}
-                  {verified ? 'Резерв оплачен' : 'Оплата не найдена'}
+                  {verified ? t('admin_pr_depositPaid') : t('admin_pr_paymentNotFound')}
                 </span>
                 <span className={`status-badge status-badge--${request.status || 'pending'}`}>
-                  {STATUS_LABELS[request.status] || request.status}
+                  {statusLabels[request.status] || request.status}
                 </span>
               </button>
             )
@@ -354,10 +358,10 @@ export default function PurchaseRequests({ onAdminSectionBadgeRefresh, onOpenUse
           >
             <header className="purchase-request-modal__header">
               <div>
-                <span>Заявка #{selectedRequest.id}</span>
-                <h2 id="purchase-request-title">{selectedRequest.property_title || 'Покупка объекта'}</h2>
+                <span>{t('admin_pr_applicationN', { id: selectedRequest.id })}</span>
+                <h2 id="purchase-request-title">{selectedRequest.property_title || t('admin_pr_purchaseProperty')}</h2>
               </div>
-              <button type="button" onClick={closeRequest} aria-label="Закрыть"><FiX size={22} /></button>
+              <button type="button" onClick={closeRequest} aria-label={t('admin_close')}><FiX size={22} /></button>
             </header>
 
             <div className="purchase-request-modal__content">
@@ -366,54 +370,57 @@ export default function PurchaseRequests({ onAdminSectionBadgeRefresh, onOpenUse
                   {paymentVerified ? <FiShield size={23} /> : <FiAlertCircle size={23} />}
                 </span>
                 <div>
-                  <span>{paymentVerified ? 'Оплата подтверждена Stripe' : 'Оплата резерва не подтверждена'}</span>
+                  <span>{paymentVerified ? t('admin_pr_paymentConfirmed') : t('admin_pr_depositUnconfirmed')}</span>
                   <strong>
                     {paymentVerified
                       ? formatPrice(
                           Number(payment.amount_cents || 0) / 100 + Number(payment.wallet_applied_major || 0),
                           payment.currency,
+                          dateLocale,
                         )
-                      : 'Завершение сделки заблокировано'}
+                      : t('admin_pr_completionBlocked')}
                   </strong>
-                  <small>{paymentVerified ? `Оплачено ${formatDate(payment.paid_at)}` : 'Проверьте Stripe Checkout и webhook'}</small>
+                  <small>{paymentVerified ? t('admin_pr_paidAt', { date: formatDate(payment.paid_at, dateLocale) }) : t('admin_pr_checkStripe')}</small>
                 </div>
                 <span className={`status-badge status-badge--${selectedRequest.status || 'pending'}`}>
-                  {STATUS_LABELS[selectedRequest.status] || selectedRequest.status}
+                  {statusLabels[selectedRequest.status] || selectedRequest.status}
                 </span>
               </section>
 
               <div className="purchase-request-people-grid">
                 <ContactCard
-                  title="Покупатель"
+                  title={t('admin_buyer')}
                   icon={FiUser}
                   name={selectedRequest.buyer_name}
                   email={selectedRequest.buyer_email}
                   phone={selectedRequest.buyer_phone}
                   userId={selectedRequest.buyer_id}
                   onOpenChat={openUserChat}
+                  t={t}
                 />
                 <ContactCard
-                  title="Продавец"
+                  title={t('admin_seller')}
                   icon={FiUser}
                   name={selectedRequest.seller_name || [propertyDetails?.first_name, propertyDetails?.last_name].filter(Boolean).join(' ')}
                   email={selectedRequest.seller_email || propertyDetails?.email}
                   phone={selectedRequest.seller_phone || propertyDetails?.phone_number}
                   userId={selectedRequest.seller_id || propertyDetails?.user_id}
                   onOpenChat={openUserChat}
+                  t={t}
                 />
               </div>
 
               <section className="purchase-request-object">
                 <div className="purchase-request-section-title">
                   <span className="purchase-request-section-title__icon"><FiShoppingCart size={18} /></span>
-                  <div><span>Объект</span><strong>Детали сделки</strong></div>
+                  <div><span>{t('admin_pr_property')}</span><strong>{t('admin_pr_dealDetails')}</strong></div>
                 </div>
-                {loadingProperty ? <p className="purchase-request-object__loading">Загружаем объект…</p> : (
+                {loadingProperty ? <p className="purchase-request-object__loading">{t('admin_pr_loadingProperty')}</p> : (
                   <dl className="purchase-request-object__grid">
-                    <div><dt>Тип продажи</dt><dd>{saleType}</dd></div>
-                    <div><dt>Конечная цена</dt><dd>{formatPrice(finalPrice, finalCurrency)}</dd></div>
-                    <div><dt>Тип недвижимости</dt><dd>{TYPE_LABELS[propertyType] || propertyType || '—'}</dd></div>
-                    <div><dt>Дата запроса</dt><dd>{formatDate(selectedRequest.request_date || selectedRequest.created_at)}</dd></div>
+                    <div><dt>{t('admin_pr_saleType')}</dt><dd>{saleType}</dd></div>
+                    <div><dt>{t('admin_pr_finalPrice')}</dt><dd>{formatPrice(finalPrice, finalCurrency, dateLocale)}</dd></div>
+                    <div><dt>{t('admin_pr_propertyType')}</dt><dd>{typeLabels[propertyType] || propertyType || '—'}</dd></div>
+                    <div><dt>{t('admin_pr_requestDate')}</dt><dd>{formatDate(selectedRequest.request_date || selectedRequest.created_at, dateLocale)}</dd></div>
                   </dl>
                 )}
                 {selectedRequest.property_id ? (
@@ -425,18 +432,18 @@ export default function PurchaseRequests({ onAdminSectionBadgeRefresh, onOpenUse
                       setSelectedRequest(null)
                     }}
                   >
-                    Открыть объект <FiExternalLink size={16} />
+                    {t('admin_pr_openProperty')} <FiExternalLink size={16} />
                   </button>
                 ) : null}
               </section>
 
               <label className="purchase-request-notes">
-                <span>Заметка администратора</span>
+                <span>{t('admin_pr_adminNote')}</span>
                 <textarea
                   value={adminNotes}
                   onChange={(event) => setAdminNotes(event.target.value)}
                   rows={3}
-                  placeholder="Документы, договорённости, следующий шаг…"
+                  placeholder={t('admin_pr_notesPlaceholder')}
                 />
               </label>
             </div>
@@ -446,10 +453,10 @@ export default function PurchaseRequests({ onAdminSectionBadgeRefresh, onOpenUse
                 type="button"
                 className="modal-action-btn modal-action-btn--completed"
                 disabled={updatingStatus || !paymentVerified || selectedRequest.status === 'completed'}
-                title={!paymentVerified ? 'Сначала Stripe должен подтвердить оплату резерва' : undefined}
+                title={!paymentVerified ? t('admin_pr_stripeFirst') : undefined}
                 onClick={() => void handleStatusUpdate('completed')}
               >
-                <FiCheck /> {updatingStatus ? 'Сохраняем…' : 'Завершить'}
+                <FiCheck /> {updatingStatus ? t('admin_savingEllipsis') : t('admin_pr_complete')}
               </button>
               <button
                 type="button"
@@ -457,7 +464,7 @@ export default function PurchaseRequests({ onAdminSectionBadgeRefresh, onOpenUse
                 disabled={updatingStatus || selectedRequest.status === 'cancelled'}
                 onClick={() => void handleStatusUpdate('cancelled')}
               >
-                <FiX /> Отменить
+                <FiX /> {t('admin_cancel')}
               </button>
             </footer>
           </div>

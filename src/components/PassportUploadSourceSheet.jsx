@@ -19,21 +19,22 @@ async function resolveGoogleClientId() {
   return runtime?.googleClientId || ''
 }
 
-async function requestCameraStream() {
+async function requestCameraStream(facingMode = 'environment') {
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new Error('CAMERA_UNSUPPORTED')
   }
 
+  const opposite = facingMode === 'user' ? 'environment' : 'user'
   const attempts = [
     {
       video: {
-        facingMode: { ideal: 'environment' },
+        facingMode: { ideal: facingMode },
         width: { ideal: 1920 },
         height: { ideal: 1080 },
       },
     },
-    { video: { facingMode: 'environment' } },
-    { video: { facingMode: 'user' } },
+    { video: { facingMode } },
+    { video: { facingMode: opposite } },
     { video: true },
   ]
 
@@ -73,9 +74,11 @@ export default function PassportUploadSourceSheet({
   const [cameraLoading, setCameraLoading] = useState(false)
   const [cameraError, setCameraError] = useState('')
   const [isCapturing, setIsCapturing] = useState(false)
+  const [facingMode, setFacingMode] = useState('environment')
   const streamRef = useRef(null)
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
+  const allowNativeCameraFallbackRef = useRef(true)
 
   const stopCamera = useCallback(() => {
     stopMediaStream(streamRef.current)
@@ -98,6 +101,8 @@ export default function PassportUploadSourceSheet({
     setCameraLoading(false)
     setCameraError('')
     setIsCapturing(false)
+    setFacingMode('environment')
+    allowNativeCameraFallbackRef.current = true
   }, [stopCamera])
 
   useEffect(() => {
@@ -113,19 +118,20 @@ export default function PassportUploadSourceSheet({
 
     void (async () => {
       try {
-        const stream = await requestCameraStream()
+        const stream = await requestCameraStream(facingMode)
         if (cancelled) {
           stopMediaStream(stream)
           return
         }
         streamRef.current = stream
+        allowNativeCameraFallbackRef.current = false
         if (videoRef.current) {
           videoRef.current.srcObject = stream
           await videoRef.current.play().catch(() => {})
         }
       } catch {
         if (cancelled) return
-        if (onPickCamera) {
+        if (allowNativeCameraFallbackRef.current && onPickCamera) {
           onPickCamera()
           window.setTimeout(() => onClose?.(), 0)
           return
@@ -140,7 +146,7 @@ export default function PassportUploadSourceSheet({
       cancelled = true
       stopCamera()
     }
-  }, [isOpen, view, stopCamera, onPickCamera, onClose, t])
+  }, [isOpen, view, facingMode, stopCamera, onPickCamera, onClose, t])
 
   const handleClose = useCallback(() => {
     if (busy || pickingFileId || isCapturing) return
@@ -158,14 +164,26 @@ export default function PassportUploadSourceSheet({
   const handleCamera = useCallback(() => {
     if (busy) return
     setCameraError('')
+    setFacingMode('environment')
+    allowNativeCameraFallbackRef.current = true
     setView('camera')
   }, [busy])
 
   const handleBackFromCamera = useCallback(() => {
     stopCamera()
     setCameraError('')
+    setFacingMode('environment')
+    allowNativeCameraFallbackRef.current = true
     setView('choice')
   }, [stopCamera])
+
+  const handleSwitchCamera = useCallback(() => {
+    if (busy || cameraLoading || isCapturing) return
+    setCameraError('')
+    allowNativeCameraFallbackRef.current = false
+    stopCamera()
+    setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'))
+  }, [busy, cameraLoading, isCapturing, stopCamera])
 
   const handleCapture = useCallback(() => {
     const video = videoRef.current
@@ -392,6 +410,21 @@ export default function PassportUploadSourceSheet({
 
           <div className="passport-upload-source__camera-preview" aria-hidden={cameraLoading}>
             <video ref={videoRef} playsInline autoPlay muted className="passport-upload-source__camera-video" />
+            <button
+              type="button"
+              className="passport-upload-source__camera-switch"
+              onClick={handleSwitchCamera}
+              disabled={cameraLoading || Boolean(cameraError) || isCapturing || busy}
+              aria-label={t('buyerData_passportSourceCameraSwitch')}
+              title={t('buyerData_passportSourceCameraSwitch')}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M18 3L21 6L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M21 6H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M6 21L3 18L6 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
             {cameraLoading ? (
               <div className="passport-upload-source__camera-overlay" role="status">
                 <FiLoader className="passport-upload-source__spinner" size={28} />

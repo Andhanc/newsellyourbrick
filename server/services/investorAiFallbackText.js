@@ -134,5 +134,5 @@ const text = {
 }
 
 export function investorAiFallbackText(locale) {
-  return text[locale] || text.ru
+  return text[locale] || text.en
 }

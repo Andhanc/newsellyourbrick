@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useClerk, useUser, useSignIn } from '@clerk/clerk-react'
+import { useTranslation } from 'react-i18next'
 import { getUserData, loginWithEmail, saveUserData, validatePassword } from '../services/authService'
 import { fetchUserById, invalidateUserByIdCache } from '../utils/usersApi'
 import { getCabinetHomePath, isSellerCabinetRole, readStoredUserRole } from '../utils/cabinetRoutes'
@@ -9,10 +10,7 @@ import {
   readPendingSellPurchasedProperty,
 } from '../utils/purchasedPropertyListingPrefill'
 import { showNotification } from '../utils/toastHelper'
-import {
-  hasNativeSessionSwitch,
-  switchNativeSession,
-} from '../utils/nativeDomBridge'
+import { formatPasswordValidationMessage } from '../utils/passwordValidationMessage'
 
 const PROFILE_API_BASE = import.meta.env?.VITE_API_BASE_URL || '/api'
 
@@ -57,6 +55,7 @@ async function loadProfilePreview() {
  * @param {'buyer' | 'seller'} targetRole — кабинет, который открываем или создаём
  */
 export function useRoleSwitchFlow(targetRole) {
+  const { t } = useTranslation()
   const { user: clerkUser, isLoaded: clerkLoaded } = useUser()
   const { signOut } = useClerk()
   const { signIn, isLoaded: signInLoaded } = useSignIn()
@@ -93,7 +92,7 @@ export function useRoleSwitchFlow(targetRole) {
     async (role, password) => {
       const email = getUserData()?.email || linkedStatus?.email
       if (!email) {
-        setError('Email не найден в профиле')
+        setError(t('roleSwitch_emailNotFoundInProfile'))
         return false
       }
 
@@ -104,9 +103,8 @@ export function useRoleSwitchFlow(targetRole) {
       try {
         sessionStorage.setItem('clerk_logout_in_progress', 'true')
         sessionStorage.setItem('role_switch_in_progress', '1')
-        const usesNativeSessionBridge = hasNativeSessionSwitch()
         try {
-          if (!usesNativeSessionBridge && clerkUser && signOut) {
+          if (clerkUser && signOut) {
             await signOut()
           }
         } catch (e) {
@@ -116,7 +114,7 @@ export function useRoleSwitchFlow(targetRole) {
         const result = await loginWithEmail(email, password, role)
         if (!result.success) {
           sessionStorage.removeItem('role_switch_in_progress')
-          setError(result.error || 'Неверный пароль')
+          setError(result.error || t('roleSwitch_wrongPassword'))
           return false
         }
 
@@ -126,7 +124,7 @@ export function useRoleSwitchFlow(targetRole) {
           newRole === 'seller' || newRole === 'owner'
         if (wantedSeller !== gotSeller) {
           sessionStorage.removeItem('role_switch_in_progress')
-          setError('Неверный пароль для выбранного кабинета')
+          setError(t('roleSwitch_wrongPasswordForCabinet'))
           return false
         }
 
@@ -146,22 +144,11 @@ export function useRoleSwitchFlow(targetRole) {
         }
 
         redirecting = true
-        if (usesNativeSessionBridge) {
-          const switched = await switchNativeSession({
-            user: result.user,
-            authToken: result.authToken || null,
-            path: targetPath,
-          })
-          if (!switched?.success) {
-            throw new Error(switched?.error || 'Не удалось переключить кабинет в приложении')
-          }
-          return true
-        }
         window.location.assign(targetPath)
         return true
       } catch (e) {
         sessionStorage.removeItem('role_switch_in_progress')
-        setError(e.message || 'Ошибка переключения кабинета')
+        setError(e.message || t('roleSwitch_switchError'))
         return false
       } finally {
         sessionStorage.removeItem('clerk_logout_in_progress')
@@ -171,7 +158,7 @@ export function useRoleSwitchFlow(targetRole) {
         }
       }
     },
-    [clerkUser, signOut, linkedStatus],
+    [clerkUser, signOut, linkedStatus, t],
   )
 
   const openFlow = useCallback(async () => {
@@ -180,14 +167,14 @@ export function useRoleSwitchFlow(targetRole) {
     try {
       const userId = getStoredUserId()
       if (!userId) {
-        showNotification('Войдите в аккаунт, чтобы переключить кабинет', 'error')
+        showNotification(t('roleSwitch_loginToSwitch'), 'error')
         return
       }
 
       const preview = await loadProfilePreview()
       setProfilePreview(preview)
       if (!preview.email || preview.email === '—') {
-        showNotification('Добавьте email в профиле, чтобы создать связанный кабинет', 'error')
+        showNotification(t('roleSwitch_addEmailForLinkedCabinet'), 'error')
         return
       }
 
@@ -204,11 +191,11 @@ export function useRoleSwitchFlow(targetRole) {
 
       setPhase('pitch')
     } catch (e) {
-      showNotification(e.message || 'Не удалось открыть переключение кабинета', 'error')
+      showNotification(e.message || t('roleSwitch_openSwitchFailed'), 'error')
     } finally {
       setLoading(false)
     }
-  }, [targetRole])
+  }, [targetRole, t])
 
   const openCabinetPicker = useCallback(async () => {
     setError('')
@@ -216,14 +203,14 @@ export function useRoleSwitchFlow(targetRole) {
     try {
       const userId = getStoredUserId()
       if (!userId) {
-        showNotification('Войдите в аккаунт, чтобы переключить кабинет', 'error')
+        showNotification(t('roleSwitch_loginToSwitch'), 'error')
         return
       }
 
       const preview = await loadProfilePreview()
       setProfilePreview(preview)
       if (!preview.email || preview.email === '—') {
-        showNotification('Добавьте email в профиле, чтобы создать связанный кабинет', 'error')
+        showNotification(t('roleSwitch_addEmailForLinkedCabinet'), 'error')
         return
       }
 
@@ -231,12 +218,11 @@ export function useRoleSwitchFlow(targetRole) {
       setLinkedStatus(status)
       setPhase('cabinet')
     } catch (e) {
-      showNotification(e.message || 'Не удалось открыть переключение кабинета', 'error')
+      showNotification(e.message || t('roleSwitch_openSwitchFailed'), 'error')
     } finally {
       setLoading(false)
     }
-  }, [])
-
+  }, [t])
   const continueFromPitch = useCallback(async () => {
     setError('')
     setPasswordHints(null)
@@ -264,14 +250,14 @@ export function useRoleSwitchFlow(targetRole) {
 
       const validation = validatePassword(password)
       if (!validation.valid) {
-        setError(validation.message)
+        setError(formatPasswordValidationMessage(validation, t))
         setPasswordHints(validation)
         return false
       }
 
       const userId = getStoredUserId()
       if (!userId) {
-        setError('Пользователь не авторизован')
+        setError(t('roleSwitch_userNotAuthorized'))
         return false
       }
 
@@ -290,14 +276,16 @@ export function useRoleSwitchFlow(targetRole) {
       } catch (e) {
         if (e.passwordValidation) {
           setPasswordHints(e.passwordValidation)
+          setError(formatPasswordValidationMessage(e.passwordValidation, t))
+        } else {
+          setError(e.message || t('roleSwitch_buyerPasswordSaveFailed'))
         }
-        setError(e.message || 'Не удалось сохранить пароль покупателя')
         return false
       } finally {
         setLoading(false)
       }
     },
-    [refreshLinkedStatus],
+    [refreshLinkedStatus, t],
   )
 
   const submitSetup = useCallback(
@@ -307,14 +295,14 @@ export function useRoleSwitchFlow(targetRole) {
 
       const validation = validatePassword(password)
       if (!validation.valid) {
-        setError(validation.message)
+        setError(formatPasswordValidationMessage(validation, t))
         setPasswordHints(validation)
         return false
       }
 
       const userId = getStoredUserId()
       if (!userId) {
-        setError('Пользователь не авторизован')
+        setError(t('roleSwitch_userNotAuthorized'))
         return false
       }
 
@@ -322,7 +310,7 @@ export function useRoleSwitchFlow(targetRole) {
         const status = linkedStatus || (await refreshLinkedStatus())
         if (status?.buyer && status.buyer.hasPassword === false) {
           setPhase('buyer-password')
-          setError('Сначала задайте пароль для кабинета покупателя')
+          setError(t('buyerPasswordRequiredFirst'))
           return false
         }
       }
@@ -338,14 +326,16 @@ export function useRoleSwitchFlow(targetRole) {
         }
         if (e.passwordValidation) {
           setPasswordHints(e.passwordValidation)
+          setError(formatPasswordValidationMessage(e.passwordValidation, t))
+        } else {
+          setError(e.message || t('roleSwitch_createCabinetFailed'))
         }
-        setError(e.message || 'Не удалось создать кабинет')
         return false
       } finally {
         setLoading(false)
       }
     },
-    [targetRole, linkedStatus, refreshLinkedStatus, switchToRole],
+    [targetRole, linkedStatus, refreshLinkedStatus, switchToRole, t],
   )
 
   const selectCabinet = useCallback(
@@ -383,7 +373,7 @@ export function useRoleSwitchFlow(targetRole) {
 
   const switchToBuyerViaGoogle = useCallback(async () => {
     if (!signInLoaded || !signIn) {
-      setError('Система авторизации не готова. Обновите страницу.')
+      setError(t('authSystemNotReady'))
       return false
     }
 
@@ -404,12 +394,12 @@ export function useRoleSwitchFlow(targetRole) {
       return true
     } catch (e) {
       sessionStorage.removeItem('role_switch_in_progress')
-      setError(e.message || 'Не удалось войти через Google')
+      setError(e.message || t('googleSignInFailed'))
       setSwitching(false)
       setLoading(false)
       return false
     }
-  }, [signIn, signInLoaded])
+  }, [signIn, signInLoaded, t])
 
   const goBackToCabinet = useCallback(() => {
     setPhase('cabinet')
@@ -425,14 +415,14 @@ export function useRoleSwitchFlow(targetRole) {
       try {
         const userId = getStoredUserId()
         if (!userId) {
-          showNotification('Войдите в аккаунт, чтобы продать объект', 'error')
+          showNotification(t('roleSwitch_loginToSell'), 'error')
           return
         }
 
         const preview = await loadProfilePreview()
         setProfilePreview(preview)
         if (!preview.email || preview.email === '—') {
-          showNotification('Добавьте email в профиле, чтобы создать кабинет продавца', 'error')
+          showNotification(t('roleSwitch_addEmailForSellerCabinet'), 'error')
           return
         }
 
@@ -453,12 +443,12 @@ export function useRoleSwitchFlow(targetRole) {
 
         setPhase('pitch')
       } catch (e) {
-        showNotification(e.message || 'Не удалось открыть кабинет продавца', 'error')
+        showNotification(e.message || t('roleSwitch_openSellerCabinetFailed'), 'error')
       } finally {
         setLoading(false)
       }
     },
-    [],
+    [t],
   )
 
   return {

@@ -12,6 +12,7 @@ import OwnerTestDriveRequestModal from './OwnerTestDriveRequestModal'
 import './OwnerMySalesSection.css'
 import { getCurrencySymbol } from '../utils/currency'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
+import { getUiIntlLocale } from '../utils/uiIntlLocale'
 
 const FALLBACK_IMG =
   '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
@@ -23,7 +24,7 @@ function formatSaleAmount(amount, currency) {
   if (!Number.isFinite(n)) return '—'
   const cur = (currency || 'USD').toUpperCase()
   const sym = getCurrencySymbol(cur)
-  return `${sym}${n.toLocaleString('ru-RU')}`
+  return `${sym}${n.toLocaleString(getUiIntlLocale())}`
 }
 
 const SALES_SECTION_FILTERS = [
@@ -150,10 +151,10 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
     e.stopPropagation()
     const bookingId = Number(item.booking_id)
     if (!Number.isFinite(bookingId)) return
-    const reason = window.prompt('Укажите причину снятия брони для покупателя')
+    const reason = window.prompt(t('ownerCancelBookingPrompt'))
     if (reason == null) return
     if (!reason.trim()) {
-      showToast('Нужно указать причину', 'warning')
+      showToast(t('ownerCancelBookingNeedReason'), 'warning')
       return
     }
     try {
@@ -166,13 +167,13 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json.success) {
-        showToast(json.error || 'Не удалось снять бронь', 'error')
+        showToast(json.error || t('ownerCancelBookingFail'), 'error')
         return
       }
-      showToast('Бронь снята, покупателю отправлена причина', 'success')
+      showToast(t('ownerCancelBookingSuccess'), 'success')
       await fetchMySales(true)
     } catch {
-      showToast('Ошибка сети', 'error')
+      showToast(t('ownerNetworkError'), 'error')
     } finally {
       setCancellingBookingId(null)
     }
@@ -200,15 +201,15 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json.success) {
-        showToast(json.error || 'Не удалось выполнить действие', 'error')
+        showToast(json.error || t('ownerConfirmActionFail'), 'error')
         return
       }
-      showToast(action === 'approve' ? 'Тест-драйв подтверждён' : 'Заявка отклонена', 'success')
+      showToast(action === 'approve' ? t('ownerTestDriveApproved') : t('ownerRequestRejected'), 'success')
       setConfirmingBooking(null)
       await fetchMySales(true)
       window.dispatchEvent(new CustomEvent('owner-notifications-refresh'))
     } catch {
-      showToast('Ошибка сети', 'error')
+      showToast(t('ownerNetworkError'), 'error')
     } finally {
       setConfirmResponding(false)
     }
@@ -291,13 +292,13 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
             </div>
             {sectionId === 'test_drive' && String(item.check_in_status || '').toLowerCase() === 'checked_in' ? (
               <p className="owner-my-sales__meta" style={{ color: '#2e9d5c', fontWeight: 700 }}>
-                Клиент заселился
+                {t('ownerTestDriveDetailCheckedIn')}
               </p>
             ) : null}
             {sectionId === 'test_drive' && bookingStatus === 'approved' ? (
               <p className="owner-my-sales__status-chip owner-my-sales__status-chip--approved">
                 <FiCheckCircle size={14} aria-hidden />
-                Подтверждено
+                {t('ownerBookingConfirmedBadge')}
               </p>
             ) : null}
             {sectionId === 'test_drive' && item.booking_id ? (
@@ -309,7 +310,7 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
                     onClick={(e) => handleOpenConfirmModal(item, e)}
                     disabled={confirmResponding}
                   >
-                    Подтвердить
+                    {t('ownerConfirmBtn')}
                   </button>
                 ) : null}
                 <button
@@ -318,7 +319,7 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
                   onClick={(e) => handleCancelBooking(item, e)}
                   disabled={cancellingBookingId === Number(item.booking_id)}
                 >
-                  {cancellingBookingId === Number(item.booking_id) ? 'Снимаем...' : 'Снять бронь'}
+                  {cancellingBookingId === Number(item.booking_id) ? t('ownerCancellingBooking') : t('ownerCancelBookingBtn')}
                 </button>
                 {ownerComment ? (
                   <button
@@ -328,14 +329,14 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
                       e.preventDefault()
                       e.stopPropagation()
                       setCommentPreview({
-                        title: item.title || 'Объект',
+                        title: item.title || t('ownerPropertyFallback'),
                         comment: ownerComment,
                         bookingId: item.booking_id,
                       })
                     }}
                   >
                     <FiEye size={14} aria-hidden />
-                    Мой комментарий
+                    {t('ownerMyCommentBtn')}
                   </button>
                 ) : null}
               </div>
@@ -385,12 +386,12 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
               type="button"
               className="owner-my-sales__comment-modal-close"
               onClick={() => setCommentPreview(null)}
-              aria-label="Закрыть"
+              aria-label={t('close')}
             >
               <FiX size={18} />
             </button>
             <h4 className="owner-my-sales__comment-modal-title">
-              Комментарий к брони #{commentPreview.bookingId}
+              {t('ownerBookingCommentTitle', { id: commentPreview.bookingId })}
             </h4>
             <p className="owner-my-sales__comment-modal-subtitle">{commentPreview.title}</p>
             <div className="owner-my-sales__comment-modal-body">{commentPreview.comment}</div>
@@ -401,8 +402,10 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
         notification={
           confirmingBooking
             ? {
-                title: 'Подтверждение заявки на тест-драйв',
-                message: `Подтвердите или отклоните заявку по объекту «${confirmingBooking.title || 'Объект'}».`,
+                title: t('ownerConfirmTestDriveTitle'),
+                message: t('ownerConfirmTestDriveMessage', {
+                  title: confirmingBooking.title || t('ownerPropertyFallback'),
+                }),
                 data: {
                   booking_id: confirmingBooking.booking_id,
                   start_date: confirmingBooking.start_date || null,

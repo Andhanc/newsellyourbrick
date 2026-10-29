@@ -21,7 +21,7 @@ const EMPTY_PROFILE = {
   identificationNumber: '',
   subscription: getOwnerSubscriptionPlanLabel('standard'),
   subscriptionPeriodEnd: null,
-  depositStatus: 'Оплачен',
+  depositStatus: 'Paid',
   depositStatusKey: 'paid',
   memberSince: '',
 }

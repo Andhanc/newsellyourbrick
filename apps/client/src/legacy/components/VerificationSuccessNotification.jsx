@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiCheckCircle, FiX } from 'react-icons/fi';
 import Confetti from 'react-confetti';
 import './VerificationSuccessNotification.css';
 
 const VerificationSuccessNotification = ({ notification, onClose, onView }) => {
+  const { t } = useTranslation();
   const [showConfetti, setShowConfetti] = useState(true);
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
@@ -57,7 +59,7 @@ const VerificationSuccessNotification = ({ notification, onClose, onView }) => {
           <button
             className="verification-success-notification__close"
             onClick={handleClose}
-            aria-label="Закрыть"
+            aria-label={t('close')}
           >
             <FiX size={24} />
           </button>
@@ -69,11 +71,11 @@ const VerificationSuccessNotification = ({ notification, onClose, onView }) => {
           </div>
 
           <h2 className="verification-success-notification__title">
-            {notification.title || 'Поздравляем с успешной верификацией!'}
+            {notification.title || t('verificationSuccess_title')}
           </h2>
 
           <p className="verification-success-notification__message">
-            {notification.message || '🎉 Ваши документы были одобрены. Теперь вы можете полноценно пользоваться сервисом.'}
+            {notification.message || t('verificationSuccess_message')}
           </p>
 
           <div className="verification-success-notification__celebration">
@@ -88,7 +90,7 @@ const VerificationSuccessNotification = ({ notification, onClose, onView }) => {
             className="verification-success-notification__button"
             onClick={handleClose}
           >
-            Отлично!
+            {t('verificationSuccess_cta')}
           </button>
         </div>
       </div>

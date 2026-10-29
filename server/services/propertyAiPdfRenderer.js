@@ -10,15 +10,15 @@ const escapeHtml = (value) => String(value ?? '')
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#039;')
 
-const money = (value, currency = 'RUB') => {
+const money = (value, currency = 'EUR') => {
   const amount = Number(value)
-  if (!Number.isFinite(amount) || amount <= 0) return 'Цена по запросу'
+  if (!Number.isFinite(amount) || amount <= 0) return 'Price on request'
   try {
-    return new Intl.NumberFormat('ru-RU', {
-      style: 'currency', currency: String(currency || 'RUB').toUpperCase(), maximumFractionDigits: 0,
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency', currency: String(currency || 'EUR').toUpperCase(), maximumFractionDigits: 0,
     }).format(amount)
   } catch {
-    return new Intl.NumberFormat('ru-RU').format(amount)
+    return new Intl.NumberFormat('en-US').format(amount)
   }
 }
 
@@ -63,7 +63,7 @@ function photoMarkup(image, className = 'page-photo', label = '') {
   const imageMarkup = image
     ? `<img class="${className}" src="${escapeHtml(image)}" alt="" onerror="this.dataset.failed='true'">`
     : `<img class="${className}" src="${EDITORIAL_FALLBACK_IMAGE}" alt="" onerror="this.dataset.failed='true'">`
-  return `<figure class="photo-frame${image ? '' : ' photo-frame--fallback'}">${imageMarkup}${label ? `<figcaption>${escapeHtml(label)}</figcaption>` : ''}${image ? '' : '<span>ИЛЛЮСТРАЦИЯ · НЕ ФОТО ОБЪЕКТА</span>'}</figure>`
+  return `<figure class="photo-frame${image ? '' : ' photo-frame--fallback'}">${imageMarkup}${label ? `<figcaption>${escapeHtml(label)}</figcaption>` : ''}${image ? '' : '<span>ILLUSTRATION · NOT A PROPERTY PHOTO</span>'}</figure>`
 }
 
 function reportPhoto(report, index = 0) {
@@ -130,7 +130,7 @@ function renderChart(chart = {}) {
       return circle
     }).join('')
     const legend = labels.map((label, index) => `<g transform="translate(390 ${80 + index * 50})"><circle cx="0" cy="0" r="7" fill="${colors[index % colors.length]}"/><text x="20" y="5" class="chart-label">${escapeHtml(label)}</text><text x="170" y="5" text-anchor="end" class="chart-legend-value">${escapeHtml(donutValues[index] ?? '')}${escapeHtml(chart.unit || '')}</text></g>`).join('')
-    return `<div class="chart-shell"><div class="chart-heading"><strong>${escapeHtml(chart.title)}</strong><span>${escapeHtml(chart.unit)}</span></div><svg class="chart-svg" viewBox="0 0 640 320" role="img"><g transform="rotate(-90 220 150)">${circles}</g><text x="220" y="144" text-anchor="middle" class="chart-total">${escapeHtml(total)}</text><text x="220" y="169" text-anchor="middle" class="chart-label">ВСЕГО</text>${legend}</svg>${chart.caption ? `<p class="chart-caption">${escapeHtml(chart.caption)}</p>` : ''}</div>`
+    return `<div class="chart-shell"><div class="chart-heading"><strong>${escapeHtml(chart.title)}</strong><span>${escapeHtml(chart.unit)}</span></div><svg class="chart-svg" viewBox="0 0 640 320" role="img"><g transform="rotate(-90 220 150)">${circles}</g><text x="220" y="144" text-anchor="middle" class="chart-total">${escapeHtml(total)}</text><text x="220" y="169" text-anchor="middle" class="chart-label">TOTAL</text>${legend}</svg>${chart.caption ? `<p class="chart-caption">${escapeHtml(chart.caption)}</p>` : ''}</div>`
   }
 
   const grid = [60, 105, 150, 195, 240].map((gridY) => `<line x1="70" x2="590" y1="${gridY}" y2="${gridY}" class="chart-grid-line"/>`).join('')
@@ -146,8 +146,8 @@ function legacySlide(page = {}) {
   if (page.layout) return page
   if (page.type === 'snapshot') return { ...page, layout: 'stats', cards: (page.metrics || []).slice(0, 4).map((metric) => ({ ...metric, title: metric.label, body: metric.note, icon: 'home', tone: 'cream' })) }
   if (page.type === 'balance') return { ...page, layout: 'comparison', cards: [
-    { title: 'Сильные стороны', body: (page.strengths || []).join('\n'), icon: 'check', tone: 'cream' },
-    { title: 'Нужно проверить', body: (page.risks || []).join('\n'), icon: 'shield', tone: 'ink' },
+    { title: 'Strengths', body: (page.strengths || []).join('\n'), icon: 'check', tone: 'cream' },
+    { title: 'Needs verification', body: (page.risks || []).join('\n'), icon: 'shield', tone: 'ink' },
   ] }
   if (page.type === 'answer') return { ...page, layout: 'photo_statement' }
   if (page.type === 'details') return { ...page, layout: 'split' }
@@ -160,7 +160,7 @@ function slideChrome(index, total, label = '') {
 
 function slideHeading(slide, index) {
   const long = String(slide.title || '').length > 68 ? ' slide-head--long' : ''
-  return `<div class="slide-head${long}"><p>${escapeHtml(slide.kicker || `РАЗДЕЛ ${String(index + 1).padStart(2, '0')}`)}</p><h2>${escapeHtml(slide.title)}</h2>${slide.body ? `<div class="slide-lead">${textWithBreaks(slide.body)}</div>` : ''}</div>`
+  return `<div class="slide-head${long}"><p>${escapeHtml(slide.kicker || `SECTION ${String(index + 1).padStart(2, '0')}`)}</p><h2>${escapeHtml(slide.title)}</h2>${slide.body ? `<div class="slide-lead">${textWithBreaks(slide.body)}</div>` : ''}</div>`
 }
 
 function renderSlide(inputSlide, index, total, report, property) {
@@ -171,7 +171,7 @@ function renderSlide(inputSlide, index, total, report, property) {
 
   if (layout === 'cover') {
     const long = String(slide.title || report.title || '').length > 62 ? ' cover-title-card--long' : ''
-    return `<section class="report-page report-page--cover"><div class="cover-stage">${photoMarkup(images[0])}<div class="cover-title-card${long}"><p>${escapeHtml(slide.kicker || 'ПЕРСОНАЛЬНЫЙ AI-РАЗБОР')}</p><h1>${escapeHtml(slide.title || report.title)}</h1><div>${escapeHtml(property.location || 'Аналитическая презентация объекта')}</div></div><div class="cover-facts"><span><small>СТОИМОСТЬ</small>${escapeHtml(money(property.price, property.currency))}</span>${property.area ? `<span><small>ПЛОЩАДЬ</small>${escapeHtml(property.area)} м²</span>` : ''}${property.rooms ? `<span><small>КОМНАТЫ</small>${escapeHtml(property.rooms)}</span>` : ''}</div></div><div class="cover-footer">${brandLockup('cover')}<span>AI PRESENTATION · ${new Date().getFullYear()}</span><b>01</b></div></section>`
+    return `<section class="report-page report-page--cover"><div class="cover-stage">${photoMarkup(images[0])}<div class="cover-title-card${long}"><p>${escapeHtml(slide.kicker || 'PERSONAL AI REVIEW')}</p><h1>${escapeHtml(slide.title || report.title)}</h1><div>${escapeHtml(property.location || 'Analytical property presentation')}</div></div><div class="cover-facts"><span><small>PRICE</small>${escapeHtml(money(property.price, property.currency))}</span>${property.area ? `<span><small>AREA</small>${escapeHtml(property.area)} m²</span>` : ''}${property.rooms ? `<span><small>ROOMS</small>${escapeHtml(property.rooms)}</span>` : ''}</div></div><div class="cover-footer">${brandLockup('cover')}<span>AI PRESENTATION · ${new Date().getFullYear()}</span><b>01</b></div></section>`
   }
 
   if (layout === 'photo_statement') {
@@ -180,7 +180,7 @@ function renderSlide(inputSlide, index, total, report, property) {
 
   if (layout === 'gallery') {
     const galleryImages = images.length ? images : (report.images || []).slice(0, 4)
-    return `<section class="report-page report-page--gallery">${chrome}<div class="gallery-title"><p>${escapeHtml(slide.kicker || 'ФОТОГРАФИИ ОБЪЕКТА')}</p><h2>${escapeHtml(slide.title)}</h2></div><div class="gallery-grid">${galleryImages.slice(0, 4).map((image, photoIndex) => photoMarkup(image, 'gallery-photo', String(photoIndex + 1).padStart(2, '0'))).join('')}</div></section>`
+    return `<section class="report-page report-page--gallery">${chrome}<div class="gallery-title"><p>${escapeHtml(slide.kicker || 'PROPERTY PHOTOS')}</p><h2>${escapeHtml(slide.title)}</h2></div><div class="gallery-grid">${galleryImages.slice(0, 4).map((image, photoIndex) => photoMarkup(image, 'gallery-photo', String(photoIndex + 1).padStart(2, '0'))).join('')}</div></section>`
   }
 
   if (layout === 'cards' || layout === 'stats') {
@@ -203,7 +203,7 @@ function renderSlide(inputSlide, index, total, report, property) {
     const groups = report.neighborhood?.groups || []
     const generatedCards = slide.cards?.length ? slide.cards : groups.slice(0, 4).map((group, groupIndex) => ({
       title: group.label,
-      value: group.places?.[0] ? `${group.places[0].distanceMeters} м` : '',
+      value: group.places?.[0] ? `${group.places[0].distanceMeters} m` : '',
       body: (group.places || []).map((place) => place.name).join(' · '),
       icon: ['school', 'transport', 'store', 'tree'][groupIndex] || 'location',
       tone: groupIndex === 0 ? 'tiffany' : 'cream',
@@ -213,10 +213,10 @@ function renderSlide(inputSlide, index, total, report, property) {
 
   if (layout === 'conclusion') {
     const long = String(slide.title || '').length > 62 ? ' conclusion-panel--long' : ''
-    return `<section class="report-page report-page--conclusion"><div class="conclusion-photo">${photoMarkup(images[0])}</div><div class="conclusion-panel${long}">${brandLockup('conclusion')}<p>${escapeHtml(slide.kicker || 'ИТОГ · СЛЕДУЮЩИЙ ШАГ')}</p><h2>${escapeHtml(slide.title)}</h2><div class="conclusion-body">${textWithBreaks(slide.body)}</div>${renderBullets(slide.bullets)}<small>${escapeHtml(report.disclaimer)}</small></div><b class="conclusion-number">${String(index + 1).padStart(2, '0')}</b></section>`
+    return `<section class="report-page report-page--conclusion"><div class="conclusion-photo">${photoMarkup(images[0])}</div><div class="conclusion-panel${long}">${brandLockup('conclusion')}<p>${escapeHtml(slide.kicker || 'SUMMARY · NEXT STEP')}</p><h2>${escapeHtml(slide.title)}</h2><div class="conclusion-body">${textWithBreaks(slide.body)}</div>${renderBullets(slide.bullets)}<small>${escapeHtml(report.disclaimer)}</small></div><b class="conclusion-number">${String(index + 1).padStart(2, '0')}</b></section>`
   }
 
-  return `<section class="report-page report-page--split">${chrome}<div class="split-layout"><div class="split-copy">${slideHeading(slide, index)}${renderBullets(slide.bullets)}${slide.cards?.length ? renderCards(slide.cards.slice(0, 2), 'compact') : ''}</div><div class="split-photo">${photoMarkup(images[0])}<span>${escapeHtml(property.title || property.name || 'ОБЪЕКТ')}</span></div></div></section>`
+  return `<section class="report-page report-page--split">${chrome}<div class="split-layout"><div class="split-copy">${slideHeading(slide, index)}${renderBullets(slide.bullets)}${slide.cards?.length ? renderCards(slide.cards.slice(0, 2), 'compact') : ''}</div><div class="split-photo">${photoMarkup(images[0])}<span>${escapeHtml(property.title || property.name || 'PROPERTY')}</span></div></div></section>`
 }
 
 function safeMediaBaseUrl(value) {
@@ -252,7 +252,7 @@ const REPORT_STYLES = `
 export function renderPropertyAiReportHtml({ report, property = {}, mediaBaseUrl = propertyAiMediaBaseUrl() }) {
   const slides = Array.isArray(report?.slides) && report.slides.length ? report.slides : (Array.isArray(report?.pages) ? report.pages : [])
   const baseUrl = safeMediaBaseUrl(mediaBaseUrl)
-  return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><base href="${escapeHtml(baseUrl)}"><title>${escapeHtml(report?.title || 'AI-презентация')}</title><style>${REPORT_STYLES}</style></head><body>${slides.map((slide, index) => renderSlide(slide, index, slides.length, report, property)).join('')}</body></html>`
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><base href="${escapeHtml(baseUrl)}"><title>${escapeHtml(report?.title || 'AI presentation')}</title><style>${REPORT_STYLES}</style></head><body>${slides.map((slide, index) => renderSlide(slide, index, slides.length, report, property)).join('')}</body></html>`
 }
 
 export function resolvePropertyAiPuppeteerOptions({

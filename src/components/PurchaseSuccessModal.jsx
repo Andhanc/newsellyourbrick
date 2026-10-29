@@ -5,42 +5,6 @@ import ImageWithSkeleton from './ImageWithSkeleton'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './PurchaseSuccessModal.css'
 
-const RESERVATION_STEPS = [
-  {
-    icon: CheckCircle2,
-    title: 'Оплата подтверждена',
-    text: 'Резерв записан в истории вашего кабинета.',
-  },
-  {
-    icon: MessagesSquare,
-    title: 'Менеджер свяжется с вами',
-    text: 'Уточнит документы, сроки и следующий шаг сделки.',
-  },
-  {
-    icon: ClipboardCheck,
-    title: 'План уже готов',
-    text: 'Статус, контакты и действия собраны на странице объекта.',
-  },
-]
-
-const SHARE_STEPS = [
-  {
-    icon: CheckCircle2,
-    title: 'Оплата подтверждена',
-    text: 'Покупка долей успешно записана.',
-  },
-  {
-    icon: ClipboardCheck,
-    title: 'Доли добавлены в активы',
-    text: 'Количество и объект доступны в вашем кабинете.',
-  },
-  {
-    icon: MessagesSquare,
-    title: 'Мы остаёмся на связи',
-    text: 'Уведомим о важных событиях по объекту.',
-  },
-]
-
 export default function PurchaseSuccessModal({
   isOpen,
   onClose,
@@ -52,7 +16,41 @@ export default function PurchaseSuccessModal({
   const image = property?.image || property?.images?.[0] || ''
   const purchaseKind = property?.purchaseKind || 'reservation'
   const isSharePurchase = purchaseKind === 'share'
-  const steps = isSharePurchase ? SHARE_STEPS : RESERVATION_STEPS
+  const steps = isSharePurchase
+    ? [
+        {
+          icon: CheckCircle2,
+          title: t('purchaseSuccess_step1PaymentTitle'),
+          text: t('purchaseSuccess_step1ShareText'),
+        },
+        {
+          icon: ClipboardCheck,
+          title: t('purchaseSuccess_step2SharesTitle'),
+          text: t('purchaseSuccess_step2SharesText'),
+        },
+        {
+          icon: MessagesSquare,
+          title: t('purchaseSuccess_step3StayTitle'),
+          text: t('purchaseSuccess_step3StayText'),
+        },
+      ]
+    : [
+        {
+          icon: CheckCircle2,
+          title: t('purchaseSuccess_step1PaymentTitle'),
+          text: t('purchaseSuccess_step1ReserveText'),
+        },
+        {
+          icon: MessagesSquare,
+          title: t('purchaseSuccess_step2ManagerTitle'),
+          text: t('purchaseSuccess_step2ManagerText'),
+        },
+        {
+          icon: ClipboardCheck,
+          title: t('purchaseSuccess_step3PlanTitle'),
+          text: t('purchaseSuccess_step3PlanText'),
+        },
+      ]
   const imageProps = image
     ? buildResponsiveImageProps(image, {
         widths: [160, 240, 320],
@@ -70,7 +68,7 @@ export default function PurchaseSuccessModal({
         className="purchase-success-modal__btn purchase-success-modal__btn--primary"
         onClick={onGoToGuide}
       >
-        <span>{isSharePurchase ? 'Открыть мои активы' : t('purchaseSuccess_goToObject')}</span>
+        <span>{isSharePurchase ? t('purchaseSuccess_goToAssets') : t('purchaseSuccess_goToObject')}</span>
         <ArrowRight size={19} aria-hidden />
       </button>
       <button
@@ -90,7 +88,7 @@ export default function PurchaseSuccessModal({
       tone="success"
       titleId="purchase-success-modal-title"
       describedBy="purchase-success-modal-description"
-      closeLabel="Закрыть подтверждение покупки"
+      closeLabel={t('purchaseSuccess_closeAria')}
       className="purchase-success-modal"
       footer={footer}
     >
@@ -107,13 +105,13 @@ export default function PurchaseSuccessModal({
 
         <p className="purchase-success-modal__eyebrow">
           <CheckCircle2 size={15} aria-hidden />
-          {isSharePurchase ? 'Покупка подтверждена' : 'Резерв подтверждён'}
+          {isSharePurchase ? t('purchaseSuccess_shareEyebrow') : t('purchaseSuccess_reserveEyebrow')}
         </p>
         <h2 id="purchase-success-modal-title" className="purchase-success-modal__title">
-          {isSharePurchase ? 'Доли куплены' : 'Объект закреплён за вами'}
+          {isSharePurchase ? t('purchaseSuccess_shareTitle') : t('purchaseSuccess_reserveTitle')}
         </h2>
         <p id="purchase-success-modal-description" className="purchase-success-modal__subtitle">
-          Ничего запоминать не нужно — мы сохранили результат и собрали дальнейшие действия ниже.
+          {t('purchaseSuccess_nextStepsSubtitle')}
         </p>
 
         <article className="purchase-success-modal__property">
@@ -127,13 +125,13 @@ export default function PurchaseSuccessModal({
             </div>
           )}
           <div className="purchase-success-modal__property-copy">
-            <span>{isSharePurchase ? 'Ваш новый актив' : 'Ваш резерв'}</span>
+            <span>{isSharePurchase ? t('purchaseSuccess_newAssetLabel') : t('purchaseSuccess_yourReserveLabel')}</span>
             <h3>{title}</h3>
             {property?.location ? <p>{property.location}</p> : null}
           </div>
         </article>
 
-        <div className="purchase-success-modal__steps" aria-label="Что произойдёт дальше">
+        <div className="purchase-success-modal__steps" aria-label={t('purchaseSuccess_stepsAria')}>
           {steps.map(({ icon: Icon, title: stepTitle, text }, index) => (
             <article key={stepTitle} className="purchase-success-modal__step">
               <span className="purchase-success-modal__step-icon" aria-hidden>

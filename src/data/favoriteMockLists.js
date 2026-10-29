@@ -67,7 +67,7 @@ export const nearbyProperties = [
 export const apartmentsData = [
   {
     id: 1,
-    name: 'Тропарево Парк',
+    name: 'Troparevo Park',
     location: 'Costa Adeje, Tenerife',
     price: 8500372,
     image: '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
@@ -101,8 +101,8 @@ export const villasData = [
 export const flatsData = [
   {
     id: 1,
-    name: 'Современная квартира в центре',
-    location: 'Москва, ул. Тверская, 15',
+    name: 'Modern city-center apartment',
+    location: 'Moscow, Tverskaya St. 15',
     price: 12500000,
     image: '/images/external/photo-1522708323590-d24dbb6b0267-cf542d6d64.jpg',
     images: ['/images/external/photo-1522708323590-d24dbb6b0267-cf542d6d64.jpg'],
@@ -118,8 +118,8 @@ export const flatsData = [
 export const townhousesData = [
   {
     id: 1,
-    name: 'Таунхаус в элитном поселке',
-    location: 'Московская область, Одинцово, ул. Садовая, 15',
+    name: 'Townhouse in a gated community',
+    location: 'Moscow Region, Odintsovo, Sadovaya St. 15',
     price: 24500000,
     image: '/images/external/photo-1600585154340-be6161a56a0c-753fb8cc27.jpg',
     images: ['/images/external/photo-1600585154340-be6161a56a0c-753fb8cc27.jpg'],

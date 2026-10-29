@@ -93,6 +93,7 @@ function ImageLightbox({
   onNavigate,
   linkHref,
 }) {
+  const { t } = useTranslation();
   const [animationPhase, setAnimationPhase] = useState('initial');
   const [isClosing, setIsClosing] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
@@ -376,7 +377,7 @@ function ImageLightbox({
                   href={linkHref}
                   className="flex items-center gap-2 px-6 py-3 text-sm font-bold uppercase tracking-widest text-white bg-teal-600 hover:brightness-110 rounded-xl shadow-lg shadow-teal-500/20 transition-all duration-300 hover:scale-105 active:scale-95"
                 >
-                  <span>Подробнее</span>
+                  <span>{t('folderLearnMore')}</span>
                   <ExternalLink className="w-4 h-4" />
                 </a>
               ) : (
@@ -388,7 +389,7 @@ function ImageLightbox({
                   }}
                   className="flex items-center gap-2 px-6 py-3 text-sm font-bold uppercase tracking-widest text-white bg-teal-600 hover:brightness-110 rounded-xl shadow-lg shadow-teal-500/20 transition-all duration-300 hover:scale-105 active:scale-95"
                 >
-                  <span>Закрыть</span>
+                  <span>{t('close')}</span>
                   <X className="w-4 h-4" />
                 </button>
               )}

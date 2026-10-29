@@ -6,17 +6,17 @@ import {
   parsePropertyAiModelContent,
 } from './propertyAiReportContract.js'
 
-test('normalizes a predefined category into a Russian question', () => {
+test('normalizes a predefined category into an English question', () => {
   assert.deepEqual(normalizePropertyAiRequest({ category: 'risks' }), {
     category: 'risks',
-    question: 'Какие у этого объекта главные плюсы и риски?',
+    question: 'What are the main strengths and risks of this property?',
   })
 })
 
 test('requires a meaningful custom question', () => {
   assert.throws(
-    () => normalizePropertyAiRequest({ category: 'custom', question: '  да  ' }),
-    /не менее 5 символов/i,
+    () => normalizePropertyAiRequest({ category: 'custom', question: '  ok  ' }),
+    /at least 5 characters/i,
   )
 })
 
@@ -61,7 +61,7 @@ test('uses the AI-authored slide order without injecting a fixed deck', () => {
   assert.equal(report.pages, report.slides)
   assert.equal(report.shortAnswer, 'Объект выглядит интересно, но требует проверки документов.')
   assert.equal(report.images[0], 'https://img.example/home.jpg')
-  assert.match(report.disclaimer, /не является финансовой/i)
+  assert.match(report.disclaimer, /not financial, legal, or valuation advice/i)
 })
 
 test('does not add a sparse gallery page when the listing has only one photo', () => {

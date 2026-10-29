@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FiMail } from 'react-icons/fi'
 import ContributorsWall from './ui/contributors-section'
 
@@ -23,34 +24,26 @@ const propertyPhotoIds = [
   '1582268611958-ebfd161ef9cf',
 ]
 
-const properties = Array.from({ length: 180 }, (_, i) => {
-  const id = propertyPhotoIds[i % propertyPhotoIds.length]
-  return {
-    username: `Объект №${i + 1}`,
-    avatarUrl: `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=160&h=160&q=60`,
-  }
-})
-
-const newsletterCards = [
+const newsletterCardMeta = [
   {
     key: 'card-1',
     image: '/images/external/photo-1600585154340-be6161a56a0c-08c1b1d59d.jpg',
-    title: 'Как работают аукционы на SellYourBrick',
-    excerpt: 'Прозрачные торги, верифицированные участники и понятные правила — разбираем механику платформы.',
+    titleKey: 'investCommunity_card1Title',
+    excerptKey: 'investCommunity_card1Excerpt',
     className: 'invest-community__float--1',
   },
   {
     key: 'card-2',
     image: '/images/external/photo-1507525428034-b723cf961d3e-ae413f8ef9.jpg',
-    title: 'Приморские виллы: спрос и доходность',
-    excerpt: 'Почему объекты у моря остаются в топе у инвесторов и как оценить потенциал аренды в солнечных регионах.',
+    titleKey: 'investCommunity_card2Title',
+    excerptKey: 'investCommunity_card2Excerpt',
     className: 'invest-community__float--2',
   },
   {
     key: 'card-3',
     image: '/images/external/photo-1486406146926-c627a92ad1ab-f0c377ec01.jpg',
-    title: 'Рынок недвижимости: тренды 2026',
-    excerpt: 'Какие локации растут быстрее, где искать доходность и на что обращать внимание при покупке за рубежом.',
+    titleKey: 'investCommunity_card3Title',
+    excerptKey: 'investCommunity_card3Excerpt',
     className: 'invest-community__float--3',
   },
 ]
@@ -60,8 +53,21 @@ function isValidEmail(value) {
 }
 
 export default function InvestorCommunitySection() {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
+
+  const properties = useMemo(
+    () =>
+      Array.from({ length: 180 }, (_, i) => {
+        const id = propertyPhotoIds[i % propertyPhotoIds.length]
+        return {
+          username: t('investCommunity_propertyLabel', { n: i + 1 }),
+          avatarUrl: `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=160&h=160&q=60`,
+        }
+      }),
+    [t],
+  )
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -74,7 +80,7 @@ export default function InvestorCommunitySection() {
   }
 
   return (
-    <section className="invest-community" aria-label="Сообщество инвесторов SellYourBrick">
+    <section className="invest-community" aria-label={t('investCommunity_aria')}>
       <div className="invest-community__wall-wrap">
         <ContributorsWall
           contributors={properties}
@@ -93,7 +99,9 @@ export default function InvestorCommunitySection() {
         <div className="invest-community__overlay">
           <header className="invest-community__header">
             <h2 className="invest-community__title">
-              Более <span>1000 объектов</span> и тысячи инвесторов на платформе
+              {t('investCommunity_titleBefore')}{' '}
+              <span>{t('investCommunity_titleAccent')}</span>{' '}
+              {t('investCommunity_titleAfter')}
             </h2>
           </header>
         </div>
@@ -103,7 +111,7 @@ export default function InvestorCommunitySection() {
         <div className="invest-community__card">
           <div className="invest-community__card-copy">
             <h3 className="invest-community__card-title">
-              Подпишитесь на еженедельную рассылку
+              {t('investCommunity_newsletterTitle')}
             </h3>
             <form className="invest-community__form" onSubmit={handleSubmit}>
               <div className="invest-community__field">
@@ -111,7 +119,7 @@ export default function InvestorCommunitySection() {
                 <input
                   type="email"
                   className="invest-community__input"
-                  placeholder="Введите свою почту"
+                  placeholder={t('investCommunity_emailPlaceholder')}
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   autoComplete="email"
@@ -124,20 +132,20 @@ export default function InvestorCommunitySection() {
                 type="submit"
                 disabled={sent || !isValidEmail(email)}
               >
-                {sent ? 'Вы подписаны!' : 'Подписаться'}
+                {sent ? t('investCommunity_subscribed') : t('investCommunity_subscribe')}
               </button>
             </form>
           </div>
 
           <div className="invest-community__visual" aria-hidden>
-            {newsletterCards.map((card) => (
+            {newsletterCardMeta.map((card) => (
               <article key={card.key} className={`invest-community__float ${card.className}`}>
                 <div className="invest-community__float-media">
                   <img src={card.image} alt="" loading="lazy" decoding="async" />
                 </div>
                 <div className="invest-community__float-body">
-                  <p className="invest-community__float-title">{card.title}</p>
-                  <p className="invest-community__float-excerpt">{card.excerpt}</p>
+                  <p className="invest-community__float-title">{t(card.titleKey)}</p>
+                  <p className="invest-community__float-excerpt">{t(card.excerptKey)}</p>
                 </div>
               </article>
             ))}

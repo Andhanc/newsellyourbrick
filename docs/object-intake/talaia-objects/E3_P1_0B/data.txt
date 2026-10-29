@@ -1,0 +1,54 @@
+Talaïa Residences — объект E3_P1_0B
+Источник: Google Drive COMERCIALIZACIÓN TALAÏA
+Прайс: DISPONIBILIDAD AL 7/10/2026
+
+Идентификатор: E3_P1_0B
+Edificio: 3
+Portal: 1
+Planta/Floor: P0 (0)
+Vivienda/Tipo: B
+Спальни (dormitorios): 3
+Комнаты (оценка dorm+salon): 4
+Ванные: 2
+Площадь квартиры usable: 102.01 m²
+Терраса usable: 40.47 m²
+Сад usable: 38.76 m²
+Итого usable: 181.24 m²
+Цена: 752,000 EUR
+Кладовка (trastero): T045
+Гараж (plaza): 49
+Вид на море: NO (без прямого вида на океан)
+
+Адрес/локация:
+Страна: Испания
+Город: Adeje (Costa Adeje, Tenerife)
+Район: Callao Salvaje / Punta de Ajabo
+Координаты (из досье): 28°07’44.3” N 16°46’49.3” W
+Пляж Ajabo: ~3 мин пешком
+
+Параметры для публикации (intake):
+Тип: Апартаменты
+Валюта: EUR
+Этажность дома: 4
+Год: 2026 (новостройка)
+Материал: Монолит
+Цена «Продать сейчас»: 752,000
+
+Удобства комплекса:
+бассейн, подогреваемый бассейн, детский бассейн, spa, сауна, хаммам, спортзал, парковка, кладовая, кондиционер, аэротермия, солнечные панели, зарядка EV (прединсталляция), digital concierge, видеонаблюдение/охрана комплекса
+
+Описание:
+Talaïa Residences, Costa Adeje (Callao Salvaje / Punta de Ajabo), Tenerife. New-build apartment E3_P1_0B: Edificio 3, Portal 1, P0, Vivienda B. 3 bedrooms, 102.01 m² usable indoor, terrace 40.47 m², 38.76 m² garden, total usable 181.24 m². Includes storage T045 and garage space 49. Sea views: без прямого вида на океан. Price 752,000 EUR (availability 7/10/2026). Complex amenities: outdoor pools (incl. heated), spa/wellness, gym, gardens, solar panels, EV pre-install. Kitchen with Bosch appliances, Hansgrohe bathrooms, ducted AC, aerothermal DHW. Energy rating B.
+
+Файлы в папке:
+- photos/ — маркетинговые рендеры комплекса (+ ref plan/vistas)
+- E3_P1_0B_layout.pdf — индивидуальная планировка
+- data.txt — этот файл
+
+Чего нет в исходниках / нужно добрать:
+- кадастровый номер конкретной квартиры
+- документы собственности / отсутствие обременений (новостройка off-plan)
+- точный номер дома/улицы (есть район и координаты)
+- точное число ванных сверено по планировке где удалось
+- аукционные поля (min/start/dates) — не применимы к прайсу застройщика
+- фото именно этой квартиры (есть тип-планировка + общие рендеры)

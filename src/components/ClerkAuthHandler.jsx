@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useAuth, useUser, useSession, useClerk } from '@clerk/clerk-react'
 import {
@@ -28,6 +29,7 @@ const PENDING_DUPLICATE_REGISTER_ALERT = 'pending_duplicate_register_alert'
  * Проверяет URL параметры после редиректа и синхронизирует данные
  */
 const ClerkAuthHandler = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
@@ -47,8 +49,8 @@ const ClerkAuthHandler = () => {
       const raw = sessionStorage.getItem(PENDING_DUPLICATE_REGISTER_ALERT)
       if (!raw) return
       const payload = JSON.parse(raw)
-      if (payload?.variant === 'already_registered' && (payload.title || payload.message)) {
-        setOauthError((prev) => prev || payload)
+      if (payload?.variant === 'already_registered') {
+        setOauthError((prev) => prev || { variant: 'already_registered' })
       }
     } catch {
       sessionStorage.removeItem(PENDING_DUPLICATE_REGISTER_ALERT)
@@ -142,7 +144,7 @@ const ClerkAuthHandler = () => {
       }
 
       // Формируем имя пользователя
-      let userName = 'Пользователь'
+      let userName = t('clerkOauth_defaultUserName')
       if (user.fullName) {
         userName = user.fullName
       } else if (user.firstName || user.lastName) {
@@ -234,7 +236,7 @@ const ClerkAuthHandler = () => {
               foundExistingInDb = true
               if (foundUser.role) roleFromDatabase = normalizeDbRole(foundUser.role)
               console.log(
-                '✅ ClerkAuthHandler: Пользователь найден в БД по email и кабинету:',
+                '✅ ClerkAuthHandler: user found in DB by email and cabinet:',
                 dbUserId,
                 intendedCabinetRole,
               )
@@ -296,7 +298,7 @@ const ClerkAuthHandler = () => {
                 : false
               if (anyCabinetExists) {
                 console.log(
-                  'ClerkAuthHandler: OAuth login — кабинет не найден для роли:',
+                  'ClerkAuthHandler: OAuth login — cabinet not found for role:',
                   intendedCabinetRole,
                 )
               }
@@ -312,7 +314,7 @@ const ClerkAuthHandler = () => {
             }
 
             const nameParts = userName.split(' ')
-            const firstName = nameParts[0] || 'Пользователь'
+            const firstName = nameParts[0] || t('clerkOauth_defaultUserName')
             const lastName = nameParts.slice(1).join(' ') || ''
             
             if (sessionStorage.getItem('clerk_oauth_user_role')) {
@@ -442,9 +444,6 @@ const ClerkAuthHandler = () => {
           window.dispatchEvent(new Event('forceOpenLoginModal'))
           const duplicateAlert = {
             variant: 'already_registered',
-            title: 'У вас уже есть аккаунт',
-            message:
-              'Этот профиль (тот же email в Google или Facebook) уже зарегистрирован на сайте. Мы открыли для вас форму входа — войдите тем же способом (Google, Facebook и др.) или по email и паролю. Повторная регистрация не нужна.',
           }
           try {
             sessionStorage.setItem(PENDING_DUPLICATE_REGISTER_ALERT, JSON.stringify(duplicateAlert))
@@ -475,8 +474,6 @@ const ClerkAuthHandler = () => {
           if (!needsRegisterPrompted) {
             setOauthError({
               variant: 'need_register',
-              title: 'Вы не зарегистрированы на сайте',
-              message: 'Закройте окно и выберите «Регистрация», чтобы завершить оформление через Google или Facebook.',
             })
           }
 
@@ -586,8 +583,7 @@ const ClerkAuthHandler = () => {
             timeoutTriggeredRef.current = true
             sessionStorage.removeItem(oauthRedirectKey)
             setOauthError({
-              title: 'Вход не завершён',
-              message: 'Не удалось войти через соцсеть. Вы можете зарегистрироваться на сайте: нажмите «Понятно», выберите «Регистрация» и войдите через Google, Facebook, email, Telegram или WhatsApp.',
+              variant: 'login_incomplete',
             })
           }
           console.error('ClerkAuthHandler: Timeout waiting for user data after OAuth redirect')
@@ -599,7 +595,7 @@ const ClerkAuthHandler = () => {
       // Нет OAuth параметров и пользователь не авторизован - это нормально
       console.log('ClerkAuthHandler: No OAuth params, user not signed in - normal state')
     }
-  }, [isSignedIn, user, userLoaded, authLoaded, session, searchParams, navigate, hasProcessed, signOut])
+  }, [isSignedIn, user, userLoaded, authLoaded, session, searchParams, navigate, hasProcessed, signOut, t])
 
   const handleOauthErrorClose = () => {
     sessionStorage.removeItem(PENDING_DUPLICATE_REGISTER_ALERT)
@@ -613,11 +609,29 @@ const ClerkAuthHandler = () => {
         <AuthAlertModal
           isOpen
           onClose={handleOauthErrorClose}
-          variant={oauthError.variant || 'error'}
-          title={oauthError.title}
-          message={oauthError.message}
+          variant={oauthError.variant === 'already_registered' || oauthError.variant === 'need_register' ? oauthError.variant : 'error'}
+          title={
+            oauthError.variant === 'already_registered'
+              ? t('clerkOauth_alreadyRegisteredTitle')
+              : oauthError.variant === 'need_register'
+                ? t('clerkOauth_needRegisterTitle')
+                : oauthError.variant === 'login_incomplete'
+                  ? t('clerkOauth_loginIncompleteTitle')
+                  : (oauthError.title || t('clerkOauth_loginIncompleteTitle'))
+          }
+          message={
+            oauthError.variant === 'already_registered'
+              ? t('clerkOauth_alreadyRegisteredMessage')
+              : oauthError.variant === 'need_register'
+                ? t('clerkOauth_needRegisterMessage')
+                : oauthError.variant === 'login_incomplete'
+                  ? t('clerkOauth_loginIncompleteMessage')
+                  : (oauthError.message || t('clerkOauth_loginIncompleteMessage'))
+          }
           buttonText={
-            oauthError?.variant === 'already_registered' ? 'Понятно, перейти ко входу' : 'Понятно'
+            oauthError?.variant === 'already_registered'
+              ? t('clerkOauth_goToLogin')
+              : t('clerkOauth_ok')
           }
         />
       )}

@@ -8,6 +8,7 @@ import { apiFetch, resolveMediaUrl } from '../api/client'
 import { storage } from '../platform/storage'
 import { colors, rounded } from '../theme/tokens'
 import { CatalogProperty, propertyHref, propertyPriceLabel } from '../components/PropertyCard'
+import { nativeT } from '../i18n/nativeStrings'
 
 type FavRow = { property_id: number | string; property_table?: string }
 
@@ -16,6 +17,13 @@ export default function FavoritesScreen() {
   const { user, loading: authLoading } = useAuth()
   const [items, setItems] = useState<CatalogProperty[]>([])
   const [loading, setLoading] = useState(true)
+  const [locale, setLocale] = useState('en')
+
+  useEffect(() => {
+    void storage.getItem('i18nextLng').then((lng) => {
+      if (lng) setLocale(lng)
+    })
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -58,7 +66,7 @@ export default function FavoritesScreen() {
         <Link href="/profile" asChild>
           <Pressable style={styles.back}><Text style={styles.backText}>←</Text></Pressable>
         </Link>
-        <Text style={styles.title}>Избранное</Text>
+        <Text style={styles.title}>{nativeT('favoritesNativeTitle', locale)}</Text>
         <View style={{ width: 40 }} />
       </View>
       {authLoading || loading ? (
@@ -70,7 +78,9 @@ export default function FavoritesScreen() {
           contentContainerStyle={{ padding: 14 }}
           ListEmptyComponent={
             <Text style={styles.empty}>
-              {user ? 'Пока пусто. Сохраняйте объекты с карточек каталога.' : 'Войдите, чтобы синхронизировать избранное.'}
+              {user
+                ? nativeT('favoritesNativeEmptyLoggedIn', locale)
+                : nativeT('favoritesNativeEmptyGuest', locale)}
             </Text>
           }
           renderItem={({ item }) => {

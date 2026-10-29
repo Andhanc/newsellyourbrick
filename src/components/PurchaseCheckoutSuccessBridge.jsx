@@ -76,10 +76,7 @@ export default function PurchaseCheckoutSuccessBridge() {
         storePendingPurchaseCheckoutSession({ sessionId, kind })
         requestOpenLoginModal({ wizard: true })
         showNotification(
-          t(
-            'purchaseSuccess_loginRequired',
-            'Войдите в аккаунт, чтобы завершить оформление покупки',
-          ),
+          t('purchaseSuccess_loginRequired'),
           'error',
         )
         if (inFlightRef.current === sessionId) inFlightRef.current = null
@@ -107,7 +104,7 @@ export default function PurchaseCheckoutSuccessBridge() {
         if (!result.ok) {
           if (!cancelled) {
             showNotification(
-              result.error || t('purchaseSuccess_confirmError', 'Не удалось подтвердить покупку'),
+              result.error || t('purchaseSuccess_confirmError'),
               'error',
             )
           }
@@ -117,8 +114,8 @@ export default function PurchaseCheckoutSuccessBridge() {
         if (result.already && !cancelled) {
           showNotification(
             kind === 'share'
-              ? t('shareDetailPurchaseSuccess', 'Покупка долей подтверждена')
-              : t('purchaseSuccess_alreadyRecorded', 'Резерв уже был учтён ранее'),
+              ? t('shareDetailPurchaseSuccess')
+              : t('purchaseSuccess_alreadyRecorded'),
           )
         }
 
@@ -136,7 +133,7 @@ export default function PurchaseCheckoutSuccessBridge() {
       } catch (e) {
         if (!cancelled) {
           showNotification(
-            e?.message || t('purchaseSuccess_confirmError', 'Не удалось подтвердить покупку'),
+            e?.message || t('purchaseSuccess_confirmError'),
             'error',
           )
         }

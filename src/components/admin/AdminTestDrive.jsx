@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiExternalLink, FiCalendar, FiChevronLeft, FiChevronRight, FiSend } from 'react-icons/fi';
 import { getApiBaseUrlSync } from '../../utils/apiConfig';
 import {
@@ -8,32 +9,33 @@ import {
   testDrivePerPropertySeenKey,
 } from '../../utils/adminSidebarBadges';
 import './AdminTestDrive.css';
+import { getUiIntlLocale } from '../../utils/uiIntlLocale'
 
 const API_BASE_URL = getApiBaseUrlSync();
 
-const WEEKDAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-const MONTH_LABELS = [
-  'Январь',
-  'Февраль',
-  'Март',
-  'Апрель',
-  'Май',
-  'Июнь',
-  'Июль',
-  'Август',
-  'Сентябрь',
-  'Октябрь',
-  'Ноябрь',
-  'Декабрь',
+const WEEKDAY_LABEL_KEYS = ['admin_mo', 'admin_tu', 'admin_we', 'admin_th', 'admin_fr', 'admin_sa', 'admin_su'];
+const MONTH_LABEL_KEYS = [
+  'admin_january',
+  'admin_february',
+  'admin_march',
+  'admin_april',
+  'admin_may',
+  'admin_june',
+  'admin_july',
+  'admin_august',
+  'admin_september',
+  'admin_october',
+  'admin_november',
+  'admin_december',
 ];
-const QUALITY_QUESTION_LABELS = {
-  property_expectations: 'Объект vs ожидания покупателя',
-  property_feedback: 'Развёрнутый отзыв об объекте',
-  amenities_ok: 'Удобства в объекте соответствуют описанию?',
-  defects_state: 'Есть ли дефекты/проблемы в объекте?',
-  price_acceptable: 'Приемлема ли цена за этот объект?',
-  listing_info_clear: 'Объявление и цена (старая версия вопроса)',
-  ready_to_stay: 'Готовность к проживанию (старая версия опроса)',
+const QUALITY_QUESTION_LABEL_KEYS = {
+  property_expectations: 'admin_td_q_propertyExpectations',
+  property_feedback: 'admin_td_q_propertyFeedback',
+  amenities_ok: 'admin_td_q_amenitiesOk',
+  defects_state: 'admin_td_q_defectsState',
+  price_acceptable: 'admin_td_q_priceAcceptable',
+  listing_info_clear: 'admin_td_q_listingInfoClear',
+  ready_to_stay: 'admin_td_q_readyToStay',
 };
 
 /** В анкете поля комментариев названы не как `${вопрос}_comment` — маппинг для админки */
@@ -45,15 +47,18 @@ const COMMENT_STORAGE_KEY = {
   ready_to_stay: 'ready_to_stay_comment',
 };
 
-const BUYER_CONTACT_LABELS = {
-  telegram: 'Telegram',
-  whatsapp: 'WhatsApp',
-  email: 'Почта',
+const BUYER_CONTACT_LABEL_KEYS = {
+  telegram: null, // Telegram
+  whatsapp: null, // WhatsApp
+  email: 'admin_td_mail',
 };
 
-function formatBuyerContactChannel(ch) {
+function formatBuyerContactChannel(ch, t) {
   const k = String(ch || '').toLowerCase();
-  return BUYER_CONTACT_LABELS[k] || (ch ? String(ch) : '—');
+  if (k === 'telegram') return 'Telegram';
+  if (k === 'whatsapp') return 'WhatsApp';
+  if (k === 'email') return t('admin_td_mail');
+  return ch ? String(ch) : '—';
 }
 
 function adminCancelSeenStorageKey(sel) {
@@ -171,35 +176,35 @@ function answerTone(value, key) {
   return 'neutral';
 }
 
-function formatAnswer(value, key) {
+function formatAnswer(value, key, t) {
   const v = String(value || '').toLowerCase();
   if (key === 'price_acceptable') {
-    if (v === 'yes') return 'Цена приемлема';
-    if (v === 'no') return 'Цена не приемлема';
+    if (v === 'yes') return t('admin_td_priceOk');
+    if (v === 'no') return t('admin_td_priceNotOk');
   }
   if (key === 'listing_info_clear') {
-    if (v === 'yes') return 'Объявление: понятно (старый вопрос)';
-    if (v === 'no') return 'Объявление: неясно (старый вопрос)';
+    if (v === 'yes') return t('admin_td_listingClear');
+    if (v === 'no') return t('admin_td_listingUnclear');
   }
   if (key === 'ready_to_stay') {
-    if (v === 'yes') return 'Проживание устраивает (старый опрос)';
-    if (v === 'no') return 'Есть замечания по проживанию (старый опрос)';
+    if (v === 'yes') return t('admin_td_stayOk');
+    if (v === 'no') return t('admin_td_stayNotes');
   }
-  if (v === 'exceeded') return 'Превзошёл ожидания';
-  if (v === 'matched') return 'Совпал с ожиданиями';
-  if (v === 'partially') return 'Частично совпал';
-  if (v === 'below') return 'Ниже ожиданий';
-  if (v === 'yes') return 'Да';
-  if (v === 'no') return 'Нет';
-  if (v === 'ok') return 'Все в порядке';
-  if (v === 'issues') return 'Есть проблемы';
+  if (v === 'exceeded') return t('admin_td_exceeded');
+  if (v === 'matched') return t('admin_td_matched');
+  if (v === 'partially') return t('admin_td_partial');
+  if (v === 'below') return t('admin_td_below');
+  if (v === 'yes') return t('admin_yes');
+  if (v === 'no') return t('admin_no');
+  if (v === 'ok') return t('admin_td_allGood');
+  if (v === 'issues') return t('admin_td_hasIssues');
   return value ? String(value) : '—';
 }
 
 function formatBroadcastDt(iso) {
   if (!iso) return '—';
   try {
-    return new Date(iso).toLocaleString('ru-RU', {
+    return new Date(iso).toLocaleString(getUiIntlLocale(), {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -217,7 +222,7 @@ function isLikelySurveyImageUrl(s) {
 }
 
 /** Группы фото из анкеты (v1: удобства/дефекты; v2: comfort_photos). */
-function collectSurveyPhotoGroups(report) {
+function collectSurveyPhotoGroups(report, t) {
   if (!report || typeof report !== 'object') return [];
   const out = [];
   const add = (title, arr) => {
@@ -225,9 +230,9 @@ function collectSurveyPhotoGroups(report) {
     const urls = arr.filter(isLikelySurveyImageUrl);
     if (urls.length) out.push({ title, urls });
   };
-  add('Фото к удобствам', report.amenities_photos);
-  add('Фото к дефектам', report.defects_photos);
-  add('Фото (комфорт)', report.comfort_photos);
+  add(t('admin_td_photosAmenities'), report.amenities_photos);
+  add(t('admin_td_photosDefects'), report.defects_photos);
+  add(t('admin_td_photosComfort'), report.comfort_photos);
   return out;
 }
 
@@ -239,15 +244,15 @@ function isSurveyReportV2(report) {
   );
 }
 
-const V2_HIGHLIGHT_LABELS = {
-  interior: 'Интерьер и атмосфера',
-  bed: 'Спальня и отдых',
-  price: 'Соотношение цены и качества',
-  kitchen: 'Кухня и техника',
-  location: 'Локация и вид',
+const V2_HIGHLIGHT_LABEL_KEYS = {
+  interior: 'admin_td_hl_interior',
+  bed: 'admin_td_hl_bed',
+  price: 'admin_td_hl_price',
+  kitchen: 'admin_td_hl_kitchen',
+  location: 'admin_td_hl_location',
 };
 
-function buildV2QualityAnswers(report) {
+function buildV2QualityAnswers(report, t) {
   const answers = [];
   const push = (key, label, displayValue, tone, extraComment) => {
     const val = String(displayValue || '').trim();
@@ -267,66 +272,66 @@ function buildV2QualityAnswers(report) {
 
   const fi = String(report.first_impression || '').trim().toLowerCase();
   const fiLabel = {
-    better: 'Лучше, чем ожидал по объявлению',
-    as_photos: 'Как на фото и в описании',
-    slightly_off: 'Ниже ожиданий — есть расхождения',
+    better: t('admin_td_fi_better'),
+    as_photos: t('admin_td_fi_asPhotos'),
+    slightly_off: t('admin_td_fi_slightlyOff'),
   }[fi];
   const fiTone = fi === 'slightly_off' ? 'negative' : 'positive';
-  if (fiLabel) push('v2_fi', 'Совпал ли объект с ожиданиями?', fiLabel, fiTone, report.first_impression_comment);
+  if (fiLabel) push('v2_fi', t('admin_td_fi_q'), fiLabel, fiTone, report.first_impression_comment);
 
   const cm = String(report.comfort || '').trim().toLowerCase();
   const cmLabel = {
-    great: 'Да — жить было удобно и спокойно',
-    mostly_but_missing: 'В целом да, но чего-то не хватало',
+    great: t('admin_td_cm_great'),
+    mostly_but_missing: t('admin_td_cm_mostly'),
   }[cm];
   const cmTone = cm === 'mostly_but_missing' ? 'negative' : 'positive';
-  if (cmLabel) push('v2_comfort', 'Комфорт проживания', cmLabel, cmTone, report.comfort_missing_comment);
+  if (cmLabel) push('v2_comfort', t('admin_td_comfort'), cmLabel, cmTone, report.comfort_missing_comment);
 
   const hl = Array.isArray(report.highlights) ? report.highlights.map(String) : [];
   if (hl.length) {
-    const lines = hl.map((k) => V2_HIGHLIGHT_LABELS[k] || k).join(', ');
-    push('v2_hl', 'Сильные стороны', lines, 'positive', report.highlights_comment);
+    const lines = hl.map((k) => (V2_HIGHLIGHT_LABEL_KEYS[k] ? t(V2_HIGHLIGHT_LABEL_KEYS[k]) : k)).join(', ');
+    push('v2_hl', t('admin_strengths'), lines, 'positive', report.highlights_comment);
   } else if (String(report.highlights_comment || '').trim()) {
-    push('v2_hl', 'Сильные стороны', '—', 'neutral', report.highlights_comment);
+    push('v2_hl', t('admin_strengths'), '—', 'neutral', report.highlights_comment);
   }
 
   const pi = String(report.price_impression || '').trim().toLowerCase();
   const piLabel = {
-    great_value: 'Отличное соотношение — объект даёт больше, чем стоит',
-    fair: 'Цена справедливая и ожидаемая',
-    expensive: 'Дорого относительно того, что увидел на месте',
+    great_value: t('admin_td_pi_great'),
+    fair: t('admin_td_pi_fair'),
+    expensive: t('admin_td_pi_expensive'),
   }[pi];
   const piTone = pi === 'expensive' ? 'negative' : 'positive';
-  if (piLabel) push('v2_price', 'Оправдывает ли объект цену?', piLabel, piTone, report.price_improve_comment);
+  if (piLabel) push('v2_price', t('admin_td_price_q'), piLabel, piTone, report.price_improve_comment);
 
   const pur = String(report.purchase_intent || '').trim().toLowerCase();
   const purLabel = {
-    definitely_yes: 'Да — хочу двигаться к покупке',
-    rather_yes: 'Скорее да, но нужны уточнения',
-    rather_no: 'Скорее нет — не мой вариант',
+    definitely_yes: t('admin_td_pur_yes'),
+    rather_yes: t('admin_td_pur_ratherYes'),
+    rather_no: t('admin_td_pur_ratherNo'),
   }[pur];
   const purTone = pur === 'rather_no' ? 'negative' : pur === 'definitely_yes' ? 'positive' : 'neutral';
-  if (purLabel) push('v2_pur', 'Рассматривает покупку?', purLabel, purTone, report.purchase_comment);
+  if (purLabel) push('v2_pur', t('admin_td_purchase_q'), purLabel, purTone, report.purchase_comment);
 
   const rating = Number(report.overall_rating);
   if (Number.isFinite(rating) && rating >= 1 && rating <= 5) {
     const stars = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
     const ratingTone = rating >= 4 ? 'positive' : rating <= 2 ? 'negative' : 'neutral';
-    push('v2_rating', 'Оценка объекта', `${stars} (${Math.round(rating)}/5)`, ratingTone);
+    push('v2_rating', t('admin_td_rating'), `${stars} (${Math.round(rating)}/5)`, ratingTone);
   }
 
   return answers;
 }
 
-function buildLegacyQualityAnswers(report) {
-  return Object.entries(QUALITY_QUESTION_LABELS)
-    .map(([key, label]) => {
+function buildLegacyQualityAnswers(report, t) {
+  return Object.entries(QUALITY_QUESTION_LABEL_KEYS)
+    .map(([key, labelKey]) => {
       const value = report?.[key];
       if (value == null || (typeof value === 'string' && value.trim() === '')) return null;
       const tone = answerTone(value, key);
       const commentKey = COMMENT_STORAGE_KEY[key] || `${key}_comment`;
       const comment = report?.[commentKey];
-      const displayVal = formatAnswer(value, key);
+      const displayVal = formatAnswer(value, key, t);
       const valueVariant =
         key === 'property_feedback' ||
         String(displayVal).length > 100 ||
@@ -335,7 +340,7 @@ function buildLegacyQualityAnswers(report) {
           : 'pill';
       return {
         key,
-        label,
+        label: t(labelKey),
         value: displayVal,
         rawValue: value,
         tone,
@@ -346,9 +351,9 @@ function buildLegacyQualityAnswers(report) {
     .filter(Boolean);
 }
 
-function buildCheckInQualityAnswers(report) {
-  if (isSurveyReportV2(report)) return buildV2QualityAnswers(report);
-  return buildLegacyQualityAnswers(report);
+function buildCheckInQualityAnswers(report, t) {
+  if (isSurveyReportV2(report)) return buildV2QualityAnswers(report, t);
+  return buildLegacyQualityAnswers(report, t);
 }
 
 export default function AdminTestDrive({
@@ -357,6 +362,12 @@ export default function AdminTestDrive({
   testDriveMenuBadge = 0,
   testDriveTotalCancelledInDb = null,
 }) {
+  const { t } = useTranslation();
+  const WEEKDAY_LABELS = WEEKDAY_LABEL_KEYS.map((k) => t(k));
+  const MONTH_LABELS = MONTH_LABEL_KEYS.map((k) => t(k));
+  const QUALITY_QUESTION_LABELS = Object.fromEntries(
+    Object.entries(QUALITY_QUESTION_LABEL_KEYS).map(([k, key]) => [k, t(key)])
+  );
   const [rows, setRows] = useState([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState(null);
@@ -387,13 +398,13 @@ export default function AdminTestDrive({
       const res = await fetch(`${API_BASE_URL}/admin/test-drive/properties`);
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.success) {
-        setListError(json.error || 'Не удалось загрузить список');
+        setListError(json.error || t('admin_ne_udalos_zagruzit_spisok_25dc1014'));
         setRows([]);
         return;
       }
       setRows(Array.isArray(json.data) ? json.data : []);
     } catch (e) {
-      setListError(e.message || 'Сеть недоступна');
+      setListError(e.message || t('admin_networkUnavailable'));
       setRows([]);
     } finally {
       setListLoading(false);
@@ -435,13 +446,13 @@ export default function AdminTestDrive({
       const res = await fetch(`${API_BASE_URL}/admin/test-drive/property-bookings?${q.toString()}`);
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.success) {
-        setBookError(json.error || 'Не удалось загрузить бронирования');
+        setBookError(json.error || t('admin_ne_udalos_zagruzit_bronirovaniya_56d0e24b'));
         setBookings([]);
         return;
       }
       setBookings(Array.isArray(json.data) ? json.data : []);
     } catch (e) {
-      setBookError(e.message || 'Сеть недоступна');
+      setBookError(e.message || t('admin_networkUnavailable'));
       setBookings([]);
     } finally {
       setBookLoading(false);
@@ -554,8 +565,8 @@ export default function AdminTestDrive({
         const report = parseCheckInReport(b.check_in_report);
         const roleRaw = String(b.buyer?.role || '').toLowerCase();
         const hasSellerRole = /(owner|seller|admin|agent|manager|moderator)/.test(roleRaw);
-        const answers = buildCheckInQualityAnswers(report);
-        const photoGroups = collectSurveyPhotoGroups(report);
+        const answers = buildCheckInQualityAnswers(report, t);
+        const photoGroups = collectSurveyPhotoGroups(report, t);
         const photoTotal = photoGroups.reduce((acc, g) => acc + g.urls.length, 0);
 
         const positiveCount = answers.filter((a) => a.tone === 'positive').length;
@@ -707,14 +718,14 @@ export default function AdminTestDrive({
         const json = await res.json().catch(() => ({}));
         if (cancelled) return;
         if (!res.ok || !json.success) {
-          setBroadcastError(json.error || 'Не удалось загрузить объявления');
+          setBroadcastError(json.error || t('admin_ne_udalos_zagruzit_obyavleniya_3b997c4e'));
           setBroadcastBookings([]);
           return;
         }
         setBroadcastBookings(Array.isArray(json.data) ? json.data : []);
       } catch (e) {
         if (!cancelled) {
-          setBroadcastError(e.message || 'Сеть недоступна');
+          setBroadcastError(e.message || t('admin_networkUnavailable'));
           setBroadcastBookings([]);
         }
       } finally {
@@ -736,7 +747,7 @@ export default function AdminTestDrive({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.success) {
-        window.alert(json.error || 'Не удалось отправить');
+        window.alert(json.error || t('admin_failedToSend'));
         return;
       }
       const r2 = await fetch(`${API_BASE_URL}/admin/test-drive/broadcasts`);
@@ -745,7 +756,7 @@ export default function AdminTestDrive({
         setBroadcastBookings(j2.data);
       }
     } catch (e) {
-      window.alert(e.message || 'Ошибка сети');
+      window.alert(e.message || t('admin_networkError'));
     } finally {
       setBroadcastSendBusy(null);
     }
@@ -762,12 +773,12 @@ export default function AdminTestDrive({
         });
         const json = await res.json().catch(() => ({}));
         if (!res.ok || !json.success) {
-          window.alert(json.error || 'Не удалось отправить');
+          window.alert(json.error || t('admin_failedToSend'));
           return;
         }
         await loadPropertyBookings();
       } catch (e) {
-        window.alert(e.message || 'Ошибка сети');
+        window.alert(e.message || t('admin_networkError'));
       } finally {
         setExitSendBusy(null);
       }
@@ -780,23 +791,20 @@ export default function AdminTestDrive({
       <div className="admin-test-drive__intro-row">
         <div className="admin-test-drive__intro-stack">
           <p className="admin-test-drive__intro">
-            Объекты с активным тест-драйвом и объекты, по которым есть бронирования. Выберите строку —
-            календарь и таблица с данными бронирующих.
+            {t('admin_obekty_s_aktivnym_test_f2e18bee')}
           </p>
           <p className="admin-test-drive__intro-note">
-            <strong>В левом меню</strong> — сколько отмен бронирования ещё не отмечены как просмотренные
-            (кнопка «Всё просмотрено» или «Просмотрено» во вкладке «Отмены» у объекта). Сейчас:{' '}
+            {t('admin_badge_skolko_otmen_bronirovaniya_b513c5c0', { badge: t('admin_v_levom_menyu_338b13b1') })}{' '}
             <strong>{testDriveMenuBadge}</strong>
             {typeof testDriveTotalCancelledInDb === 'number' ? (
               <>
                 {' '}
-                из <strong>{testDriveTotalCancelledInDb}</strong> отменённых броней в базе.
+                {t('admin_iz_count_otmenennyh_broney_2bad78ea', { count: testDriveTotalCancelledInDb })}
               </>
             ) : (
               '.'
             )}{' '}
-            <strong>Число справа у объекта в списке</strong> — всего бронирований (любой статус), не только
-            отмены.
+            {t('admin_label_vsego_bronirovaniy_lyuboy_7ff330c4', { label: t('admin_chislo_sprava_u_obekta_aaf57e1b') })}
           </p>
         </div>
         <button
@@ -804,29 +812,29 @@ export default function AdminTestDrive({
           className="admin-test-drive__mark-all-read"
           onClick={markAllTestDriveCancellationsViewed}
         >
-          Всё просмотрено
+          {t('admin_vse_prosmotreno_03ec7f17')}
         </button>
       </div>
 
       <div className="admin-test-drive__layout">
         <section className="admin-test-drive__panel">
           <div className="admin-test-drive__panel-head">
-            <h2 className="admin-test-drive__panel-title">Объекты</h2>
+            <h2 className="admin-test-drive__panel-title">{t('admin_obekty_99ec3879')}</h2>
             <input
               type="search"
               className="admin-test-drive__search"
-              placeholder="Поиск по названию, адресу, ID…"
+              placeholder={t('admin_poisk_po_nazvaniyu_adresu_e4b3b180')}
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             />
           </div>
           {listError ? <div className="admin-test-drive__error">{listError}</div> : null}
           {listLoading ? (
-            <div className="admin-test-drive__loading">Загрузка списка…</div>
+            <div className="admin-test-drive__loading">{t('admin_zagruzka_spiska_f0f62b89')}</div>
           ) : (
             <div className="admin-test-drive__list">
               {filteredRows.length === 0 ? (
-                <div className="admin-test-drive__detail-empty">Ничего не найдено.</div>
+                <div className="admin-test-drive__detail-empty">{t('admin_nichego_ne_naydeno_40de4aab')}</div>
               ) : (
                 filteredRows.map((r) => {
                   const active =
@@ -843,21 +851,21 @@ export default function AdminTestDrive({
                       {r.cover_url ? (
                         <img className="admin-test-drive__thumb" src={r.cover_url} alt="" />
                       ) : (
-                        <div className="admin-test-drive__thumb-fallback">нет фото</div>
+                        <div className="admin-test-drive__thumb-fallback">{t('admin_net_foto_65908105')}</div>
                       )}
                       <div className="admin-test-drive__row-main">
-                        <div className="admin-test-drive__row-title">{r.title || `Объект #${r.property_id}`}</div>
+                        <div className="admin-test-drive__row-title">{r.title || t('admin_objectNum_tmpl', { id: r.property_id })}</div>
                         <div className="admin-test-drive__row-meta">
-                          {r.property_table === 'properties_houses' ? 'Дом / вилла' : 'Квартира'} · ID{' '}
+                          {r.property_table === 'properties_houses' ? t('admin_dom_villa_3a6f0ae3') : t('admin_apartment')} · ID{' '}
                           {r.property_id}
                           <br />
                           {r.location_line}
-                          {Number(r.test_drive) === 1 ? '' : ' · тест-драйв выключен'}
+                          {Number(r.test_drive) === 1 ? '' : t('admin_test_drayv_vyklyuchen_9e71db07')}
                         </div>
                       </div>
                       <span
                         className={`admin-test-drive__badge${r.booking_count ? '' : ' admin-test-drive__badge--muted'}`}
-                        title="Всего записей бронирования (любой статус: ожидание, оплачено, отмена и т.д.)"
+                        title={t('admin_vsego_zapisey_bronirovaniya_lyuboy_b1bd0bfc')}
                       >
                         {r.booking_count || 0}
                       </span>
@@ -871,7 +879,7 @@ export default function AdminTestDrive({
 
         <section className="admin-test-drive__panel">
           {!selected ? (
-            <div className="admin-test-drive__detail-empty">Выберите объект слева.</div>
+            <div className="admin-test-drive__detail-empty">{t('admin_vyberite_obekt_sleva_a0988be1')}</div>
           ) : (
             <div className="admin-test-drive__detail">
               <div className="admin-test-drive__detail-top">
@@ -881,7 +889,7 @@ export default function AdminTestDrive({
                   <div className="admin-test-drive__detail-thumb-fallback" />
                 )}
                 <div className="admin-test-drive__detail-heading">
-                  <h3>{selected.title || `Объект #${selected.property_id}`}</h3>
+                  <h3>{selected.title || t('admin_objectNum_tmpl', { id: selected.property_id })}</h3>
                   <div className="admin-test-drive__detail-links">
                     <a
                       className="admin-test-drive__link-btn admin-test-drive__link-btn--primary"
@@ -889,7 +897,7 @@ export default function AdminTestDrive({
                       target="_blank"
                       rel="noreferrer"
                     >
-                      Страница объекта <FiExternalLink size={14} aria-hidden />
+                      {t('admin_property_page')} <FiExternalLink size={14} aria-hidden />
                     </a>
                     <a
                       className="admin-test-drive__link-btn"
@@ -897,18 +905,18 @@ export default function AdminTestDrive({
                       target="_blank"
                       rel="noreferrer"
                     >
-                      Календарь записи <FiCalendar size={14} aria-hidden />
+                      {t('admin_booking_calendar')} <FiCalendar size={14} aria-hidden />
                     </a>
                   </div>
                   <p className="admin-test-drive__detail-sub">
-                    Таблица: {selected.property_table} · владелец user_id {selected.owner_user_id} · бронирований:{' '}
+                    {t('admin_tablica_table_vladelec_user_f61555a9', { table: selected.property_table, owner: selected.owner_user_id })}{' '}
                     {selected.booking_count ?? 0}
                   </p>
                 </div>
               </div>
 
               <div className="admin-test-drive__cal-wrap">
-                <div className="admin-test-drive__tabs" role="tablist" aria-label="Тест-драйв вкладки">
+                <div className="admin-test-drive__tabs" role="tablist" aria-label={t('admin_test_drayv_vkladki_eaf101eb')}>
                   <button
                     type="button"
                     className={`admin-test-drive__tab-btn${activeTab === 'calendar' ? ' admin-test-drive__tab-btn--active' : ''}`}
@@ -916,7 +924,7 @@ export default function AdminTestDrive({
                     aria-selected={activeTab === 'calendar'}
                     onClick={() => setActiveTab('calendar')}
                   >
-                    Календарь
+                    {t('admin_kalendar_fa3a2f17')}
                   </button>
                   <button
                     type="button"
@@ -925,7 +933,7 @@ export default function AdminTestDrive({
                     aria-selected={activeTab === 'quality'}
                     onClick={() => setActiveTab('quality')}
                   >
-                    Проверка качества
+                    {t('admin_proverka_kachestva_d14cb1f4')}
                   </button>
                   <button
                     type="button"
@@ -934,7 +942,7 @@ export default function AdminTestDrive({
                     aria-selected={activeTab === 'broadcasts'}
                     onClick={() => setActiveTab('broadcasts')}
                   >
-                    Объявления
+                    {t('admin_obyavleniya_5c38d87a')}
                   </button>
                   <button
                     type="button"
@@ -943,7 +951,7 @@ export default function AdminTestDrive({
                     aria-selected={activeTab === 'cancellations'}
                     onClick={() => setActiveTab('cancellations')}
                   >
-                    Отмены
+                    {t('admin_otmeny_87735831')}
                     <span
                       className={`admin-test-drive__tab-count${
                         unseenCancelCount > 0 ? '' : ' admin-test-drive__tab-count--muted'
@@ -964,11 +972,11 @@ export default function AdminTestDrive({
                           </span>
                           <span className="admin-test-drive__cal-month-year">{viewMonth.getFullYear()}</span>
                         </div>
-                        <div className="admin-test-drive__cal-nav" role="group" aria-label="Навигация по месяцам">
-                          <button type="button" aria-label="Предыдущий месяц" onClick={() => shiftMonth(-1)}>
+                        <div className="admin-test-drive__cal-nav" role="group" aria-label={t('admin_navigaciya_po_mesyacam_a9ce6802')}>
+                          <button type="button" aria-label={t('admin_predyduschiy_mesyac_b4fde607')} onClick={() => shiftMonth(-1)}>
                             <FiChevronLeft size={18} aria-hidden />
                           </button>
-                          <button type="button" aria-label="Следующий месяц" onClick={() => shiftMonth(1)}>
+                          <button type="button" aria-label={t('admin_sleduyuschiy_mesyac_b36ebe72')} onClick={() => shiftMonth(1)}>
                             <FiChevronRight size={18} aria-hidden />
                           </button>
                         </div>
@@ -1009,27 +1017,27 @@ export default function AdminTestDrive({
                     <div className="admin-test-drive__cal-legend">
                       <span className="admin-test-drive__cal-legend-item">
                         <span className="admin-test-drive__cal-legend-swatch admin-test-drive__cal-legend-swatch--booked" />{' '}
-                        Занято
+                        {t('admin_zanyato_ba8daf5d')}
                       </span>
                       <span className="admin-test-drive__cal-legend-item">
                         <span className="admin-test-drive__cal-legend-swatch admin-test-drive__cal-legend-swatch--today" />{' '}
-                        Сегодня
+                        {t('admin_segodnya_5d5d2ea2')}
                       </span>
                       <span className="admin-test-drive__cal-legend-caption">
-                        Подсвечены все даты внутри интервала брони (включительно).
+                        {t('admin_podsvecheny_vse_daty_vnutri_20aa2014')}
                       </span>
                     </div>
                   </>
                 ) : activeTab === 'quality' ? (
                   <div className="admin-test-drive__quality admin-test-drive__quality--split">
                     {bookLoading ? (
-                      <div className="admin-test-drive__loading">Загрузка анкет качества…</div>
+                      <div className="admin-test-drive__loading">{t('admin_zagruzka_anket_kachestva_20d9a538')}</div>
                     ) : (
                       <>
-                        <h4 className="admin-test-drive__quality-section-title">Анкета при проживании</h4>
+                        <h4 className="admin-test-drive__quality-section-title">{t('admin_anketa_pri_prozhivanii_804be98e')}</h4>
                         {qualityCards.length === 0 ? (
                           <div className="admin-test-drive__detail-empty admin-test-drive__detail-empty--tight">
-                            Нет заполненных анкет по этому объекту.
+                            {t('admin_net_zapolnennyh_anket_po_9b72c97c')}
                           </div>
                         ) : (
                           qualityCards.map((card) => (
@@ -1043,40 +1051,40 @@ export default function AdminTestDrive({
                                     user #{card.buyer?.id}: {card.buyerDisplayName}
                                   </div>
                                   <div className="admin-test-drive__quality-meta">
-                                    <span className="admin-test-drive__quality-badge">Покупатель</span>
+                                    <span className="admin-test-drive__quality-badge">{t('admin_buyer')}</span>
                                     <span
                                       className={`admin-test-drive__quality-badge${card.hasSellerRole ? '' : ' admin-test-drive__quality-badge--muted'}`}
                                     >
-                                      Продавец
+                                      {t('admin_seller')}
                                     </span>
-                                    <span className="admin-test-drive__quality-booking">Бронь #{card.bookingId}</span>
+                                    <span className="admin-test-drive__quality-booking">{t('admin_bookingNum_tmpl', { id: card.bookingId })}</span>
                                   </div>
                                 </div>
                                 <div className="admin-test-drive__quality-stats">
                                   <span className="admin-test-drive__quality-chip admin-test-drive__quality-chip--positive">
-                                    Положительных: {card.positiveCount}
+                                    {t('admin_td_positive_count', { count: card.positiveCount })}
                                   </span>
                                   <span className="admin-test-drive__quality-chip admin-test-drive__quality-chip--negative">
-                                    Отрицательных: {card.negativeCount}
+                                    {t('admin_td_negative_count', { count: card.negativeCount })}
                                   </span>
                                 </div>
                               </summary>
                               <div className="admin-test-drive__quality-body">
                                 <div className="admin-test-drive__quality-subhead">
-                                  Статус check-in: {card.checkInStatus} · отправлено:{' '}
+                                  {t('admin_td_checkin_status', { status: card.checkInStatus })}{' '}
                                   {card.submittedAt ? formatBroadcastDt(card.submittedAt) : '—'}
                                   {card.photoTotal > 0 ? (
                                     <>
                                       {' '}
-                                      · вложено фото: <strong>{card.photoTotal}</strong>
+                                      {t('admin_td_photos_attached', { n: card.photoTotal })}
                                     </>
                                   ) : null}
                                 </div>
                                 <div className="admin-test-drive__quality-contact">
-                                  <div className="admin-test-drive__quality-contact-title">Связь с покупателем</div>
+                                  <div className="admin-test-drive__quality-contact-title">{t('admin_svyaz_s_pokupatelem_f944dcb3')}</div>
                                   <div className="admin-test-drive__quality-contact-row">
-                                    <span className="admin-test-drive__muted">Предпочтительный канал:</span>{' '}
-                                    {formatBuyerContactChannel(card.buyerContactChannel)}
+                                    <span className="admin-test-drive__muted">{t('admin_predpochtitelnyy_kanal_d84f2b43')}</span>{' '}
+                                    {formatBuyerContactChannel(card.buyerContactChannel, t)}
                                   </div>
                                   <div className="admin-test-drive__quality-contact-row">
                                     <span className="admin-test-drive__muted">Email:</span>{' '}
@@ -1087,7 +1095,7 @@ export default function AdminTestDrive({
                                     )}
                                   </div>
                                   <div className="admin-test-drive__quality-contact-row">
-                                    <span className="admin-test-drive__muted">Телефон:</span>{' '}
+                                    <span className="admin-test-drive__muted">{t('admin_telefon_0e41c7c4')}</span>{' '}
                                     {card.buyerPhone ? (
                                       <a href={`tel:${String(card.buyerPhone).replace(/\s+/g, '')}`}>
                                         {card.buyerPhone}
@@ -1151,10 +1159,10 @@ export default function AdminTestDrive({
                             </details>
                           ))
                         )}
-                        <h4 className="admin-test-drive__quality-section-title">После проживания (оценка звёздами)</h4>
+                        <h4 className="admin-test-drive__quality-section-title">{t('admin_posle_prozhivaniya_ocenka_zvezdami_88ab98f7')}</h4>
                         {exitFeedbackCards.length === 0 ? (
                           <div className="admin-test-drive__detail-empty admin-test-drive__detail-empty--tight">
-                            Пока нет оценок после выезда по этому объекту.
+                            {t('admin_poka_net_ocenok_posle_cd313619')}
                           </div>
                         ) : (
                           exitFeedbackCards.map((ef) => {
@@ -1164,7 +1172,7 @@ export default function AdminTestDrive({
                               <summary className="admin-test-drive__quality-summary">
                                 <div className="admin-test-drive__quality-head">
                                   <div className="admin-test-drive__quality-name">
-                                    Бронь #{ef.bookingId}: {ef.buyerDisplayName}
+                                    {t('admin_td_booking_buyer', { id: ef.bookingId, name: ef.buyerDisplayName })}
                                   </div>
                                   <div className="admin-test-drive__quality-meta">
                                     <span className="admin-test-drive__quality-booking">
@@ -1176,10 +1184,10 @@ export default function AdminTestDrive({
                               </summary>
                               <div className="admin-test-drive__quality-body">
                                 <div className="admin-test-drive__quality-subhead">
-                                  Отправлено: {ef.submittedAt ? formatBroadcastDt(ef.submittedAt) : '—'}
+                                  {t('admin_td_sent_at', { at: ef.submittedAt ? formatBroadcastDt(ef.submittedAt) : '—' })}
                                 </div>
                                 <div className="admin-test-drive__quality-contact">
-                                  <div className="admin-test-drive__quality-contact-title">Связь с покупателем</div>
+                                  <div className="admin-test-drive__quality-contact-title">{t('admin_svyaz_s_pokupatelem_f944dcb3')}</div>
                                   <div className="admin-test-drive__quality-contact-row">
                                     <span className="admin-test-drive__muted">Email:</span>{' '}
                                     {ef.buyerEmail ? (
@@ -1189,7 +1197,7 @@ export default function AdminTestDrive({
                                     )}
                                   </div>
                                   <div className="admin-test-drive__quality-contact-row">
-                                    <span className="admin-test-drive__muted">Телефон:</span>{' '}
+                                    <span className="admin-test-drive__muted">{t('admin_telefon_0e41c7c4')}</span>{' '}
                                     {ef.buyerPhone ? (
                                       <a href={`tel:${String(ef.buyerPhone).replace(/\s+/g, '')}`}>{ef.buyerPhone}</a>
                                     ) : (
@@ -1198,7 +1206,7 @@ export default function AdminTestDrive({
                                   </div>
                                 </div>
                                 <div className="admin-test-drive__quality-item">
-                                  <div className="admin-test-drive__quality-question">Комментарий</div>
+                                  <div className="admin-test-drive__quality-question">{t('admin_kommentariy_829038c9')}</div>
                                   <div className="admin-test-drive__quality-comment" style={{ marginTop: 6 }}>
                                     {ef.comment}
                                   </div>
@@ -1213,7 +1221,7 @@ export default function AdminTestDrive({
                   </div>
                 ) : activeTab === 'broadcasts' ? (
                   <div className="admin-test-drive__broadcasts">
-                    <div className="admin-test-drive__broadcast-subtabs" role="tablist" aria-label="Рассылки объявлений">
+                    <div className="admin-test-drive__broadcast-subtabs" role="tablist" aria-label={t('admin_rassylki_obyavleniy_5a70fea8')}>
                       <button
                         type="button"
                         role="tab"
@@ -1221,7 +1229,7 @@ export default function AdminTestDrive({
                         aria-selected={broadcastSubTab === 'survey'}
                         onClick={() => setBroadcastSubTab('survey')}
                       >
-                        Опрос при проживании
+                        {t('admin_opros_pri_prozhivanii_9ecb4bdd')}
                       </button>
                       <button
                         type="button"
@@ -1230,19 +1238,18 @@ export default function AdminTestDrive({
                         aria-selected={broadcastSubTab === 'exit'}
                         onClick={() => setBroadcastSubTab('exit')}
                       >
-                        Завершение брони
+                        {t('admin_zavershenie_broni_517c95fd')}
                       </button>
                     </div>
                     {broadcastSubTab === 'survey' ? (
                       <>
                         {broadcastLoading ? (
-                          <div className="admin-test-drive__loading">Загрузка рассылок…</div>
+                          <div className="admin-test-drive__loading">{t('admin_zagruzka_rassylok_d1dae98f')}</div>
                         ) : broadcastError ? (
                           <div className="admin-test-drive__error">{broadcastError}</div>
                         ) : propertyBroadcasts.length === 0 ? (
                           <div className="admin-test-drive__detail-empty">
-                            Нет подтверждённых броней с рассылкой опроса по этому объекту (статус «Подтверждено» у
-                            владельца).
+                            {t('admin_net_podtverzhdennyh_broney_s_ff8e75f1')}
                           </div>
                         ) : (
                           <div className="admin-test-drive__broadcast-list">
@@ -1257,7 +1264,7 @@ export default function AdminTestDrive({
                                   <div className="admin-test-drive__broadcast-card-head">
                                     <div>
                                       <div className="admin-test-drive__broadcast-title">
-                                        Бронь #{br.id} · {br.start_date} — {br.end_date}
+                                        {t('admin_td_booking_range', { id: br.id, start: br.start_date, end: br.end_date })}
                                       </div>
                                       <div className="admin-test-drive__muted">
                                         {buyerLabel || `user #${br.user_id}`}
@@ -1269,13 +1276,13 @@ export default function AdminTestDrive({
                                         sent ? ' admin-test-drive__broadcast-status--sent' : ''
                                       }`}
                                     >
-                                      {sent ? 'Отправлено' : 'Ожидает'}
+                                      {sent ? t('admin_sent') : t('admin_pending')}
                                     </span>
                                   </div>
                                   <div className="admin-test-drive__broadcast-meta">
-                                    <span>Автоотправка (план): {formatBroadcastDt(br.survey_scheduled_at)}</span>
+                                    <span>{t('admin_avtootpravka_plan_95979567')} {formatBroadcastDt(br.survey_scheduled_at)}</span>
                                     <span>
-                                      Факт WA: {sent ? formatBroadcastDt(br.survey_whatsapp_sent_at) : '—'}
+                                      {t('admin_fakt__dcd47481')} {sent ? formatBroadcastDt(br.survey_whatsapp_sent_at) : '—'}
                                     </span>
                                   </div>
                                   {!sent ? (
@@ -1286,11 +1293,11 @@ export default function AdminTestDrive({
                                       onClick={() => sendSurveyBroadcastNow(br.id)}
                                     >
                                       <FiSend size={16} aria-hidden />
-                                      {broadcastSendBusy === Number(br.id) ? 'Отправка…' : 'Отправить сейчас'}
+                                      {broadcastSendBusy === Number(br.id) ? t('admin_sending') : t('admin_sendNow')}
                                     </button>
                                   ) : (
                                     <p className="admin-test-drive__muted admin-test-drive__broadcast-note">
-                                      Сообщение с ссылкой на опрос уже отправлено в WhatsApp.
+                                      {t('admin_soobschenie_s_ssylkoy_na_2c5b19bd')}
                                     </p>
                                   )}
                                 </div>
@@ -1302,11 +1309,10 @@ export default function AdminTestDrive({
                     ) : (
                       <>
                         {bookLoading ? (
-                          <div className="admin-test-drive__loading">Загрузка броней…</div>
+                          <div className="admin-test-drive__loading">{t('admin_zagruzka_broney_e60b527c')}</div>
                         ) : propertyExitBroadcasts.length === 0 ? (
                           <div className="admin-test-drive__detail-empty">
-                            Нет броней с токеном пост-отзыва по этому объекту (оплаченные / подтверждённые появятся после
-                            синхронизации).
+                            {t('admin_net_broney_s_tokenom_ffef9771')}
                           </div>
                         ) : (
                           <div className="admin-test-drive__broadcast-list">
@@ -1321,7 +1327,7 @@ export default function AdminTestDrive({
                                   <div className="admin-test-drive__broadcast-card-head">
                                     <div>
                                       <div className="admin-test-drive__broadcast-title">
-                                        Бронь #{br.id} · выезд {br.end_date}
+                                        {t('admin_td_booking_checkout', { id: br.id, end: br.end_date })}
                                       </div>
                                       <div className="admin-test-drive__muted">
                                         {buyerLabel || `user #${br.user_id}`}
@@ -1333,13 +1339,13 @@ export default function AdminTestDrive({
                                         sent ? ' admin-test-drive__broadcast-status--sent' : ''
                                       }`}
                                     >
-                                      {sent ? 'Отправлено' : 'Ожидает'}
+                                      {sent ? t('admin_sent') : t('admin_pending')}
                                     </span>
                                   </div>
                                   <div className="admin-test-drive__broadcast-meta">
-                                    <span>План WA после выезда: {formatBroadcastDt(br.exit_feedback_scheduled_at)}</span>
+                                    <span>{t('admin_plan__posle_vyezda_f4af9128')} {formatBroadcastDt(br.exit_feedback_scheduled_at)}</span>
                                     <span>
-                                      Факт WA: {sent ? formatBroadcastDt(br.exit_feedback_whatsapp_sent_at) : '—'}
+                                      {t('admin_fakt__dcd47481')} {sent ? formatBroadcastDt(br.exit_feedback_whatsapp_sent_at) : '—'}
                                     </span>
                                   </div>
                                   {!sent ? (
@@ -1350,11 +1356,11 @@ export default function AdminTestDrive({
                                       onClick={() => sendExitBroadcastNow(br.id)}
                                     >
                                       <FiSend size={16} aria-hidden />
-                                      {exitSendBusy === Number(br.id) ? 'Отправка…' : 'Отправить сейчас'}
+                                      {exitSendBusy === Number(br.id) ? t('admin_sending') : t('admin_sendNow')}
                                     </button>
                                   ) : (
                                     <p className="admin-test-drive__muted admin-test-drive__broadcast-note">
-                                      Сообщение с ссылкой на оценку после проживания уже отправлено в WhatsApp.
+                                      {t('admin_soobschenie_s_ssylkoy_na_ed538388')}
                                     </p>
                                   )}
                                 </div>
@@ -1369,7 +1375,7 @@ export default function AdminTestDrive({
                   <div className="admin-test-drive__cancellations">
                     <div className="admin-test-drive__cancel-actions">
                       <div className="admin-test-drive__cancel-stats">
-                        Непросмотренных отмен: <strong>{unseenCancelCount}</strong>
+                        {t('admin_td_unseen_cancels', { count: unseenCancelCount })}
                       </div>
                       <button
                         type="button"
@@ -1377,20 +1383,20 @@ export default function AdminTestDrive({
                         onClick={markCancelsAsViewed}
                         disabled={unseenCancelCount === 0}
                       >
-                        Просмотрено
+                        {t('admin_prosmotreno_0dbf26a5')}
                       </button>
                     </div>
 
                     {bookLoading ? (
-                      <div className="admin-test-drive__loading">Загрузка отмен…</div>
+                      <div className="admin-test-drive__loading">{t('admin_zagruzka_otmen_0f838f28')}</div>
                     ) : cancelCards.length === 0 ? (
-                      <div className="admin-test-drive__detail-empty">По этому объекту пока нет отмененных броней.</div>
+                      <div className="admin-test-drive__detail-empty">{t('admin_po_etomu_obektu_poka_32f1bbb6')}</div>
                     ) : (
                       <div className="admin-test-drive__cancel-list">
                         {cancelCards.map((c) => (
                           <div key={`cancel-${c.id}`} className="admin-test-drive__cancel-card">
                             <div className="admin-test-drive__cancel-head">
-                              <div className="admin-test-drive__cancel-title">Бронь #{c.id}</div>
+                              <div className="admin-test-drive__cancel-title">{t('admin_bookingNum_tmpl', { id: c.id })}</div>
                               <span className="admin-test-drive__status admin-test-drive__status--cancelled">
                                 cancelled
                               </span>
@@ -1402,17 +1408,17 @@ export default function AdminTestDrive({
                               user #{c.buyer?.id}: {buyerName(c.buyer)}
                             </div>
                             <div className="admin-test-drive__cancel-contact-block">
-                              <div className="admin-test-drive__cancel-contact-title">Контакты покупателя</div>
+                              <div className="admin-test-drive__cancel-contact-title">{t('admin_kontakty_pokupatelya_0a9677d4')}</div>
                               <div className="admin-test-drive__cancel-contact-row">
                                 {c.buyer?.email || 'email: —'}
                               </div>
                               <div className="admin-test-drive__cancel-contact-row">
-                                {c.buyer?.phone_number || 'телефон: —'}
+                                {c.buyer?.phone_number || t('admin_telefon_0360f013')}
                               </div>
                             </div>
                             <div className="admin-test-drive__cancel-contact-block">
                               <div className="admin-test-drive__cancel-contact-title">
-                                Контакты продавца (user #{selected.owner_user_id || '—'})
+                                {t('admin_kontakty_prodavca_user_id_10bf4d64', { id: selected.owner_user_id || '—' })}
                               </div>
                               <div className="admin-test-drive__cancel-contact-row">
                                 {ownerContact
@@ -1426,15 +1432,15 @@ export default function AdminTestDrive({
                                 {ownerContact?.email || 'email: —'}
                               </div>
                               <div className="admin-test-drive__cancel-contact-row">
-                                {ownerContact?.phone_number || 'телефон: —'}
+                                {ownerContact?.phone_number || t('admin_telefon_0360f013')}
                               </div>
                             </div>
                             <div className="admin-test-drive__cancel-meta">
-                              Отменил: {c.cancelled_by === 'owner' ? 'продавец' : 'покупатель'}
+                              {t('admin_otmenil_who_74d6b7c0', { who: c.cancelled_by === 'owner' ? t('admin_prodavec_4ada6871') : t('admin_pokupatel_38479427') })}
                             </div>
                             <div className="admin-test-drive__cancel-reason">{c.cancellation_reason}</div>
                             <div className="admin-test-drive__muted">
-                              {c.cancelled_at ? `Время отмены: ${c.cancelled_at}` : ''}
+                              {c.cancelled_at ? t('admin_cancelTime_tmpl', { at: c.cancelled_at }) : ''}
                             </div>
                           </div>
                         ))}
@@ -1446,28 +1452,28 @@ export default function AdminTestDrive({
 
               {bookError ? <div className="admin-test-drive__error">{bookError}</div> : null}
               {activeTab === 'calendar' && bookLoading ? (
-                <div className="admin-test-drive__loading">Загрузка бронирований…</div>
+                <div className="admin-test-drive__loading">{t('admin_zagruzka_bronirovaniy_58dd1a3d')}</div>
               ) : activeTab === 'calendar' ? (
                 <div className="admin-test-drive__table-wrap">
                   <table className="admin-test-drive__table">
                     <thead>
                       <tr>
                         <th>ID</th>
-                        <th>Период</th>
-                        <th>Статус</th>
-                        <th>Покупатель</th>
-                        <th>Предпочт. связь</th>
-                        <th>Контакты</th>
-                        <th>Заселение</th>
-                        <th>Отмена</th>
-                        <th>Комментарий владельца</th>
+                        <th>{t('admin_period_b2822e2b')}</th>
+                        <th>{t('admin_status_f7f293b5')}</th>
+                        <th>{t('admin_buyer')}</th>
+                        <th>{t('admin_predpocht_svyaz_f509a145')}</th>
+                        <th>{t('admin_sa_contacts')}</th>
+                        <th>{t('admin_zaselenie_4d9613e9')}</th>
+                        <th>{t('admin_otmena_0ec753be')}</th>
+                        <th>{t('admin_kommentariy_vladelca_7a8d4918')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {bookings.length === 0 ? (
                         <tr>
                           <td colSpan={9} className="admin-test-drive__muted" style={{ textAlign: 'center', padding: '1.25rem' }}>
-                            Нет бронирований.
+                            {t('admin_net_bronirovaniy_eaa85c9f')}
                           </td>
                         </tr>
                       ) : (
@@ -1476,7 +1482,7 @@ export default function AdminTestDrive({
                             <td>{b.id}</td>
                             <td>
                               {b.start_date} — {b.end_date}
-                              <div className="admin-test-drive__muted">Создано: {b.created_at || '—'}</div>
+                              <div className="admin-test-drive__muted">{t('admin_td_created', { at: b.created_at || '—' })}</div>
                             </td>
                             <td>
                               <span className={`admin-test-drive__status admin-test-drive__status--${statusTone(b.status)}`}>
@@ -1487,7 +1493,7 @@ export default function AdminTestDrive({
                               user #{b.buyer?.id}: {buyerName(b.buyer)}
                               <div className="admin-test-drive__muted">{b.buyer?.role || ''}</div>
                             </td>
-                            <td>{formatBuyerContactChannel(b.buyer_contact_channel)}</td>
+                            <td>{formatBuyerContactChannel(b.buyer_contact_channel, t)}</td>
                             <td>
                               {b.buyer?.email || '—'}
                               <br />
@@ -1498,11 +1504,11 @@ export default function AdminTestDrive({
                               {String(b.status || '').toLowerCase() === 'cancelled' ? (
                                 <>
                                   <span className="admin-test-drive__cancel-source">
-                                    {b.cancelled_by === 'owner' ? 'Отменил продавец' : 'Отменил покупатель'}
+                                    {b.cancelled_by === 'owner' ? t('admin_otmenil_prodavec_9a74eb2d') : t('admin_otmenil_pokupatel_0f47f7f2')}
                                   </span>
                                   <div>{b.cancellation_reason || b.cancellation_reason_code || '—'}</div>
                                   <div className="admin-test-drive__muted">
-                                    {b.cancelled_at ? `Время: ${b.cancelled_at}` : ''}
+                                    {b.cancelled_at ? t('admin_timeAt_tmpl', { at: b.cancelled_at }) : ''}
                                   </div>
                                 </>
                               ) : (

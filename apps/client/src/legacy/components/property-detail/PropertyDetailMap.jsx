@@ -5,7 +5,7 @@ import { usePropertyMapCoordinates } from '../../hooks/usePropertyMapCoordinates
 export default function PropertyDetailMap({ property, className = '' }) {
   const { t } = useTranslation()
   const { finalCoordinates, hasRealMarker, isGeocoding } = usePropertyMapCoordinates(property)
-  const locationLabel = property?.location || property?.address || t('location') || 'Местоположение'
+  const locationLabel = property?.location || property?.address || t('location', { defaultValue: 'Location' })
 
   return (
     <div className={`property-detail-sidebar__map ${className}`.trim()}>
@@ -25,7 +25,7 @@ export default function PropertyDetailMap({ property, className = '' }) {
             />
             {isGeocoding && (
               <div className="property-detail-map__geocoding-hint property-detail-sidebar__map-loading">
-                Поиск местоположения...
+                {t('mapSearchingLocation', { defaultValue: 'Searching location...' })}
               </div>
             )}
           </>

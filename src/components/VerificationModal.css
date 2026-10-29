@@ -1280,6 +1280,12 @@
   transform: rotate(180deg);
 }
 
+.camera-switch:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .camera-control-spacer {
   width: 48px;
   height: 48px;

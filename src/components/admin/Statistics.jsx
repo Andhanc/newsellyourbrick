@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Bar, Pie, Line } from 'react-chartjs-2';
 import { FiCalendar } from 'react-icons/fi';
 import {
@@ -34,6 +35,8 @@ ChartJS.register(
 );
 
 const Statistics = ({ businessInfo, onShowUsers }) => {
+  const { t, i18n } = useTranslation();
+  const numberLocale = (i18n.language || 'en').split('-')[0] || 'en';
   const [timeFilter, setTimeFilter] = useState('all');
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [startDate, setStartDate] = useState(null);
@@ -260,9 +263,9 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
         // Форматируем данные для слайдера (без учета ставок)
         const formattedAuctionsBase = allAuctions.map(auction => ({
           id: auction.id,
-          object_title: auction.title || auction.name || 'Без названия',
+          object_title: auction.title || auction.name || t('admin_untitled'),
           description: auction.description || '',
-          object_location: auction.location || 'Не указано',
+          object_location: auction.location || t('admin_notSpecified'),
           image_url: auction.image || (auction.images && auction.images[0]) || '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
           starting_price: auction.auction_starting_price || auction.price || 0,
           auction_starting_price: auction.auction_starting_price || auction.price || 0,
@@ -436,7 +439,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
 
   const formatDate = (date) => {
     if (!date) return '';
-    return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return date.toLocaleDateString(numberLocale, { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   const isDateInRange = (date) => {
@@ -463,9 +466,9 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
     if (isLoadingStats || countryStats.length === 0) {
       // Показываем заглушку во время загрузки
       return {
-        labels: ['Загрузка...'],
+        labels: [t('admin_loading')],
         datasets: [{
-          label: 'Доля регистраций, %',
+          label: t('admin_dolya_registraciy_e10f185e'),
           data: [0],
           backgroundColor: ['#4361ee'],
           borderRadius: 6,
@@ -477,7 +480,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
     // Вычисляем общее количество пользователей
     const total = countryStats.reduce((sum, item) => sum + item.count, 0);
     
-    // Сортируем по количеству и берем топ-7, остальные объединяем в "Остальные"
+    // Сортируем по количеству и берем топ-7, остальные объединяем в t('admin_ostalnye_ac800e86')
     const sorted = [...countryStats].sort((a, b) => b.count - a.count);
     const topCountries = sorted.slice(0, 6);
     const othersCount = sorted.slice(6).reduce((sum, item) => sum + item.count, 0);
@@ -486,7 +489,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
     const data = topCountries.map(item => ((item.count / total) * 100).toFixed(1));
     
     if (othersCount > 0) {
-      labels.push('Остальные');
+      labels.push(t('admin_ostalnye_ac800e86'));
       data.push(((othersCount / total) * 100).toFixed(1));
     }
 
@@ -503,7 +506,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
     return {
       labels: labels,
       datasets: [{
-        label: 'Доля регистраций, %',
+        label: t('admin_dolya_registraciy_e10f185e'),
         data: data.map(val => parseFloat(val)),
         backgroundColor: colors.slice(0, labels.length),
         borderRadius: 6,
@@ -514,14 +517,14 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
 
   // Данные для диаграммы пользователей по дням недели (реальные регистрации за выбранную неделю)
   const usersByWeekdayData = useMemo(() => {
-    const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+    const dayNames = [t('admin_mo'), t('admin_tu'), t('admin_we'), t('admin_th'), t('admin_fr'), t('admin_sa'), t('admin_su')];
     const data = usersByDayData.length === 7
       ? usersByDayData.map((d) => d.count)
       : Array(7).fill(0);
     return {
       labels: dayNames,
       datasets: [{
-        label: 'Регистраций',
+        label: t('admin_registraciy_5bec1212'),
         data,
         borderColor: '#4361ee',
         backgroundColor: 'rgba(67, 97, 238, 0.1)',
@@ -531,8 +534,8 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
     };
   }, [usersByDayData]);
 
-  const typeLabels = { villa: 'Виллы', house: 'Дома', apartment: 'Квартиры', commercial: 'Апартаменты' };
-  const sectionLabels = { auction: 'Аукцион', buy_now: 'Купить сейчас', share: 'Доли', debt: 'Долги' };
+  const typeLabels = { villa: t('admin_villy_0f595628'), house: t('admin_doma_b12b665b'), apartment: t('admin_kvartiry_5aaf7953'), commercial: t('admin_apartamenty_f27af5a9') };
+  const sectionLabels = { auction: t('admin_auction'), buy_now: t('admin_buyNow'), share: t('admin_doli_a0493352'), debt: t('admin_dolgi_6d124eac') };
   const propertyCategoriesData = useMemo(() => {
     const isType = categoryViewMode === 'type';
     const list = isType ? categoryStats.byType : categoryStats.bySection;
@@ -541,9 +544,9 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
     const data = list.map((item) => item.count);
     const colors = ['#4361ee', '#4895ef', '#3f37c9', '#4cc9f0', '#0099A9'];
     return {
-      labels: labels.length ? labels : (isType ? ['Виллы', 'Дома', 'Квартиры', 'Апартаменты'] : ['Аукцион', 'Купить сейчас', 'Доли', 'Долги']),
+      labels: labels.length ? labels : (isType ? [t('admin_villy_0f595628'), t('admin_doma_b12b665b'), t('admin_kvartiry_5aaf7953'), t('admin_apartamenty_f27af5a9')] : [t('admin_auction'), t('admin_buyNow'), t('admin_doli_a0493352'), t('admin_dolgi_6d124eac')]),
       datasets: [{
-        label: isType ? 'По типу' : 'По разделам',
+        label: isType ? t('admin_po_tipu_6f71274e') : t('admin_po_razdelam_bd2c54c2'),
         data: data.length ? data : (isType ? [0, 0, 0, 0] : [0, 0, 0, 0]),
         backgroundColor: colors.slice(0, Math.max(data.length, 1)),
         borderRadius: 6
@@ -562,7 +565,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
     const buyersValue = total > 0 ? buyers : Math.round((businessInfo.user_role_stats?.buyers || 55) * multiplier);
 
     return {
-      labels: ['Продавцы', 'Покупатели'],
+      labels: [t('admin_prodavcy_013f28e0'), t('admin_pokupateli_c6e3359b')],
       datasets: [{
         data: [sellersValue, buyersValue],
         backgroundColor: [
@@ -622,7 +625,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
         callbacks: {
           label: function (context) {
             const value = context.parsed.y ?? 0;
-            return `${value} регистраций`;
+            return t('admin_n_registraciy_988b0957', { n: value });
           }
         }
       }
@@ -674,7 +677,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
         callbacks: {
           label: function(context) {
             const value = context.parsed.y;
-            return `${value} объектов`;
+            return t('admin_n_obektov_3c176033', { n: value });
           }
         }
       }
@@ -761,66 +764,66 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
     
     const statsData = [
       {
-        title: 'Всего пользователей',
+        title: t('admin_vsego_polzovateley_32857237'),
         value: isLoadingUsersCount ? '...' : totalUsers,
         changePercent: '12.5',
         icon: 'fas fa-users',
         iconClass: 'blue'
       },
       {
-        title: 'Количество Покупателей',
+        title: t('admin_kolichestvo_pokupateley_99e25f0b'),
         value: buyersCount,
         changePercent: '8.3',
         icon: 'fas fa-shopping-cart',
         iconClass: 'green'
       },
       {
-        title: 'Количество Продавцов',
+        title: t('admin_kolichestvo_prodavcov_3a54fa2b'),
         value: sellersCount,
         changePercent: '10.2',
         icon: 'fas fa-store',
         iconClass: 'purple'
       },
       {
-        title: 'Выставленные Объекты',
+        title: t('admin_vystavlennye_obekty_c3577df1'),
         value: isLoadingCounts ? '...' : (propertiesCount !== null && propertiesCount !== undefined ? propertiesCount : 0),
         changePercent: '15.2',
         icon: 'fas fa-building',
         iconClass: 'orange'
       },
       {
-        title: 'Аукционов',
+        title: t('admin_aukcionov_b235b547'),
         value: isLoadingCounts ? '...' : (auctionsCount !== null && auctionsCount !== undefined ? auctionsCount : 0),
         changePercent: '18.4',
         icon: 'fas fa-gavel',
         iconClass: 'blue'
       },
       {
-        title: 'Прибыль',
-        value: `$${Math.round(businessInfo.stats.total_profit * multiplier).toLocaleString('ru-RU')}`,
+        title: t('admin_pribyl_539b7009'),
+        value: `$${Math.round(businessInfo.stats.total_profit * multiplier).toLocaleString(numberLocale)}`,
         changePercent: '22.7',
         icon: 'fas fa-wallet',
         iconClass: 'green'
       },
       {
-        title: 'Онлайн',
+        title: t('admin_onlayn_76e9fb6a'),
         value: isLoadingOnlineCount ? '...' : (onlineCount !== null && onlineCount !== undefined ? onlineCount : 0),
         changePercent: '5.3',
         icon: 'fas fa-circle',
         iconClass: 'red'
       },
       {
-        title: 'Платежи (Stripe)',
+        title: t('admin_platezhi_tripe_78a0b6b6'),
         value: isLoadingStripePaymentsCount ? '...' : (stripePaymentsCount !== null ? stripePaymentsCount : 0),
         changePercent: '0',
         icon: 'fas fa-credit-card',
         iconClass: 'green',
         onCardClick: () => setPaymentsModalOpen(true),
-        ariaLabel: 'Открыть список платежей Stripe'
+        ariaLabel: t('admin_otkryt_spisok_platezhey_tripe_6b724ee3')
       },
       {
-        title: 'Оборот',
-        value: `$${Math.round((businessInfo.stats.turnover || 2500000) * multiplier).toLocaleString('ru-RU')}`,
+        title: t('admin_oborot_a37f4082'),
+        value: `$${Math.round((businessInfo.stats.turnover || 2500000) * multiplier).toLocaleString(numberLocale)}`,
         changePercent: '18.9',
         icon: 'fas fa-exchange-alt',
         iconClass: 'orange'
@@ -828,7 +831,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
     ];
 
     return statsData.map(stat => {
-      // При фильтре "Все время" не показываем проценты, только абсолютные значения
+      // При фильтре t('admin_vse_vremya_c8d80c56') не показываем проценты, только абсолютные значения
       if (timeFilter === 'all') {
         return {
           ...stat,
@@ -840,7 +843,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
       const changeString = getChangePercent(stat.changePercent, timeFilter);
       return {
         ...stat,
-        change: changeString + ' за период',
+        change: changeString + t('admin_za_period_58f2f78e'),
         changeType: getChangeType(changeString)
       };
     });
@@ -860,17 +863,17 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
   ]);
 
   const timeFilterOptions = [
-    { value: 'all', label: 'Все время' },
-    { value: 'month', label: 'Месяц' },
-    { value: '3months', label: '3 месяца' },
-    { value: '6months', label: 'Полгода' },
-    { value: 'year', label: 'Год' }
+    { value: 'all', label: t('admin_vse_vremya_c8d80c56') },
+    { value: 'month', label: t('admin_mesyac_e558fb6e') },
+    { value: '3months', label: t('admin_3_mesyaca_81866957') },
+    { value: '6months', label: t('admin_polgoda_99b46121') },
+    { value: 'year', label: t('admin_god_03f8541f') }
   ];
 
   return (
     <div className="content-section" id="statistics-section">
       <div className="statistics-header">
-        <h2 className="statistics-title">Статистика</h2>
+        <h2 className="statistics-title">{t('admin_statistika_a77d7f6c')}</h2>
         <div className="time-filter-container">
           <div className="time-filter">
             {timeFilterOptions.map(option => (
@@ -893,7 +896,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
             <button
               className={`calendar-icon-btn ${startDate && endDate ? 'active' : ''}`}
               onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-              title="Выбрать диапазон дат"
+              title={t('admin_vybrat_diapazon_dat_d2f794d4')}
             >
               <FiCalendar size={20} />
               {startDate && endDate && (
@@ -919,7 +922,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
                     ‹
                   </button>
                   <div className="calendar-month-year">
-                    {new Date(calendarYear, calendarMonth).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}
+                    {new Date(calendarYear, calendarMonth).toLocaleDateString(numberLocale, { month: 'long', year: 'numeric' })}
                   </div>
                   <button
                     className="calendar-nav-btn"
@@ -937,7 +940,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
                 </div>
                 <div className="calendar-grid">
                   <div className="calendar-weekdays">
-                    {['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(day => (
+                    {[t('admin_mo'), t('admin_tu'), t('admin_we'), t('admin_th'), t('admin_fr'), t('admin_sa'), t('admin_su')].map(day => (
                       <div key={day} className="calendar-weekday">{day}</div>
                     ))}
                   </div>
@@ -957,19 +960,19 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
                 <div className="calendar-footer">
                   {tempStartDate && tempEndDate && (
                     <div className="calendar-selected-range">
-                      Выбрано: {formatDate(tempStartDate)} - {formatDate(tempEndDate)}
+                      {t('admin_vybrano_e3c7726b')} {formatDate(tempStartDate)} - {formatDate(tempEndDate)}
                     </div>
                   )}
                   <div className="calendar-actions">
                     <button className="calendar-action-btn" onClick={clearDateRange}>
-                      Очистить
+                      {t('admin_ochistit_98b2073e')}
                     </button>
                     <button
                       className="calendar-action-btn calendar-action-btn-primary"
                       onClick={applyDateRange}
                       disabled={!tempStartDate || !tempEndDate}
                     >
-                      Применить
+                      {t('admin_primenit_768af677')}
                     </button>
                   </div>
                 </div>
@@ -998,7 +1001,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
 
       {isLoadingAuctions ? (
         <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
-          Загрузка аукционов...
+          {t('admin_zagruzka_aukcionov_dots')}
         </div>
       ) : activeAuctions.length > 0 ? (
         <NearestAuctionsSlider auctions={activeAuctions} />
@@ -1007,9 +1010,9 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
       <div className="charts-row">
         <div className="chart-container">
           <div className="chart-header">
-            <h3 className="chart-title">Национальность пользователей</h3>
+            <h3 className="chart-title">{t('admin_nacionalnost_polzovateley_4438aeb0')}</h3>
             <div className="chart-actions">
-              <button className="chart-btn active">Все дни</button>
+              <button className="chart-btn active">{t('admin_vse_dni_728ed0eb')}</button>
             </div>
           </div>
           <div className="chart-wrapper">
@@ -1019,14 +1022,14 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
 
         <div className="chart-container">
           <div className="chart-header">
-            <h3 className="chart-title-small">Пользователей по дням</h3>
+            <h3 className="chart-title-small">{t('admin_polzovateley_po_dnyam_1c6db66b')}</h3>
             <div className="chart-actions">
               <button
                 type="button"
                 className="chart-btn"
                 onClick={() => setUsersByDayWeekOffset((o) => o - 1)}
                 disabled={isLoadingUsersByDay}
-                title="Предыдущая неделя"
+                title={t('admin_predyduschaya_nedelya_efadda11')}
               >
                 ←
               </button>
@@ -1035,19 +1038,19 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
                   ? (() => {
                       const fmt = (s) => {
                         const d = new Date(s + 'T12:00:00');
-                        const months = 'янв фев мар апр май июн июл авг сен окт ноя дек'.split(' ');
+                        const months = t('admin_yanv_fev_mar_apr_99c87508').split(' ');
                         return `${d.getDate()} ${months[d.getMonth()]}`;
                       };
                       return `${fmt(usersByDayWeekRange.weekStart)} – ${fmt(usersByDayWeekRange.weekEnd)} ${new Date(usersByDayWeekRange.weekStart + 'T12:00:00').getFullYear()}`;
                     })()
-                  : 'Загрузка...'}
+                  : t('admin_loading')}
               </span>
               <button
                 type="button"
                 className="chart-btn"
                 onClick={() => setUsersByDayWeekOffset((o) => o + 1)}
                 disabled={isLoadingUsersByDay || usersByDayWeekOffset >= 0}
-                title="Следующая неделя"
+                title={t('admin_sleduyuschaya_nedelya_672592ce')}
               >
                 →
               </button>
@@ -1055,7 +1058,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
           </div>
           <div className="chart-wrapper">
             {isLoadingUsersByDay ? (
-              <div className="chart-loading">Загрузка...</div>
+              <div className="chart-loading">{t('admin_loading')}</div>
             ) : (
               <>
                 <Line 
@@ -1064,7 +1067,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
                 />
                 {usersByDayLoadError && (
                   <p className="chart-error-hint">
-                    Не удалось загрузить данные. Запустите сервер: <code>npm run server</code> или <code>npm start</code>.
+                    {t('admin_ne_udalos_zagruzit_dannye_22fa2c7b')} <code>npm run server</code> {t('admin_ili_30bb0333')} <code>npm start</code>.
                   </p>
                 )}
               </>
@@ -1076,7 +1079,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
       <div className="demographics-grid">
         <div className="chart-container">
           <div className="chart-header">
-            <h3 className="chart-title">Категории недвижимости</h3>
+            <h3 className="chart-title">{t('admin_kategorii_nedvizhimosti_ad3c0638')}</h3>
             <div className="chart-actions">
               <button
                 type="button"
@@ -1084,7 +1087,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
                 onClick={() => setCategoryViewMode('type')}
                 disabled={isLoadingCategoryStats}
               >
-                Тип
+                {t('admin_tip_d25691ca')}
               </button>
               <button
                 type="button"
@@ -1092,13 +1095,13 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
                 onClick={() => setCategoryViewMode('sections')}
                 disabled={isLoadingCategoryStats}
               >
-                Разделы
+                {t('admin_razdely_946ee087')}
               </button>
             </div>
           </div>
           <div className="chart-wrapper">
             {isLoadingCategoryStats ? (
-              <div className="chart-loading">Загрузка...</div>
+              <div className="chart-loading">{t('admin_loading')}</div>
             ) : (
               <Bar data={propertyCategoriesData} options={propertyCategoriesOptions} />
             )}
@@ -1107,7 +1110,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
 
         <div className="chart-container">
           <div className="chart-header">
-            <h3 className="chart-title">Соотношение продавцов и покупателей</h3>
+            <h3 className="chart-title">{t('admin_sootnoshenie_prodavcov_i_pokupateley_ded74cde')}</h3>
           </div>
           <div className="chart-wrapper">
             <Pie data={userRoleData} options={pieOptions} />
@@ -1117,12 +1120,12 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
 
       <div className="users-section">
         <div className="users-header">
-          <h3 className="users-title">Информация о пользователях</h3>
+          <h3 className="users-title">{t('admin_informaciya_o_polzovatelyah_042c9e74')}</h3>
           <button className="users-toggle" onClick={onShowUsers}>
-            <i className="fas fa-users"></i> Показать всех пользователей
+            <i className="fas fa-users"></i> {t('admin_pokazat_vseh_polzovateley_65a233ae')}
           </button>
         </div>
-        <p>Нажмите кнопку, чтобы просмотреть подробную информацию о клиентах, включая их покупки, бонусные баллы и другую статистику.</p>
+        <p>{t('admin_nazhmite_knopku_chtoby_prosmotret_400d7215')}</p>
       </div>
     </div>
   );

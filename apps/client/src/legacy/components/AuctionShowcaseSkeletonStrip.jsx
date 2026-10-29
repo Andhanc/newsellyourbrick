@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import './AuctionShowcaseSkeletonStrip.css'
 
 /**
@@ -39,8 +40,9 @@ export function AuctionShowcaseSkeletonCards({ count = 6 }) {
  * Горизонтальная лента скелетонов в разметке карточек витрины аукциона (как .auction-showcase-card на главной).
  */
 export function AuctionShowcaseSkeletonStrip({ count = 6 }) {
+  const { t } = useTranslation()
   return (
-    <div className="auction-showcase-skeleton-root" aria-busy="true" aria-label="Загрузка объектов">
+    <div className="auction-showcase-skeleton-root" aria-busy="true" aria-label={t('sharesPage_loadingAria')}>
       <div className="auction-showcase__carousel">
         <div className="auction-showcase__scroller">
           <AuctionShowcaseSkeletonCards count={count} />

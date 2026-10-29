@@ -192,10 +192,10 @@ function buildHintData(t) {
 
 /**
  * Оценка горизонтального поворота по положению кончика носа относительно краёв лица.
- * Фронтальная камера показывается зеркально, поэтому меняем знак: положительное
+ * При зеркальном превью (фронтальная камера) меняем знак: положительное
  * значение означает движение вправо именно так, как его видит пользователь.
  */
-function estimateMirroredHeadYaw(landmarks) {
+function estimateHeadYaw(landmarks, mirrored = true) {
   const nose = landmarks?.[1]
   const faceLeft = landmarks?.[234]
   const faceRight = landmarks?.[454]
@@ -203,7 +203,8 @@ function estimateMirroredHeadYaw(landmarks) {
   const faceWidth = Math.abs(faceRight.x - faceLeft.x)
   if (faceWidth < 0.01) return 0
   const faceCenterX = (faceLeft.x + faceRight.x) / 2
-  return -((nose.x - faceCenterX) / (faceWidth / 2))
+  const yaw = (nose.x - faceCenterX) / (faceWidth / 2)
+  return mirrored ? -yaw : yaw
 }
 
 const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) => {
@@ -966,7 +967,10 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
   const selfieGateRef = useRef({ canShoot: false, hint: '', inOval: false })
   const [clipRegion, setClipRegion] = useState(null)
   const [isCapturing, setIsCapturing] = useState(false)
-  const [facingMode, setFacingMode] = useState('environment') // 'user' для фронтальной, 'environment' для задней
+  const [facingMode, setFacingMode] = useState(() =>
+    type === 'selfie' || type === 'selfieWithPassport' ? 'user' : 'environment'
+  ) // 'user' front camera, 'environment' rear
+  const facingModeRef = useRef(facingMode)
   /** Подсказка для шага селфи */
   const [selfieFaceHint, setSelfieFaceHint] = useState('')
   const [selfieFaceOk, setSelfieFaceOk] = useState(false)
@@ -1047,6 +1051,13 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
   useEffect(() => {
     clipRegionRef.current = clipRegion
   }, [clipRegion])
+
+  useEffect(() => {
+    facingModeRef.current = facingMode
+  }, [facingMode])
+
+  const isPreviewMirrored =
+    (type === 'selfie' || type === 'selfieWithPassport') && facingMode === 'user'
 
   const resetLivenessChallenge = useCallback((regenerate = false) => {
     const nextChallenge = regenerate ? createLivenessChallenge() : livenessChallengeRef.current
@@ -1213,16 +1224,31 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
   const startCamera = async () => {
     if (previewMode) return
 
-    try {
-      const constraints = {
+    const attempts = [
+      {
         video: {
-          facingMode: type === 'selfie' || type === 'selfieWithPassport' ? 'user' : 'environment',
+          facingMode: { ideal: facingMode },
           width: { ideal: 1280 },
-          height: { ideal: 720 }
+          height: { ideal: 720 },
+        },
+      },
+      { video: { facingMode } },
+      { video: true },
+    ]
+
+    let lastError = null
+    try {
+      let stream = null
+      for (const constraints of attempts) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia(constraints)
+          break
+        } catch (error) {
+          lastError = error
         }
       }
+      if (!stream) throw lastError || new Error('CAMERA_UNAVAILABLE')
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints)
       streamRef.current = stream
       if (videoRef.current) {
         videoRef.current.srcObject = stream
@@ -1339,7 +1365,8 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
 
           const cxRaw = box.x + box.width / 2
           const cyRaw = box.y + box.height / 2
-          const cx = vw - cxRaw
+          const mirrored = facingModeRef.current === 'user'
+          const cx = mirrored ? vw - cxRaw : cxRaw
           const cy = cyRaw
 
           const inOval = pointInEllipse(cx, cy, ellipse.cx, ellipse.cy, ellipse.rx, ellipse.ry)
@@ -1394,7 +1421,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
           return
         }
 
-        const measuredYaw = estimateMirroredHeadYaw(framing.landmarks)
+        const measuredYaw = estimateHeadYaw(framing.landmarks, facingModeRef.current === 'user')
         smoothedYawRef.current =
           smoothedYawRef.current * 0.62 + measuredYaw * 0.38
 
@@ -1789,7 +1816,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
       if (crop) {
         canvas.width = crop.sw
         canvas.height = crop.sh
-        if (type === 'selfie') {
+        if (type === 'selfie' && facingModeRef.current === 'user') {
           // Как на превью: фронтальная камера зеркалится
           context.translate(crop.sw, 0)
           context.scale(-1, 1)
@@ -1827,8 +1854,17 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
   capturePhotoRef.current = capturePhoto
 
   const switchCamera = () => {
+    if (isCapturing) return
     stopCamera()
-    setFacingMode(prev => prev === 'user' ? 'environment' : 'user')
+    if (type === 'selfie') {
+      resetLivenessChallenge(false)
+      applySelfieGateUi({
+        canShoot: false,
+        hint: t('verificationCamera_preparingCamera'),
+        inOval: false,
+      })
+    }
+    setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'))
   }
 
   return (
@@ -1843,7 +1879,7 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
             ref={videoRef}
             autoPlay
             playsInline
-            className={`camera-video ${(type === 'selfie' || type === 'selfieWithPassport') ? 'mirrored' : ''}`}
+            className={`camera-video ${isPreviewMirrored ? 'mirrored' : ''}`}
           />
           <canvas ref={canvasRef} style={{ display: 'none' }} />
 
@@ -1959,18 +1995,21 @@ const Camera = ({ type, onCapture, onClose, previewMode = false }) => {
         </div>
 
         <div className="camera-controls">
-          {type !== 'selfie' ? (
-            <button className="camera-switch" onClick={switchCamera}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M18 3L21 6L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M21 6H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                <path d="M6 21L3 18L6 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </button>
-          ) : (
-            <div className="camera-control-spacer" aria-hidden="true" />
-          )}
+          <button
+            type="button"
+            className="camera-switch"
+            onClick={switchCamera}
+            disabled={isCapturing}
+            aria-label={t('verificationCamera_switchCamera')}
+            title={t('verificationCamera_switchCamera')}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M18 3L21 6L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M21 6H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <path d="M6 21L3 18L6 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
           <button
             type="button"
             className={`camera-capture ${type === 'selfie' ? 'camera-capture--liveness' : ''} ${

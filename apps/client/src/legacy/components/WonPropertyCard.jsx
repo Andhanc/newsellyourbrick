@@ -188,7 +188,7 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate, purchaseTerms, onS
                   })
                 }
               >
-                Продать объект
+                {t('buyerCabinet_sellProperty')}
               </button>
             ) : null}
           </div>

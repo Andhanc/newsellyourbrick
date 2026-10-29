@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { validateLuhn, detectCardType, validateCardExpiryRealtime } from '../utils/cardValidation'
 import { showNotification } from '../utils/toastHelper'
 import './CardTopUpModal.css'
 
 const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
+  const { t } = useTranslation()
   const [cardNumber, setCardNumber] = useState('')
   const [cardExpiry, setCardExpiry] = useState('')
   const [cardCvv, setCardCvv] = useState('')
@@ -40,8 +42,8 @@ const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
     }
 
     if (hasNumber && expiryValid && !isCardFlipped) {
-      const t = setTimeout(() => setIsCardFlipped(true), 300)
-      return () => clearTimeout(t)
+      const flipTimer = setTimeout(() => setIsCardFlipped(true), 300)
+      return () => clearTimeout(flipTimer)
     }
   }, [cardNumber, cardExpiry, isCardFlipped])
 
@@ -86,11 +88,11 @@ const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
     const cleaned = cardNumber.replace(/\D/g, '')
     const expiryMsg = validateCardExpiryRealtime(cardExpiry)
     if (expiryMsg) {
-      setCardError(expiryMsg)
+      setCardError(t(expiryMsg))
       return
     }
     if (detectCardType(cleaned) === 'UNKNOWN') {
-      setCardError('Используйте Visa или Mastercard')
+      setCardError(t('cardTopUp_visaMastercardOnly'))
       return
     }
 
@@ -111,7 +113,7 @@ const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
       })
       const cardData = await cardResponse.json()
       if (!cardData.success) {
-        setCardError(cardData.error || 'Ошибка сохранения карты')
+        setCardError(cardData.error || t('cardTopUp_saveCardError'))
         return
       }
 
@@ -123,14 +125,14 @@ const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
       const data = await response.json()
       if (data.success) {
         const newDeposit = data.data?.depositAmount ?? 0
-        showNotification(`Депозит пополнен на 3000 €. Баланс: €${Number(newDeposit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`)
+        showNotification(t('cardTopUp_successNotification', { balance: Number(newDeposit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }))
         onSuccess?.(newDeposit)
         onClose()
       } else {
-        setCardError(data.error || 'Ошибка пополнения')
+        setCardError(data.error || t('cardTopUp_topUpError'))
       }
     } catch (err) {
-      setCardError(err.message || 'Ошибка сети')
+      setCardError(err.message || t('cardTopUp_networkError'))
     } finally {
       setIsSubmitting(false)
     }
@@ -141,13 +143,13 @@ const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
   return (
     <div className="card-topup-overlay" onClick={onClose}>
       <div className="card-topup-modal" onClick={e => e.stopPropagation()}>
-        <button type="button" className="card-topup-modal__close" onClick={onClose} aria-label="Закрыть">
+        <button type="button" className="card-topup-modal__close" onClick={onClose} aria-label={t('cardTopUp_closeAria')}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         </button>
-        <h2 className="card-topup-modal__title">Пополнение картой</h2>
-        <p className="card-topup-modal__subtitle">Введите данные карты.</p>
+        <h2 className="card-topup-modal__title">{t('cardTopUp_title')}</h2>
+        <p className="card-topup-modal__subtitle">{t('cardTopUp_subtitle')}</p>
 
         <div className="card-topup-modal__card-wrap">
           <div
@@ -189,7 +191,8 @@ const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
                         let v = e.target.value.replace(/\D/g, '').slice(0, 4)
                         if (v.length >= 2) v = v.slice(0, 2) + '/' + v.slice(2)
                         setCardExpiry(v)
-                        setExpiryError(validateCardExpiryRealtime(v))
+                        const expiryKey = validateCardExpiryRealtime(v)
+                        setExpiryError(expiryKey ? t(expiryKey) : '')
                         setCardError('')
                       }}
                       placeholder="MM/YY"
@@ -231,7 +234,7 @@ const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
           disabled={!canSubmit() || isSubmitting}
           onClick={handleSubmit}
         >
-          {isSubmitting ? 'Пополняем…' : 'Пополнить 3000 €'}
+          {isSubmitting ? t('cardTopUp_submitting') : t('cardTopUp_submit')}
         </button>
       </div>
     </div>

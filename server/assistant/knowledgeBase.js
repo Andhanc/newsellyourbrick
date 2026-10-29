@@ -40,7 +40,7 @@ function loadFromDisk() {
   const raw = fs.readFileSync(KNOWLEDGE_PATH, 'utf8')
   const data = JSON.parse(raw)
   if (!data || typeof data !== 'object' || Array.isArray(data)) {
-    throw new Error('База знаний должна быть JSON-объектом')
+    throw new Error('Knowledge base must be a JSON object')
   }
   return data
 }

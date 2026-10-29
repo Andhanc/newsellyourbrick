@@ -3,12 +3,14 @@
 import { useScroll, useTransform, motion } from 'framer-motion';
 import { useLayoutScrollRef } from '@/context/LayoutScrollContext';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import './Timeline.css';
 
 /**
  * @param {{ data: Array<{ title: string; content: import('react').ReactNode }> }} props
  */
 export const Timeline = ({ data }) => {
+  const { t } = useTranslation();
   const ref = useRef(null);
   const containerRef = useRef(null);
   const itemRefs = useRef([]);
@@ -80,10 +82,10 @@ export const Timeline = ({ data }) => {
     <div className={`timeline-about ${isDarkTheme ? 'timeline-about--dark' : ''}`} ref={containerRef}>
       <div className="timeline-about__header">
         <h2 className="timeline-about__title">
-          Как мы развивались
+          {t('aboutTimeline_title')}
         </h2>
         <p className="timeline-about__subtitle">
-          Sellyourbrick создавался как современная платформа для недвижимости. Краткая хронология ключевых этапов.
+          {t('aboutTimeline_subtitle')}
         </p>
       </div>
 

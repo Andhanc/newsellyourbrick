@@ -1,14 +1,17 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiSearch, FiUser, FiUserCheck, FiShield, FiShieldOff, FiX } from 'react-icons/fi';
 import UserDetailModal from './UserDetailModal';
 import { getApiBaseUrl, getApiBaseUrlSync } from '../../utils/apiConfig';
 import { showNotification } from '../../utils/toastHelper';
 import './UsersList.css';
+import { getUiIntlLocale } from '../../utils/uiIntlLocale'
 
 // Константа для базового URL без /api (для изображений)
 const API_BASE_URL_WITHOUT_API = getApiBaseUrlSync().replace('/api', '');
 
 const UsersList = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -47,7 +50,7 @@ const UsersList = () => {
                 firstName: user.first_name || '',
                 lastName: user.last_name || '',
                 avatar: avatarUrl,
-                role: user.role || 'buyer', // 'buyer' или 'seller'
+                role: user.role || 'buyer', // buyer | seller
                 moderationStatus: user.is_verified ? 'approved' : 'pending',
                 isBlocked: user.is_blocked === 1, // Читаем из БД
                 email: user.email || '',
@@ -59,14 +62,14 @@ const UsersList = () => {
             
             setUsers(transformedUsers);
           } else {
-            setError('Не удалось загрузить пользователей');
+            setError(t('admin_usersLoadFail'));
           }
         } else {
-          setError('Ошибка при загрузке пользователей');
+          setError(t('admin_usersLoadError'));
         }
       } catch (err) {
         console.error('❌ Ошибка при загрузке пользователей:', err);
-        setError('Произошла ошибка при загрузке пользователей');
+        setError(t('admin_usersLoadErrorGeneric'));
       } finally {
         setIsLoading(false);
       }
@@ -108,9 +111,11 @@ const UsersList = () => {
 
   const handleBlock = async (userId) => {
     const user = users.find(u => u.id === userId);
-    const action = user?.isBlocked ? 'разблокировать' : 'заблокировать';
+    const confirmMsg = user?.isBlocked
+      ? t('admin_user_confirmUnblock')
+      : t('admin_user_confirmBlock');
     
-    if (window.confirm(`Вы уверены, что хотите ${action} этого пользователя?`)) {
+    if (window.confirm(confirmMsg)) {
       try {
         const API_BASE_URL = await getApiBaseUrl();
         const endpoint = user?.isBlocked 
@@ -127,29 +132,33 @@ const UsersList = () => {
         if (response.ok) {
           const result = await response.json();
           if (result.success) {
-            // Обновляем локальное состояние
             setUsers(users.map(user => 
               user.id === userId ? { ...user, isBlocked: !user.isBlocked } : user
             ));
             
-            // Показываем сообщение об успехе
-            showNotification(`Пользователь успешно ${action === 'заблокировать' ? 'заблокирован' : 'разблокирован'}`);
+            showNotification(
+              user?.isBlocked ? t('admin_user_unblockedOk') : t('admin_user_blockedOk')
+            );
           } else {
-            showNotification(`Ошибка: ${result.error || 'Не удалось изменить статус блокировки'}`);
+            showNotification(
+              `${t('admin_error')}: ${result.error || t('admin_user_blockStatusChangeFail')}`
+            );
           }
         } else {
           const errorData = await response.json();
-          showNotification(`Ошибка: ${errorData.error || 'Не удалось изменить статус блокировки'}`);
+          showNotification(
+            `${t('admin_error')}: ${errorData.error || t('admin_user_blockStatusChangeFail')}`
+          );
         }
       } catch (error) {
-        console.error('Ошибка при изменении статуса блокировки:', error);
-        showNotification('Произошла ошибка при изменении статуса блокировки');
+        console.error('Block status change error:', error);
+        showNotification(t('admin_panel_blockStatusError'));
       }
     }
   };
 
   const getRoleLabel = (role) => {
-    return role === 'buyer' ? 'Покупатель' : 'Продавец';
+    return role === 'buyer' ? t('admin_buyer') : t('admin_seller');
   };
 
   const getRoleIcon = (role) => {
@@ -157,7 +166,7 @@ const UsersList = () => {
   };
 
   const getStatusLabel = (status) => {
-    return status === 'approved' ? 'Одобрен' : 'На модерации';
+    return status === 'approved' ? t('admin_odobren_0a0f1509') : t('admin_na_moderacii_29c1e27e');
   };
 
   const getStatusBadgeClass = (status) => {
@@ -171,7 +180,7 @@ const UsersList = () => {
           <FiSearch className="search-icon" size={20} />
           <input
             type="text"
-            placeholder="Поиск по имени, фамилии или email..."
+            placeholder={t('admin_searchNameLastEmail')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="filter-input"
@@ -180,7 +189,7 @@ const UsersList = () => {
             <button 
               className="clear-search"
               onClick={() => setSearchQuery('')}
-              aria-label="Очистить поиск"
+              aria-label={t('admin_clearSearch')}
             >
               <FiX size={18} />
             </button>
@@ -189,55 +198,55 @@ const UsersList = () => {
         
         <div className="filter-buttons">
           <div className="filter-group">
-            <label className="filter-label">Роль:</label>
+            <label className="filter-label">{t('admin_rol_86bc8f1a')}</label>
             <div className="filter-options">
               <button
                 className={`filter-btn ${roleFilter === 'all' ? 'active' : ''}`}
                 onClick={() => setRoleFilter('all')}
               >
-                Все
+                {t('admin_all')}
               </button>
               <button
                 className={`filter-btn ${roleFilter === 'buyer' ? 'active' : ''}`}
                 onClick={() => setRoleFilter('buyer')}
               >
-                Покупатели
+                {t('admin_pokupateli_c6e3359b')}
               </button>
               <button
                 className={`filter-btn ${roleFilter === 'seller' ? 'active' : ''}`}
                 onClick={() => setRoleFilter('seller')}
               >
-                Продавцы
+                {t('admin_prodavcy_013f28e0')}
               </button>
             </div>
           </div>
 
           <div className="filter-group">
-            <label className="filter-label">Статус:</label>
+            <label className="filter-label">{t('admin_status_b90462b6')}</label>
             <div className="filter-options">
               <button
                 className={`filter-btn ${statusFilter === 'all' ? 'active' : ''}`}
                 onClick={() => setStatusFilter('all')}
               >
-                Все
+                {t('admin_all')}
               </button>
               <button
                 className={`filter-btn ${statusFilter === 'pending' ? 'active' : ''}`}
                 onClick={() => setStatusFilter('pending')}
               >
-                На модерации
+                {t('admin_na_moderacii_29c1e27e')}
               </button>
               <button
                 className={`filter-btn ${statusFilter === 'approved' ? 'active' : ''}`}
                 onClick={() => setStatusFilter('approved')}
               >
-                Одобрены
+                {t('admin_odobreny_f6815dc8')}
               </button>
               <button
                 className={`filter-btn ${statusFilter === 'blocked' ? 'active' : ''}`}
                 onClick={() => setStatusFilter('blocked')}
               >
-                Заблокированы
+                {t('admin_zablokirovany_862c58ba')}
               </button>
             </div>
           </div>
@@ -246,18 +255,18 @@ const UsersList = () => {
 
       {isLoading ? (
         <div className="users-loading">
-          <p>Загрузка пользователей...</p>
+          <p>{t('admin_zagruzka_polzovateley_983713a1')}</p>
         </div>
       ) : error ? (
         <div className="users-error">
-          <p>Ошибка: {error}</p>
-          <button onClick={() => window.location.reload()}>Попробовать снова</button>
+          <p>{t('admin_errorPrefix')}{error}</p>
+          <button onClick={() => window.location.reload()}>{t('admin_tryAgain')}</button>
         </div>
       ) : (
         <div className="admin-users-list">
           {filteredUsers.length === 0 ? (
             <div className="users-empty">
-              <p>Пользователи не найдены</p>
+              <p>{t('admin_polzovateli_ne_naydeny_942d94c3')}</p>
             </div>
           ) : (
             filteredUsers.map(user => (
@@ -297,17 +306,17 @@ const UsersList = () => {
               <div className="user-card__info">
                 <div className="user-card__name">
                   <h3>
-                    {`${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Без имени'}
+                    {`${user.firstName || ''} ${user.lastName || ''}`.trim() || t('admin_bez_imeni_cdf641f2')}
                   </h3>
                   {user.isBlocked && (
-                    <span className="blocked-badge">Заблокирован</span>
+                    <span className="blocked-badge">{t('admin_zablokirovan_2c998bfc')}</span>
                   )}
                 </div>
-                <p className="user-card__email">{user.email || user.phone || 'Нет контактов'}</p>
+                <p className="user-card__email">{user.email || user.phone || t('admin_net_kontaktov_19c1e680')}</p>
                 
                 <div className="user-card__meta">
                   <div className="user-meta-item">
-                    <span className="meta-label">Роль:</span>
+                    <span className="meta-label">{t('admin_rol_86bc8f1a')}</span>
                     <span className={`meta-value meta-value--role meta-value--${user.role}`}>
                       {getRoleIcon(user.role)}
                       {getRoleLabel(user.role)}
@@ -315,23 +324,23 @@ const UsersList = () => {
                   </div>
                   
                   <div className="user-meta-item">
-                    <span className="meta-label">Регистрация:</span>
+                    <span className="meta-label">{t('admin_registraciya_fa3af185')}</span>
                     <span className="meta-value">
                       {user.registrationDate 
                         ? (() => {
                             try {
-                              return new Date(user.registrationDate).toLocaleDateString('ru-RU');
+                              return new Date(user.registrationDate).toLocaleDateString(getUiIntlLocale());
                             } catch (e) {
-                              return 'Не указано';
+                              return t('admin_notSpecified');
                             }
                           })()
-                        : 'Не указано'}
+                        : t('admin_notSpecified')}
                     </span>
                   </div>
                   
                   <div className="user-meta-item">
                     <span className="meta-label">
-                      {user.role === 'buyer' ? 'Куплено объектов:' : 'Выставлено объектов:'}
+                      {user.role === 'buyer' ? t('admin_kupleno_obektov_40df0f0a') : t('admin_vystavleno_obektov_8ddd6156')}
                     </span>
                     <span className="meta-value meta-value--objects">{user.objectsCount || 0}</span>
                   </div>
@@ -342,9 +351,9 @@ const UsersList = () => {
                 <button
                   className={`btn-action ${user.isBlocked ? 'btn-action--unblock' : 'btn-action--block'}`}
                   onClick={() => handleBlock(user.id)}
-                  title={user.isBlocked ? 'Разблокировать' : 'Заблокировать'}
+                  title={user.isBlocked ? t('admin_unblock') : t('admin_block')}
                 >
-                  {user.isBlocked ? 'Разблокировать' : 'Заблокировать'}
+                  {user.isBlocked ? t('admin_unblock') : t('admin_block')}
                 </button>
               </div>
               </div>
@@ -356,11 +365,11 @@ const UsersList = () => {
       {!isLoading && !error && (
         <div className="users-stats">
           <div className="stat-item">
-            <span className="stat-label">Всего пользователей:</span>
+            <span className="stat-label">{t('admin_vsego_polzovateley_9aefbeab')}</span>
             <span className="stat-value">{users.length}</span>
           </div>
           <div className="stat-item">
-            <span className="stat-label">Найдено:</span>
+            <span className="stat-label">{t('admin_naydeno_df119811')}</span>
             <span className="stat-value">{filteredUsers.length}</span>
           </div>
           </div>

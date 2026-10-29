@@ -17,6 +17,7 @@ import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
 import {
   confirmCheckoutSession,
   startOwnerSubscriptionCheckout,
+  translateBillingError,
 } from '../utils/subscriptionCheckout'
 import SiteBrandLogo from '../components/SiteBrandLogo'
 import { PricingInteraction } from '@/components/ui/pricing-interaction'
@@ -230,7 +231,8 @@ export default function OwnerSubscriptionsTestPage() {
       })
       if (!result.ok) {
         setCheckoutError(
-          checkoutErrorText[result.error] || result.error || t('ownerTest_checkoutStripeError')
+          checkoutErrorText[result.error] ||
+            translateBillingError(result.error, t, 'ownerTest_checkoutStripeError')
         )
         setStartingPlanId(null)
       }

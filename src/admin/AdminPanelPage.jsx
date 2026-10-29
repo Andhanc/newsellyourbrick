@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Sidebar from '../components/admin/Sidebar';
 import Header from '../components/admin/Header';
 import { lazyWithRetry } from '../utils/lazyWithRetry';
@@ -50,6 +51,7 @@ function readAdminSectionFromHash() {
 }
 
 const AdminPanelPage = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState(readAdminSectionFromHash);
   const [showUsersModal, setShowUsersModal] = useState(false);
@@ -101,28 +103,28 @@ const AdminPanelPage = () => {
     };
   }, [navigate]);
 
-  const sectionTitles = {
-    statistics: 'Статистика',
-    users: 'Пользователи',
-    private_club: 'Закрытый клуб',
-    moderation: 'Модерация',
-    chat: 'Чат',
-    smart_assistant: 'Умный помощник',
-    addition: 'Добавление',
-    objects: 'Объекты',
-    test_drive: 'Тест-драйв',
-    debt_reasons: 'Причина долга',
-    debt_documents: 'Необходимые документы',
+  const sectionTitles = useMemo(() => ({
+    statistics: t('admin_panel_statistics'),
+    users: t('admin_panel_users'),
+    private_club: t('admin_panel_privateClub'),
+    moderation: t('admin_panel_moderation'),
+    chat: t('admin_panel_chat'),
+    smart_assistant: t('admin_sa_title'),
+    addition: t('admin_panel_addition'),
+    objects: t('admin_panel_objects'),
+    test_drive: t('admin_panel_testDrive'),
+    debt_reasons: t('admin_panel_debtReasons'),
+    debt_documents: t('admin_panel_debtDocuments'),
     whatsapp: 'WhatsApp',
-    clients: 'Клиенты и CRM',
-    purchase_requests: 'Запросы на покупку',
-    bonuses: 'Бонусные задания',
-    testing: 'Тестирование',
-    access_management: 'Доступы',
-    storage: 'Хранилище',
-    auctions: 'Аукционы',
+    clients: t('admin_panel_clients'),
+    purchase_requests: t('admin_pr_title'),
+    bonuses: t('admin_panel_bonuses'),
+    testing: t('admin_panel_testing'),
+    access_management: t('admin_panel_access'),
+    storage: t('admin_panel_storage'),
+    auctions: t('admin_panel_auctions'),
     seo: 'SEO'
-  };
+  }), [t]);
 
   // Проверка прав доступа к разделу
   const hasAccess = (section) => {
@@ -158,7 +160,7 @@ const AdminPanelPage = () => {
   };
 
   const handleLogout = () => {
-    if (window.confirm('Вы уверены, что хотите выйти?')) {
+    if (window.confirm(t('admin_panel_confirmLogout'))) {
       // Полностью завершаем сессию, включая админскую
       clearUserData();
       navigate('/');
@@ -189,7 +191,7 @@ const AdminPanelPage = () => {
         window.history.replaceState(null, '', `#${section}`);
       }
     } else {
-      showNotification('У вас нет прав доступа к этому разделу');
+      showNotification(t('admin_panel_noAccess'));
     }
   };
 
@@ -256,8 +258,8 @@ const AdminPanelPage = () => {
     if (!hasAccess(activeSection)) {
       return (
         <div style={{ padding: '2rem', textAlign: 'center' }}>
-          <h2>Доступ запрещен</h2>
-          <p>У вас нет прав доступа к этому разделу.</p>
+          <h2>{t('admin_panel_accessDenied')}</h2>
+          <p>{t('admin_panel_noAccessDetail')}</p>
         </div>
       );
     }
@@ -346,7 +348,7 @@ const AdminPanelPage = () => {
       />
       <div ref={mainContentRef} className="main-content" data-admin-section={activeSection}>
         <Header 
-          title={sectionTitles[activeSection] || 'Статистика'} 
+          title={sectionTitles[activeSection] || t('admin_panel_statistics')} 
           onLogout={handleLogout}
           onBack={handleBack}
         />

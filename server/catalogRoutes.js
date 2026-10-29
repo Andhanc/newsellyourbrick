@@ -188,16 +188,16 @@ export function registerCatalogRoutes(app) {
       const sale = String(req.query.sale || 'all').trim().toLowerCase();
 
       if (!isValidCatalogCountrySlug(countrySlug)) {
-        return res.status(404).json({ success: false, error: 'Неизвестная страна' });
+        return res.status(404).json({ success: false, error: 'Unknown country' });
       }
       if (!citySlug) {
-        return res.status(400).json({ success: false, error: 'Город не указан' });
+        return res.status(400).json({ success: false, error: 'City not specified' });
       }
       if (typePlural && !CATALOG_TYPE_PLURALS[typePlural]) {
-        return res.status(404).json({ success: false, error: 'Неизвестный тип недвижимости' });
+        return res.status(404).json({ success: false, error: 'Unknown property type' });
       }
       if (!CATALOG_SALE_TABS.includes(sale)) {
-        return res.status(400).json({ success: false, error: 'Некорректный фильтр sale' });
+        return res.status(400).json({ success: false, error: 'Invalid sale filter' });
       }
 
       const all = await loadAllApprovedCatalogProperties();
@@ -208,7 +208,7 @@ export function registerCatalogRoutes(app) {
         sale: 'all',
       });
       if (inCity.length === 0) {
-        return res.status(404).json({ success: false, error: 'Город не найден' });
+        return res.status(404).json({ success: false, error: 'City not found' });
       }
       if (typePlural) {
         const inType = filterCatalogProperties(all, {
@@ -218,7 +218,7 @@ export function registerCatalogRoutes(app) {
           sale: 'all',
         });
         if (inType.length === 0) {
-          return res.status(404).json({ success: false, error: 'Тип не найден' });
+          return res.status(404).json({ success: false, error: 'Type not found' });
         }
       }
 
@@ -245,7 +245,7 @@ export function registerCatalogRoutes(app) {
       });
     } catch (err) {
       console.error('GET /api/catalog', err);
-      return res.status(500).json({ success: false, error: err.message || 'Ошибка каталога' });
+      return res.status(500).json({ success: false, error: err.message || 'Catalog error' });
     }
   });
 }

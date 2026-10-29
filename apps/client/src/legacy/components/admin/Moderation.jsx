@@ -1,4 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n/config';
 import { FiSearch, FiUser, FiHome, FiShield, FiShieldOff, FiX, FiCheck, FiXCircle, FiTrash2 } from 'react-icons/fi';
 import { FaBuilding } from 'react-icons/fa';
 import ModerationPropertyDetail from './ModerationPropertyDetail';
@@ -10,6 +12,7 @@ import {
 } from '../../utils/adminSidebarBadges';
 import './Moderation.css';
 import { getApiBaseUrlSync } from '../../utils/apiConfig';
+import { getUiIntlLocale } from '../../utils/uiIntlLocale'
 
 // Используем dev tunnel для API
 const API_BASE_URL = getApiBaseUrlSync();
@@ -18,21 +21,21 @@ const API_BASE_URL = getApiBaseUrlSync();
 const mockUsersForModeration = [
   {
     id: 1,
-    firstName: 'Петр',
-    lastName: 'Петров',
-    middleName: 'Иванович',
+    firstName: i18n.t('admin_petr_adef68a1'),
+    lastName: i18n.t('admin_petrov_79f47241'),
+    middleName: i18n.t('admin_ivanovich_918d27f4'),
     avatar: '/images/external/photo-1506794778202-cad84cf45f1d-7fea972b45.jpg',
     email: 'petr@example.com',
     phone: '+7 (912) 345-67-89',
     passportNumber: '4512 345678',
-    citizenship: 'Российская Федерация',
+    citizenship: i18n.t('admin_rossiyskaya_federaciya_2ea17dd2'),
     accountNumber: '40817810099910004312',
     role: 'seller',
     registrationDate: '2024-02-20',
     moderationStatus: 'pending',
     documents: [
-      { name: 'Паспорт', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/d0-ad-d0-bb-d0-b5-d0-ba-d1-82-d1-80-d0-be--8c3f8d7484.jpg' },
-      { name: 'Справка', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/photo-1450101499163-c8848c66ca85-72a0e796aa.jpg' }
+      { name: i18n.t('admin_passport'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/d0-ad-d0-bb-d0-b5-d0-ba-d1-82-d1-80-d0-be--8c3f8d7484.jpg' },
+      { name: i18n.t('admin_certificate'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/photo-1450101499163-c8848c66ca85-72a0e796aa.jpg' }
     ],
     photos: [
       '/images/external/photo-1507003211169-0a1dd7228f2d-94d7ce3808.jpg'
@@ -40,20 +43,20 @@ const mockUsersForModeration = [
   },
   {
     id: 2,
-    firstName: 'Мария',
-    lastName: 'Иванова',
-    middleName: 'Сергеевна',
+    firstName: i18n.t('admin_mariya_a2f6bcdf'),
+    lastName: i18n.t('admin_ivanova_bcac614f'),
+    middleName: i18n.t('admin_sergeevna_18aca7ba'),
     avatar: '/images/external/photo-1525134479668-1bee5c7c6845-966b578ed7.jpg',
     email: 'maria@example.com',
     phone: '+7 (923) 456-78-90',
     passportNumber: '4513 456789',
-    citizenship: 'Российская Федерация',
+    citizenship: i18n.t('admin_rossiyskaya_federaciya_2ea17dd2'),
     accountNumber: '40817810099910004313',
     role: 'buyer',
     registrationDate: '2024-05-12',
     moderationStatus: 'pending',
     documents: [
-      { name: 'Паспорт', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/d0-ad-d0-bb-d0-b5-d0-ba-d1-82-d1-80-d0-be--8c3f8d7484.jpg' }
+      { name: i18n.t('admin_passport'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/d0-ad-d0-bb-d0-b5-d0-ba-d1-82-d1-80-d0-be--8c3f8d7484.jpg' }
     ],
     photos: [
       '/images/external/photo-1494790108377-be9c29b29330-e7e855964a.jpg'
@@ -61,22 +64,22 @@ const mockUsersForModeration = [
   },
   {
     id: 3,
-    firstName: 'Сергей',
-    lastName: 'Волков',
-    middleName: 'Александрович',
+    firstName: i18n.t('admin_sergey_384224dc'),
+    lastName: i18n.t('admin_volkov_a4109e4b'),
+    middleName: i18n.t('admin_aleksandrovich_647463e4'),
     avatar: '/images/external/photo-1472099645785-5658abf4ff4e-066a8445b1.jpg',
     email: 'sergey@example.com',
     phone: '+7 (934) 567-89-01',
     passportNumber: '4514 567890',
-    citizenship: 'Российская Федерация',
+    citizenship: i18n.t('admin_rossiyskaya_federaciya_2ea17dd2'),
     accountNumber: '40817810099910004314',
     role: 'seller',
     registrationDate: '2024-08-30',
     moderationStatus: 'pending',
     documents: [
-      { name: 'Паспорт', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/d0-ad-d0-bb-d0-b5-d0-ba-d1-82-d1-80-d0-be--8c3f8d7484.jpg' },
-      { name: 'Справка', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/photo-1450101499163-c8848c66ca85-72a0e796aa.jpg' },
-      { name: 'Лицензия', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/photo-1454165804606-c3d57bc86b40-3152e46306.jpg' }
+      { name: i18n.t('admin_passport'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/d0-ad-d0-bb-d0-b5-d0-ba-d1-82-d1-80-d0-be--8c3f8d7484.jpg' },
+      { name: i18n.t('admin_certificate'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/photo-1450101499163-c8848c66ca85-72a0e796aa.jpg' },
+      { name: i18n.t('admin_licenziya_7f1ef7b9'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/photo-1454165804606-c3d57bc86b40-3152e46306.jpg' }
     ],
     photos: [
       '/images/external/photo-1472099645785-5658abf4ff4e-066a8445b1.jpg'
@@ -88,16 +91,16 @@ const mockUsersForModeration = [
 const mockPropertiesForModeration = [
   {
     id: 1,
-    title: 'Квартира в центре города',
+    title: i18n.t('admin_kvartira_v_centre_goroda_dfb57230'),
     type: 'apartment',
     price: 8500000,
     location: 'Costa Adeje, Tenerife',
-    ownerName: 'Петр Петров',
+    ownerName: i18n.t('admin_petr_petrov_a476c04f'),
     ownerEmail: 'petr@example.com',
     submittedDate: '2024-12-10',
     moderationStatus: 'pending',
     images: 5,
-    description: 'Прекрасная квартира с видом на океан',
+    description: i18n.t('admin_prekrasnaya_kvartira_s_vidom_245b8df9'),
     imageUrls: [
       '/images/external/photo-1560448204-e02f11c3d0e2-ef4b1c9172.jpg',
       '/images/external/photo-1505691938895-1758d7feb511-295137cd90.jpg',
@@ -106,24 +109,24 @@ const mockPropertiesForModeration = [
       '/images/external/photo-1522771739844-6a9f6d5f14af-c11365faed.jpg'
     ],
     documents: [
-      { name: 'Свидетельство о праве собственности', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
-      { name: 'Кадастровый паспорт', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
-      { name: 'Технический паспорт', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
-      { name: 'Справка БТИ', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' }
+      { name: i18n.t('admin_titleDeed'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
+      { name: i18n.t('admin_cadastralPassport'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
+      { name: i18n.t('admin_technicalPassport'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
+      { name: i18n.t('admin_btiCertificate'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' }
     ]
   },
   {
     id: 2,
-    title: 'Вилла на берегу моря',
+    title: i18n.t('admin_villa_na_beregu_morya_51261bee'),
     type: 'villa',
     price: 25000000,
     location: 'Playa de las Américas, Tenerife',
-    ownerName: 'Анна Сидорова',
+    ownerName: i18n.t('admin_anna_sidorova_5bf0731f'),
     ownerEmail: 'anna@example.com',
     submittedDate: '2024-12-12',
     moderationStatus: 'pending',
     images: 8,
-    description: 'Роскошная вилла с бассейном',
+    description: i18n.t('admin_roskoshnaya_villa_s_basseynom_39224fb1'),
     imageUrls: [
       '/images/external/photo-1600596542815-ffad4c1539a9-ee898bce64.jpg',
       '/images/external/photo-1505691938895-1758d7feb511-295137cd90.jpg',
@@ -135,25 +138,25 @@ const mockPropertiesForModeration = [
       '/images/external/photo-1600607687939-ce8a6c25118c-7aaf4b83d3.jpg'
     ],
     documents: [
-      { name: 'Свидетельство о праве собственности', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
-      { name: 'Кадастровый паспорт', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
-      { name: 'Технический паспорт', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
-      { name: 'Справка БТИ', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
-      { name: 'Договор купли-продажи', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' }
+      { name: i18n.t('admin_titleDeed'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
+      { name: i18n.t('admin_cadastralPassport'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
+      { name: i18n.t('admin_technicalPassport'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
+      { name: i18n.t('admin_btiCertificate'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
+      { name: i18n.t('admin_dogovor_kupli_prodazhi_f717039d'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' }
     ]
   },
   {
     id: 3,
-    title: 'Дом в тихом районе',
+    title: i18n.t('admin_dom_v_tihom_rayone_b0dc1907'),
     type: 'house',
     price: 12000000,
     location: 'Los Cristianos, Tenerife',
-    ownerName: 'Сергей Волков',
+    ownerName: i18n.t('admin_sergey_volkov_b91a0ba2'),
     ownerEmail: 'sergey@example.com',
     submittedDate: '2024-12-14',
     moderationStatus: 'pending',
     images: 6,
-    description: 'Уютный дом для семьи',
+    description: i18n.t('admin_uyutnyy_dom_dlya_semi_2f5b4472'),
     imageUrls: [
       '/images/external/photo-1522708323590-d24dbb6b0267-55446ced7e.jpg',
       '/images/external/photo-1600585154340-be6161a56a0c-e705a536f2.jpg',
@@ -163,14 +166,15 @@ const mockPropertiesForModeration = [
       '/images/external/photo-1600585154526-990dced4db0d-06b654a393.jpg'
     ],
     documents: [
-      { name: 'Свидетельство о праве собственности', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
-      { name: 'Кадастровый паспорт', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
-      { name: 'Технический паспорт', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' }
+      { name: i18n.t('admin_titleDeed'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
+      { name: i18n.t('admin_cadastralPassport'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
+      { name: i18n.t('admin_technicalPassport'), type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' }
     ]
   }
 ];
 
 const Moderation = ({ onAdminSectionBadgeRefresh }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('users');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
@@ -232,10 +236,10 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
             if (!groupedByUser[doc.user_id]) {
               groupedByUser[doc.user_id] = {
                 id: doc.user_id,
-                firstName: doc.first_name || 'Не указано',
+                firstName: doc.first_name || t('admin_notSpecified'),
                 lastName: doc.last_name || '',
-                email: doc.email || 'Не указано',
-                phone: doc.phone_number || 'Не указано',
+                email: doc.email || t('admin_notSpecified'),
+                phone: doc.phone_number || t('admin_notSpecified'),
                 role: doc.role || 'buyer', // Используем роль из документа (берется из БД через JOIN)
                 documents: []
               };
@@ -264,7 +268,7 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
             const dateB = b.documents && b.documents.length > 0 
               ? new Date(b.documents[0].created_at || 0).getTime() 
               : 0;
-            return dateB - dateA; // Новые сверху
+            return dateB - dateA; // {t('admin_novye_sverhu_e99bb83e')}
           });
           console.log('👥 Сгруппировано пользователей:', usersList.length);
           console.log('👥 Список пользователей:', usersList);
@@ -321,10 +325,10 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
           } else {
             const newUser = {
               id: userLocalId,
-              firstName: 'Не указано',
+              firstName: t('admin_notSpecified'),
               lastName: '',
-              email: 'Не указано',
-              phone: 'Не указано',
+              email: t('admin_notSpecified'),
+              phone: t('admin_notSpecified'),
               role: 'seller',
               documents: [
                 ...(verification.passportPhoto ? [{
@@ -395,7 +399,7 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
       const dateB = b.documents && b.documents.length > 0 
         ? new Date(b.documents[0].created_at || 0).getTime() 
         : 0;
-      return dateB - dateA; // Новые сверху
+      return dateB - dateA; // {t('admin_novye_sverhu_e99bb83e')}
     });
   }, [activeTab, searchQuery, pendingDocuments]);
 
@@ -436,7 +440,7 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
           console.warn('⚠️ API вернул success: false или нет data');
         }
       } else {
-        const errorText = await response.text().catch(() => 'Неизвестная ошибка');
+        const errorText = await response.text().catch(() => t('admin_unknownError'));
         console.error('❌ Ошибка загрузки объявлений на модерации:', response.status, errorText);
       }
       
@@ -454,9 +458,9 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
           price: property.price,
           currency: property.currency,
           location: property.location || property.address || '',
-          first_name: property.userProfileData?.first_name || 'Не указано',
+          first_name: property.userProfileData?.first_name || t('admin_notSpecified'),
           last_name: property.userProfileData?.last_name || '',
-          email: property.userProfileData?.email || 'Не указано',
+          email: property.userProfileData?.email || t('admin_notSpecified'),
           created_at: property.submittedAt,
           photos: property.photos || [],
           description: property.description,
@@ -522,7 +526,7 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
       propertiesList.sort((a, b) => {
         const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
         const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
-        return dateB - dateA; // Новые сверху
+        return dateB - dateA; // {t('admin_novye_sverhu_e99bb83e')}
       });
       
       console.log(`📊 Итого объявлений для отображения: ${propertiesList.length}`);
@@ -575,7 +579,7 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
     return filtered.sort((a, b) => {
       const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
       const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
-      return dateB - dateA; // Новые сверху
+      return dateB - dateA; // {t('admin_novye_sverhu_e99bb83e')}
     });
   }, [activeTab, searchQuery, pendingProperties, requestTypeFilter]);
 
@@ -589,7 +593,7 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
           const index = parseInt(id.replace('local_', ''));
           if (index >= 0 && index < localStorageProperties.length) {
             const property = localStorageProperties[index];
-            const propertyTitle = property.title || 'Объект недвижимости';
+            const propertyTitle = property.title || t('admin_obekt_nedvizhimosti_6e3a5810');
             const propertyUserId = property.userId;
             
             // Пытаемся найти числовой ID пользователя в БД
@@ -703,8 +707,8 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
                         body: JSON.stringify({
                           user_id: parseInt(dbUserId),
                           type: 'property_approved',
-                          title: 'Ваш объект прошел верификацию',
-                          message: `Ваш объект "${propertyTitle}" прошел верификацию и опубликован на платформе`,
+                          title: t('admin_vash_obekt_proshel_verifikaciyu_f8c6ee3f'),
+                          message: t('admin_vash_obekt_title_proshel_verifikaciyu_opublikovan', { title: propertyTitle }),
                           data: JSON.stringify({ property_id: createData.data?.id, property_title: propertyTitle })
                         })
                       });
@@ -734,7 +738,7 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
             // Удаляем объект из localStorage
             localStorageProperties.splice(index, 1);
             localStorage.setItem('pendingProperties', JSON.stringify(localStorageProperties));
-            showNotification('Объявление одобрено и удалено из списка модерации.');
+            showNotification(t('admin_obyavlenie_odobreno_i_udaleno_d5f899c5'));
             loadPendingProperties();
             setSelectedProperty(null);
           }
@@ -755,12 +759,12 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
           if (index >= 0 && index < localStorageVerifications.length) {
             localStorageVerifications.splice(index, 1);
             localStorage.setItem('pendingVerifications', JSON.stringify(localStorageVerifications));
-            showNotification('Пользователь одобрен и удален из списка модерации.');
+            showNotification(t('admin_polzovatel_odobren_i_udalen_f288f420'));
             loadPendingDocuments();
             setSelectedUser(null);
           } else {
             console.warn('Не удалось найти пользователя в localStorage с ID:', id);
-            showNotification('Пользователь не найден в localStorage. Возможно, он уже был обработан.');
+            showNotification(t('admin_polzovatel_ne_nayden_v_d4b9ca2f'));
             loadPendingDocuments();
             setSelectedUser(null);
           }
@@ -832,7 +836,7 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
               console.log('📊 Статус объекта после одобрения:', data.data.moderation_status);
               if (data.data.moderation_status !== 'approved') {
                 console.warn('⚠️ ВНИМАНИЕ: Объект одобрен, но статус не обновлен на approved!', data.data);
-                showNotification('Объявление одобрено, но статус не обновлен. Возможно, проблема на сервере. Проверьте логи бэкенда.');
+                showNotification(t('admin_obyavlenie_odobreno_no_status_7089cc74'));
               } else {
                 console.log('✅ Статус объекта успешно обновлен на approved');
               }
@@ -872,8 +876,8 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
             }, 5 * 60 * 1000); // 5 минут
             
             showNotification(data.translated === false
-              ? 'Объявление опубликовано. Перевод не удался — можно перевести позже.'
-              : 'Объявление переведено на все языки сайта и опубликовано.');
+              ? t('admin_obyavlenie_opublikovano_perevod_ne_8d9e62ea')
+              : t('admin_obyavlenie_perevedeno_na_vse_fb7844d6'));
             // Закрываем детальный вид
             setSelectedProperty(null);
             
@@ -892,12 +896,12 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
             }, 1500);
           } else {
             console.error('❌ API вернул success: false:', data);
-            showNotification(data.error || data.message || 'Ошибка при одобрении объявления. Сервер вернул ошибку.');
+            showNotification(data.error || data.message || t('admin_oshibka_pri_odobrenii_obyavleniya_66b18919'));
           }
         } else {
-          const errorText = await response.text().catch(() => 'Неизвестная ошибка');
+          const errorText = await response.text().catch(() => t('admin_unknownError'));
           console.error('❌ Ошибка HTTP при одобрении:', response.status, errorText);
-          let errorMessage = 'Ошибка при одобрении объявления';
+          let errorMessage = t('admin_oshibka_pri_odobrenii_obyavleniya_fffaa654');
           try {
             const errorData = JSON.parse(errorText);
             errorMessage = errorData.error || errorData.message || errorMessage;
@@ -934,18 +938,18 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
               console.warn('⚠️ Не удалось очистить localStorage:', e);
             }
             
-            showNotification('Пользователь одобрен и верифицирован. Ему отправлено уведомление.');
+            showNotification(t('admin_polzovatel_odobren_i_verificirovan_16588358'));
             loadPendingDocuments();
             setSelectedUser(null);
           }
         } else {
           const errorData = await response.json().catch(() => ({}));
-          showNotification(errorData.error || 'Ошибка при одобрении пользователя');
+          showNotification(errorData.error || t('admin_oshibka_pri_odobrenii_polzovatelya_69a04bbe'));
         }
       }
     } catch (error) {
       console.error('Ошибка при одобрении:', error);
-      showNotification('Ошибка при одобрении');
+      showNotification(t('admin_oshibka_pri_odobrenii_06d6fdf9'));
     }
   };
 
@@ -962,7 +966,7 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
           if (reversedIndex >= 0 && reversedIndex < localStorageProperties.length) {
             localStorageProperties.splice(reversedIndex, 1);
             localStorage.setItem('pendingProperties', JSON.stringify(localStorageProperties));
-            showNotification('Объявление отклонено и удалено из списка модерации.');
+            showNotification(t('admin_obyavlenie_otkloneno_i_udaleno_1e2f68aa'));
             loadPendingProperties();
             setSelectedProperty(null);
           }
@@ -975,7 +979,7 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
           if (reversedIndex >= 0 && reversedIndex < localStorageVerifications.length) {
             localStorageVerifications.splice(reversedIndex, 1);
             localStorage.setItem('pendingVerifications', JSON.stringify(localStorageVerifications));
-            showNotification('Пользователь отклонен и удален из списка модерации.');
+            showNotification(t('admin_polzovatel_otklonen_i_udalen_83aade44'));
             loadPendingDocuments();
             setSelectedUser(null);
           }
@@ -1001,13 +1005,13 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
         if (response.ok) {
           const data = await response.json();
           if (data.success) {
-            showNotification('Объявление отклонено. Владельцу отправлено уведомление.');
+            showNotification(t('admin_obyavlenie_otkloneno_vladelcu_otprav_2d1fd0c4'));
             loadPendingProperties();
             setSelectedProperty(null);
           }
         } else {
           const errorData = await response.json().catch(() => ({}));
-          showNotification(errorData.error || 'Ошибка при отклонении объявления');
+          showNotification(errorData.error || t('admin_oshibka_pri_otklonenii_obyavleniya_6520742e'));
         }
       } else {
         // Отклонение пользователя
@@ -1037,26 +1041,26 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
               console.warn('⚠️ Не удалось очистить localStorage:', e);
             }
             
-            showNotification('Пользователь отклонен. Ему отправлено уведомление.');
+            showNotification(t('admin_polzovatel_otklonen_emu_otpravleno_1f6954ae'));
             loadPendingDocuments();
             setSelectedUser(null);
           }
         } else {
           const errorData = await response.json().catch(() => ({}));
-          showNotification(errorData.error || 'Ошибка при отклонении пользователя');
+          showNotification(errorData.error || t('admin_oshibka_pri_otklonenii_polzovatelya_68a7d7e6'));
         }
       }
     } catch (error) {
       console.error('Ошибка при отклонении:', error);
-      showNotification('Ошибка при отклонении');
+      showNotification(t('admin_oshibka_pri_otklonenii_e7e63a7e'));
     }
   };
 
   const getTypeLabel = (type) => {
     const types = {
-      apartment: 'Квартира',
-      villa: 'Вилла',
-      house: 'Дом'
+      apartment: t('admin_apartment'),
+      villa: t('admin_villa'),
+      house: t('admin_house')
     };
     return types[type] || type;
   };
@@ -1075,10 +1079,10 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
   };
 
   const clearLocalStorage = () => {
-    if (window.confirm('Вы уверены, что хотите очистить все данные из localStorage? Это удалит все необработанные верификации и объявления из локального хранилища.')) {
+    if (window.confirm(t('admin_vy_uvereny_chto_hotite_c0d75300'))) {
       localStorage.removeItem('pendingVerifications');
       localStorage.removeItem('pendingProperties');
-      showNotification('localStorage очищен. Список модерации обновлен.');
+      showNotification(t('admin_localtorage_ochischen_spisok_modera_a8f4a18f'));
       if (activeTab === 'users') {
         loadPendingDocuments();
       } else {
@@ -1129,7 +1133,7 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
           }}
         >
           <FiUser size={18} />
-          Пользователи
+          {t('admin_polzovateli_0f0b8f55')}
         </button>
         <button
           className={`moderation-tab ${activeTab === 'properties' ? 'active' : ''}`}
@@ -1140,7 +1144,7 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
           }}
         >
           <FiHome size={18} />
-          Недвижимость
+          {t('admin_nedvizhimost_e65aac89')}
         </button>
       </div>
 
@@ -1150,8 +1154,8 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
           type="text"
           placeholder={
             activeTab === 'users'
-              ? 'Поиск по имени, фамилии или email...'
-              : 'Поиск по названию, локации или владельцу...'
+              ? t('admin_poisk_po_imeni_familii_d74bf0de')
+              : t('admin_poisk_po_nazvaniyu_lokacii_e58588bb')
           }
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -1161,7 +1165,7 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
           <button
             className="clear-search"
             onClick={() => setSearchQuery('')}
-            aria-label="Очистить поиск"
+            aria-label={t('admin_clearSearch')}
           >
             <FiX size={18} />
           </button>
@@ -1173,11 +1177,11 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
         <div className="moderation-content">
           {loading ? (
             <div className="moderation-empty">
-              <p>Загрузка документов...</p>
+              <p>{t('admin_zagruzka_dokumentov_f59e4ff0')}</p>
             </div>
           ) : filteredUsers.length === 0 ? (
             <div className="moderation-empty">
-              <p>Нет документов на верификацию</p>
+              <p>{t('admin_net_dokumentov_na_verifikaciyu_63f43fe7')}</p>
             </div>
           ) : (
             <div className="moderation-list">
@@ -1210,23 +1214,23 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
 
                     <div className="moderation-card__meta">
                       <div className="moderation-meta-item">
-                        <span className="moderation-label">Роль:</span>
+                        <span className="moderation-label">{t('admin_rol_86bc8f1a')}</span>
                         <span className={`moderation-value moderation-value--${user.role}`}>
-                          {user.role === 'buyer' ? 'Покупатель' : 'Продавец'}
+                          {user.role === 'buyer' ? t('admin_buyer') : t('admin_seller')}
                         </span>
                       </div>
                       <div className="moderation-meta-item">
-                        <span className="moderation-label">Регистрация:</span>
+                        <span className="moderation-label">{t('admin_registraciya_fa3af185')}</span>
                         <span className="moderation-value">
                           {user.documents && user.documents.length > 0 && user.documents[0].created_at
-                            ? new Date(user.documents[0].created_at).toLocaleDateString('ru-RU')
-                            : 'Не указано'}
+                            ? new Date(user.documents[0].created_at).toLocaleDateString(getUiIntlLocale())
+                            : t('admin_notSpecified')}
                         </span>
                       </div>
                       <div className="moderation-meta-item">
-                        <span className="moderation-label">Документы:</span>
+                        <span className="moderation-label">{t('admin_dokumenty_682414b8')}</span>
                         <span className="moderation-value">
-                          {user.documents ? user.documents.length : 0} документ(ов) на проверку
+                          {t('admin_n_dokument_ov_na_a2e9bbe0', { n: user.documents ? user.documents.length : 0 })}
                         </span>
                       </div>
                     </div>
@@ -1246,45 +1250,45 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
               className={`moderation-filter-btn ${requestTypeFilter === 'all' ? 'active' : ''}`}
               onClick={() => setRequestTypeFilter('all')}
             >
-              Все
+              {t('admin_all')}
             </button>
             <button
               className={`moderation-filter-btn ${requestTypeFilter === 'publication' ? 'active' : ''}`}
               onClick={() => setRequestTypeFilter('publication')}
             >
-              Публикация
+              {t('admin_publikaciya_eb8ec703')}
             </button>
             <button
               className={`moderation-filter-btn ${requestTypeFilter === 'edit' ? 'active' : ''}`}
               onClick={() => setRequestTypeFilter('edit')}
             >
-              Редактирование
+              {t('admin_redaktirovanie_29f74d43')}
             </button>
             <button
               className={`moderation-filter-btn ${requestTypeFilter === 'delete' ? 'active' : ''}`}
               onClick={() => setRequestTypeFilter('delete')}
             >
-              Удаление
+              {t('admin_udalenie_04963db0')}
             </button>
           </div>
 
           {loading ? (
             <div className="moderation-empty">
-              <p>Загрузка...</p>
+              <p>{t('admin_loading')}</p>
             </div>
           ) : filteredProperties.length === 0 ? (
             <div className="moderation-empty">
-              <p>Нет объектов недвижимости на модерации</p>
+              <p>{t('admin_net_obektov_nedvizhimosti_na_ad3c87cc')}</p>
             </div>
           ) : (
             <div className="moderation-list">
               {filteredProperties.map(property => {
-                const ownerName = `${property.first_name || ''} ${property.last_name || ''}`.trim() || 'Не указано';
+                const ownerName = `${property.first_name || ''} ${property.last_name || ''}`.trim() || t('admin_notSpecified');
                 const requestType = getRequestType(property);
                 const requestTypeLabels = {
-                  'publication': 'Запрос на публикацию',
-                  'edit': 'Запрос на редактирование',
-                  'delete': 'Запрос на удаление'
+                  'publication': t('admin_publicationRequest'),
+                  'edit': t('admin_editRequest'),
+                  'delete': t('admin_deleteRequest')
                 };
                 const requestTypeColors = {
                   'publication': '#0099A9',
@@ -1306,7 +1310,7 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
                     <div className="moderation-card__info">
                       <div className="moderation-card__header">
                         <h3>{property.title}</h3>
-                        {/* Показываем тип запроса только когда выбран фильтр "Все" */}
+                        {/* Показываем тип запроса только когда выбран фильтр t('admin_all') */}
                         {requestTypeFilter === 'all' && (
                           <span 
                             className="moderation-request-badge"
@@ -1323,34 +1327,34 @@ const Moderation = ({ onAdminSectionBadgeRefresh }) => {
                           </span>
                         )}
                       </div>
-                      <p className="moderation-card__location">{property.location || 'Не указано'}</p>
+                      <p className="moderation-card__location">{property.location || t('admin_notSpecified')}</p>
 
                       <div className="moderation-card__meta">
                         <div className="moderation-meta-item">
-                          <span className="moderation-label">Тип:</span>
+                          <span className="moderation-label">{t('admin_tip_2345ad64')}</span>
                           <span className="moderation-value">{getTypeLabel(property.property_type)}</span>
                         </div>
                         {property.price && (
                           <div className="moderation-meta-item">
-                            <span className="moderation-label">Цена:</span>
+                            <span className="moderation-label">{t('admin_cena_6715b185')}</span>
                             <span className="moderation-value moderation-value--price">
-                              {property.price.toLocaleString('ru-RU')} {property.currency || 'USD'}
+                              {property.price.toLocaleString(getUiIntlLocale())} {property.currency || 'USD'}
                             </span>
                           </div>
                         )}
                         <div className="moderation-meta-item">
-                          <span className="moderation-label">Владелец:</span>
+                          <span className="moderation-label">{t('admin_vladelec_a3021a4b')}</span>
                           <span className="moderation-value">{ownerName}</span>
                         </div>
                         <div className="moderation-meta-item">
-                          <span className="moderation-label">Дата подачи:</span>
+                          <span className="moderation-label">{t('admin_data_podachi_71a7232c')}</span>
                           <span className="moderation-value">
-                            {new Date(property.created_at).toLocaleDateString('ru-RU')}
+                            {new Date(property.created_at).toLocaleDateString(getUiIntlLocale())}
                           </span>
                         </div>
                         {property.photos && Array.isArray(property.photos) && (
                           <div className="moderation-meta-item">
-                            <span className="moderation-label">Фотографий:</span>
+                            <span className="moderation-label">{t('admin_fotografiy_89083c98')}</span>
                             <span className="moderation-value">{property.photos.length}</span>
                           </div>
                         )}

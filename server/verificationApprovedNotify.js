@@ -4,20 +4,20 @@ import { resolvePublicFrontendBase } from './publicFrontendUrl.js';
 
 export function buildVerificationApprovedCopy({ siteUrl } = {}) {
   const base = String(siteUrl || resolvePublicFrontendBase()).replace(/\/+$/, '');
-  const subject = 'Верификация пройдена — SellYourBrick';
+  const subject = 'Verification approved — SellYourBrick';
 
   const emailBody = [
-    'Здравствуйте!',
+    'Hello!',
     '',
-    'Ваши документы одобрены администратором. Верификация пройдена.',
-    'Теперь вы можете делать ставки на аукционах и пользоваться всеми функциями покупателя.',
+    'Your documents were approved by an administrator. Verification is complete.',
+    'You can now place auction bids and use all buyer features.',
     '',
-    `Открыть сайт: ${base}`,
+    `Open the site: ${base}`,
     '',
     'SellYourBrick',
   ].join('\n');
 
-  const whatsappBody = `🎉 Верификация пройдена!\n\nДокументы одобрены. Теперь вы можете делать ставки на аукционах и пользоваться всеми функциями покупателя.\n\n${base}`;
+  const whatsappBody = `🎉 Verification approved!\n\nYour documents were approved. You can now place auction bids and use all buyer features.\n\n${base}`;
 
   return { subject, emailBody, whatsappBody };
 }

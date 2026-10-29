@@ -30,7 +30,7 @@ export default function BuyerMapScene({ onOpenStrategies }) {
   const metricCards = useMemo(
     () => [
       { key: 'yield', label: t('buyerPage_mapYield'), value: '+10.8%', Icon: FiTrendingUp, placement: 'tl' },
-      { key: 'area', label: t('buyerPage_mapArea'), value: '1 500 м²', Icon: FiGrid, placement: 'tr' },
+      { key: 'area', label: t('buyerPage_mapArea'), value: t('buyerPage_mapAreaValue'), Icon: FiGrid, placement: 'tr' },
       { key: 'beds', label: t('buyerPage_mapBeds'), value: t('buyerPage_mapBedsValue'), Icon: FiHome, placement: 'bl' },
       { key: 'trust', label: t('buyerPage_mapTrust'), value: '99%', Icon: FiShield, placement: 'br' },
     ],

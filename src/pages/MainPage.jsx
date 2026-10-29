@@ -77,7 +77,7 @@ import {
   isSoftLaunchHrefBlocked,
 } from '../utils/softLaunchAccess'
 import { getManagerContactButtons } from '../services/liveChatApi'
-import { refreshAssistantMessageCopy, visibleAssistantButtons } from '../utils/siteAssistantHelpers'
+import { getSiteLinkLabel, refreshAssistantMessageCopy, visibleAssistantButtons } from '../utils/siteAssistantHelpers'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
 import SiteNavDrawer from '../components/SiteNavDrawer'
 import CookieConsentDrawer, {
@@ -86,6 +86,7 @@ import CookieConsentDrawer, {
 } from '../components/CookieConsentDrawer'
 import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
 import { fetchUserById } from '../utils/usersApi'
+import { getUiIntlLocale } from '../utils/uiIntlLocale'
 
 import { getApiBaseUrl, getApiBaseUrlSync, getEventsBaseUrl } from '../utils/apiConfig'
 import { normalizePropertyMediaFields, getPropertyCardImage } from '../utils/propertyImage'
@@ -106,104 +107,79 @@ import HomeSaleFormats from '../components/HomeSaleFormats'
 
 const MainPageBelowFoldLazy = lazyWithRetry(() => import('./MainPageBelowFold'))
 
-/** Фон hero-секции (вилла в public/images/external) */
+/** Hero section background (villa in public/images/external) */
 const HERO_BACKGROUND_URL = publicAsset('images/external/shares-hero-villa.jpg')
 const LANDING_MODELS_RIBBON_IMAGE = publicAsset('images/sellyourbrick/landing-models-ribbon.png')
 
-// Используем синхронную версию для инициализации, затем обновим при загрузке
+// Use sync version for init, then refresh on load
 let API_BASE_URL = getApiBaseUrlSync()
 
 const LISTING_IMAGE_FALLBACK =
   '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
 
-const premiumStats = [
-  { value: '4', label: 'стратегии', text: 'аукцион, фиксированная цена, доли и долги' },
-  { value: '€1.4B+', label: 'активов', text: 'в объектной, долговой и инвестиционной витрине' },
-  { value: '34%', label: 'быстрее', text: 'путь от интереса к квалифицированному решению' },
+// Not rendered on MainPage today (landing stats use statLabel1/2). Keyed for reuse / future wire-up.
+const premiumStatDefs = [
+  { value: '4', labelKey: 'mainPremiumStat_0_label', textKey: 'mainPremiumStat_0_text' },
+  { value: '€1.4B+', labelKey: 'mainPremiumStat_1_label', textKey: 'mainPremiumStat_1_text' },
+  { value: '34%', labelKey: 'mainPremiumStat_2_label', textKey: 'mainPremiumStat_2_text' },
 ]
 
-const premiumModes = [
+const premiumModeDefs = [
   {
     id: 'auction',
+    i18nKey: 'auction',
     number: '01',
-    eyebrow: 'Аукцион',
-    benefit: 'Поймайте цену ниже рынка',
-    proof: 'Прозрачные ставки и понятный финал торгов',
-    title: 'Аукцион показывает реальный спрос',
-    text: 'Подходит объектам, где важно создать конкуренцию покупателей и получить рыночную цену без хаоса в переговорах.',
-    caption: 'Для продавца: управляемые торги. Для покупателя: прозрачная история ставок.',
-    actionText: 'Показать аукционы',
     to: '/auction?filter=auction',
     anchorId: 'strategy-auction',
     objectsId: 'objects-auction',
     image: '/images/home-sale-formats/summer-2026/sale-format-auction-summer.webp',
-    imageAlt: 'Современный европейский дом для продажи на аукционе',
     Icon: FaGavel,
   },
   {
     id: 'buy-now',
+    i18nKey: 'buyNow',
     number: '02',
-    eyebrow: 'Купить сейчас',
-    benefit: 'Заберите подходящий объект без ожидания',
-    proof: 'Фиксированная цена и быстрый путь к сделке',
-    title: 'Купить сейчас закрывает сделку быстрее',
-    text: 'Формат для понятных активов с фиксированной ценой: покупатель не ждет финала торгов, продавец быстрее получает решение.',
-    caption: 'Для тех, кто уже готов к сделке и хочет убрать лишние шаги.',
-    actionText: 'Показать объекты',
     to: '/auction/buy-now',
     anchorId: 'strategy-buy-now',
     objectsId: 'objects-buy-now',
     image: '/images/home-sale-formats/summer-2026/sale-format-buy-now-summer.webp',
-    imageAlt: 'Светлая готовая вилла для быстрой покупки',
     Icon: FaBolt,
   },
   {
     id: 'shares',
+    i18nKey: 'shares',
     number: '03',
-    eyebrow: 'Доли',
-    benefit: 'Начните с меньшего капитала',
-    proof: 'Доля в реальном объекте и доход пропорционально участию',
-    title: 'Доли открывают вход с меньшим чеком',
-    text: 'Инвестор может собрать портфель из долей в проверенных объектах, а собственник получает новый способ монетизации.',
-    caption: 'Четкая структура доли, объекта, доходности и выхода.',
-    actionText: 'Показать доли',
     to: '/shares',
     anchorId: 'strategy-shares',
     objectsId: 'objects-shares',
     image: '/images/home-sale-formats/summer-2026/sale-format-shares-summer.webp',
-    imageAlt: 'Премиальный доходный объект для долевого участия',
     Icon: FaGem,
   },
   {
     id: 'debts',
+    i18nKey: 'debts',
     number: '04',
-    eyebrow: 'Долги',
-    benefit: 'Используйте дисконт за сложность',
-    proof: 'Риск-профиль и условия известны до решения',
-    title: 'Долги превращают сложность в стратегию',
-    text: 'Долговые активы требуют отдельной логики: дисконт, документы, риск-профиль и сценарий выхода видны до решения.',
-    caption: 'Для инвесторов, которые умеют работать с асимметрией цены и риска.',
-    actionText: 'Показать долги',
     to: '/debts',
     anchorId: 'strategy-debts',
     objectsId: 'objects-debts',
     image: '/images/home-sale-formats/summer-2026/sale-format-debts-summer.webp',
-    imageAlt: 'Недвижимость с инвестиционным потенциалом долгового актива',
     Icon: FiPieChart,
   },
 ]
 
-const premiumFlow = [
-  ['01', 'Собираем объект', 'фото, параметры, документы, ограничения и целевой сценарий продажи'],
-  ['02', 'Упаковываем спрос', 'позиционирование, витрина, торги, buy now или доли'],
-  ['03', 'Ведем сделку', 'чат, уведомления, депозит, история ставок и безопасное закрытие'],
+// Not rendered on MainPage today. Keyed for reuse / future wire-up.
+const premiumFlowDefs = [
+  { step: '01', titleKey: 'mainPremiumFlow_0_title', textKey: 'mainPremiumFlow_0_text' },
+  { step: '02', titleKey: 'mainPremiumFlow_1_title', textKey: 'mainPremiumFlow_1_text' },
+  { step: '03', titleKey: 'mainPremiumFlow_2_title', textKey: 'mainPremiumFlow_2_text' },
 ]
 
-const premiumProof = [
-  'Юридический контур сделки виден до решения',
-  'AI-консультант помогает сузить выбор без давления',
-  'Продавец и инвестор работают в одном интерфейсе',
-  'Каждый объект можно открыть как инвестиционный сценарий',
+// Not rendered on MainPage today. Keyed for reuse / future wire-up.
+const premiumProofKeys = [
+  'mainPremiumProof_0',
+  'mainPremiumProof_1',
+  'mainPremiumProof_2',
+  'mainPremiumProof_3',
 ]
 
 function TiffanyThreeScene() {
@@ -386,6 +362,7 @@ function asFiniteNumberOrNull(value) {
   return Number.isFinite(n) ? n : null
 }
 
+// Demo fixtures: not used in home showcases (API-driven). May surface only via AI chat rec IDs.
 const recommendedProperties = [
   {
     id: 1,
@@ -412,8 +389,8 @@ const recommendedProperties = [
     currentBid: 750000,
     endTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000 + 58 * 60 * 1000 + 53 * 1000).toISOString(),
     description:
-      'Роскошная недвижимость в самом сердце Манхэттена. Современная квартира с панорамными видами на город. Рядом находятся лучшие рестораны, магазины и культурные достопримечательности. Идеальное расположение для тех, кто ценит комфорт и престиж.',
-    owner: { firstName: 'Джон', lastName: 'Смит' },
+      'Luxury property in the heart of Manhattan. Modern apartment with panoramic city views. Near top restaurants, shops and cultural landmarks.',
+    owner: { firstName: 'John', lastName: 'Smith' },
     broker: {
       name: 'Muhammad Farhan',
       phone: '18392719103',
@@ -445,8 +422,8 @@ const recommendedProperties = [
     currentBid: 1100,
     endTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 9 * 60 * 60 * 1000 + 58 * 60 * 1000 + 53 * 1000).toISOString(),
     description:
-      'Прекрасная вилла в элитном районе Коста-Адехе. Современный дизайн, просторные террасы с видом на океан. Рядом находятся лучшие пляжи, гольф-клубы и рестораны. Идеальное место для отдыха и жизни на Тенерифе.',
-    owner: { firstName: 'Карлос', lastName: 'Родригес' },
+      'Beautiful villa in upscale Costa Adeje. Modern design, spacious terraces with ocean views. Near beaches, golf clubs and restaurants.',
+    owner: { firstName: 'Carlos', lastName: 'Rodriguez' },
     broker: {
       name: 'Muhammad Farhan',
       phone: '18392719103',
@@ -481,8 +458,8 @@ const nearbyProperties = [
     currentBid: 950,
     endTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000 + 58 * 60 * 1000 + 53 * 1000).toISOString(),
     description:
-      'Уютный дом в Лос-Кристианос, одном из самых популярных курортов Тенерифе. Близость к пляжу, магазинам и ресторанам. Тихое место с прекрасным климатом круглый год. Отличный вариант для постоянного проживания или отдыха.',
-    owner: { firstName: 'Мария', lastName: 'Гонсалес' },
+      'Cozy home in Los Cristianos, one of Tenerife’s most popular resorts. Close to the beach, shops and restaurants. Quiet spot with great year-round climate.',
+    owner: { firstName: 'Maria', lastName: 'Gonzalez' },
     broker: {
       name: 'Muhammad Farhan',
       phone: '18392719103',
@@ -514,8 +491,8 @@ const nearbyProperties = [
     currentBid: 920,
     endTime: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000 + 11 * 60 * 60 * 1000 + 58 * 60 * 1000 + 53 * 1000).toISOString(),
     description:
-      'Светлая квартира в историческом Пуэрто-де-ла-Крус. Уникальное расположение на севере острова с мягким климатом. Рядом ботанический сад, пляжи с черным песком и множество достопримечательностей. Идеально для тех, кто любит спокойствие и природу.',
-    owner: { firstName: 'Антонио', lastName: 'Мартинес' },
+      'Bright apartment in historic Puerto de la Cruz. Unique north-island location with a mild climate. Near the botanical garden, black-sand beaches and many sights.',
+    owner: { firstName: 'Antonio', lastName: 'Martinez' },
     broker: {
       name: 'Muhammad Farhan',
       phone: '18392719103',
@@ -528,11 +505,11 @@ const nearbyProperties = [
 const apartmentsData = [
   {
     id: 1,
-    name: 'Тропарево Парк',
+    name: 'Adeje Ocean Residence',
     location: 'Costa Adeje, Tenerife',
     price: 8500372,
     coordinates: [28.2916, -16.6291],
-    owner: { firstName: 'Хосе', lastName: 'Мендес' },
+    owner: { firstName: 'Jose', lastName: 'Mendez' },
     image: '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
     images: [
       '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
@@ -545,12 +522,12 @@ const apartmentsData = [
     hasSamolyot: false,
     isAuction: true,
     currentBid: 8000000,
-    endTime: new Date(Date.now() + 100 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000 + 58 * 60 * 1000 + 53 * 1000).toISOString(), // 100 дней (зеленый - от 3 месяцев)
+    endTime: new Date(Date.now() + 100 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000 + 58 * 60 * 1000 + 53 * 1000).toISOString(), // 100 days (green — 3+ months)
     beds: 2,
     baths: 1,
     sqft: 850,
     description:
-      'Современная квартира в престижном районе Коста-Адехе. Элитный комплекс с бассейном и инфраструктурой. Рядом лучшие пляжи острова, гольф-поля и рестораны высокой кухни. Идеальное место для инвестиций и отдыха.',
+      'Modern apartment in prestigious Costa Adeje. Elite complex with pool and amenities. Near top beaches, golf courses and fine dining.',
   },
 ]
 
@@ -561,7 +538,7 @@ const villasData = [
     location: 'Costa Adeje, Tenerife',
     price: 12000000,
     coordinates: [28.2916, -16.6291],
-    owner: { firstName: 'Франсиско', lastName: 'Гарсия' },
+    owner: { firstName: 'Francisco', lastName: 'Garcia' },
     image: '/images/external/photo-1600596542815-ffad4c1539a9-95d912f909.jpg',
     images: [
       '/images/external/photo-1600596542815-ffad4c1539a9-95d912f909.jpg',
@@ -576,23 +553,23 @@ const villasData = [
     hasSamolyot: false,
     isAuction: true,
     currentBid: 11000000,
-    endTime: new Date(Date.now() + 70 * 24 * 60 * 60 * 1000 + 10 * 60 * 60 * 1000 + 58 * 60 * 1000 + 53 * 1000).toISOString(), // 70 дней (оранжевый - от 2 до 3 месяцев)
+    endTime: new Date(Date.now() + 70 * 24 * 60 * 60 * 1000 + 10 * 60 * 60 * 1000 + 58 * 60 * 1000 + 53 * 1000).toISOString(), // 70 days (orange — 2–3 months)
     beds: 4,
     baths: 3,
     sqft: 2500,
     description:
-      'Роскошная вилла в элитном районе Коста-Адехе с панорамным видом на океан. Частный бассейн, террасы, современная кухня. Рядом лучшие пляжи, гольф-клубы и рестораны. Идеальное место для роскошного отдыха и жизни.',
+      'Luxury villa in upscale Costa Adeje with panoramic ocean views. Private pool, terraces, modern kitchen. Near beaches, golf clubs and restaurants.',
   },
 ]
 
 const flatsData = [
   {
     id: 1,
-    name: 'Современная квартира в центре',
-    location: 'Москва, ул. Тверская, 15',
+    name: 'Modern city-center apartment',
+    location: 'Moscow, Tverskaya St., 15',
     price: 12500000,
     coordinates: [55.7558, 37.6173],
-    owner: { firstName: 'Александр', lastName: 'Иванов' },
+    owner: { firstName: 'Alexander', lastName: 'Ivanov' },
     image: '/images/external/photo-1522708323590-d24dbb6b0267-cf542d6d64.jpg',
     images: [
       '/images/external/photo-1522708323590-d24dbb6b0267-cf542d6d64.jpg',
@@ -605,23 +582,23 @@ const flatsData = [
     hasSamolyot: false,
     isAuction: true,
     currentBid: 11800000,
-    endTime: new Date(Date.now() + 92 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000 + 58 * 60 * 1000 + 53 * 1000).toISOString(), // 92 дня (зеленый - от 3 месяцев)
+    endTime: new Date(Date.now() + 92 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000 + 58 * 60 * 1000 + 53 * 1000).toISOString(), // 92 days (green — 3+ months)
     beds: 2,
     baths: 1,
     sqft: 65,
     description:
-      'Просторная двухкомнатная квартира в самом центре Москвы. Евроремонт, панорамные окна, вид на парк. Большая гостиная, современная кухня. Вся мебель и техника в отличном состоянии. Парковка во дворе.',
+      'Spacious two-bedroom apartment in central Moscow. Renovated, panoramic windows, park view. Large living room, modern kitchen. Furniture and appliances in excellent condition. Courtyard parking.',
   },
 ]
 
 const townhousesData = [
   {
     id: 1,
-    name: 'Таунхаус в элитном поселке',
-    location: 'Московская область, Одинцово, ул. Садовая, 15',
+    name: 'Townhouse in a gated community',
+    location: 'Moscow Region, Odintsovo, Sadovaya St., 15',
     price: 24500000,
     coordinates: [55.6759, 37.2784],
-    owner: { firstName: 'Владимир', lastName: 'Новиков' },
+    owner: { firstName: 'Vladimir', lastName: 'Novikov' },
     image: '/images/external/photo-1600585154340-be6161a56a0c-753fb8cc27.jpg',
     images: [
       '/images/external/photo-1600585154340-be6161a56a0c-753fb8cc27.jpg',
@@ -639,7 +616,7 @@ const townhousesData = [
     baths: 3,
     sqft: 180,
     description:
-      'Современный таунхаус в элитном поселке. Два этажа, гараж, участок 6 соток. Камин, терраса, современная техника. Охраняемая территория, детская площадка.',
+      'Modern townhouse in a gated community. Two floors, garage, 600 m² plot. Fireplace, terrace, modern appliances. Secured grounds and playground.',
   },
 ]
 
@@ -647,31 +624,50 @@ function MainPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { t, i18n } = useTranslation()
+  const premiumModes = useMemo(
+    () =>
+      premiumModeDefs.map((mode) => {
+        const k = mode.i18nKey
+        return {
+          ...mode,
+          eyebrow: t(`mainPremiumMode_${k}_eyebrow`),
+          benefit: t(`mainPremiumMode_${k}_benefit`),
+          proof: t(`mainPremiumMode_${k}_proof`),
+          title: t(`mainPremiumMode_${k}_title`),
+          text: t(`mainPremiumMode_${k}_text`),
+          caption: t(`mainPremiumMode_${k}_caption`),
+          actionText: t(`mainPremiumMode_${k}_action`),
+          imageAlt: t(`mainPremiumMode_${k}_imageAlt`),
+        }
+      }),
+    [t, i18n.language],
+  )
+  // premiumStatDefs / premiumFlowDefs / premiumProofKeys: i18n-ready, not rendered on this page.
   const { user, isLoaded: userLoaded } = useUser()
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const [isLanguageOpen, setIsLanguageOpen] = useState(false)
-  const [propertyMode] = useState('buy') // 'rent' для аренды, 'buy' для покупки
+  const [propertyMode] = useState('buy') // 'rent' for rentals, 'buy' for purchase
   const [activeNav, setActiveNav] = useState('home')
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
   const [managerChatInput, setManagerChatInput] = useState('')
   const aiAssistantHiddenByFooter = useSiteFooterNear()
-  /** Совпадает с hero @media (max-width: 768px): в ряд две CTA — короткая подпись на обеих */
+  /** Matches hero @media (max-width: 768px): two CTAs in a row — short label on both */
   const [isHeroCtaAdaptive, setIsHeroCtaAdaptive] = useState(false)
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
   const [isLoadingAI, setIsLoadingAI] = useState(false)
   const [isSlowAIResponse, setIsSlowAIResponse] = useState(false)
   const slowResponseTimerRef = useRef(null)
-  const chatHistoryLoadedRef = useRef(false) // Флаг для отслеживания загрузки истории
-  const [userPhoto, setUserPhoto] = useState(null) // Фотография пользователя
-  const [isLoggedIn, setIsLoggedIn] = useState(false) // Статус авторизации
-  const [hasIncompleteProfile, setHasIncompleteProfile] = useState(false) // Есть незаполненные поля профиля
+  const chatHistoryLoadedRef = useRef(false) // Flag tracking chat history load
+  const [userPhoto, setUserPhoto] = useState(null) // User photo
+  const [isLoggedIn, setIsLoggedIn] = useState(false) // Auth status
+  const [hasIncompleteProfile, setHasIncompleteProfile] = useState(false) // Profile has incomplete fields
   const [userPreferences, setUserPreferences] = useState({
-    purpose: null, // 'для себя', 'под сдачу', 'инвестиции'
+    purpose: null, // for_self | for_rent | investment
     budget: null,
     location: null,
-    propertyType: null, // 'квартира', 'вилла', 'апартаменты', 'дом'
+    propertyType: null, // apartment | villa | house
     rooms: null,
     area: null,
     other: null,
@@ -680,7 +676,7 @@ function MainPage() {
     preferredContact: null // 'phone' | 'email' | 'whatsapp' | 'telegram' | 'live_chat'
   })
   
-  // Объединяем все данные недвижимости
+  // Merge all property data
   const allProperties = useMemo(() => {
     const combined = [
       ...recommendedProperties.map(p => ({ ...p, source: 'recommended' })),
@@ -690,13 +686,13 @@ function MainPage() {
       ...flatsData.map(p => ({ ...p, source: 'flat' })),
       ...townhousesData.map(p => ({ ...p, source: 'townhouse' }))
     ]
-    // Фильтруем по Испании и Дубаю
+    // Filter to Spain and Dubai
     return filterPropertiesByLocation(combined)
   }, [])
   
-  // Функция для получения уникального идентификатора пользователя/сессии
+  // Unique user/session id
   const getChatUserId = useMemo(() => {
-    // Если пользователь авторизован, используем его ID
+    // If signed in, use user id
     if (isLoggedIn) {
       const userData = getUserData()
       const userId = userData.id || localStorage.getItem('userId')
@@ -705,10 +701,10 @@ function MainPage() {
       }
     }
     
-    // Если пользователь не авторизован, создаем/используем уникальный ID сессии
+    // If anonymous, create/reuse a session id
     let sessionId = localStorage.getItem('chatSessionId')
     if (!sessionId) {
-      // Генерируем уникальный ID сессии
+      // Generate unique session id
       sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       localStorage.setItem('chatSessionId', sessionId)
     }
@@ -733,21 +729,21 @@ function MainPage() {
     return () => mq.removeEventListener('change', update)
   }, [])
 
-  // Загружаем историю чата из localStorage при монтировании компонента или изменении пользователя
+  // Load chat history from localStorage on mount or user change
   const lastChatUserIdRef = useRef(null)
   useEffect(() => {
     const chatUserId = getChatUserId
-    // Загружаем историю только если изменился идентификатор пользователя
+    // Load history only when user id changes
     if (lastChatUserIdRef.current !== chatUserId) {
       try {
         const historyKey = `aiChatHistory_${chatUserId}`
         const preferencesKey = `aiChatPreferences_${chatUserId}`
         
-        // Загружаем историю сообщений
+        // Load message history
         const savedChatHistory = localStorage.getItem(historyKey)
         if (savedChatHistory) {
           const parsed = JSON.parse(savedChatHistory)
-          // Преобразуем timestamp из строк в Date объекты
+          // Convert timestamp strings to Date
           const messagesWithDates = parsed.map(msg => ({
             ...msg,
             timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
@@ -765,7 +761,7 @@ function MainPage() {
           }])
         }
         
-        // Загружаем предпочтения пользователя
+        // Load user preferences
         const savedPreferences = localStorage.getItem(preferencesKey)
         if (savedPreferences) {
           const parsed = JSON.parse(savedPreferences)
@@ -780,17 +776,17 @@ function MainPage() {
         chatHistoryLoadedRef.current = true
       }
     }
-  }, [getChatUserId]) // Загружаем при изменении идентификатора пользователя
+  }, [getChatUserId]) // Reload when user id changes
 
-  // Сохраняем историю чата в localStorage при каждом изменении и синхронизируем с сервером для раздела «Умный помощник»
+  // Persist chat history to localStorage and sync to server for Smart Assistant
   useEffect(() => {
     if (chatHistoryLoadedRef.current && chatMessages.length > 0) {
       try {
         const chatUserId = getChatUserId
         const historyKey = `aiChatHistory_${chatUserId}`
-        // Сохраняем историю в localStorage с привязкой к пользователю
+        // Save history in localStorage keyed by user
         localStorage.setItem(historyKey, JSON.stringify(chatMessages))
-        // Синхронизация с сервером для админки «Умный помощник»
+        // Sync to server for Smart Assistant admin
         const userData = getUserData()
         syncAssistantLead(chatUserId, chatMessages, userPreferences, userData?.isLoggedIn ? userData : null)
       } catch (error) {
@@ -799,7 +795,7 @@ function MainPage() {
     }
   }, [chatMessages, userPreferences, getChatUserId])
 
-  // Сохраняем предпочтения пользователя в localStorage
+  // Save user preferences to localStorage
   useEffect(() => {
     if (chatHistoryLoadedRef.current) {
       try {
@@ -812,15 +808,15 @@ function MainPage() {
     }
   }, [userPreferences, getChatUserId])
 
-  // История чата сохраняется в localStorage и не очищается при закрытии страницы
-  // Каждый пользователь видит только свою переписку
+  // Chat history stays in localStorage and is not cleared on page close
+  // Each user only sees their own conversation
   
-  // Отладочная информация о состоянии i18n
-  // Функция для проверки заполненности профиля
+  // Debug: i18n state
+  // Check whether the profile is complete
   const checkProfileCompleteness = (userData) => {
     if (!userData) return false
     
-    // Проверяем важные поля
+    // Check important fields
     const hasFirstName = userData.first_name && userData.first_name.trim() !== ''
     const hasLastName = userData.last_name && userData.last_name.trim() !== ''
     const hasEmail = userData.email && userData.email.trim() !== '' && userData.is_verified === 1
@@ -829,82 +825,82 @@ function MainPage() {
     const hasPassportSeries = userData.passport_series && userData.passport_series.trim() !== ''
     const hasPassportNumber = userData.passport_number && userData.passport_number.trim() !== ''
     
-    // Профиль считается неполным, если:
-    // 1. Нет имени (обязательное поле)
-    // 2. Нет фамилии (важное поле)
-    // 3. Нет подтвержденного email или телефона (хотя бы один контакт)
-    // 4. Нет адреса (желательно, но не критично)
-    // 5. Нет паспортных данных (серия или номер) (желательно, но не критично)
+    // Profile is incomplete if:
+    // 1. Missing first name (required)
+    // 2. Missing last name (important)
+    // 3. No verified email or phone (at least one contact)
+    // 4. No address (optional)
+    // 5. No passport data (series or number) (optional)
     
-    // Базовые обязательные поля
+    // Base required fields
     const missingBasicFields = !hasFirstName || !hasLastName || (!hasEmail && !hasPhone)
     
-    // Дополнительные желательные поля (если хотя бы одно не заполнено, показываем индикатор)
+    // Optional fields (show indicator if any missing)
     const missingOptionalFields = !hasAddress || (!hasPassportSeries && !hasPassportNumber)
     
-    // Профиль неполный, если отсутствуют базовые поля ИЛИ дополнительные поля
+    // Profile incomplete if base OR optional fields are missing
     const isIncomplete = missingBasicFields || missingOptionalFields
     
     return isIncomplete
   }
 
-  // Загружаем фотографию пользователя и проверяем заполненность профиля
+  // Load user photo and check profile completeness
   useEffect(() => {
     const loadUserPhotoAndCheckProfile = async () => {
-      // Проверяем авторизацию через Clerk
+      // Check Clerk auth
       if (userLoaded && user) {
-        // Пользователь авторизован через Clerk
+        // User signed in via Clerk
         const clerkPhoto = user.imageUrl || user.profileImageUrl || null
         setUserPhoto(clerkPhoto)
         setIsLoggedIn(true)
         
-        // Пытаемся загрузить данные из БД для полной проверки
+        // Try loading DB data for a full check
         const userData = getUserData()
         let profileIncomplete = false
         
-        // Используем числовой ID из БД (из localStorage), а не Clerk ID
+        // Use numeric DB id from localStorage, not Clerk id
         const dbUserId = localStorage.getItem('userId')
         if (userData && dbUserId && /^\d+$/.test(dbUserId)) {
           try {
             const dbUser = await fetchUserById(API_BASE_URL, dbUserId)
             if (dbUser) {
-              // Проверяем заполненность профиля из БД
+              // Check profile completeness from DB
               profileIncomplete = checkProfileCompleteness(dbUser)
               setHasIncompleteProfile(profileIncomplete)
             } else {
-              // Если запрос не удался, проверяем базовые поля Clerk
+              // On request failure, check basic Clerk fields
               profileIncomplete = !user.firstName || !user.lastName || (!user.primaryEmailAddress?.emailAddress && !user.primaryPhoneNumber?.phoneNumber)
               setHasIncompleteProfile(profileIncomplete)
             }
           } catch (error) {
             console.warn('⚠️ Не удалось загрузить данные из БД для Clerk пользователя:', error)
-            // Если ошибка, проверяем базовые поля Clerk
+            // On error, check basic Clerk fields
             profileIncomplete = !user.firstName || !user.lastName || (!user.primaryEmailAddress?.emailAddress && !user.primaryPhoneNumber?.phoneNumber)
             setHasIncompleteProfile(profileIncomplete)
           }
         } else {
-          // Если нет ID в localStorage, проверяем базовые поля Clerk
+          // If no id in localStorage, check basic Clerk fields
           profileIncomplete = !user.firstName || !user.lastName || (!user.primaryEmailAddress?.emailAddress && !user.primaryPhoneNumber?.phoneNumber)
           setHasIncompleteProfile(profileIncomplete)
         }
       } else {
-        // Проверяем старую систему авторизации
+        // Check legacy auth system
         const userData = getUserData()
         if (userData.isLoggedIn) {
           setIsLoggedIn(true)
           
-          // Сначала пытаемся получить фотографию из localStorage
+          // First try photo from localStorage
           let photo = userData.picture || null
           let profileIncomplete = false
           
-          // Загружаем данные из БД для проверки заполненности
-          // Используем числовой ID из БД (из localStorage), а не Clerk ID
+          // Load DB data to check completeness
+          // Use numeric DB id from localStorage, not Clerk id
           const dbUserId = localStorage.getItem('userId')
           if (dbUserId && /^\d+$/.test(dbUserId)) {
             try {
               const result = await fetchUserById(API_BASE_URL, dbUserId, { includeMeta: true })
               
-              // Если пользователь не найден в БД (404) — сессия устарела, очищаем её
+              // User not found in DB (404) — stale session, clear it
               if (result.notFound) {
                 console.warn('⚠️ Локальная сессия устарела: пользователь не найден в БД. Очищаем данные.')
                 clearUserData()
@@ -917,18 +913,18 @@ function MainPage() {
               if (result.ok && result.user) {
                   const dbUser = result.user
                   
-                  // Проверяем заполненность профиля
+                  // Check profile completeness
                   profileIncomplete = checkProfileCompleteness(dbUser)
                   setHasIncompleteProfile(profileIncomplete)
                   
-                  // Если user_photo есть, используем его
+                  // Prefer user_photo when present
                   if (dbUser.user_photo && !photo) {
                     const photoPath = dbUser.user_photo
                     photo = photoPath.startsWith('http') 
                       ? photoPath 
                       : `${API_BASE_URL.replace('/api', '')}${photoPath}`
                     
-                    // Обновляем localStorage с фотографией
+                    // Update localStorage with photo
                     const updatedUserData = {
                       ...userData,
                       picture: photo
@@ -938,12 +934,12 @@ function MainPage() {
               }
             } catch (error) {
               console.warn('⚠️ Не удалось загрузить данные из БД:', error)
-              // Если не удалось загрузить из БД, проверяем localStorage
+              // If DB load fails, fall back to localStorage
               profileIncomplete = !userData.name || (!userData.email && !userData.phone)
               setHasIncompleteProfile(profileIncomplete)
             }
           } else {
-            // Если нет ID, проверяем только localStorage
+            // If no id, check localStorage only
             profileIncomplete = !userData.name || (!userData.email && !userData.phone)
             setHasIncompleteProfile(profileIncomplete)
           }
@@ -959,7 +955,7 @@ function MainPage() {
     
     loadUserPhotoAndCheckProfile()
     
-    // Обновляем данные при фокусе окна (когда пользователь возвращается на страницу)
+    // Refresh on window focus (user returns to the page)
     const handleFocus = () => {
       loadUserPhotoAndCheckProfile()
     }
@@ -969,7 +965,7 @@ function MainPage() {
     return () => {
       window.removeEventListener('focus', handleFocus)
     }
-  }, [user, userLoaded, location.pathname]) // Обновляем при изменении маршрута
+  }, [user, userLoaded, location.pathname]) // Refresh on route change
 
   const [selectedProperty, setSelectedProperty] = useState(null)
   const [showMap, setShowMap] = useState(false)
@@ -998,9 +994,9 @@ function MainPage() {
     }
   }, [location.pathname])
 
-  /** Вариант входа в LoginModal: с главной hero — default (шаг 2 формы), иначе как в шапке — мастер */
+  /** LoginModal entry: from home hero — default (form step 2), otherwise header wizard */
   const [mainLoginModalAuthEntry, setMainLoginModalAuthEntry] = useState('header_wizard')
-  /** Модалка «стать продавцом» / «стать покупателем» для залогиненных с другой ролью */
+  /** Become-seller / become-buyer modal for signed-in users with the other role */
   const [heroRolePitch, setHeroRolePitch] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -1085,7 +1081,7 @@ function MainPage() {
     }
   }, [])
 
-  // Прогресс скролла для секции «Цифры»: 0 = секция внизу экрана, 1 = контент по центру (секция белая)
+  // Scroll progress for Numbers section: 0 = section at bottom, 1 = content centered (white)
   useEffect(() => {
     const el = landingStatsRef.current
     if (!el) return
@@ -1093,7 +1089,7 @@ function MainPage() {
       const rect = el.getBoundingClientRect()
       const viewportCenter = window.innerHeight / 2
       const sectionCenter = rect.top + rect.height / 2
-      // progress 0: центр секции ниже центра экрана; 1: центр секции по центру экрана или выше
+      // progress 0: section center below viewport center; 1: at/above center
       const raw = (viewportCenter - rect.top) / (rect.height * 0.5)
       const progress = Math.min(1, Math.max(0, raw))
       setStatsScrollProgress(progress)
@@ -1107,7 +1103,7 @@ function MainPage() {
     }
   }, [])
 
-  // Функция фильтрации по поисковому запросу
+  // Filter by search query
   const filterBySearch = (properties) => {
     if (!searchQuery) return properties
     const query = searchQuery.toLowerCase()
@@ -1117,7 +1113,7 @@ function MainPage() {
     )
   }
 
-  // Определение страниц для поиска
+  // Pages available for search
   const cabinetProfilePath = getCabinetProfilePath()
   const cabinetDataPath = getCabinetDataPath()
   const sellerCabinet = isSellerCabinetRole()
@@ -1125,44 +1121,44 @@ function MainPage() {
     {
       path: '/',
       keywords: ['главная', 'home', 'начало', 'старт'],
-      title: 'Главная',
+      title: t('home'),
       requiresAuth: false,
-      allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] // Доступна всем
+      allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] // Available to everyone
     },
     {
       path: '/auction',
       keywords: ['аукцион', 'auction', 'торги', 'продажа', 'недвижимость'],
-      title: 'Аукцион',
+      title: t('auction'),
       requiresAuth: false,
-      allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] // Доступна всем
+      allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] // Available to everyone
     },
     {
       path: '/map',
       keywords: ['карта', 'map', 'карты', 'локация', 'место'],
-      title: 'Карта',
+      title: t('map'),
       requiresAuth: true,
       allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client']
     },
     {
       path: '/chat?manager=1',
       keywords: ['поддержка', 'support', 'чат', 'chat', 'сообщения', 'messages', 'переписка', 'техподдержка'],
-      title: 'Поддержка',
+      title: t('chat'),
       requiresAuth: true,
       allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client']
     },
     {
       path: cabinetProfilePath,
       keywords: ['профиль', 'profile', 'аккаунт', 'личный кабинет', 'личный', 'кабинет', 'настройки', 'settings'],
-      title: 'Профиль',
+      title: t('profile'),
       requiresAuth: true,
       allowedRoles: sellerCabinet ? ['seller', 'owner', 'admin'] : ['buyer', 'client', 'admin'],
     },
     {
       path: '/favorites',
       keywords: ['избранное', 'favorites', 'избранные', 'закладки', 'bookmarks'],
-      title: 'Избранное',
+      title: t('favorites'),
       requiresAuth: true,
-      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
+      allowedRoles: ['buyer', 'client', 'admin'] // Buyers and admins only
     },
     {
       path: '/deposit',
@@ -1178,58 +1174,58 @@ function MainPage() {
         'платежи',
         'payments',
       ],
-      title: 'Депозит',
+      title: t('buyerCabinet_tileDepositTitle'),
       requiresAuth: true,
-      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
+      allowedRoles: ['buyer', 'client', 'admin'] // Buyers and admins only
     },
     {
       path: cabinetDataPath,
       keywords: ['данные', 'data', 'информация', 'information', 'персональные данные'],
-      title: 'Данные',
+      title: t('data'),
       requiresAuth: true,
       allowedRoles: sellerCabinet ? ['seller', 'owner', 'admin'] : ['buyer', 'client', 'admin'],
     },
     {
       path: '/subscriptions',
       keywords: ['подписки', 'subscriptions', 'подписка', 'subscription', 'тарифы', 'tariffs'],
-      title: 'Подписки',
+      title: t('subscriptions'),
       requiresAuth: true,
-      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
+      allowedRoles: ['buyer', 'client', 'admin'] // Buyers and admins only
     },
     {
       path: '/profile?history=1',
       keywords: ['история', 'history', 'история покупок', 'покупки', 'purchases'],
-      title: 'История',
+      title: t('history'),
       requiresAuth: true,
-      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
+      allowedRoles: ['buyer', 'client', 'admin'] // Buyers and admins only
     },
     {
       path: '/owner',
       keywords: ['кабинет продавца', 'owner', 'продавец', 'seller', 'владелец', 'dashboard', 'дашборд', 'панель продавца'],
-      title: 'Кабинет продавца',
+      title: t('roleSwitch_sellerCabinet'),
       requiresAuth: true,
       requiresRole: ['seller', 'owner'],
-      allowedRoles: ['seller', 'owner', 'admin'] // Только для продавцов и админов
+      allowedRoles: ['seller', 'owner', 'admin'] // Sellers and admins only
     },
     {
       path: '/owner/property/new',
       keywords: ['добавить недвижимость', 'add property', 'новая недвижимость', 'создать объявление', 'разместить'],
-      title: 'Добавить недвижимость',
+      title: t('addProperty'),
       requiresAuth: true,
       requiresRole: ['seller', 'owner'],
-      allowedRoles: ['seller', 'owner', 'admin'] // Только для продавцов и админов
+      allowedRoles: ['seller', 'owner', 'admin'] // Sellers and admins only
     },
     {
       path: '/admin',
       keywords: ['админ', 'admin', 'администратор', 'administrator', 'панель администратора', 'админка'],
-      title: 'Админ-панель',
+      title: t('adminPanel'),
       requiresAuth: true,
       requiresRole: ['admin'],
-      allowedRoles: ['admin'] // Только для админов
+      allowedRoles: ['admin'] // Admins only
     }
   ]
 
-  // Получение текущей роли пользователя
+  // Current user role
   const getUserRole = () => {
     const userData = getUserData()
     const localRole = localStorage.getItem('userRole')
@@ -1237,16 +1233,16 @@ function MainPage() {
     const isAdmin = localStorage.getItem('isAdminLoggedIn') === 'true' && storedRole === 'admin'
     const isOwner = storedRole === 'seller' || storedRole === 'owner' || localStorage.getItem('isOwnerLoggedIn') === 'true'
     
-    // Админ имеет приоритет
+    // Admin takes priority
     if (isAdmin) return 'admin'
     
-    // Проверяем продавца/владельца
+    // Check seller/owner
     if (isOwner) {
       return storedRole === 'seller' ? 'seller' : 'owner'
     }
     
-    // Все остальные - покупатели (buyer или client)
-    // Если роль явно указана как buyer, возвращаем buyer, иначе client
+    // Everyone else is a buyer (buyer or client)
+    // If role is explicitly buyer return buyer, else client
     return (storedRole === 'buyer' || storedRole === 'client') ? storedRole : 'client'
   }
 
@@ -1310,7 +1306,7 @@ function MainPage() {
     setMainLoginModalAuthEntry('header_wizard')
   }
 
-  // Открытие LoginModal по глобальному запросу (например, клик из toast «Войти / Регистрация»)
+  // Open LoginModal from a global request (e.g. toast Sign in / Register)
   useEffect(() => {
     const openForcedLoginModal = () => {
       const forceOpen = sessionStorage.getItem('login_modal_force_open')
@@ -1331,7 +1327,7 @@ function MainPage() {
     }
   }, [])
 
-  // Функция поиска страниц
+  // Page search
   const searchPages = (query) => {
     if (!query.trim()) {
       setPageSearchResults([])
@@ -1343,20 +1339,20 @@ function MainPage() {
     
     const results = searchablePages
       .filter(page => {
-        // Проверяем совпадение по ключевым словам
+        // Match by keywords
         const matchesKeywords = page.keywords.some(keyword => 
           keyword.toLowerCase().includes(queryLower) || queryLower.includes(keyword.toLowerCase())
         )
         
-        // Проверяем совпадение по названию
+        // Match by title
         const matchesTitle = page.title.toLowerCase().includes(queryLower)
         
         if (!(matchesKeywords || matchesTitle)) {
           return false
         }
         
-        // Фильтруем по роли пользователя
-        // Если пользователь не авторизован, показываем только страницы без авторизации
+        // Filter by user role
+        // If anonymous, show only pages that do not require auth
         const userData = getUserData()
         const isUserLoggedIn = isLoggedIn || (userLoaded && user) || userData.isLoggedIn
         
@@ -1364,32 +1360,32 @@ function MainPage() {
           return !page.requiresAuth
         }
         
-        // Если страница доступна всем ролям или не указаны ограничения
+        // If page allows all roles or has no role limits
         if (!page.allowedRoles || page.allowedRoles.length === 0) {
           return true
         }
         
-        // Строго проверяем, есть ли роль пользователя в списке разрешенных
-        // Если роли нет в списке - страница НЕ показывается вообще
+        // Strictly check whether the user role is in the allow-list
+        // If role is not listed — hide the page entirely
         return page.allowedRoles.includes(currentUserRole)
       })
       .map(page => ({
         ...page,
-        // Проверяем авторизацию
+        // Check auth
         canAccess: checkPageAccess(page)
       }))
 
     setPageSearchResults(results)
   }
 
-  // Проверка доступа к странице
+  // Check page access
   const checkPageAccess = (page) => {
-    // Если страница не требует авторизации
+    // If the page does not require auth
     if (!page.requiresAuth) {
       return { allowed: true }
     }
 
-    // Проверяем авторизацию
+    // Check auth
     const userData = getUserData()
     const isUserLoggedIn = isLoggedIn || (userLoaded && user) || userData.isLoggedIn
 
@@ -1397,11 +1393,11 @@ function MainPage() {
       return { 
         allowed: false, 
         reason: 'auth',
-        message: 'Для доступа к этой странице необходимо войти в систему'
+        message: t('pageAccessNeedLogin')
       }
     }
 
-    // Проверяем роль, если требуется
+    // Check role when required
     if (page.requiresRole) {
       const userRole = userData.role || localStorage.getItem('userRole') || 'client'
       const isAdmin = localStorage.getItem('isAdminLoggedIn') === 'true' && userRole === 'admin'
@@ -1411,7 +1407,7 @@ function MainPage() {
         return { 
           allowed: false, 
           reason: 'role',
-          message: 'Доступ только для администраторов'
+          message: t('pageAccessAdminsOnly')
         }
       }
 
@@ -1419,7 +1415,7 @@ function MainPage() {
         return { 
           allowed: false, 
           reason: 'role',
-          message: 'Доступ только для продавцов'
+          message: t('pageAccessSellersOnly')
         }
       }
     }
@@ -1427,7 +1423,7 @@ function MainPage() {
     return { allowed: true }
   }
 
-  // Обработка выбора результата поиска
+  // Handle search result selection
   const handleSearchResultClick = (page) => {
     const access = checkPageAccess(page)
     
@@ -1438,13 +1434,13 @@ function MainPage() {
         setMainLoginModalAuthEntry('header_wizard')
         setIsLoginModalOpen(true)
       } else {
-        // Показываем сообщение об ошибке доступа
+        // Show access error message
         alert(access.message)
       }
       return
     }
 
-    // Переходим на страницу
+    // Navigate to the page
     if (page.path === '/deposit' || page.path === '/wallet') {
       navigateToWallet(navigate, location.pathname)
     } else {
@@ -1455,7 +1451,7 @@ function MainPage() {
     setPageSearchResults([])
   }
 
-  // Обработка изменения поискового запроса
+  // Handle search query change
   useEffect(() => {
     if (isSearchOpen && searchQuery.trim()) {
       searchPages(searchQuery)
@@ -1465,11 +1461,11 @@ function MainPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, isSearchOpen])
 
-  // Обработка клика вне области поиска
+  // Handle click outside search
   useEffect(() => {
     function handleClickOutside(event) {
       if (searchWrapperRef.current && !searchWrapperRef.current.contains(event.target) && isSearchOpen) {
-        // Не закрываем поиск при клике вне, только если это не клик на другие элементы хедера
+        // Do not close search on outside click unless it is another header control
         const headerElements = document.querySelectorAll('.new-header__search-btn, .new-header__user-btn, .new-header__notification-btn, .new-header__auction-btn')
         const clickedOnHeaderElement = Array.from(headerElements).some(el => el.contains(event.target))
         if (!clickedOnHeaderElement) {
@@ -1484,17 +1480,17 @@ function MainPage() {
     }
   }, [isSearchOpen])
 
-  // Фильтрованные данные
-  // Состояние для одобренных объявлений из API
-  // и общий список объектов для главной страницы
+  // Filtered data
+  // State for approved listings from API
+  // and the combined listings for the home page
   const [homeProperties, setHomeProperties] = useState([])
-  /** Пока первый GET объявлений для витрин не завершился — скелетоны в каруселях «Аукцион», «Долги», доля и т.д. */
+  /** Until the first listings GET for showcases finishes — skeletons in Auction / Debts / shares carousels, etc. */
   const [homePropertiesLoading, setHomePropertiesLoading] = useState(true)
 
   const filteredRecommended = useMemo(() => filterBySearch(recommendedProperties), [searchQuery])
   const filteredNearby = useMemo(() => filterBySearch(nearbyProperties), [searchQuery])
 
-  // Три параллельных GET: approved + auctions + debts → homeProperties (без дублирующих запросов по type)
+  // Three parallel GETs: approved + auctions + debts → homeProperties (no duplicate type requests)
   const loadHomeProperties = useCallback(async (options = {}) => {
     const showSkeleton = options.showSkeleton !== false
     if (showSkeleton) setHomePropertiesLoading(true)
@@ -1604,12 +1600,12 @@ function MainPage() {
     }
   }, [i18n.language])
 
-  // При смене языка в футере перезагружаем объявления с переводами
+  // On footer language change, reload listings with translations
   useEffect(() => {
     loadHomeProperties()
   }, [i18n.language, loadHomeProperties])
 
-  // SSE: новые лоты и тест-таймер с админки — без F5 (тот же канал, что на /auction)
+  // SSE: new lots and admin test timer — no F5 (same channel as /auction)
   useEffect(() => {
     let eventSource = null
     let reconnectTimer = null
@@ -1659,13 +1655,13 @@ function MainPage() {
     }
   }, [loadHomeProperties])
 
-  // Разделы для главной страницы (по типу продажи)
+  // Home page sections (by sale type)
   const auctionSection = useMemo(() => {
-    // Аукционы без цены "Купить сейчас"; объекты с долями не показываем на аукционе
+    // Auctions without Buy Now price; share listings hidden from auction
     const base = homeProperties.filter((p) => {
       if (!p || !p.isAuction) return false
       if (p.is_shared_ownership === 1 || p.is_shared_ownership === true) return false
-      // На главной в "Аукционы" не показываем долги
+      // Home Auctions section excludes debts
       const isDebt =
         p.sale_type === 'debt' ||
         p.is_debt === 1 ||
@@ -1675,7 +1671,7 @@ function MainPage() {
         ['red', 'yellow', 'green'].includes(String(p.debt_severity || '').toLowerCase())
       if (isDebt) return false
 
-      // Если у лота реально доступна опция "Купить сейчас", это не "чистый" аукцион.
+      // If Buy Now is actually available, this is not a pure auction.
       return !hasBuyNowOption(p)
     }).filter((p) => !isAuctionListingEnded(p))
 
@@ -1683,11 +1679,11 @@ function MainPage() {
   }, [homeProperties, searchQuery])
 
   const buyNowSection = useMemo(() => {
-    // Аукционы с опцией "Купить сейчас"; объекты с долями не показываем
+    // Auctions with Buy Now; share listings hidden
     const base = homeProperties.filter((p) => {
       if (!p || !p.isAuction) return false
       if (p.is_shared_ownership === 1 || p.is_shared_ownership === true) return false
-      // На главной в "Купить сейчас" не показываем долги
+      // Home Buy Now section excludes debts
       const isDebt =
         p.sale_type === 'debt' ||
         p.is_debt === 1 ||
@@ -1703,7 +1699,7 @@ function MainPage() {
   }, [homeProperties, searchQuery])
 
   const debtsSection = useMemo(() => {
-    // Объекты с долгами (ожидаем флаги от бэкенда)
+    // Debt listings (expect flags from backend)
     const base = homeProperties.filter((p) =>
       p &&
       (p.sale_type === 'debt' ||
@@ -1718,7 +1714,7 @@ function MainPage() {
   }, [homeProperties, searchQuery])
 
   const sharesSection = useMemo(() => {
-    // Долевая собственность
+    // Co-ownership / shares
     const base = homeProperties.filter((p) =>
       p &&
       (p.is_share === 1 ||
@@ -1730,7 +1726,7 @@ function MainPage() {
     return filterBySearch(base).slice(0, 7)
   }, [homeProperties, searchQuery])
 
-  // Чтение URL параметров и применение фильтров
+  // Read URL params and apply filters
   useEffect(() => {
     try {
       if (!location) {
@@ -1773,7 +1769,7 @@ function MainPage() {
               )
             }
 
-            // Если есть фильтр аукциона, применяем его
+            // Apply auction filter when present
             if (filter === 'auction') {
               filteredRecommended = filteredRecommended.filter((p) => p && p.isAuction === true)
               filteredNearby = filteredNearby.filter((p) => p && p.isAuction === true)
@@ -1794,7 +1790,7 @@ function MainPage() {
           clearTimeout(timeoutId)
         }
       } else {
-        // Если нет параметров, сбрасываем фильтры
+        // Reset filters when there are no params
         setFilteredProperties(null)
         setActiveCategory(null)
       }
@@ -1819,7 +1815,7 @@ function MainPage() {
       }
     }
 
-    // Проверяем ширину экрана для десктопа
+    // Check viewport width for desktop
     const checkDesktop = () => {
       setIsDesktop(window.innerWidth >= 1024)
     }
@@ -1834,9 +1830,9 @@ function MainPage() {
     }
   }, [])
 
-  // Закрытие меню обрабатывается через backdrop onClick
+  // Menu close is handled via backdrop onClick
 
-  // Изменяем overflow body когда меню открыто (но не фон, чтобы не было белого экрана)
+  // Toggle body overflow when the menu is open (keep background to avoid a white flash)
   useEffect(() => {
     setSiteNavDrawerOpen(isMenuOpen)
     return () => setSiteNavDrawerOpen(false)
@@ -2024,7 +2020,7 @@ function MainPage() {
       setChatInput('')
     }
 
-    // Добавляем сообщение пользователя
+    // Append user message
     const userMessageObj = {
       id: Date.now(),
       text: userMessage,
@@ -2092,25 +2088,25 @@ function MainPage() {
       return
     }
 
-    // Обновляем предпочтения на основе сообщения
+    // Update preferences from the message
     const lowerMessage = userMessage.toLowerCase()
     
-    // Определяем цель
-    if (lowerMessage.includes('для себя') || lowerMessage === 'для себя' || lowerMessage.includes('сам') || lowerMessage.includes('личн')) {
-      setUserPreferences(prev => ({ ...prev, purpose: 'для себя' }))
-    } else if (lowerMessage.includes('под сдачу') || lowerMessage === 'под сдачу' || lowerMessage.includes('сдачу') || lowerMessage.includes('аренд')) {
-      setUserPreferences(prev => ({ ...prev, purpose: 'под сдачу' }))
-    } else if (lowerMessage.includes('инвестиц') || lowerMessage === 'инвестиции' || lowerMessage.includes('инвест')) {
-      setUserPreferences(prev => ({ ...prev, purpose: 'инвестиции' }))
+    // Detect goal
+    if (lowerMessage.includes('для себя') || lowerMessage === 'для себя' || lowerMessage.includes('сам') || lowerMessage.includes('личн') || lowerMessage.includes('for myself') || lowerMessage.includes('personal use')) {
+      setUserPreferences(prev => ({ ...prev, purpose: 'for_self' }))
+    } else if (lowerMessage.includes('под сдачу') || lowerMessage === 'под сдачу' || lowerMessage.includes('сдачу') || lowerMessage.includes('аренд') || lowerMessage.includes('for rent') || lowerMessage.includes('rental')) {
+      setUserPreferences(prev => ({ ...prev, purpose: 'for_rent' }))
+    } else if (lowerMessage.includes('инвестиц') || lowerMessage === 'инвестиции' || lowerMessage.includes('инвест') || lowerMessage.includes('invest')) {
+      setUserPreferences(prev => ({ ...prev, purpose: 'investment' }))
     }
     
-    // Извлекаем бюджет из сообщения (конвертируем рубли в евро, если указаны)
+    // Extract budget from the message (convert RUB to EUR when needed)
     const budgetMatch = userMessage.match(/(\d+[\s,.]?\d*)\s*(тыс|млн|k|m|€|\$|eur|usd|евро|доллар|рубл|₽|rub)/i)
     if (budgetMatch) {
       let budget = parseFloat(budgetMatch[1].replace(/\s/g, '').replace(',', '.'))
       const unit = budgetMatch[2].toLowerCase()
       
-      // Конвертируем в евро (примерный курс: 1 EUR = 100 RUB)
+      // Convert to EUR (approx. 1 EUR = 100 RUB)
       const eurToRubRate = 100
       
       if (unit.includes('млн') || unit === 'm') {
@@ -2119,7 +2115,7 @@ function MainPage() {
         budget = budget * 1000
       }
       
-      // Если указаны рубли, конвертируем в евро
+      // If RUB is mentioned, convert to EUR
       if (unit.includes('рубл') || unit.includes('₽') || unit.includes('rub')) {
         budget = budget / eurToRubRate
       }
@@ -2127,16 +2123,16 @@ function MainPage() {
       setUserPreferences(prev => ({ ...prev, budget }))
     }
     
-    // Определяем тип недвижимости
+    // Detect property type
     if (lowerMessage.includes('квартир') || lowerMessage.includes('апартамент') || lowerMessage.includes('apartment')) {
-      setUserPreferences(prev => ({ ...prev, propertyType: 'квартира' }))
+      setUserPreferences(prev => ({ ...prev, propertyType: 'apartment' }))
     } else if (lowerMessage.includes('вилл') || lowerMessage.includes('villa')) {
-      setUserPreferences(prev => ({ ...prev, propertyType: 'вилла' }))
+      setUserPreferences(prev => ({ ...prev, propertyType: 'villa' }))
     } else if (lowerMessage.includes('дом') || lowerMessage.includes('таунхаус') || lowerMessage.includes('townhouse') || lowerMessage.includes('house')) {
-      setUserPreferences(prev => ({ ...prev, propertyType: 'дом' }))
+      setUserPreferences(prev => ({ ...prev, propertyType: 'house' }))
     }
     
-    // Извлекаем количество комнат
+    // Extract room count
     const roomsMatch = userMessage.match(/(\d+)\s*(комнат|room|bed)/i)
     if (roomsMatch) {
       setUserPreferences(prev => ({ ...prev, rooms: parseInt(roomsMatch[1]) }))
@@ -2214,14 +2210,15 @@ function MainPage() {
     slowResponseTimerRef.current = setTimeout(() => setIsSlowAIResponse(true), 6000)
 
     try {
-      // Получаем ответ от AI
+      // Get AI reply
       const response = await askPropertyAssistant(
         [...chatMessages, userMessageObj],
         userPreferences,
-        allProperties
+        allProperties,
+        { t },
       )
 
-      // Добавляем ответ бота
+      // Append bot reply
       const botMessage = {
         id: Date.now() + 1,
         text: response.text,
@@ -2238,7 +2235,7 @@ function MainPage() {
       console.error('Ошибка при обращении к AI:', error)
       const errorMessage = {
         id: Date.now() + 1,
-        text: 'Извините, произошла ошибка. Попробуйте еще раз.',
+        text: t('chatError'),
         sender: 'bot',
         timestamp: new Date(),
         buttons: null,
@@ -2273,7 +2270,7 @@ function MainPage() {
     )
   }, [isChatOpen])
 
-  // Функции для получения переведенных элементов (обновляются при смене языка)
+  // Helpers for translated items (refresh on language change)
   const getPropertyTypes = useMemo(() => [
       { label: 'House', displayLabel: t('house'), icon: PiHouseLine, image: '/house.png', href: buildAuctionFilterPath({ categorySlug: 'houses' }) },
       { label: 'Map', displayLabel: t('map'), icon: FiMap, isMap: true, image: '/map.png', href: '/map' },
@@ -2328,8 +2325,8 @@ function MainPage() {
     },
   ], [t, i18n.language])
   
-  // Автоматический перевод пользовательского контента отключен из-за лимитов API
-  // Статический контент переводится через i18next
+  // Auto-translate of user content disabled due to API limits
+  // Static content is translated via i18next
 
   const handleCategoryClick = (categoryLabel) => {
     if (categoryLabel === 'Map') {
@@ -2340,16 +2337,16 @@ function MainPage() {
     setIsLoading(true)
     setActiveCategory(categoryLabel)
     
-    // Обновляем URL с параметрами фильтра
+    // Update URL with filter params
     navigate(buildAuctionFilterPath({ categorySlug: legacyCategoryToSlug(categoryLabel) }), { replace: true })
 
     setTimeout(() => {
-      // Фильтруем объявления по типу
+      // Filter listings by type
       let filteredRecommended = recommendedProperties
       let filteredNearby = nearbyProperties
 
       if (categoryLabel === 'House') {
-        // Фильтруем только дома
+        // Filter houses only
         filteredRecommended = recommendedProperties.filter((p) => 
           p.tag.toLowerCase() === 'house'
         )
@@ -2467,11 +2464,11 @@ function MainPage() {
       showPropertyAuthRequiredToast()
       return
     }
-    // Если объект не передан, пытаемся найти его в массивах
+    // If property is missing, try finding it in local arrays
     let propertyToNavigate = property
 
     if (!propertyToNavigate) {
-      // Ищем объект в recommendedProperties и nearbyProperties
+      // Look up in recommendedProperties and nearbyProperties
       const allProperties = [...recommendedProperties, ...nearbyProperties]
       propertyToNavigate = allProperties.find(p => p.id === propertyId)
     }
@@ -2507,13 +2504,13 @@ function MainPage() {
           url: window.location.href,
         })
         .catch(() => {
-          // Fallback если share не поддерживается
+          // Fallback when Web Share is unsupported
         })
     }
   }
 
   const handleBookNow = () => {
-    // Обработчик бронирования
+    // Booking handler
     showNotification(t('bookingFeatureSoon', 'Booking will be available soon.'))
   }
 
@@ -2524,17 +2521,17 @@ function MainPage() {
   }
 
   const handleChatBroker = () => {
-    // Обработчик чата с брокером
+    // Broker chat handler
     showNotification(t('brokerChatFeatureSoon', 'Broker chat will be available soon.'))
   }
 
-  // Получаем все свойства для карты
+  // Collect all properties for the map
   const allPropertiesForMap = [
     ...recommendedProperties.map((p) => ({ ...p, category: 'recommended' })),
     ...nearbyProperties.map((p) => ({ ...p, category: 'nearby' })),
   ]
 
-  // Проверка на ошибки рендеринга
+  // Render error guard
   if (!recommendedProperties || !nearbyProperties) {
     return <div className="app">{t('loading')}</div>
   }
@@ -2612,7 +2609,7 @@ function MainPage() {
                 setIsMenuOpen(true)
               }
             }}
-            aria-label="Меню"
+            aria-label={t('menu')}
             aria-expanded={isMenuOpen}
           >
             <MenuToggleIcon open={isMenuOpen} className="new-header__menu-icon" duration={500} />
@@ -2724,7 +2721,7 @@ function MainPage() {
                     <span className="new-header__search-result-title">{result.title}</span>
                     {!result.canAccess.allowed && (
                       <span className="new-header__search-result-hint">
-                        {result.canAccess.reason === 'auth' ? '🔒 Требуется вход' : '⚠️ Нет доступа'}
+                        {result.canAccess.reason === 'auth' ? `🔒 ${t('mainSearch_loginRequired')}` : `⚠️ ${t('mainSearch_noAccess')}`}
                       </span>
                     )}
                   </button>
@@ -2748,7 +2745,7 @@ function MainPage() {
                 setSearchQuery('')
                 setPageSearchResults([])
               }}
-              aria-label="Открыть поиск"
+              aria-label={t('openSearch')}
             >
               <FiSearch size={20} />
             </button>
@@ -2813,55 +2810,53 @@ function MainPage() {
           <div className="premium-hero__copy">
             <div className="premium-hero__badge">
               <span className="premium-hero__badge-dot" aria-hidden="true" />
-              Единая платформа. 4 стратегии продажи.
+              {t('mainPremiumHero_badge')}
             </div>
             <h1 id="premium-home-title" className="premium-hero__title">
-              Продайте объект через{' '}
-              <span>правильную стратегию сделки.</span>
+              {t('mainPremiumHero_titleBefore')}{' '}
+              <span>{t('mainPremiumHero_titleAccent')}</span>
             </h1>
             <p className="premium-hero__lead">
-              SellYourBrick подбирает механику под актив: аукцион, фиксированная цена,
-              доли или долговой сценарий. Покупатель видит понятную витрину, продавец —
-              управляемый путь к сделке.
+              {t('mainPremiumHero_lead')}
             </p>
 
             <form className="premium-search" onSubmit={handlePremiumSearchSubmit}>
               <label className="premium-search__field premium-search__field--wide">
-                <span>Поиск объекта</span>
+                <span>{t('mainPremiumSearch_queryLabel')}</span>
                 <span className="premium-search__input-wrap">
                   <FiSearch size={19} aria-hidden />
                   <input
                     name="query"
                     type="search"
-                    placeholder="Вилла, апартаменты, район или ID лота"
+                    placeholder={t('mainPremiumSearchPlaceholder')}
                     autoComplete="off"
                   />
                 </span>
               </label>
               <label className="premium-search__field">
-                <span>Стратегия</span>
+                <span>{t('mainPremiumSearch_strategyLabel')}</span>
                 <select name="dealType" defaultValue="auction">
-                  <option value="auction">Аукцион</option>
-                  <option value="buy_now">Купить сейчас</option>
-                  <option value="shares">Доли</option>
-                  <option value="debts">Долги</option>
+                  <option value="auction">{t('mainPremiumSearch_optAuction')}</option>
+                  <option value="buy_now">{t('mainPremiumSearch_optBuyNow')}</option>
+                  <option value="shares">{t('mainPremiumSearch_optShares')}</option>
+                  <option value="debts">{t('mainPremiumSearch_optDebts')}</option>
                 </select>
               </label>
               <label className="premium-search__field">
-                <span>Локация</span>
+                <span>{t('mainPremiumSearch_locationLabel')}</span>
                 <select name="location" defaultValue="tenerife">
-                  <option value="tenerife">Тенерифе</option>
-                  <option value="spain">Испания</option>
-                  <option value="global">Все рынки</option>
+                  <option value="tenerife">{t('mainPremiumSearch_locTenerife')}</option>
+                  <option value="spain">{t('mainPremiumSearch_locSpain')}</option>
+                  <option value="global">{t('mainPremiumSearch_locGlobal')}</option>
                 </select>
               </label>
               <button type="submit" className="premium-search__submit">
-                <span>Найти</span>
+                <span>{t('mainPremiumSearch_submit')}</span>
                 <FiArrowRight size={18} strokeWidth={2.4} aria-hidden />
               </button>
             </form>
 
-            <div className="premium-search__filters" aria-label="Быстрые фильтры по стратегиям">
+            <div className="premium-search__filters" aria-label={t('mainPremiumSearch_filtersAria')}>
               {premiumModes.map((mode) => (
                 <button
                   type="button"
@@ -2880,34 +2875,34 @@ function MainPage() {
             <div className="premium-object-card">
               <img
                 src="/images/new-home/new-home-hero-villa.jpg"
-                alt="Современная вилла у океана"
+                alt={t('mainPremiumObject_alt')}
                 loading="eager"
                 fetchPriority="high"
                 decoding="async"
               />
               <div className="premium-object-card__top">
-                <span>Объект недели</span>
+                <span>{t('mainPremiumObject_weekBadge')}</span>
                 <strong>Villa Atlantic</strong>
               </div>
               <div className="premium-object-card__bottom">
                 <div>
-                  <span>Стратегия</span>
+                  <span>{t('mainPremiumObject_strategyLabel')}</span>
                   <strong>Auction + Buy Now</strong>
                 </div>
                 <div>
-                  <span>Ориентир</span>
+                  <span>{t('mainPremiumObject_guideLabel')}</span>
                   <strong>€1.82M</strong>
                 </div>
               </div>
             </div>
 
             <div className="premium-object-note premium-object-note--seller">
-              <span>Кабинет продавца</span>
-              <strong>Цена, документы, спрос и переговоры в одном контуре.</strong>
+              <span>{t('mainPremiumNote_sellerTitle')}</span>
+              <strong>{t('mainPremiumNote_sellerText')}</strong>
             </div>
             <div className="premium-object-note premium-object-note--buyer">
-              <span>Шортлист покупателя</span>
-              <strong>Фильтры по стратегии, бюджету и типу сделки.</strong>
+              <span>{t('mainPremiumNote_buyerTitle')}</span>
+              <strong>{t('mainPremiumNote_buyerText')}</strong>
             </div>
           </div>
 
@@ -2916,20 +2911,20 @@ function MainPage() {
               <span className="premium-role-card__icon">
                 <FiShoppingCart size={18} aria-hidden />
               </span>
-              <strong>Я покупатель</strong>
-              <span>Подобрать объект, сравнить стратегии и открыть безопасный путь к сделке.</span>
+              <strong>{t('mainPremiumRole_buyerTitle')}</strong>
+              <span>{t('mainPremiumRole_buyerText')}</span>
             </button>
             <button type="button" className="premium-role-card" onClick={handleHeroSellerCardClick}>
               <span className="premium-role-card__icon">
                 <FaHome size={18} aria-hidden />
               </span>
-              <strong>Я продавец</strong>
-              <span>Упаковать объект, выбрать механику продажи и получить квалифицированный спрос.</span>
+              <strong>{t('mainPremiumRole_sellerTitle')}</strong>
+              <span>{t('mainPremiumRole_sellerText')}</span>
             </button>
           </div>
         </div>
 
-        <nav className="premium-hero__strategy-rail" aria-label="Стратегии SellYourBrick">
+        <nav className="premium-hero__strategy-rail" aria-label={t('mainPremiumHero_strategyRailAria')}>
           {premiumModes.map((mode) => {
             const Icon = mode.Icon
             return (
@@ -3110,15 +3105,15 @@ function MainPage() {
                       <div className="chat-widget__yield-grid">
                         <div>
                           <span>{t('chatYieldPrice')}</span>
-                          <strong>{Number(message.yieldEstimate.price).toLocaleString('ru-RU')} €</strong>
+                          <strong>{Number(message.yieldEstimate.price).toLocaleString(getUiIntlLocale())} €</strong>
                         </div>
                         <div>
                           <span>{t('chatYieldAnnual')}</span>
-                          <strong>{Number(message.yieldEstimate.annualRent).toLocaleString('ru-RU')} €</strong>
+                          <strong>{Number(message.yieldEstimate.annualRent).toLocaleString(getUiIntlLocale())} €</strong>
                         </div>
                         <div>
                           <span>{t('chatYieldMonthly')}</span>
-                          <strong>{Number(message.yieldEstimate.monthlyIncome).toLocaleString('ru-RU')} €</strong>
+                          <strong>{Number(message.yieldEstimate.monthlyIncome).toLocaleString(getUiIntlLocale())} €</strong>
                         </div>
                         <div>
                           <span>{t('chatYieldRate')}</span>
@@ -3126,7 +3121,11 @@ function MainPage() {
                         </div>
                       </div>
                       {message.yieldEstimate.note ? (
-                        <p className="chat-widget__yield-note">{message.yieldEstimate.note}</p>
+                        <p className="chat-widget__yield-note">
+                          {String(message.yieldEstimate.note).includes('_') && !String(message.yieldEstimate.note).includes(' ')
+                            ? t(message.yieldEstimate.note)
+                            : message.yieldEstimate.note}
+                        </p>
                       ) : null}
                       <button
                         type="button"
@@ -3154,7 +3153,7 @@ function MainPage() {
                               setIsChatOpen(false)
                             }}
                           >
-                            <span>{nav.label}</span>
+                            <span>{getSiteLinkLabel(nav, t)}</span>
                           </button>
                         ))}
                       </div>
@@ -3167,7 +3166,7 @@ function MainPage() {
                         const property = allProperties.find(p => p.id === recId || String(p.id) === String(recId))
                         if (!property) return null
                         const propertyName = property.name || property.title || t('listingDefault')
-                        const propertyPrice = property.price ? `${property.price.toLocaleString('ru-RU')} €` : t('priceNotSpecified')
+                        const propertyPrice = property.price ? `${property.price.toLocaleString(getUiIntlLocale())} €` : t('priceNotSpecified')
                         const propertyArea = property.area || property.sqft
                         const propertyRooms = property.rooms || property.beds
                         

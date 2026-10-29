@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react';
 import { useClerk, useAuth } from '@clerk/clerk-react';
+import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { clearUserData } from '../services/authService';
 import { getMainScrollEl, scrollMainTo } from '../utils/mainScroll';
 import './BlockedUserModal.css';
 
 const BlockedUserModal = ({ isOpen }) => {
+  const { t } = useTranslation();
   const { signOut } = useClerk();
   const { isSignedIn } = useAuth();
 
@@ -38,7 +40,7 @@ const BlockedUserModal = ({ isOpen }) => {
   const handleEmailClick = () => {
     // Можно настроить email для оспаривания
     const email = 'support@example.com'; // Замените на реальный email
-    window.location.href = `mailto:${email}?subject=Оспаривание блокировки аккаунта`;
+    window.location.href = `mailto:${email}?subject=${encodeURIComponent(t('blockedUser_mailSubject'))}`;
   };
 
   const handleClose = async () => {
@@ -78,8 +80,8 @@ const BlockedUserModal = ({ isOpen }) => {
         <button 
           className="blocked-user-modal-close"
           onClick={handleClose}
-          aria-label="Выйти из аккаунта"
-          title="Выйти из аккаунта"
+          aria-label={t('blockedUser_logoutAria')}
+          title={t('blockedUser_logoutAria')}
         >
           <X size={20} />
         </button>
@@ -87,15 +89,15 @@ const BlockedUserModal = ({ isOpen }) => {
           <div className="blocked-user-icon">
             <i className="fas fa-frown"></i>
           </div>
-          <h2 className="blocked-user-title">К сожалению, вы заблокированы</h2>
+          <h2 className="blocked-user-title">{t('blockedUser_title')}</h2>
           <p className="blocked-user-message">
-            Для оспаривания напишите на почту
+            {t('blockedUser_message')}
           </p>
           <button 
             className="blocked-user-button"
             onClick={handleEmailClick}
           >
-            Перейти
+            {t('blockedUser_cta')}
           </button>
         </div>
       </div>

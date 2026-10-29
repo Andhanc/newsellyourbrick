@@ -1,4 +1,4 @@
-/** Локализация карточек/мета новостей: badge, title, excerpt, lead, date. */
+/** Localize news cards/meta and known article body/sections. */
 
 export const NEWS_ARTICLE_SLUG_KEYS = {
   '5-neobychnyh-postroek-v-barselone': 'barcelonaBuildings',
@@ -7,6 +7,7 @@ export const NEWS_ARTICLE_SLUG_KEYS = {
 }
 
 const BADGE_I18N_KEYS = {
+  'Travel ideas': 'newsPage_static_heroBadge',
   'Идеи для поездок': 'newsPage_static_heroBadge',
   '🌊 К морю!': 'newsPage_static_crimeaBadge',
   '🌊 К морю': 'newsPage_static_crimeaBadge',
@@ -54,6 +55,29 @@ function translateField(t, key, fallback) {
   return value
 }
 
+function localizeBodyBlocks(body, t, slugKey) {
+  if (!Array.isArray(body) || !slugKey) return body || []
+  return body.map((block, index) => {
+    if (!block || typeof block.text !== 'string') return block
+    const text = translateField(t, `newsArticle_${slugKey}_body_${index}`, block.text)
+    return { ...block, text }
+  })
+}
+
+function localizeSections(sections, t, slugKey) {
+  if (!Array.isArray(sections) || !slugKey) return sections || []
+  return sections.map((section) => {
+    if (!section) return section
+    const key = section.id
+      ? `newsArticle_${slugKey}_section_${section.id}`
+      : null
+    const title = key
+      ? translateField(t, key, section.title)
+      : section.title
+    return { ...section, title }
+  })
+}
+
 /**
  * @param {object|null|undefined} article
  * @param {(key: string, options?: object) => string} t
@@ -83,6 +107,8 @@ export function localizeNewsArticle(article, t, language) {
     title,
     excerpt,
     lead,
+    sections: localizeSections(article.sections, t, slugKey),
+    body: localizeBodyBlocks(article.body, t, slugKey),
     date: resolveDate(article, language),
   }
 }

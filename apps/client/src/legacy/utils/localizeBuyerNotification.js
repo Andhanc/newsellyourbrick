@@ -3,6 +3,7 @@ import {
   matchCountryKey,
   parsePropertyLocation,
 } from './propertySearchLocation.js'
+import { getLocalizedCountryName } from './localizeCountryName.js'
 
 /** type → i18n key for notification title (UI language, not DB Russian). */
 export const BUYER_NOTIFICATION_TITLE_KEYS = {
@@ -53,32 +54,6 @@ export function isPropertyEditApproval(notification, data = null) {
   )
 }
 
-const COUNTRY_ISO = {
-  spain: 'ES',
-  belarus: 'BY',
-  uae: 'AE',
-  russia: 'RU',
-  portugal: 'PT',
-  france: 'FR',
-  germany: 'DE',
-  italy: 'IT',
-  turkey: 'TR',
-  thailand: 'TH',
-  uk: 'GB',
-  usa: 'US',
-  poland: 'PL',
-  georgia: 'GE',
-  armenia: 'AM',
-  kazakhstan: 'KZ',
-  cyprus: 'CY',
-  austria: 'AT',
-  greece: 'GR',
-  montenegro: 'ME',
-  serbia: 'RS',
-  egypt: 'EG',
-  israel: 'IL',
-}
-
 /** Known cities → existing region* i18n keys. */
 const REGION_I18N_KEYS = {
   spain: 'regionSpain',
@@ -89,6 +64,11 @@ const REGION_I18N_KEYS = {
   'costa-adeje': 'regionCostaAdeje',
   laspalmas: 'regionLasPalmas',
   'las-palmas': 'regionLasPalmas',
+  moscow: 'regionMoscow',
+  minsk: 'regionMinsk',
+  'saint-petersburg': 'regionSaintPetersburg',
+  'abu-dhabi': 'regionAbuDhabi',
+  sharjah: 'regionSharjah',
 }
 
 function toPascalRegionKey(regionKey) {
@@ -104,24 +84,28 @@ function localizeCountryLabel(countryKey, fallback, locale, t) {
   if (countryKey === 'spain') {
     return t('regionSpain', { defaultValue: fallback || 'Spain' })
   }
-  const iso = COUNTRY_ISO[countryKey]
-  if (iso) {
-    try {
-      const label = new Intl.DisplayNames([locale || 'en'], { type: 'region' }).of(iso)
-      if (label) return label
-    } catch {
-      /* ignore */
-    }
-  }
+  const localized = getLocalizedCountryName(countryKey, locale || 'en')
+  if (localized && localized !== countryKey) return localized
   return fallback || countryKey
 }
 
-function localizeCityLabel(regionKey, fallback, t) {
-  if (!regionKey) return fallback || ''
-  const mapped = REGION_I18N_KEYS[regionKey] || `region${toPascalRegionKey(regionKey)}`
+/**
+ * Localize a catalog city/region key for UI (filters, breadcrumbs, chips).
+ * Falls back to `fallback` (often RU canonical) only when no translation exists.
+ */
+export function getLocalizedRegionLabel(regionKey, fallback, t) {
+  if (!regionKey && !fallback) return ''
+  const canonical = getCanonicalRegionKey(regionKey) || String(regionKey || '').trim().toLowerCase()
+  if (!canonical) return fallback || ''
+  if (typeof t !== 'function') return fallback || canonical
+  const mapped = REGION_I18N_KEYS[canonical] || `region${toPascalRegionKey(canonical)}`
   const translated = t(mapped, { defaultValue: '' })
   if (translated && translated !== mapped) return translated
-  return fallback || regionKey
+  return fallback || canonical
+}
+
+function localizeCityLabel(regionKey, fallback, t) {
+  return getLocalizedRegionLabel(regionKey, fallback, t)
 }
 
 function extractStreetRemainder(location, countryLabel, regionLabel) {

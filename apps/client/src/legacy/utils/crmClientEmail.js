@@ -1,6 +1,6 @@
 /**
- * Отправка писем из CRM через EmailJS в браузере (тот же путь, что и код верификации в authService).
- * Обходит ограничение EmailJS на запросы не из браузера с бэкенда.
+ * Send CRM emails via EmailJS in the browser (same path as verification codes in authService).
+ * Avoids EmailJS rejecting non-browser requests from the backend.
  */
 import emailjs from '@emailjs/browser';
 import { getEmailJsConfig, getEnv, loadRuntimeConfig } from './env';
@@ -28,24 +28,20 @@ async function resolveEmailJsForCrm() {
 export async function sendCrmEmailFromBrowser({ toEmail, subject, messageBody, fromName }) {
   const { serviceId, templateId, publicKey } = await resolveEmailJsForCrm();
   if (!serviceId || !publicKey) {
-    throw new Error(
-      'EmailJS: задайте service id и public key (как для регистрации).'
-    );
+    throw new Error('crmEmailErr_missingKeys');
   }
   if (!templateId) {
-    throw new Error(
-      'Для CRM нужен отдельный шаблон EmailJS, не шаблон «код подтверждения». Создайте в EmailJS новый шаблон: тема {{subject}}, текст {{message}} или {{full_message}}, получатель {{to_email}}. Укажите его Template ID: локально VITE_EMAILJS_CRM_TEMPLATE_ID в .env, на проде — EMAILJS_CRM_TEMPLATE_ID на сервере (отдаётся в /api/config).'
-    );
+    throw new Error('crmEmailErr_missingTemplate');
   }
   emailjs.init(publicKey);
   const subj =
-    subject != null && String(subject).trim() ? String(subject).trim() : 'Сообщение от Sellyourbrick';
+    subject != null && String(subject).trim() ? String(subject).trim() : 'Message from SellYourBrick';
   const text = messageBody != null ? String(messageBody) : '';
   const sender =
-    fromName != null && String(fromName).trim() ? String(fromName).trim() : 'Sellyourbrick';
-  /** Один блок текста для шаблонов с одной переменной (часто {{message}}). */
+    fromName != null && String(fromName).trim() ? String(fromName).trim() : 'SellYourBrick';
+  /** Single body field for templates that only expose {{message}}. */
   const messageWithSubject = text ? `${subj}\n\n${text}` : subj;
-  const timeStr = new Date().toLocaleString('ru-RU', {
+  const timeStr = new Date().toLocaleString(undefined, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -69,16 +65,16 @@ export async function sendCrmEmailFromBrowser({ toEmail, subject, messageBody, f
     letter: text,
     crm_subject: subj,
     crm_body: text,
-    /** Если в шаблоне одна площадка «текст письма», подставьте {{full_message}} или {{message}} */
+    /** Prefer {{full_message}} or {{message}} when the template has a single body field. */
     full_message: messageWithSubject,
     combined: messageWithSubject,
     from_name: sender,
-    /** Шаблон Contact Us / Auto-Reply часто ждёт {{name}} (отправитель) и {{time}} */
+    /** Contact Us / Auto-Reply templates often expect {{name}} (sender) and {{time}}. */
     name: sender,
     time: timeStr,
   };
   const result = await emailjs.send(serviceId, templateId, templateParams, publicKey);
   if (result.status !== 200) {
-    throw new Error(`EmailJS вернул статус ${result.status}`);
+    throw new Error(`crmEmailErr_status:${result.status}`);
   }
 }

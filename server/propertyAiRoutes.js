@@ -25,7 +25,7 @@ function normalizeProperty(row, table) {
   const images = normalizePropertyAiImages([row.images, row.photos, row.image])
   return {
     ...row,
-    title: row.title || row.name || `Объект №${row.id}`,
+    title: row.title || row.name || `Listing #${row.id}`,
     images: images.slice(0, 8),
     source_table: table,
   }
@@ -50,7 +50,7 @@ async function loadProperty(propertyId, requestedTable) {
 async function requirePropertyAiUser(req, res, next) {
   const userId = positiveInt(req.get('X-User-Id') || req.query.user_id || req.body?.user_id)
   if (!userId || !(await userExistsForPropertyAi(userId))) {
-    return res.status(401).json({ detail: 'Войдите в аккаунт, чтобы использовать Недвижимость AI.' })
+    return res.status(401).json({ detail: 'Sign in to use Property AI.' })
   }
   req.propertyAiUserId = userId
   next()
@@ -65,7 +65,7 @@ export function registerPropertyAiRoutes(app) {
   router.get('/history', async (req, res) => {
     try {
       const propertyId = positiveInt(req.query.property_id)
-      if (!propertyId) return res.status(400).json({ detail: 'Некорректный ID объекта.' })
+      if (!propertyId) return res.status(400).json({ detail: 'Invalid property ID.' })
       const history = await listPropertyAiHistory({
         userId: req.propertyAiUserId,
         propertyId,
@@ -74,17 +74,18 @@ export function registerPropertyAiRoutes(app) {
       res.json({ success: true, data: history })
     } catch (error) {
       console.error('[property-ai/history]', error)
-      res.status(500).json({ detail: 'Не удалось загрузить историю AI.' })
+      res.status(500).json({ detail: 'Could not load AI history.' })
     }
   })
 
   router.post('/reports', async (req, res) => {
     try {
       const propertyId = positiveInt(req.body?.property_id)
-      if (!propertyId) return res.status(400).json({ detail: 'Некорректный ID объекта.' })
+      if (!propertyId) return res.status(400).json({ detail: 'Invalid property ID.' })
       const request = normalizePropertyAiRequest(req.body)
       const property = await loadProperty(propertyId, req.body?.property_table)
-      if (!property) return res.status(404).json({ detail: 'Объект не найден.' })
+      if (!property) return res.status(404).json({ detail: 'Property not found.' })
+
       const conversation = await ensurePropertyAiConversation({
         userId: req.propertyAiUserId,
         propertyId,
@@ -124,34 +125,36 @@ export function registerPropertyAiRoutes(app) {
       })
     } catch (error) {
       const message = String(error?.message || error)
-      const status = /категория|вопрос/i.test(message) ? 400 : 500
+      const status = /category|question/i.test(message) ? 400 : 500
+
       console.error('[property-ai/reports]', error)
-      res.status(status).json({ detail: status === 400 ? message : 'Не удалось запустить AI-анализ.' })
+      res.status(status).json({ detail: status === 400 ? message : 'Could not start the AI analysis.' })
     }
   })
 
   router.get('/reports/:reportId', async (req, res) => {
     try {
       const reportId = positiveInt(req.params.reportId)
-      if (!reportId) return res.status(400).json({ detail: 'Некорректный ID отчёта.' })
+      if (!reportId) return res.status(400).json({ detail: 'Invalid report ID.' })
       const report = await getOwnedPropertyAiReport({ reportId, userId: req.propertyAiUserId })
-      if (!report) return res.status(404).json({ detail: 'Отчёт не найден.' })
+      if (!report) return res.status(404).json({ detail: 'Report not found.' })
       res.json({ success: true, data: report })
     } catch (error) {
       console.error('[property-ai/report]', error)
-      res.status(500).json({ detail: 'Не удалось получить статус отчёта.' })
+      res.status(500).json({ detail: 'Could not load report status.' })
     }
   })
 
   router.get('/reports/:reportId/pdf', async (req, res) => {
     try {
       const reportId = positiveInt(req.params.reportId)
-      if (!reportId) return res.status(400).json({ detail: 'Некорректный ID отчёта.' })
+      if (!reportId) return res.status(400).json({ detail: 'Invalid report ID.' })
       const report = await getOwnedPropertyAiReport({ reportId, userId: req.propertyAiUserId, includePdf: true })
-      if (!report) return res.status(404).json({ detail: 'Отчёт не найден.' })
+      if (!report) return res.status(404).json({ detail: 'Report not found.' })
       if (report.status !== 'completed' || !report.pdfData) {
-        return res.status(409).json({ detail: 'PDF ещё не готов.' })
+        return res.status(409).json({ detail: 'PDF is not ready yet.' })
       }
+
       const disposition = req.query.download === '1' ? 'attachment' : 'inline'
       res.setHeader('Content-Type', 'application/pdf')
       res.setHeader('Content-Disposition', `${disposition}; filename="property-ai-report-${report.id}-tiffany-v2.pdf"`)
@@ -160,7 +163,7 @@ export function registerPropertyAiRoutes(app) {
       res.send(Buffer.from(report.pdfData))
     } catch (error) {
       console.error('[property-ai/pdf]', error)
-      res.status(500).json({ detail: 'Не удалось открыть PDF.' })
+      res.status(500).json({ detail: 'Could not open the PDF.' })
     }
   })
 

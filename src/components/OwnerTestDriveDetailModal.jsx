@@ -76,7 +76,8 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
       onUpdated?.()
       onClose()
     } catch (error) {
-      showToast(error?.message || t('ownerTestDriveDetailActionFailed'), 'error')
+      const key = error?.message || 'ownerTdErr_actionFailed'
+      showToast(t(key, { defaultValue: t('ownerTestDriveDetailActionFailed') }), 'error')
     } finally {
       setResponding(false)
     }
@@ -97,7 +98,8 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
       onUpdated?.()
       onClose()
     } catch (error) {
-      showToast(error?.message || t('ownerTestDriveDetailCancelFailed'), 'error')
+      const key = error?.message || 'ownerTdErr_cancelFailed'
+      showToast(t(key, { defaultValue: t('ownerTestDriveDetailCancelFailed') }), 'error')
     } finally {
       setResponding(false)
     }

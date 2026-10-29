@@ -111,7 +111,7 @@ export async function failStalePropertyAiReports({ conversationId, olderThanSeco
     ? await prisma.$queryRaw`
         UPDATE property_ai_reports
         SET status = 'failed',
-            error = COALESCE(NULLIF(error, ''), 'Генерация прервалась. Запустите анализ ещё раз.'),
+            error = COALESCE(NULLIF(error, ''), 'Generation interrupted. Start the analysis again.'),
             updated_at = NOW()
         WHERE conversation_id = ${conversationId}
           AND status IN ('queued', 'analyzing', 'rendering')
@@ -121,7 +121,7 @@ export async function failStalePropertyAiReports({ conversationId, olderThanSeco
     : await prisma.$queryRaw`
         UPDATE property_ai_reports
         SET status = 'failed',
-            error = COALESCE(NULLIF(error, ''), 'Генерация прервалась. Запустите анализ ещё раз.'),
+            error = COALESCE(NULLIF(error, ''), 'Generation interrupted. Start the analysis again.'),
             updated_at = NOW()
         WHERE status IN ('queued', 'analyzing', 'rendering')
           AND updated_at <= NOW() - (${seconds} * INTERVAL '1 second')

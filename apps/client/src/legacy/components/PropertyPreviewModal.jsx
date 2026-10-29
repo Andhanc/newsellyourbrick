@@ -52,13 +52,13 @@ const PropertyPreviewModal = ({ isOpen, onClose, propertyData }) => {
         <button 
           className="preview-modal__close" 
           onClick={onClose}
-          aria-label="Закрыть"
+          aria-label={t('closeModalAria')}
         >
           <FiX size={24} />
         </button>
 
         <div className="preview-modal__content">
-          <h2 className="preview-modal__title">Предпросмотр объявления</h2>
+          <h2 className="preview-modal__title">{t('propertyPreview_title')}</h2>
 
           {/* Медиа (фото и видео) */}
           {hasMedia && (
@@ -85,14 +85,14 @@ const PropertyPreviewModal = ({ isOpen, onClose, propertyData }) => {
                     {currentMedia.type === 'image' ? (
                       <img 
                         src={currentMedia.content} 
-                        alt={`Фото ${currentMedia.index + 1}`}
+                        alt={t('propertyPreview_photoAlt', { n: currentMedia.index + 1 })}
                       />
                     ) : (
                       <div className="preview-media-video">
                         {currentMedia.content.type === 'youtube' && currentMedia.content.videoId ? (
                           <iframe
                             src={`https://www.youtube.com/embed/${currentMedia.content.videoId}`}
-                            title={`YouTube видео ${currentMedia.index + 1}`}
+                            title={t('propertyPreview_youtubeTitle', { n: currentMedia.index + 1 })}
                             frameBorder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowFullScreen
@@ -100,7 +100,7 @@ const PropertyPreviewModal = ({ isOpen, onClose, propertyData }) => {
                         ) : currentMedia.content.type === 'googledrive' && currentMedia.content.videoId ? (
                           <iframe
                             src={`https://drive.google.com/file/d/${currentMedia.content.videoId}/preview`}
-                            title={`Google Drive видео ${currentMedia.index + 1}`}
+                            title={t('propertyPreview_gdriveTitle', { n: currentMedia.index + 1 })}
                             frameBorder="0"
                             allowFullScreen
                           />
@@ -110,7 +110,7 @@ const PropertyPreviewModal = ({ isOpen, onClose, propertyData }) => {
                             controls
                             className="preview-video-file"
                           >
-                            Ваш браузер не поддерживает воспроизведение видео.
+                            {t('propertyPreview_videoUnsupported')}
                           </video>
                         ) : null}
                       </div>
@@ -137,7 +137,7 @@ const PropertyPreviewModal = ({ isOpen, onClose, propertyData }) => {
                         {thumbnail ? (
                           <img
                             src={thumbnail}
-                            alt={`Миниатюра ${index + 1}`}
+                            alt={t('propertyPreview_thumbAlt', { n: index + 1 })}
                           />
                         ) : (
                           <div className="preview-thumbnail-video-placeholder">
@@ -154,7 +154,7 @@ const PropertyPreviewModal = ({ isOpen, onClose, propertyData }) => {
 
           {/* Информация */}
           <div className="preview-info">
-            <h1 className="preview-title">{propertyData.title || 'Без названия'}</h1>
+            <h1 className="preview-title">{propertyData.title || t('propertyPreview_untitled')}</h1>
             
             {propertyData.location && (
               <div className="preview-location">
@@ -165,7 +165,7 @@ const PropertyPreviewModal = ({ isOpen, onClose, propertyData }) => {
 
             {propertyData.description && (
               <div className="preview-description">
-                <h3>Описание</h3>
+                <h3>{t('propertyPreview_description')}</h3>
                 <p>{propertyData.description}</p>
               </div>
             )}
@@ -175,24 +175,24 @@ const PropertyPreviewModal = ({ isOpen, onClose, propertyData }) => {
               {propertyData.area && (
                 <div className="preview-feature">
                   <BiArea size={20} />
-                  <span>{propertyData.area} м²</span>
+                  <span>{t('propertyPreview_areaSqm', { area: propertyData.area })}</span>
                 </div>
               )}
               {propertyData.bedrooms && (
                 <div className="preview-feature">
                   <MdBed size={20} />
-                  <span>{propertyData.bedrooms} спален</span>
+                  <span>{t('propertyPreview_bedrooms', { count: propertyData.bedrooms })}</span>
                 </div>
               )}
               {propertyData.bathrooms && (
                 <div className="preview-feature">
                   <MdOutlineBathtub size={20} />
-                  <span>{propertyData.bathrooms} санузлов</span>
+                  <span>{t('propertyPreview_bathrooms', { count: propertyData.bathrooms })}</span>
                 </div>
               )}
               {propertyData.rooms && (
                 <div className="preview-feature">
-                  <span>{propertyData.rooms} комнат</span>
+                  <span>{t('propertyPreview_rooms', { count: propertyData.rooms })}</span>
                 </div>
               )}
             </div>
@@ -201,24 +201,27 @@ const PropertyPreviewModal = ({ isOpen, onClose, propertyData }) => {
             <div className="preview-details">
               {propertyData.floor && (
                 <div className="preview-detail-item">
-                  <strong>Этаж:</strong> {propertyData.floor}
-                  {propertyData.totalFloors && ` из ${propertyData.totalFloors}`}
+                  <strong>{t('propertyPreview_floor')}</strong> {propertyData.floor}
+                  {propertyData.totalFloors && t('propertyPreview_floorOf', { total: propertyData.totalFloors })}
                 </div>
               )}
               {propertyData.yearBuilt && (
                 <div className="preview-detail-item">
-                  <strong>Год постройки:</strong> {propertyData.yearBuilt}
+                  <strong>{t('propertyPreview_yearBuilt')}</strong> {propertyData.yearBuilt}
                 </div>
               )}
               {propertyData.propertyType && (
                 <div className="preview-detail-item">
-                  <strong>Тип:</strong> {
-                    propertyData.propertyType === 'apartment' ? 'Квартира' :
-                    propertyData.propertyType === 'house' ? 'Дом' :
-                    propertyData.propertyType === 'villa' ? 'Вилла' :
-                    propertyData.propertyType === 'commercial' ? 'Коммерческая' :
-                    propertyData.propertyType
-                  }
+                  <strong>{t('propertyPreview_type')}</strong>{' '}
+                  {propertyData.propertyType === 'apartment'
+                    ? t('propertyTypeApartment')
+                    : propertyData.propertyType === 'house'
+                      ? t('propertyTypeHouse')
+                      : propertyData.propertyType === 'villa'
+                        ? t('propertyTypeVilla')
+                        : propertyData.propertyType === 'commercial'
+                          ? t('propertyTypeCommercial')
+                          : propertyData.propertyType}
                 </div>
               )}
             </div>
@@ -228,7 +231,7 @@ const PropertyPreviewModal = ({ isOpen, onClose, propertyData }) => {
               <div className="preview-price">
                 <FiDollarSign size={24} />
                 <span className="price-amount">
-                  {parseInt(propertyData.price).toLocaleString('ru-RU')} $
+                  {parseInt(propertyData.price).toLocaleString()} $
                 </span>
               </div>
             )}
@@ -236,13 +239,13 @@ const PropertyPreviewModal = ({ isOpen, onClose, propertyData }) => {
             {/* Информация об аукционе */}
             {propertyData.isAuction && (
               <div className="preview-auction">
-                <div className="auction-badge">Аукцион</div>
+                <div className="auction-badge">{t('auction')}</div>
                 {propertyData.auctionStartDate && propertyData.auctionEndDate && (
                   <div className="auction-dates">
                     <FiCalendar size={18} />
                     <span>
-                      {new Date(propertyData.auctionStartDate).toLocaleDateString('ru-RU')} - 
-                      {' '}{new Date(propertyData.auctionEndDate).toLocaleDateString('ru-RU')}
+                      {new Date(propertyData.auctionStartDate).toLocaleDateString()} - 
+                      {' '}{new Date(propertyData.auctionEndDate).toLocaleDateString()}
                     </span>
                   </div>
                 )}
@@ -254,7 +257,7 @@ const PropertyPreviewModal = ({ isOpen, onClose, propertyData }) => {
               <div className="preview-documents">
                 <h3 className="preview-documents-title">
                   <FiFileText size={20} />
-                  Дополнительные документы
+                  {t('propertyPreview_extraDocs')}
                 </h3>
                 <div className="preview-documents-grid">
                   {propertyData.additionalDocuments.map((doc) => (
@@ -269,7 +272,7 @@ const PropertyPreviewModal = ({ isOpen, onClose, propertyData }) => {
                       <div className="preview-document-info">
                         <h4 className="preview-document-name">{isPropertyPresentation(doc) ? t('propertyPresentationTitle') : doc.name}</h4>
                         <span className="preview-document-type">
-                          {doc.type === 'pdf' ? 'PDF документ' : 'Изображение'}
+                          {doc.type === 'pdf' ? t('propertyPreview_pdfDoc') : t('propertyPreview_imageDoc')}
                         </span>
                       </div>
                     </div>

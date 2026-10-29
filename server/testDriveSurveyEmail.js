@@ -8,28 +8,28 @@ export function testDriveSurveyFrontendBase() {
 }
 
 export function buildTestDriveSurveyInviteEmail({ firstName, propertyTitle, surveyUrl }) {
-  const title = String(propertyTitle || 'объект').trim() || 'объект';
-  const hello = firstName ? `Здравствуйте, ${firstName}!` : 'Здравствуйте!';
-  const subject = 'Пройдите опрос по тест-драйву';
+  const title = String(propertyTitle || 'property').trim() || 'property';
+  const hello = firstName ? `Hello, ${firstName}!` : 'Hello!';
+  const subject = 'Complete the test-drive survey';
   const body = `${hello}
 
-Расскажите, что понравилось в «${title}», планируете ли покупку и оцените объект звёздами — это займёт пару минут.
+Tell us what you liked about “${title}”, whether you plan to buy, and rate the listing — it only takes a couple of minutes.
 
-Следующий шаг: откройте опрос и поделитесь впечатлениями — это поможет улучшить объекты.
+Next step: open the survey and share your feedback — it helps us improve the listings.
 
-Пройти опрос:
+Open the survey:
 ${surveyUrl}
 
-С уважением, Sellyourbrick`;
+Best regards, Sellyourbrick`;
   return { subject, body };
 }
 
 export function buildTestDriveSurveyInviteWhatsApp({ firstName, propertyTitle, surveyUrl }) {
-  const title = String(propertyTitle || 'объект').trim() || 'объект';
-  const hello = firstName ? `Здравствуйте, ${firstName}! ` : '';
-  return `${hello}Пройдите опрос по тест-драйву «${title}». Расскажите, что понравилось, планируете ли покупку и оцените объект звёздами — это займёт пару минут.
+  const title = String(propertyTitle || 'property').trim() || 'property';
+  const hello = firstName ? `Hello, ${firstName}! ` : '';
+  return `${hello}Complete the test-drive survey for “${title}”. Tell us what you liked, whether you plan to buy, and rate the listing — it only takes a couple of minutes.
 
-Пройти опрос: ${surveyUrl}`;
+Open the survey: ${surveyUrl}`;
 }
 
 function surveyUrlForToken(surveyToken) {

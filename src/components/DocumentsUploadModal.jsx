@@ -1,8 +1,10 @@
 import { useState, useRef } from 'react'
 import { FiX, FiUpload, FiFile, FiCheck } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 import './DocumentsUploadModal.css'
 
 const DocumentsUploadModal = ({ isOpen, onClose, onComplete }) => {
+  const { t } = useTranslation()
   const [documents, setDocuments] = useState({
     passport: null,
     ownership: null,
@@ -22,21 +24,21 @@ const DocumentsUploadModal = ({ isOpen, onClose, onComplete }) => {
   const documentTypes = [
     {
       key: 'passport',
-      label: 'Паспорт',
+      label: t('documentsModal_passportLabel'),
       ref: passportRef,
-      description: 'Загрузите фото или скан паспорта'
+      description: t('documentsModal_passportDesc')
     },
     {
       key: 'ownership',
-      label: 'Право собственности',
+      label: t('documentsModal_ownershipLabel'),
       ref: ownershipRef,
-      description: 'Загрузите документ о праве собственности'
+      description: t('documentsModal_ownershipDesc')
     },
     {
       key: 'noDebts',
-      label: 'Справка об отсутствии обременений',
+      label: t('documentsModal_noDebtsLabel'),
       ref: noDebtsRef,
-      description: 'Загрузите справку об отсутствии задолженностей'
+      description: t('documentsModal_noDebtsDesc')
     }
   ]
 
@@ -67,7 +69,7 @@ const DocumentsUploadModal = ({ isOpen, onClose, onComplete }) => {
   const handleComplete = () => {
     const allUploaded = Object.values(uploaded).every(v => v === true)
     if (!allUploaded) {
-      alert('Пожалуйста, загрузите все необходимые документы')
+      alert(t('documentsModal_alertAllRequired'))
       return
     }
     onComplete(documents)
@@ -75,17 +77,19 @@ const DocumentsUploadModal = ({ isOpen, onClose, onComplete }) => {
 
   if (!isOpen) return null
 
+  const uploadedCount = Object.values(uploaded).filter(v => v).length
+
   return (
     <div className="documents-modal-overlay" onClick={onClose}>
       <div className="documents-modal" onClick={(e) => e.stopPropagation()}>
-        <button className="documents-modal__close" onClick={onClose}>
+        <button className="documents-modal__close" onClick={onClose} aria-label={t('close')}>
           <FiX size={24} />
         </button>
         
         <div className="documents-modal__content">
-          <h2 className="documents-modal__title">Загрузка документов</h2>
+          <h2 className="documents-modal__title">{t('documentsModal_title')}</h2>
           <p className="documents-modal__description">
-            Пожалуйста, загрузите все необходимые документы для публикации объявления
+            {t('documentsModal_subtitle')}
           </p>
           
           <div className="documents-modal__list">
@@ -116,7 +120,7 @@ const DocumentsUploadModal = ({ isOpen, onClose, onComplete }) => {
                       className="documents-modal__upload-btn"
                     >
                       <FiUpload size={20} />
-                      <span>Выбрать файл</span>
+                      <span>{t('documentsModal_chooseFile')}</span>
                     </label>
                   </div>
                 ) : (
@@ -127,14 +131,14 @@ const DocumentsUploadModal = ({ isOpen, onClose, onComplete }) => {
                     <div className="documents-modal__file-details">
                       <p className="documents-modal__file-name">{documents[doc.key]?.name}</p>
                       <p className="documents-modal__file-size">
-                        {(documents[doc.key]?.size / 1024 / 1024).toFixed(2)} МБ
+                        {(documents[doc.key]?.size / 1024 / 1024).toFixed(2)} {t('documentsModal_mb')}
                       </p>
                     </div>
                     <button
                       className="documents-modal__remove-btn"
                       onClick={() => handleRemove(doc.key)}
                     >
-                      Удалить
+                      {t('documentsModal_remove')}
                     </button>
                   </div>
                 )}
@@ -147,12 +151,12 @@ const DocumentsUploadModal = ({ isOpen, onClose, onComplete }) => {
               <div
                 className="documents-modal__progress-fill"
                 style={{
-                  width: `${(Object.values(uploaded).filter(v => v).length / 3) * 100}%`
+                  width: `${(uploadedCount / 3) * 100}%`
                 }}
               />
             </div>
             <p className="documents-modal__progress-text">
-              Загружено {Object.values(uploaded).filter(v => v).length} из 3 документов
+              {t('documentsModal_progress', { count: uploadedCount, total: 3 })}
             </p>
           </div>
           
@@ -161,13 +165,13 @@ const DocumentsUploadModal = ({ isOpen, onClose, onComplete }) => {
               className="documents-modal__btn documents-modal__btn--cancel"
               onClick={onClose}
             >
-              Отмена
+              {t('documentsModal_cancel')}
             </button>
             <button
               className="documents-modal__btn documents-modal__btn--complete"
               onClick={handleComplete}
             >
-              Завершить публикацию
+              {t('documentsModal_completePublish')}
             </button>
           </div>
         </div>

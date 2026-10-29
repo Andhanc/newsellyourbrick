@@ -1,8 +1,8 @@
 export const properties = [
   {
     id: 1,
-    title: "2-комн. квартира, 58 м², 9/10 этаж",
-    location: "Новгородская область, Великий Новгород, Большая Московская улица, 128/10",
+    title: "2-bed apartment, 58 m², floor 9/10",
+    location: "Novgorod Region, Veliky Novgorod, Bolshaya Moskovskaya St. 128/10",
     price: 35000,
     currentBid: 32000,
     images: [
@@ -13,16 +13,16 @@ export const properties = [
     area: 58,
     rooms: 2,
     floor: "9/10",
-    description: "Предлагается в аренду 2 комнатная светлая квартира в районе Ивушки на Большой Московской, д. 128/10. рядом с магазином Осень. (это плюс). Квартира с косметическим ремонтом, теплая. Из мебели и техники есть всё необходимое для проживания. Двухспальная тахта, двухспальный диван, стенка, прихожая, комод, кондиционер, стильная машина, холодильник, кухонный гарнитур.",
-    endTime: new Date(Date.now() + 100 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000), // 100 дней (зеленый - от 3 месяцев)
-    seller: "РИЕЛТОР",
+    description: "Bright 2-bedroom apartment for rent near shops and amenities. Cosmetic renovation, furnished with essentials: sofa, wardrobe, AC, washing machine, fridge, and kitchen set.",
+    endTime: new Date(Date.now() + 100 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000), // 100 days (green — 3+ months)
+    seller: "Realtor",
     sellerId: "ID 124809292",
     isAuction: true
   },
   {
     id: 2,
-    title: "1-комн. квартира, 37 м², 6/9 этаж",
-    location: "Новгородская область, Великий Новгород, Большая Московская улица, 124к2",
+    title: "1-bed apartment, 37 m², floor 6/9",
+    location: "Novgorod Region, Veliky Novgorod, Bolshaya Moskovskaya St. 124k2",
     price: 25000,
     currentBid: 23000,
     images: [
@@ -33,16 +33,16 @@ export const properties = [
     area: 37,
     rooms: 1,
     floor: "6/9",
-    description: "Сдаётся уютная однокомнатная квартира площадью 37 кв. м в панельном доме, построенном в 2015 году. Квартира расположена на 6-м этаже 9-этажного здания. Комната просторная, жилая площадь составляет 18 кв. м, а кухня 9 кв. м. Высота потолков 2.7 метра, что создаёт ощущение простора. Из окон открывается вид во двор, что обеспечивает тишину и уединение. В квартире сделан косметический ремонт, есть вся необходимая мебель как в комнате, так и на кухне.",
-    endTime: new Date(Date.now() + 75 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000), // 75 дней (оранжевый - от 2 до 3 месяцев)
-    seller: "СОБСТВЕННИК",
+    description: "Cozy one-bedroom apartment (37 m²) in a 2015 panel building on floor 6 of 9. Spacious room (~18 m²), kitchen (~9 m²), 2.7 m ceilings, quiet courtyard view. Cosmetic renovation with furniture.",
+    endTime: new Date(Date.now() + 75 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000), // 75 days (orange — 2–3 months)
+    seller: "Owner",
     sellerId: "ID 106668168",
     isAuction: true
   },
   {
     id: 3,
-    title: "Уютная 1-к квартира, 37 м², 1/9 этаж",
-    location: "Новгородская область, Великий Новгород, Волотовская улица, 6",
+    title: "Cozy 1-bed apartment, 37 m², floor 1/9",
+    location: "Novgorod Region, Veliky Novgorod, Volotovskaya St. 6",
     price: 36000,
     currentBid: 34000,
     images: [
@@ -53,16 +53,16 @@ export const properties = [
     area: 37,
     rooms: 1,
     floor: "1/9",
-    description: "Уютная однокомнатная квартира в современном доме. Квартира расположена на первом этаже, что удобно для пожилых людей и семей с детьми. Современный ремонт, вся необходимая мебель и техника. Рядом остановка общественного транспорта, магазины и детский сад.",
-    endTime: new Date(Date.now() + 50 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000), // 50 дней (красный - от 1 до 2 месяцев)
-    seller: "СОБСТВЕННИК",
+    description: "Cozy one-bedroom apartment on the ground floor — convenient for families and seniors. Modern renovation, furniture and appliances included. Near transit, shops, and a kindergarten.",
+    endTime: new Date(Date.now() + 50 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000), // 50 days (red — 1–2 months)
+    seller: "Owner",
     sellerId: "ID 75852506",
     isAuction: true
   },
   {
     id: 4,
-    title: "3-комн. квартира, 85 м², 5/12 этаж",
-    location: "Москва, ул. Ленина, 15",
+    title: "3-bed apartment, 85 m², floor 5/12",
+    location: "Moscow, Lenina St. 15",
     price: 9500000,
     currentBid: 9200000,
     images: [
@@ -73,16 +73,16 @@ export const properties = [
     area: 85,
     rooms: 3,
     floor: "5/12",
-    description: "Просторная трехкомнатная квартира в центре Москвы. Евроремонт, панорамные окна, вид на парк. Большая гостиная, две спальни, современная кухня. Вся мебель и техника в отличном состоянии. Парковка во дворе.",
-    endTime: new Date(Date.now() + 70 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000), // 70 дней (оранжевый - от 2 до 3 месяцев)
-    seller: "РИЕЛТОР",
+    description: "Spacious three-bedroom apartment in central Moscow. Quality finish, panoramic windows overlooking a park. Large living room, two bedrooms, modern kitchen. Furniture and appliances in excellent condition. Courtyard parking.",
+    endTime: new Date(Date.now() + 70 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000), // 70 days (orange — 2–3 months)
+    seller: "Realtor",
     sellerId: "ID 234567890",
     isAuction: true
   },
   {
     id: 5,
-    title: "2-комн. квартира, 65 м², 7/9 этаж",
-    location: "Санкт-Петербург, Невский проспект, 45",
+    title: "2-bed apartment, 65 m², floor 7/9",
+    location: "Saint Petersburg, Nevsky Prospect 45",
     price: 7200000,
     currentBid: 7000000,
     images: [
@@ -93,16 +93,16 @@ export const properties = [
     area: 65,
     rooms: 2,
     floor: "7/9",
-    description: "Двухкомнатная квартира в историческом центре Санкт-Петербурга. Высокие потолки, большие окна, вид на Неву. Квартира полностью отремонтирована, готова к проживанию. Рядом метро, магазины, кафе.",
-    endTime: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000 + 10 * 60 * 60 * 1000), // 40 дней (красный - от 1 до 2 месяцев)
-    seller: "СОБСТВЕННИК",
+    description: "Two-bedroom apartment in the historic center of Saint Petersburg. High ceilings, large windows with Neva views. Fully renovated and move-in ready. Metro, shops, and cafés nearby.",
+    endTime: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000 + 10 * 60 * 60 * 1000), // 40 days (red — 1–2 months)
+    seller: "Owner",
     sellerId: "ID 345678901",
     isAuction: true
   },
   {
     id: 6,
-    title: "Студия, 28 м², 3/5 этаж",
-    location: "Казань, ул. Баумана, 12",
+    title: "Studio, 28 m², floor 3/5",
+    location: "Kazan, Baumana St. 12",
     price: 2800000,
     currentBid: 2600000,
     images: [
@@ -112,16 +112,16 @@ export const properties = [
     area: 28,
     rooms: 0,
     floor: "3/5",
-    description: "Уютная студия в центре Казани. Идеально подходит для одного человека или пары. Современный ремонт, вся необходимая мебель. Рядом университет, кафе, магазины.",
-    endTime: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000), // 25 дней (красный мигающий - меньше 1 месяца)
-    seller: "РИЕЛТОР",
+    description: "Cozy studio in central Kazan — ideal for one person or a couple. Modern renovation and essential furniture. University, cafés, and shops nearby.",
+    endTime: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000), // 25 days (red blinking — under 1 month)
+    seller: "Realtor",
     sellerId: "ID 456789012",
     isAuction: true
   },
   {
     id: 7,
-    title: "4-комн. квартира, 120 м², 8/16 этаж",
-    location: "Москва, ул. Тверская, 25",
+    title: "4-bed apartment, 120 m², floor 8/16",
+    location: "Moscow, Tverskaya St. 25",
     price: 18500000,
     currentBid: 17500000,
     images: [
@@ -132,16 +132,16 @@ export const properties = [
     area: 120,
     rooms: 4,
     floor: "8/16",
-    description: "Просторная четырехкомнатная квартира в престижном районе Москвы. Панорамные окна, вид на центр города. Евроремонт, дизайнерская мебель. Два санузла, большая кухня-гостиная.",
-    endTime: new Date(Date.now() + 35 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000), // 35 дней (красный - от 1 до 2 месяцев)
-    seller: "РИЕЛТОР",
+    description: "Spacious four-bedroom apartment in a prestigious Moscow district. Panoramic city-center views. Designer finish and furniture. Two bathrooms and a large kitchen-living area.",
+    endTime: new Date(Date.now() + 35 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000), // 35 days (red — 1–2 months)
+    seller: "Realtor",
     sellerId: "ID 567890123",
     isAuction: true
   },
   {
     id: 8,
-    title: "1-комн. квартира, 42 м², 4/10 этаж",
-    location: "Санкт-Петербург, Невский проспект, 88",
+    title: "1-bed apartment, 42 m², floor 4/10",
+    location: "Saint Petersburg, Nevsky Prospect 88",
     price: 8500000,
     currentBid: 8200000,
     images: [
@@ -152,16 +152,16 @@ export const properties = [
     area: 42,
     rooms: 1,
     floor: "4/10",
-    description: "Однокомнатная квартира в историческом центре Санкт-Петербурга. Высокие потолки, большие окна. Полностью отремонтирована, готова к проживанию. Рядом метро, магазины, кафе.",
-    endTime: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000 + 15 * 60 * 60 * 1000), // 20 дней (красный мигающий - меньше 1 месяца)
-    seller: "СОБСТВЕННИК",
+    description: "One-bedroom apartment in the historic center of Saint Petersburg. High ceilings, large windows. Fully renovated and ready to move in. Metro, shops, and cafés nearby.",
+    endTime: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000 + 15 * 60 * 60 * 1000), // 20 days (red blinking — under 1 month)
+    seller: "Owner",
     sellerId: "ID 678901234",
     isAuction: true
   },
   {
     id: 9,
-    title: "Таунхаус, 180 м², 2 этажа",
-    location: "Московская область, Одинцово, ул. Садовая, 15",
+    title: "Townhouse, 180 m², 2 floors",
+    location: "Moscow Region, Odintsovo, Sadovaya St. 15",
     price: 24500000,
     currentBid: 23500000,
     images: [
@@ -172,16 +172,16 @@ export const properties = [
     area: 180,
     rooms: 5,
     floor: "2/2",
-    description: "Современный таунхаус в элитном поселке. Два этажа, гараж, участок 6 соток. Камин, терраса, современная техника. Охраняемая территория, детская площадка.",
-    endTime: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000), // 15 дней (красный мигающий - меньше 1 месяца)
-    seller: "РИЕЛТОР",
+    description: "Modern townhouse in a gated community. Two floors, garage, ~600 m² plot. Fireplace, terrace, modern appliances. Secured area with a playground.",
+    endTime: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000), // 15 days (red blinking — under 1 month)
+    seller: "Realtor",
     sellerId: "ID 789012345",
     isAuction: true
   },
   {
     id: 10,
-    title: "2-комн. квартира, 55 м², 12/25 этаж",
-    location: "Москва, ул. Ленинградский проспект, 45",
+    title: "2-bed apartment, 55 m², floor 12/25",
+    location: "Moscow, Leningradsky Prospect 45",
     price: 12500000,
     currentBid: 11800000,
     images: [
@@ -192,16 +192,16 @@ export const properties = [
     area: 55,
     rooms: 2,
     floor: "12/25",
-    description: "Двухкомнатная квартира в новостройке. Панорамные окна, вид на парк. Современная планировка, качественный ремонт. Рядом метро, торговый центр, парк.",
-    endTime: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000 + 18 * 60 * 60 * 1000), // 10 дней (красный мигающий - меньше 1 месяца)
-    seller: "СОБСТВЕННИК",
+    description: "Two-bedroom apartment in a new development. Panoramic windows overlooking a park. Modern layout and quality finish. Metro, mall, and park nearby.",
+    endTime: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000 + 18 * 60 * 60 * 1000), // 10 days (red blinking — under 1 month)
+    seller: "Owner",
     sellerId: "ID 890123456",
     isAuction: true
   },
   {
     id: 11,
-    title: "Вилла, 250 м², 3 этажа",
-    location: "Краснодарский край, Сочи, ул. Приморская, 120",
+    title: "Villa, 250 m², 3 floors",
+    location: "Krasnodar Region, Sochi, Primorskaya St. 120",
     price: 45000000,
     currentBid: 42000000,
     images: [
@@ -212,16 +212,16 @@ export const properties = [
     area: 250,
     rooms: 6,
     floor: "3/3",
-    description: "Роскошная вилла на берегу моря. Три этажа, бассейн, сауна, терраса с видом на море. Участок 15 соток, парковка на 4 машины. Элитная отделка, дизайнерская мебель.",
-    endTime: new Date(Date.now() + 95 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000), // 95 дней (зеленый - от 3 месяцев)
-    seller: "РИЕЛТОР",
+    description: "Luxury seaside villa. Three floors, pool, sauna, sea-view terrace. ~1,500 m² plot, parking for 4 cars. Premium finishes and designer furniture.",
+    endTime: new Date(Date.now() + 95 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000), // 95 days (green — 3+ months)
+    seller: "Realtor",
     sellerId: "ID 901234567",
     isAuction: true
   },
   {
     id: 12,
-    title: "3-комн. квартира, 95 м², 5/9 этаж",
-    location: "Екатеринбург, ул. Ленина, 50",
+    title: "3-bed apartment, 95 m², floor 5/9",
+    location: "Yekaterinburg, Lenina St. 50",
     price: 6800000,
     currentBid: 6500000,
     images: [
@@ -232,16 +232,16 @@ export const properties = [
     area: 95,
     rooms: 3,
     floor: "5/9",
-    description: "Трехкомнатная квартира в центре Екатеринбурга. Просторная гостиная, две спальни, современная кухня. Качественный ремонт, вся мебель и техника. Рядом центр, парк, школы.",
-    endTime: new Date(Date.now() + 65 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000), // 65 дней (оранжевый - от 2 до 3 месяцев)
-    seller: "СОБСТВЕННИК",
+    description: "Three-bedroom apartment in central Yekaterinburg. Spacious living room, two bedrooms, modern kitchen. Quality renovation with furniture and appliances. Near downtown, park, and schools.",
+    endTime: new Date(Date.now() + 65 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000), // 65 days (orange — 2–3 months)
+    seller: "Owner",
     sellerId: "ID 012345678",
     isAuction: true
   },
   {
     id: 13,
-    title: "Таунхаус, 160 м², 2 этажа",
-    location: "Московская область, Химки, ул. Лесная, 5",
+    title: "Townhouse, 160 m², 2 floors",
+    location: "Moscow Region, Khimki, Lesnaya St. 5",
     price: 19500000,
     currentBid: 18500000,
     images: [
@@ -252,16 +252,16 @@ export const properties = [
     area: 160,
     rooms: 4,
     floor: "2/2",
-    description: "Уютный таунхаус в тихом месте у леса. Два этажа, просторная кухня-гостиная, терраса. Участок 6 соток, парковка. Рядом лес, река, тишина и покой.",
-    endTime: new Date(Date.now() + 80 * 24 * 60 * 60 * 1000 + 14 * 60 * 60 * 1000), // 80 дней (оранжевый - от 2 до 3 месяцев)
-    seller: "РИЕЛТОР",
+    description: "Cozy townhouse in a quiet wooded area. Two floors, open kitchen-living room, terrace. ~600 m² plot and parking. Forest and river nearby.",
+    endTime: new Date(Date.now() + 80 * 24 * 60 * 60 * 1000 + 14 * 60 * 60 * 1000), // 80 days (orange — 2–3 months)
+    seller: "Realtor",
     sellerId: "ID 112233445",
     isAuction: true
   },
   {
     id: 14,
-    title: "Таунхаус премиум, 200 м², 3 этажа",
-    location: "Московская область, Мытищи, ул. Мира, 12",
+    title: "Premium townhouse, 200 m², 3 floors",
+    location: "Moscow Region, Mytishchi, Mira St. 12",
     price: 28000000,
     currentBid: 26500000,
     images: [
@@ -272,16 +272,16 @@ export const properties = [
     area: 200,
     rooms: 5,
     floor: "3/3",
-    description: "Роскошный таунхаус премиум класса. Три этажа, просторные комнаты, камин, терраса. Участок 8 соток, бассейн, сауна. Охраняемая территория, развитая инфраструктура.",
-    endTime: new Date(Date.now() + 55 * 24 * 60 * 60 * 1000 + 11 * 60 * 60 * 1000), // 55 дней (красный - от 1 до 2 месяцев)
-    seller: "РИЕЛТОР",
+    description: "Luxury premium townhouse. Three floors, spacious rooms, fireplace, terrace. ~800 m² plot with pool and sauna. Gated community with amenities.",
+    endTime: new Date(Date.now() + 55 * 24 * 60 * 60 * 1000 + 11 * 60 * 60 * 1000), // 55 days (red — 1–2 months)
+    seller: "Realtor",
     sellerId: "ID 223344556",
     isAuction: true
   },
   {
     id: 15,
-    title: "Таунхаус с садом, 170 м², 2 этажа",
-    location: "Ленинградская область, Всеволожск, ул. Центральная, 20",
+    title: "Townhouse with garden, 170 m², 2 floors",
+    location: "Leningrad Region, Vsevolozhsk, Tsentralnaya St. 20",
     price: 18500000,
     currentBid: 17500000,
     images: [
@@ -292,16 +292,16 @@ export const properties = [
     area: 170,
     rooms: 4,
     floor: "2/2",
-    description: "Уютный таунхаус с собственным садом. Два этажа, просторные комнаты, кухня-гостиная. Участок 5 соток, парковка. Рядом лес, тихое место для семейной жизни.",
-    endTime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000 + 9 * 60 * 60 * 1000), // 30 дней (красный - от 1 до 2 месяцев)
-    seller: "СОБСТВЕННИК",
+    description: "Cozy townhouse with a private garden. Two floors, spacious rooms, kitchen-living area. ~500 m² plot and parking. Quiet family-friendly setting near forest.",
+    endTime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000 + 9 * 60 * 60 * 1000), // 30 days (red — 1–2 months)
+    seller: "Owner",
     sellerId: "ID 334455667",
     isAuction: true
   },
   {
     id: 16,
-    title: "Вилла на берегу, 280 м², 3 этажа",
-    location: "Краснодарский край, Анапа, ул. Набережная, 45",
+    title: "Waterfront villa, 280 m², 3 floors",
+    location: "Krasnodar Region, Anapa, Naberezhnaya St. 45",
     price: 52000000,
     currentBid: 49000000,
     images: [
@@ -312,16 +312,16 @@ export const properties = [
     area: 280,
     rooms: 6,
     floor: "3/3",
-    description: "Эксклюзивная вилла на берегу моря. Три этажа, панорамные окна с видом на море, бассейн, сауна. Участок 12 соток, частный пляж. Элитная отделка, дизайнерская мебель.",
-    endTime: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000), // 28 дней (красный мигающий - меньше 1 месяца)
-    seller: "РИЕЛТОР",
+    description: "Exclusive waterfront villa. Three floors, panoramic sea views, pool, sauna. ~1,200 m² plot with private beach access. Premium finishes and designer furniture.",
+    endTime: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000), // 28 days (red blinking — under 1 month)
+    seller: "Realtor",
     sellerId: "ID 445566778",
     isAuction: true
   },
   {
     id: 17,
-    title: "Вилла в горах, 220 м², 2 этажа",
-    location: "Краснодарский край, Сочи, ул. Горная, 88",
+    title: "Mountain villa, 220 m², 2 floors",
+    location: "Krasnodar Region, Sochi, Gornaya St. 88",
     price: 38000000,
     currentBid: 36000000,
     images: [
@@ -332,16 +332,16 @@ export const properties = [
     area: 220,
     rooms: 5,
     floor: "2/2",
-    description: "Современная вилла в горах с видом на море. Два этажа, большие террасы, камин. Участок 10 соток, бассейн. Тишина и покой, близость к природе. Идеально для отдыха.",
-    endTime: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000 + 15 * 60 * 60 * 1000), // 45 дней (красный - от 1 до 2 месяцев)
-    seller: "СОБСТВЕННИК",
+    description: "Modern mountain villa with sea views. Two floors, large terraces, fireplace. ~1,000 m² plot with a pool. Quiet, nature-close setting — ideal for leisure.",
+    endTime: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000 + 15 * 60 * 60 * 1000), // 45 days (red — 1–2 months)
+    seller: "Owner",
     sellerId: "ID 556677889",
     isAuction: true
   },
   {
     id: 18,
-    title: "Вилла элитная, 300 м², 3 этажа",
-    location: "Краснодарский край, Геленджик, ул. Приморская, 200",
+    title: "Elite villa, 300 m², 3 floors",
+    location: "Krasnodar Region, Gelendzhik, Primorskaya St. 200",
     price: 48000000,
     currentBid: 45000000,
     images: [
@@ -352,16 +352,16 @@ export const properties = [
     area: 300,
     rooms: 7,
     floor: "3/3",
-    description: "Роскошная элитная вилла с видом на море. Три этажа, просторные комнаты, домашний кинотеатр, винный погреб. Участок 18 соток, бассейн, теннисный корт. Премиум локация.",
-    endTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000), // 5 дней (красный мигающий - меньше 1 месяца)
-    seller: "РИЕЛТОР",
+    description: "Luxury elite villa with sea views. Three floors, spacious rooms, home cinema, wine cellar. ~1,800 m² plot with pool and tennis court. Premium location.",
+    endTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000), // 5 days (red blinking — under 1 month)
+    seller: "Realtor",
     sellerId: "ID 667788990",
     isAuction: true
   },
   {
     id: 19,
-    title: "Апартаменты премиум, 95 м², 15/20 этаж",
-    location: "Москва, ул. Тверская, 10",
+    title: "Premium apartments, 95 m², floor 15/20",
+    location: "Moscow, Tverskaya St. 10",
     price: 18500000,
     currentBid: 17500000,
     images: [
@@ -372,16 +372,16 @@ export const properties = [
     area: 95,
     rooms: 2,
     floor: "15/20",
-    description: "Элитные апартаменты в центре Москвы. Панорамные окна с видом на город, современная отделка. Полностью меблированы, вся техника премиум класса. Охраняемая территория, подземный паркинг.",
-    endTime: new Date(Date.now() + 92 * 24 * 60 * 60 * 1000 + 10 * 60 * 60 * 1000), // 92 дня (зеленый - от 3 месяцев)
-    seller: "РИЕЛТОР",
+    description: "Elite apartments in central Moscow. Panoramic city views, modern finishes. Fully furnished with premium appliances. Gated complex with underground parking.",
+    endTime: new Date(Date.now() + 92 * 24 * 60 * 60 * 1000 + 10 * 60 * 60 * 1000), // 92 days (green — 3+ months)
+    seller: "Realtor",
     sellerId: "ID 778899001",
     isAuction: true
   },
   {
     id: 20,
-    title: "Апартаменты у моря, 75 м², 8/12 этаж",
-    location: "Краснодарский край, Сочи, ул. Морская, 25",
+    title: "Sea-view apartments, 75 m², floor 8/12",
+    location: "Krasnodar Region, Sochi, Morskaya St. 25",
     price: 12500000,
     currentBid: 11800000,
     images: [
@@ -392,16 +392,16 @@ export const properties = [
     area: 75,
     rooms: 2,
     floor: "8/12",
-    description: "Современные апартаменты с видом на море. Балкон с панорамным видом, качественная отделка. Рядом пляж, рестораны, развлечения. Идеально для отдыха и инвестиций.",
-    endTime: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000), // 12 дней (красный мигающий - меньше 1 месяца)
-    seller: "СОБСТВЕННИК",
+    description: "Modern apartments with sea views. Panoramic balcony, quality finishes. Beach, restaurants, and entertainment nearby — great for leisure or investment.",
+    endTime: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000 + 12 * 60 * 60 * 1000), // 12 days (red blinking — under 1 month)
+    seller: "Owner",
     sellerId: "ID 889900112",
     isAuction: true
   },
   {
     id: 21,
-    title: "Апартаменты бизнес-класс, 110 м², 10/15 этаж",
-    location: "Санкт-Петербург, Невский проспект, 100",
+    title: "Business-class apartments, 110 m², floor 10/15",
+    location: "Saint Petersburg, Nevsky Prospect 100",
     price: 22000000,
     currentBid: 21000000,
     images: [
@@ -412,16 +412,16 @@ export const properties = [
     area: 110,
     rooms: 3,
     floor: "10/15",
-    description: "Просторные апартаменты бизнес-класса в историческом центре. Высокие потолки, большие окна, вид на Неву. Современная планировка, качественная отделка. Рядом метро, деловой центр.",
-    endTime: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000 + 7 * 60 * 60 * 1000), // 60 дней (оранжевый - от 2 до 3 месяцев)
-    seller: "РИЕЛТОР",
+    description: "Spacious business-class apartments in the historic center. High ceilings, large windows with Neva views. Modern layout and quality finishes. Metro and business district nearby.",
+    endTime: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000 + 7 * 60 * 60 * 1000), // 60 days (orange — 2–3 months)
+    seller: "Realtor",
     sellerId: "ID 990011223",
     isAuction: true
   },
   {
     id: 22,
-    title: "Апартаменты студия, 45 м², 5/10 этаж",
-    location: "Москва, ул. Арбат, 15",
+    title: "Studio apartments, 45 m², floor 5/10",
+    location: "Moscow, Arbat St. 15",
     price: 8500000,
     currentBid: 8000000,
     images: [
@@ -432,9 +432,9 @@ export const properties = [
     area: 45,
     rooms: 0,
     floor: "5/10",
-    description: "Стильные апартаменты-студия в самом центре Москвы. Современный дизайн, функциональная планировка. Идеально для одного человека или пары. Рядом все необходимое для жизни.",
-    endTime: new Date(Date.now() + 38 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000), // 38 дней (красный - от 1 до 2 месяцев)
-    seller: "СОБСТВЕННИК",
+    description: "Stylish studio apartments in the heart of Moscow. Contemporary design and functional layout. Ideal for one person or a couple. Everything you need is nearby.",
+    endTime: new Date(Date.now() + 38 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000), // 38 days (red — 1–2 months)
+    seller: "Owner",
     sellerId: "ID 001122334",
     isAuction: true
   }

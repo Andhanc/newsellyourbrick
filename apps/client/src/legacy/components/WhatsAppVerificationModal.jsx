@@ -18,7 +18,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [errorCode, setErrorCode] = useState(null) // 'ALREADY_REGISTERED' | 'NEED_REGISTER'
-  const [step, setStep] = useState('phone') // 'phone' или 'code'
+  const [step, setStep] = useState('phone') // 'phone' | 'code'
   const [countdown, setCountdown] = useState(0)
   const inputRefs = useRef([])
 
@@ -53,7 +53,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
     // Валидация номера телефона
     const validation = validatePhoneNumber(phone)
     if (!validation.valid) {
-      setError(validation.error || t('enterValidPhone') || 'Введите корректный номер телефона')
+      setError(validation.error || t('enterValidPhone'))
       return
     }
 
@@ -64,7 +64,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
       // Используем сохраненный номер в цифровом формате или форматируем текущий
       const digitsToSend = phoneDigits || phone.replace(/\D/g, '')
       if (!digitsToSend) {
-        setError(t('enterPhone') || 'Введите номер телефона')
+        setError(t('enterPhone'))
         setIsLoading(false)
         return
       }
@@ -100,11 +100,11 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
           }
         }, 100)
       } else {
-        setError(result.error || t('whatsappSendError') || 'Не удалось отправить код')
+        setError(result.error || t('whatsappSendError'))
       }
     } catch (error) {
       console.error('Ошибка отправки кода:', error)
-      setError(t('genericError') || 'Произошла ошибка. Попробуйте позже.')
+      setError(t('genericError'))
     } finally {
       setIsLoading(false)
     }
@@ -178,7 +178,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
       // Используем сохраненный номер в цифровом формате или форматируем текущий
       const digitsToVerify = phoneDigits || phone.replace(/\D/g, '')
       if (!digitsToVerify) {
-        setError(t('phoneNotFound') || 'Номер телефона не найден. Запросите новый код.')
+        setError(t('phoneNotFound'))
         setIsLoading(false)
         return
       }
@@ -190,12 +190,12 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
         }
         onClose()
       } else {
-        let message = result.error || t('invalidCode') || 'Неверный код. Попробуйте еще раз.'
+        let message = result.error || t('invalidCode')
         if (result.code === 'ALREADY_REGISTERED') {
-          message = result.error || 'Вы уже зарегистрированы с этим номером. Закройте окно и выберите «Вход», чтобы войти.'
+          message = result.error || t('whatsappAlreadyRegisteredHint')
           setErrorCode('ALREADY_REGISTERED')
         } else if (result.code === 'NEED_REGISTER') {
-          message = result.error || 'Вы не зарегистрированы на сайте. Закройте окно и выберите «Регистрация», затем войдите через WhatsApp.'
+          message = result.error || t('whatsappNeedRegisterHint')
           setErrorCode('NEED_REGISTER')
         } else {
           setErrorCode(null)
@@ -206,7 +206,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
       }
     } catch (error) {
       console.error('Ошибка верификации кода:', error)
-      setError(t('genericError') || 'Произошла ошибка. Попробуйте позже.')
+      setError(t('genericError'))
     } finally {
       setIsLoading(false)
     }
@@ -252,13 +252,13 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
             {errorCode === 'ALREADY_REGISTERED' && (
               <div className="whatsapp-verification-modal__error-head">
                 <FiAlertCircle size={22} aria-hidden />
-                <span>Вы уже зарегистрированы</span>
+                <span>{t('whatsappAlreadyRegisteredTitle')}</span>
               </div>
             )}
             {errorCode === 'NEED_REGISTER' && (
               <div className="whatsapp-verification-modal__error-head">
                 <FiInfo size={22} aria-hidden />
-                <span>Вы не зарегистрированы на сайте</span>
+                <span>{t('whatsappNeedRegisterTitle')}</span>
               </div>
             )}
             {errorCode ? (

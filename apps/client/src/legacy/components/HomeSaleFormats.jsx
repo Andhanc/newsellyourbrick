@@ -1,10 +1,12 @@
 import { useRef } from 'react'
 import { FiArrowLeft, FiArrowRight } from 'react-icons/fi'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 import './HomeSaleFormats.css'
 
 function HomeSaleFormats({ modes }) {
+  const { t } = useTranslation()
   const railRef = useRef(null)
 
   const scrollRail = (direction) => {
@@ -25,28 +27,25 @@ function HomeSaleFormats({ modes }) {
     <section className="sale-formats" aria-labelledby="sale-formats-title">
       <div className="sale-formats__header">
         <div className="sale-formats__heading">
-          <h2 id="sale-formats-title">4 способа купить недвижимость на своих условиях</h2>
-          <p>
-            Торгуйтесь за лучшую цену, забирайте объект сразу или начните с доли —
-            выберите формат под вашу цель
-          </p>
+          <h2 id="sale-formats-title">{t('saleFormats_title')}</h2>
+          <p>{t('saleFormats_subtitle')}</p>
           <p className="sale-formats__trust">
-            Проверенные объекты <span aria-hidden="true">·</span> прозрачные условия{' '}
-            <span aria-hidden="true">·</span> сопровождение сделки
+            {t('saleFormats_trustVerified')} <span aria-hidden="true">·</span> {t('saleFormats_trustTerms')}{' '}
+            <span aria-hidden="true">·</span> {t('saleFormats_trustSupport')}
           </p>
         </div>
 
-        <div className="sale-formats__controls" aria-label="Прокрутка форматов">
+        <div className="sale-formats__controls" aria-label={t('saleFormats_scrollAria')}>
           <button
             type="button"
-            aria-label="Предыдущие форматы"
+            aria-label={t('saleFormats_prevAria')}
             onClick={() => scrollRail(-1)}
           >
             <FiArrowLeft aria-hidden="true" />
           </button>
           <button
             type="button"
-            aria-label="Следующие форматы"
+            aria-label={t('saleFormats_nextAria')}
             onClick={() => scrollRail(1)}
           >
             <FiArrowRight aria-hidden="true" />
@@ -79,8 +78,8 @@ function HomeSaleFormats({ modes }) {
                 loading="lazy"
                 decoding="async"
               />
-              <span className="sale-formats__cta" aria-label="Смотреть объекты">
-                Смотреть <FiArrowRight aria-hidden="true" />
+              <span className="sale-formats__cta" aria-label={t('saleFormats_ctaAria')}>
+                {t('saleFormats_cta')} <FiArrowRight aria-hidden="true" />
               </span>
             </div>
           </Link>

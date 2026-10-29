@@ -6,21 +6,21 @@ import { listPublishedArticles } from './services/newsStore.js';
 const PROPERTY_BATCH_SIZE = 2000;
 
 const STATIC_PAGES = [
-  { path: '/', pageType: 'static', label: 'Главная' },
-  { path: '/auction', pageType: 'static', label: 'Аукцион' },
-  { path: '/auction/pre-auction', pageType: 'static', label: 'Аукцион — предстоящие' },
-  { path: '/auction/buy-now', pageType: 'static', label: 'Аукцион — купить сейчас' },
-  { path: '/auction/bidding', pageType: 'static', label: 'Аукцион — торги' },
-  { path: '/auction/ended', pageType: 'static', label: 'Аукцион — завершённые' },
-  { path: '/debts', pageType: 'static', label: 'Недвижимость с долгами' },
-  { path: '/co-investment', pageType: 'static', label: 'Долевая недвижимость' },
-  { path: '/test-drive', pageType: 'static', label: 'Тест-драйв' },
-  { path: '/about', pageType: 'static', label: 'О нас' },
-  { path: '/news', pageType: 'static', label: 'Новости' },
-  { path: '/map', pageType: 'static', label: 'Карта' },
-  { path: '/sections', pageType: 'static', label: 'Разделы' },
-  { path: '/calculator', pageType: 'static', label: 'Калькулятор' },
-  { path: '/private-club', pageType: 'static', label: 'Закрытый клуб' },
+  { path: '/', pageType: 'static', label: 'Home' },
+  { path: '/auction', pageType: 'static', label: 'Auction' },
+  { path: '/auction/pre-auction', pageType: 'static', label: 'Auction — upcoming' },
+  { path: '/auction/buy-now', pageType: 'static', label: 'Auction — buy now' },
+  { path: '/auction/bidding', pageType: 'static', label: 'Auction — live' },
+  { path: '/auction/ended', pageType: 'static', label: 'Auction — ended' },
+  { path: '/debts', pageType: 'static', label: 'Properties with debts' },
+  { path: '/co-investment', pageType: 'static', label: 'Shared ownership' },
+  { path: '/test-drive', pageType: 'static', label: 'Test drive' },
+  { path: '/about', pageType: 'static', label: 'About us' },
+  { path: '/news', pageType: 'static', label: 'News' },
+  { path: '/map', pageType: 'static', label: 'Map' },
+  { path: '/sections', pageType: 'static', label: 'Sections' },
+  { path: '/calculator', pageType: 'static', label: 'Calculator' },
+  { path: '/private-club', pageType: 'static', label: 'Private club' },
 ];
 
 const PROPERTY_SELECT = {
@@ -94,7 +94,7 @@ function collectPropertyPages(rows) {
       pages.push({
         path: `/property/${slug}/test-drive`,
         pageType: 'property-test-drive',
-        label: `${label} — тест-драйв`,
+        label: `${label} — test drive`,
         lastmod,
       });
     }
@@ -105,10 +105,10 @@ function collectPropertyPages(rows) {
 function collectAuctionCategoryPages() {
   const pages = [];
   for (const categorySlug of Object.keys(AUCTION_CATEGORY_SLUGS)) {
-    pages.push({ path: `/auction/${categorySlug}`, pageType: 'catalog', label: `Аукцион — ${categorySlug}`, lastmod: null });
-    pages.push({ path: `/auction/bidding/${categorySlug}`, pageType: 'catalog', label: `Торги — ${categorySlug}`, lastmod: null });
-    pages.push({ path: `/auction/pre-auction/${categorySlug}`, pageType: 'catalog', label: `Предстоящие — ${categorySlug}`, lastmod: null });
-    pages.push({ path: `/auction/buy-now/${categorySlug}`, pageType: 'catalog', label: `Купить сейчас — ${categorySlug}`, lastmod: null });
+    pages.push({ path: `/auction/${categorySlug}`, pageType: 'catalog', label: `Auction — ${categorySlug}`, lastmod: null });
+    pages.push({ path: `/auction/bidding/${categorySlug}`, pageType: 'catalog', label: `Bidding — ${categorySlug}`, lastmod: null });
+    pages.push({ path: `/auction/pre-auction/${categorySlug}`, pageType: 'catalog', label: `Upcoming — ${categorySlug}`, lastmod: null });
+    pages.push({ path: `/auction/buy-now/${categorySlug}`, pageType: 'catalog', label: `Buy now — ${categorySlug}`, lastmod: null });
   }
   return pages;
 }
@@ -143,21 +143,21 @@ function collectCatalogPages(rows) {
     pages.push({
       path: `/${countrySlug}/${citySlug}`,
       pageType: 'catalog',
-      label: `Каталог — ${citySlug}`,
+      label: `Catalog — ${citySlug}`,
       lastmod: bucket.lastmod,
     });
     for (const typePlural of bucket.types) {
       pages.push({
         path: `/${countrySlug}/${citySlug}/${typePlural}`,
         pageType: 'catalog',
-        label: `Каталог — ${citySlug} / ${typePlural}`,
+        label: `Catalog — ${citySlug} / ${typePlural}`,
         lastmod: bucket.lastmod,
       });
       for (const sale of ['auction', 'co-investment', 'debts']) {
         pages.push({
           path: `/${countrySlug}/${citySlug}/${typePlural}/${sale}`,
           pageType: 'catalog',
-          label: `Каталог — ${citySlug} / ${typePlural} / ${sale}`,
+          label: `Catalog — ${citySlug} / ${typePlural} / ${sale}`,
           lastmod: bucket.lastmod,
         });
       }
@@ -166,7 +166,7 @@ function collectCatalogPages(rows) {
       pages.push({
         path: `/${countrySlug}/${citySlug}/${sale}`,
         pageType: 'catalog',
-        label: `Каталог — ${citySlug} / ${sale}`,
+        label: `Catalog — ${citySlug} / ${sale}`,
         lastmod: bucket.lastmod,
       });
     }

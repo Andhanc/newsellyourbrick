@@ -66,7 +66,7 @@ import {
   replacePhoneDialCodeByCountry,
 } from '../utils/profilePhoneFormat'
 import {
-  INVALID_SPAIN_DNI_NIE_MESSAGE,
+  INVALID_SPAIN_DNI_NIE_MESSAGE_KEY,
   isSpainCountry,
   isValidSpainDniNie,
   normalizeIdentificationInput,
@@ -566,7 +566,7 @@ export default function OwnerProfileTestPage() {
         isSpainCountry(profile?.country) &&
         !isValidSpainDniNie(profile.identificationNumber)
       ) {
-        showNotification(INVALID_SPAIN_DNI_NIE_MESSAGE, 'error')
+        showNotification(t(INVALID_SPAIN_DNI_NIE_MESSAGE_KEY), 'error')
         focusProfileField('identificationNumber')
         return
       }
@@ -887,6 +887,7 @@ export default function OwnerProfileTestPage() {
         formatDateSafe: formatDateForExport,
         properties: excelProperties,
         mySalesData: ownerSalesData,
+        t,
         stats: {
           totalProperties: statsTotals.totalProperties,
           activeProperties: statsTotals.activeProperties,

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { FiLogOut, FiPlus, FiTrash2, FiExternalLink, FiFileText } from 'react-icons/fi'
 import { Megaphone } from 'lucide-react'
 import {
@@ -16,13 +17,14 @@ import {
 } from '@/services/siteAdsApi'
 import GenerateNewsModal from '@/components/news/GenerateNewsModal'
 import CreateSiteAdModal from '@/components/marketer/CreateSiteAdModal'
-import { getSiteAdPageLabel, SITE_AD_TYPE_LABELS } from '@/utils/siteAdPages'
+import { getSiteAdPageLabel, getSiteAdTypeLabel } from '@/utils/siteAdPages'
 import { SITE_AD_ICONS } from '@/utils/siteAdIcons'
 import SiteAdIcon from '@/components/siteAds/SiteAdIcon'
 import { scrollMainTo } from '@/utils/mainScroll'
 import './MarketerPanel.css'
 
 function MarketerLoginForm({ onSuccess }) {
+  const { t } = useTranslation()
   const [login, setLogin] = useState('manager')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -36,7 +38,7 @@ function MarketerLoginForm({ onSuccess }) {
       await marketerLogin(login.trim(), password)
       onSuccess()
     } catch (err) {
-      setError(err?.message || 'Ошибка входа')
+      setError(err?.message || t('marketerPanel_loginError'))
     } finally {
       setLoading(false)
     }
@@ -45,11 +47,11 @@ function MarketerLoginForm({ onSuccess }) {
   return (
     <div className="marketer-login">
       <form className="marketer-login__card" onSubmit={handleSubmit}>
-        <h1 className="marketer-login__title">Панель маркетолога</h1>
-        <p className="marketer-login__hint">Вход для публикации новостей и рекламы на сайте</p>
+        <h1 className="marketer-login__title">{t('marketerPanel_loginTitle')}</h1>
+        <p className="marketer-login__hint">{t('marketerPanel_loginHint')}</p>
         {error ? <p className="marketer-login__error">{error}</p> : null}
         <label className="marketer-login__label">
-          Логин
+          {t('marketerPanel_loginLabel')}
           <input
             type="text"
             autoComplete="username"
@@ -59,7 +61,7 @@ function MarketerLoginForm({ onSuccess }) {
           />
         </label>
         <label className="marketer-login__label">
-          Пароль
+          {t('marketerPanel_passwordLabel')}
           <input
             type="password"
             autoComplete="current-password"
@@ -69,10 +71,10 @@ function MarketerLoginForm({ onSuccess }) {
           />
         </label>
         <button type="submit" className="marketer-login__submit" disabled={loading}>
-          {loading ? 'Вход…' : 'Войти'}
+          {loading ? t('marketerPanel_loginSubmitting') : t('marketerPanel_loginSubmit')}
         </button>
         <Link to="/news" className="marketer-login__back">
-          ← К новостям
+          {t('marketerPanel_backToNews')}
         </Link>
       </form>
     </div>
@@ -80,6 +82,7 @@ function MarketerLoginForm({ onSuccess }) {
 }
 
 export default function MarketerPanel() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [authed, setAuthed] = useState(() => Boolean(getMarketerToken()))
   const [activeTab, setActiveTab] = useState('news')
@@ -95,9 +98,9 @@ export default function MarketerPanel() {
       setMarketerToken('')
       setAuthed(false)
     } else {
-      setError(e?.message || 'Ошибка загрузки')
+      setError(e?.message || t('marketerPanel_loadError'))
     }
-  }, [])
+  }, [t])
 
   const loadArticles = useCallback(async () => {
     setLoading(true)
@@ -143,22 +146,22 @@ export default function MarketerPanel() {
   }
 
   const handleDeleteArticle = async (id) => {
-    if (!window.confirm('Удалить эту новость с сайта?')) return
+    if (!window.confirm(t('marketerPanel_deleteNewsConfirm'))) return
     try {
       await deleteMarketerArticle(id)
       await loadArticles()
     } catch (e) {
-      setError(e?.message || 'Не удалось удалить')
+      setError(e?.message || t('marketerPanel_deleteError'))
     }
   }
 
   const handleDeleteAd = async (id) => {
-    if (!window.confirm('Удалить эту рекламу с сайта?')) return
+    if (!window.confirm(t('marketerPanel_deleteAdConfirm'))) return
     try {
       await deleteMarketerSiteAd(id)
       await loadAds()
     } catch (e) {
-      setError(e?.message || 'Не удалось удалить')
+      setError(e?.message || t('marketerPanel_deleteError'))
     }
   }
 
@@ -178,9 +181,9 @@ export default function MarketerPanel() {
     <div className="marketer-panel">
       <header className="marketer-panel__header">
         <div>
-          <h1 className="marketer-panel__title">Панель маркетолога</h1>
+          <h1 className="marketer-panel__title">{t('marketerPanel_title')}</h1>
           <p className="marketer-panel__subtitle">
-            {isNewsTab ? 'Генерация и публикация новостей' : 'Управление рекламой на сайте'}
+            {isNewsTab ? t('marketerPanel_subtitleNews') : t('marketerPanel_subtitleAds')}
           </p>
         </div>
         <div className="marketer-panel__header-actions">
@@ -191,7 +194,7 @@ export default function MarketerPanel() {
               onClick={() => setNewsModalOpen(true)}
             >
               <FiPlus size={18} />
-              Сгенерировать новость
+              {t('marketerPanel_generateNews')}
             </button>
           ) : (
             <button
@@ -200,24 +203,24 @@ export default function MarketerPanel() {
               onClick={() => setAdModalOpen(true)}
             >
               <FiPlus size={18} />
-              Создать рекламу
+              {t('marketerPanel_createAd')}
             </button>
           )}
           <button type="button" className="marketer-panel__btn" onClick={handleLogout}>
             <FiLogOut size={18} />
-            Выйти
+            {t('marketerPanel_logout')}
           </button>
         </div>
       </header>
 
-      <nav className="marketer-panel__tabs" aria-label="Разделы панели">
+      <nav className="marketer-panel__tabs" aria-label={t('marketerPanel_tabsAria')}>
         <button
           type="button"
           className={`marketer-panel__tab${isNewsTab ? ' marketer-panel__tab--active' : ''}`}
           onClick={() => setActiveTab('news')}
         >
           <FiFileText size={16} />
-          Новости
+          {t('marketerPanel_tabNews')}
         </button>
         <button
           type="button"
@@ -225,7 +228,7 @@ export default function MarketerPanel() {
           onClick={() => setActiveTab('ads')}
         >
           <Megaphone size={16} strokeWidth={2} />
-          Реклама
+          {t('marketerPanel_tabAds')}
         </button>
       </nav>
 
@@ -233,14 +236,12 @@ export default function MarketerPanel() {
 
       {isNewsTab ? (
         <section className="marketer-panel__list-section">
-          <h2 className="marketer-panel__list-title">Опубликованные материалы</h2>
+          <h2 className="marketer-panel__list-title">{t('marketerPanel_publishedTitle')}</h2>
           {loading && !articles.length ? (
-            <p className="marketer-panel__muted">Загрузка…</p>
+            <p className="marketer-panel__muted">{t('marketerPanel_loading')}</p>
           ) : null}
           {!loading && !articles.length ? (
-            <p className="marketer-panel__muted">
-              Пока нет опубликованных новостей. Создайте первую через кнопку выше.
-            </p>
+            <p className="marketer-panel__muted">{t('marketerPanel_emptyNews')}</p>
           ) : null}
           <ul className="marketer-panel__list">
             {articles.map((article) => (
@@ -250,7 +251,10 @@ export default function MarketerPanel() {
                   <span className="marketer-panel__item-badge">{article.badge}</span>
                   <h3 className="marketer-panel__item-title">{article.title}</h3>
                   <p className="marketer-panel__item-meta">
-                    {article.date} · {article.status === 'published' ? 'опубликовано' : article.status}
+                    {article.date} ·{' '}
+                    {article.status === 'published'
+                      ? t('marketerPanel_statusPublished')
+                      : article.status}
                   </p>
                 </div>
                 <div className="marketer-panel__item-actions">
@@ -258,7 +262,7 @@ export default function MarketerPanel() {
                     <button
                       type="button"
                       className="marketer-panel__icon-btn"
-                      title="Открыть на сайте"
+                      title={t('marketerPanel_openOnSite')}
                       onClick={() => navigate(`/news/${article.slug}`)}
                     >
                       <FiExternalLink size={18} />
@@ -267,7 +271,7 @@ export default function MarketerPanel() {
                   <button
                     type="button"
                     className="marketer-panel__icon-btn marketer-panel__icon-btn--danger"
-                    title="Удалить"
+                    title={t('marketerPanel_delete')}
                     onClick={() => handleDeleteArticle(article.id)}
                   >
                     <FiTrash2 size={18} />
@@ -277,19 +281,17 @@ export default function MarketerPanel() {
             ))}
           </ul>
           <p className="marketer-panel__footer-link">
-            <Link to="/news">Перейти на страницу новостей →</Link>
+            <Link to="/news">{t('marketerPanel_goToNewsPage')}</Link>
           </p>
         </section>
       ) : (
         <section className="marketer-panel__list-section">
-          <h2 className="marketer-panel__list-title">Активная реклама</h2>
+          <h2 className="marketer-panel__list-title">{t('marketerPanel_activeAdsTitle')}</h2>
           {loading && !ads.length ? (
-            <p className="marketer-panel__muted">Загрузка…</p>
+            <p className="marketer-panel__muted">{t('marketerPanel_loading')}</p>
           ) : null}
           {!loading && !ads.length ? (
-            <p className="marketer-panel__muted">
-              Рекламы пока нет. Создайте модальное окно или блок через кнопку выше.
-            </p>
+            <p className="marketer-panel__muted">{t('marketerPanel_emptyAds')}</p>
           ) : null}
           <ul className="marketer-panel__list marketer-panel__list--ads">
             {ads.map((ad) => (
@@ -302,24 +304,29 @@ export default function MarketerPanel() {
                 </div>
                 <div className="marketer-panel__item-body">
                   <span className="marketer-panel__item-badge">
-                    {SITE_AD_TYPE_LABELS[ad.type] || ad.type}
+                    {getSiteAdTypeLabel(ad.type, t)}
                     {' · '}
-                    {SITE_AD_ICONS.find((i) => i.id === ad.icon)?.label || 'Мегафон'}
+                    {(() => {
+                      const icon = SITE_AD_ICONS.find((i) => i.id === ad.icon)
+                      return icon?.labelKey ? t(icon.labelKey) : t('marketerPanel_iconMegaphone')
+                    })()}
                   </span>
                   <h3 className="marketer-panel__item-title">{ad.title}</h3>
                   <p className="marketer-panel__item-description">{ad.description}</p>
                   <p className="marketer-panel__item-meta">
                     {Array.isArray(ad.pages)
-                      ? ad.pages.map((p) => getSiteAdPageLabel(p)).join(' · ')
+                      ? ad.pages.map((p) => getSiteAdPageLabel(p, t)).join(' · ')
                       : ''}
-                    {ad.buttonEnabled && ad.buttonUrl ? ` · Кнопка: ${ad.buttonUrl}` : ''}
+                    {ad.buttonEnabled && ad.buttonUrl
+                      ? t('marketerPanel_buttonMeta', { url: ad.buttonUrl })
+                      : ''}
                   </p>
                 </div>
                 <div className="marketer-panel__item-actions">
                   <button
                     type="button"
                     className="marketer-panel__icon-btn marketer-panel__icon-btn--danger"
-                    title="Удалить"
+                    title={t('marketerPanel_delete')}
                     onClick={() => handleDeleteAd(ad.id)}
                   >
                     <FiTrash2 size={18} />

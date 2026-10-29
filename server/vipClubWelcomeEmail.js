@@ -2,7 +2,7 @@ import { sendCrmEmailViaEmailJS } from './emailJsCrmSend.js';
 import { userQueries } from './database/database.js';
 import { getWhatsAppManagerDigits, buildWhatsAppChatUrl } from './whatsappOutbound.js';
 
-const VIP_WELCOME_PREFILL = 'Здравствуйте! Я оформил подписку VIP закрытого клуба.';
+const VIP_WELCOME_PREFILL = 'Hello! I subscribed to the VIP private club.';
 
 export function shouldSendVipClubWelcomeEmail({ planKey, isNewPayment, vipPaymentCount }) {
   if (!isNewPayment) return false;
@@ -11,20 +11,21 @@ export function shouldSendVipClubWelcomeEmail({ planKey, isNewPayment, vipPaymen
 }
 
 export function buildVipClubWelcomeEmail({ firstName, whatsappUrl }) {
-  const hello = firstName ? `Здравствуйте, ${firstName}!` : 'Здравствуйте!';
-  const subject = 'Добро пожаловать в закрытый клуб VIP — Sellyourbrick';
+  const hello = firstName ? `Hello, ${firstName}!` : 'Hello!';
+  const subject = 'Welcome to the VIP private club — Sellyourbrick';
   const chatBlock = whatsappUrl
-    ? `Напишите менеджеру в WhatsApp — он поможет с объектами клуба и ответит на вопросы:
+    ? `Message a manager on WhatsApp — they can help with club listings and answer your questions:
 
 ${whatsappUrl}`
-    : 'Менеджер свяжется с вами. Если удобнее, напишите нам через чат на сайте.';
+    : 'A manager will contact you. If easier, message us via the site chat.';
   const body = `${hello}
 
-Ваша подписка VIP закрытого клуба активирована.
+Your VIP private club subscription is now active.
 
 ${chatBlock}
 
-С уважением, Sellyourbrick`;
+Best regards,
+Sellyourbrick`;
   return { subject, body };
 }
 

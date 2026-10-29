@@ -13,7 +13,7 @@ export async function fetchActiveSiteAds() {
     const base = `${getApiBaseUrlSync()}/news`
     const res = await fetchDedupe(`${base}/ads`)
     const data = await res.json().catch(() => ({}))
-    if (!res.ok) throw new Error(data.error || 'Не удалось загрузить рекламу')
+    if (!res.ok) throw new Error(data.error || 'Could not load ads')
     cachedAds = data.ads || []
     return cachedAds
   })()

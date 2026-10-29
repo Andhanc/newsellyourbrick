@@ -14,7 +14,7 @@ import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
-import { refreshAssistantMessageCopy, visibleAssistantButtons } from '../utils/siteAssistantHelpers'
+import { getSiteLinkLabel, refreshAssistantMessageCopy, visibleAssistantButtons } from '../utils/siteAssistantHelpers'
 import {
   ensureLiveChatSession,
   fetchLiveChatMessagesSince,
@@ -23,18 +23,38 @@ import {
   normalizeLiveChatRows,
   sendLiveChatUserMessage,
 } from '../services/liveChatApi'
+import { getUiIntlLocale } from '../utils/uiIntlLocale'
 
-/** Те же эвристики, что на главной: цель, локация, бюджет, тип, комнаты */
+/** Same heuristics as the home assistant: purpose, budget, type, rooms. */
 function mergeAssistantPrefsFromText(prev, userMessage) {
   const next = { ...prev }
   const lowerMessage = userMessage.toLowerCase()
 
-  if (lowerMessage.includes('для себя') || lowerMessage === 'для себя' || lowerMessage.includes('сам') || lowerMessage.includes('личн')) {
-    next.purpose = 'для себя'
-  } else if (lowerMessage.includes('под сдачу') || lowerMessage === 'под сдачу' || lowerMessage.includes('сдачу') || lowerMessage.includes('аренд')) {
-    next.purpose = 'под сдачу'
-  } else if (lowerMessage.includes('инвестиц') || lowerMessage === 'инвестиции' || lowerMessage.includes('инвест')) {
-    next.purpose = 'инвестиции'
+  if (
+    lowerMessage.includes('для себя') ||
+    lowerMessage === 'для себя' ||
+    lowerMessage.includes('сам') ||
+    lowerMessage.includes('личн') ||
+    lowerMessage.includes('for myself') ||
+    lowerMessage.includes('personal use')
+  ) {
+    next.purpose = 'for_self'
+  } else if (
+    lowerMessage.includes('под сдачу') ||
+    lowerMessage === 'под сдачу' ||
+    lowerMessage.includes('сдачу') ||
+    lowerMessage.includes('аренд') ||
+    lowerMessage.includes('for rent') ||
+    lowerMessage.includes('rental')
+  ) {
+    next.purpose = 'for_rent'
+  } else if (
+    lowerMessage.includes('инвестиц') ||
+    lowerMessage === 'инвестиции' ||
+    lowerMessage.includes('инвест') ||
+    lowerMessage.includes('invest')
+  ) {
+    next.purpose = 'investment'
   }
 
   const budgetMatch = userMessage.match(/(\d+[\s,.]?\d*)\s*(тыс|млн|k|m|€|\$|eur|usd|евро|доллар|рубл|₽|rub)/i)
@@ -49,11 +69,11 @@ function mergeAssistantPrefsFromText(prev, userMessage) {
   }
 
   if (lowerMessage.includes('квартир') || lowerMessage.includes('апартамент') || lowerMessage.includes('apartment')) {
-    next.propertyType = 'квартира'
+    next.propertyType = 'apartment'
   } else if (lowerMessage.includes('вилл') || lowerMessage.includes('villa')) {
-    next.propertyType = 'вилла'
+    next.propertyType = 'villa'
   } else if (lowerMessage.includes('дом') || lowerMessage.includes('таунхаус') || lowerMessage.includes('townhouse') || lowerMessage.includes('house')) {
-    next.propertyType = 'дом'
+    next.propertyType = 'house'
   }
 
   const roomsMatch = userMessage.match(/(\d+)\s*(комнат|room|bed)/i)
@@ -62,7 +82,7 @@ function mergeAssistantPrefsFromText(prev, userMessage) {
   return next
 }
 
-// Получаем идентификатор чата, общий с виджетом AI на главной
+/** Chat id shared with the home AI widget. */
 function getChatUserId() {
   try {
     const savedUserDataRaw = localStorage.getItem('userData')
@@ -80,7 +100,7 @@ function getChatUserId() {
     }
     return sessionId
   } catch (e) {
-    console.warn('Не удалось получить chatUserId, используем сессию по умолчанию:', e)
+    console.warn('Failed to resolve chatUserId, using default session:', e)
     let sessionId = localStorage.getItem('chatSessionId')
     if (!sessionId) {
       sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -117,7 +137,7 @@ const Chat = () => {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { user, isLoaded: userLoaded } = useUser()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   useEffect(() => {
     if (!userLoaded) return
@@ -134,20 +154,20 @@ const Chat = () => {
     'tech-support': [
       {
         id: 1,
-        text: 'Здравствуйте! С вами бот 😊 Уточните ваш вопрос. Попробую помочь.',
+        text: t('chatBotGreeting'),
         sender: 'bot',
-        time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-        date: 'Сегодня',
+        time: new Date().toLocaleTimeString(i18n.language || 'en', { hour: '2-digit', minute: '2-digit' }),
+        date: t('chatToday'),
         timestamp: new Date()
       }
     ],
     'expert': [
       {
         id: 1,
-        text: 'Напишите в чат или выберите нужный вопрос:',
+        text: t('chatExpertPrompt'),
         sender: 'bot',
         time: '23:05',
-        date: 'Сегодня'
+        date: t('chatToday')
       }
     ]
   })
@@ -163,7 +183,7 @@ const Chat = () => {
   const chatHistoryLoadedRef = useRef(false)
   const managerMessagesRef = useRef(null)
 
-  // Загружаем историю и предпочтения (общие с виджетом на главной)
+  // Load history and preferences shared with the home AI widget.
   useEffect(() => {
     try {
       const historyKey = `aiChatHistory_${chatUserId}`
@@ -184,8 +204,8 @@ const Chat = () => {
             id: msg.id || index + 1,
             text: msg.text || '',
             sender: msg.sender === 'user' ? 'user' : 'bot',
-            time: dateObj.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-            date: 'Сегодня',
+            time: dateObj.toLocaleTimeString(i18n.language || 'en', { hour: '2-digit', minute: '2-digit' }),
+            date: t('chatToday'),
             timestamp: dateObj
           }
         })
@@ -199,7 +219,7 @@ const Chat = () => {
         }
       }
     } catch (e) {
-      console.error('Ошибка загрузки истории AI-чата в Chat.jsx:', e)
+      console.error('Failed to load AI chat history in Chat.jsx:', e)
     } finally {
       chatHistoryLoadedRef.current = true
     }
@@ -210,7 +230,7 @@ const Chat = () => {
     if (cached?.length) setCatalogProperties(cached)
   }, [])
 
-  // Сохраняем историю, предпочтения и синхронизируем лид для админки
+  // Persist history/preferences and sync lead for admin CRM.
   useEffect(() => {
     if (!chatHistoryLoadedRef.current) return
     try {
@@ -229,7 +249,7 @@ const Chat = () => {
       const userData = getUserData()
       syncAssistantLead(chatUserId, serializable, userPreferences, userData?.isLoggedIn ? userData : null)
     } catch (e) {
-      console.error('Ошибка сохранения истории AI-чата в Chat.jsx:', e)
+      console.error('Failed to save AI chat history in Chat.jsx:', e)
     }
   }, [messages, chatUserId, userPreferences])
 
@@ -239,7 +259,7 @@ const Chat = () => {
       localStorage.removeItem(`aiChatHistory_${chatUserId}`)
       localStorage.removeItem(`aiChatPreferences_${chatUserId}`)
     } catch (error) {
-      console.error('Ошибка при очистке истории чата:', error)
+      console.error('Failed to clear chat history:', error)
     }
     setUserPreferences(defaultAssistantPreferences())
     setInputMessage('')
@@ -251,8 +271,8 @@ const Chat = () => {
           id: Date.now(),
           text: t('chatWelcomeMessage'),
           sender: 'bot',
-          time: now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-          date: 'Сегодня',
+          time: now.toLocaleTimeString(i18n.language || 'en', { hour: '2-digit', minute: '2-digit' }),
+          date: t('chatToday'),
           timestamp: now,
           buttons: null,
         },
@@ -322,7 +342,7 @@ const Chat = () => {
     }
   }, [resumeLiveManagerIfNeeded])
 
-  // /chat и /chat?manager=1 — актуальные модалки, без старой страницы «Сообщения»
+  // /chat and /chat?manager=1 use current modals (not the old messages page).
   useLayoutEffect(() => {
     const raw = searchParams.get('manager')
     const isManager =
@@ -355,25 +375,25 @@ const Chat = () => {
         id: m.id,
         text: m.text,
         sender: m.sender,
-        time: m.timestamp.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-        date: 'Сегодня',
+        time: m.timestamp.toLocaleTimeString(i18n.language || 'en', { hour: '2-digit', minute: '2-digit' }),
+        date: t('chatToday'),
         timestamp: m.timestamp,
       })),
-    [managerChatMessages]
+    [managerChatMessages, t, i18n.language]
   )
 
   const chats = [
     {
       id: 'tech-support',
       name: 'AI',
-      description: 'Для вопросов по сервису',
+      description: t('chatTechSupportDesc'),
       avatar: 'ai',
       unread: false
     },
     {
       id: 'expert',
-      name: 'Эксперт по подбору',
-      description: 'Найдёт, подскажет, позвонит',
+      name: t('chatExpertName'),
+      description: t('chatExpertDesc'),
       avatar: 'expert',
       unread: true,
       photo: '/images/external/photo-1494790108377-be9c29b29330-89f0c4a88f.jpg'
@@ -416,8 +436,8 @@ const Chat = () => {
       id: Date.now(),
       text: userMessage,
       sender: 'user',
-      time: now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-      date: 'Сегодня',
+      time: now.toLocaleTimeString(i18n.language || 'en', { hour: '2-digit', minute: '2-digit' }),
+      date: t('chatToday'),
       timestamp: now
     }
 
@@ -452,8 +472,8 @@ const Chat = () => {
           id: Date.now() + 1,
           text: tgUrl ? t('managerContactThanksTelegram') : t('liveChatTelegramNotConfigured'),
           sender: 'bot',
-          time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-          date: 'Сегодня',
+          time: new Date().toLocaleTimeString(i18n.language || 'en', { hour: '2-digit', minute: '2-digit' }),
+          date: t('chatToday'),
           timestamp: new Date(),
           buttons: null,
           recommendations: null
@@ -475,8 +495,8 @@ const Chat = () => {
         id: Date.now() + 1,
         text: thanksText,
         sender: 'bot',
-        time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-        date: 'Сегодня',
+        time: new Date().toLocaleTimeString(i18n.language || 'en', { hour: '2-digit', minute: '2-digit' }),
+        date: t('chatToday'),
         timestamp: new Date(),
         buttons: null,
         recommendations: null
@@ -517,8 +537,8 @@ const Chat = () => {
           id: Date.now() + 1,
           text: t('managerRequestAlready', { method: methodLabel }),
           sender: 'bot',
-          time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-          date: 'Сегодня',
+          time: new Date().toLocaleTimeString(i18n.language || 'en', { hour: '2-digit', minute: '2-digit' }),
+          date: t('chatToday'),
           timestamp: new Date(),
           buttons: null,
           recommendations: null
@@ -534,8 +554,8 @@ const Chat = () => {
           id: Date.now() + 1,
           text: t('managerContactPickHint'),
           sender: 'bot',
-          time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-          date: 'Сегодня',
+          time: new Date().toLocaleTimeString(i18n.language || 'en', { hour: '2-digit', minute: '2-digit' }),
+          date: t('chatToday'),
           timestamp: new Date(),
           buttons: contactPrefButtons(),
           recommendations: null
@@ -556,8 +576,8 @@ const Chat = () => {
         id: Date.now() + 1,
         text: t('managerRequestAck'),
         sender: 'bot',
-        time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-        date: 'Сегодня',
+        time: new Date().toLocaleTimeString(i18n.language || 'en', { hour: '2-digit', minute: '2-digit' }),
+        date: t('chatToday'),
         timestamp: new Date(),
         buttons: contactPrefButtons(),
         recommendations: null
@@ -574,7 +594,8 @@ const Chat = () => {
       const aiResponse = await askPropertyAssistant(
         [...tsPrev, userMessageObj],
         mergedPrefs,
-        catalogProperties
+        catalogProperties,
+        { t },
       )
 
       if (aiResponse?.preferences && typeof aiResponse.preferences === 'object') {
@@ -589,10 +610,10 @@ const Chat = () => {
 
       const botMessage = {
         id: Date.now() + 1,
-        text: aiResponse?.text || 'Извините, не удалось получить ответ от AI. Попробуйте ещё раз.',
+        text: aiResponse?.text || t('chatAiNoResponse'),
         sender: 'bot',
-        time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-        date: 'Сегодня',
+        time: new Date().toLocaleTimeString(i18n.language || 'en', { hour: '2-digit', minute: '2-digit' }),
+        date: t('chatToday'),
         timestamp: new Date(),
         buttons: aiResponse?.buttons ?? null,
         recommendations: aiResponse?.recommendations ?? null,
@@ -605,13 +626,13 @@ const Chat = () => {
         'tech-support': [...(prev['tech-support'] || []), botMessage]
       }))
     } catch (error) {
-      console.error('Ошибка AI-чата:', error)
+      console.error('AI chat request failed:', error)
       const errorMessage = {
         id: Date.now() + 1,
-        text: 'Произошла ошибка при обращении к AI. Попробуйте ещё раз позже.',
+        text: t('chatAiRequestError'),
         sender: 'bot',
-        time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-        date: 'Сегодня',
+        time: new Date().toLocaleTimeString(i18n.language || 'en', { hour: '2-digit', minute: '2-digit' }),
+        date: t('chatToday'),
         timestamp: new Date()
       }
       setMessages(prev => ({
@@ -647,8 +668,8 @@ const Chat = () => {
         id: messages[activeChat].length + 1,
         text: inputMessage,
         sender: 'user',
-        time: now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-        date: 'Сегодня',
+        time: now.toLocaleTimeString(i18n.language || 'en', { hour: '2-digit', minute: '2-digit' }),
+        date: t('chatToday'),
         timestamp: now
       }
       setMessages(prev => ({
@@ -659,10 +680,10 @@ const Chat = () => {
       setTimeout(() => {
         const botResponse = {
           id: messages[activeChat].length + 2,
-          text: 'Спасибо за ваше сообщение! Мы обработаем ваш запрос и ответим в ближайшее время.',
+          text: t('chatExpertThanks'),
           sender: 'bot',
-          time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-          date: 'Сегодня',
+          time: new Date().toLocaleTimeString(i18n.language || 'en', { hour: '2-digit', minute: '2-digit' }),
+          date: t('chatToday'),
           timestamp: new Date()
         }
         setMessages(prev => ({
@@ -683,7 +704,7 @@ const Chat = () => {
     return MANAGER_QUERY_VALUES.has(String(raw).toLowerCase())
   }, [searchParams])
 
-  /** Пока идёт ensureLiveChatSession, без этого показывался старый двухколоночный чат */
+  /** While ensureLiveChatSession runs; without this the old two-column chat flashed. */
   const managerUiConnecting = wantManagerFromUrl && techSupportMode === 'ai'
 
   const handleManagerHeaderBack = useCallback(() => {
@@ -732,8 +753,8 @@ const Chat = () => {
               </svg>
               <p>
                 {notificationsEnabled
-                  ? 'Теперь сообщения будут отображаться в уведомлениях'
-                  : 'Уведомления отключены'}
+                  ? t('chatNotificationsEnabledToast')
+                  : t('chatNotificationsDisabledToast')}
               </p>
             </div>
           </div>
@@ -842,8 +863,8 @@ const Chat = () => {
             </svg>
             <p>
               {notificationsEnabled
-                ? 'Теперь сообщения будут отображаться в уведомлениях'
-                : 'Уведомления отключены'}
+                ? t('chatNotificationsEnabledToast')
+                : t('chatNotificationsDisabledToast')}
             </p>
           </div>
         </div>
@@ -852,7 +873,7 @@ const Chat = () => {
       <div className="chat-container" onClick={(e) => e.stopPropagation()}>
         <div className="chat-sidebar">
           <div className="chat-header">
-            <h2>Сообщения</h2>
+            <h2>{t('chatMessagesTitle')}</h2>
             <button className="close-button" onClick={() => navigate(-1)}>
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -868,7 +889,7 @@ const Chat = () => {
               <path d="M10 2C8.89543 2 8 2.89543 8 4V5.5C6.34315 5.5 5 6.84315 5 8.5V13.5C5 14.3284 4.32843 15 3.5 15H2V16.5H18V15H16.5C15.6716 15 15 14.3284 15 13.5V8.5C15 6.84315 13.6569 5.5 12 5.5V4C12 2.89543 11.1046 2 10 2Z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
               <path d="M7.5 15C7.5 16.3807 8.61929 17.5 10 17.5C11.3807 17.5 12.5 16.3807 12.5 15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
             </svg>
-            <span>{notificationsEnabled ? 'Отключить уведомления' : 'Включить уведомления'}</span>
+            <span>{notificationsEnabled ? t('chatDisableNotifications') : t('chatEnableNotifications')}</span>
           </button>
 
           <div className="chats-list">
@@ -1025,15 +1046,15 @@ const Chat = () => {
                               <div className="chat-widget__yield-grid">
                                 <div>
                                   <span>{t('chatYieldPrice')}</span>
-                                  <strong>{Number(message.yieldEstimate.price).toLocaleString('ru-RU')} €</strong>
+                                  <strong>{Number(message.yieldEstimate.price).toLocaleString(getUiIntlLocale())} €</strong>
                                 </div>
                                 <div>
                                   <span>{t('chatYieldAnnual')}</span>
-                                  <strong>{Number(message.yieldEstimate.annualRent).toLocaleString('ru-RU')} €</strong>
+                                  <strong>{Number(message.yieldEstimate.annualRent).toLocaleString(getUiIntlLocale())} €</strong>
                                 </div>
                                 <div>
                                   <span>{t('chatYieldMonthly')}</span>
-                                  <strong>{Number(message.yieldEstimate.monthlyIncome).toLocaleString('ru-RU')} €</strong>
+                                  <strong>{Number(message.yieldEstimate.monthlyIncome).toLocaleString(getUiIntlLocale())} €</strong>
                                 </div>
                                 <div>
                                   <span>{t('chatYieldRate')}</span>
@@ -1041,7 +1062,11 @@ const Chat = () => {
                                 </div>
                               </div>
                               {message.yieldEstimate.note ? (
-                                <p className="chat-widget__yield-note">{message.yieldEstimate.note}</p>
+                                <p className="chat-widget__yield-note">
+                                  {String(message.yieldEstimate.note).includes('_') && !String(message.yieldEstimate.note).includes(' ')
+                                    ? t(message.yieldEstimate.note)
+                                    : message.yieldEstimate.note}
+                                </p>
                               ) : null}
                               <button
                                 type="button"
@@ -1063,7 +1088,7 @@ const Chat = () => {
                                     className="chat-widget__navigation-link"
                                     onClick={() => navigate(nav.path)}
                                   >
-                                    <span>{nav.label}</span>
+                                    <span>{getSiteLinkLabel(nav, t)}</span>
                                   </button>
                                 ))}
                               </div>
@@ -1095,7 +1120,7 @@ const Chat = () => {
                                       <div className="chat-widget__recommendation-location">{property.location}</div>
                                       <div className="chat-widget__recommendation-price">
                                         {property.price
-                                          ? `${Number(property.price).toLocaleString('ru-RU')} €`
+                                          ? `${Number(property.price).toLocaleString(getUiIntlLocale())} €`
                                           : t('priceNotSpecified')}
                                       </div>
                                       <div className="chat-widget__recommendation-cta">{t('chatOpenListing')}</div>

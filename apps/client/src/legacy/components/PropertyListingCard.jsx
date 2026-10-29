@@ -516,7 +516,7 @@ const PropertyListingCard = ({
                   })
                 }}
               >
-                <span>{listingState.state === 'sold' ? 'Сделка завершена' : 'Торги завершены'}</span>
+                <span>{listingState.state === 'sold' ? t('listingDealCompleted') : t('listingAuctionEnded')}</span>
                 <strong>{t('auctionResultSummary')} <span aria-hidden>→</span></strong>
               </button>
             ) : null}

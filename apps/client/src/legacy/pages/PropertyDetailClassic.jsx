@@ -93,7 +93,7 @@ import { refetchPropertyAfterCheckout } from '../utils/purchaseSuccessFlow'
 import { navigateToSearchCatalog } from '../utils/searchCatalogNavigation'
 import { getPropertyShareUrl, sharePropertyListing } from '../utils/shareProperty'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
-import { collectAmenityKeys, getAmenityLabelRu } from '../utils/tzAmenityLabels'
+import { collectAmenityKeys, getAmenityLabel } from '../utils/tzAmenityLabels'
 import { getAmenityIcon } from './oapAmenityIcons'
 import { patchCachedAuctionPropertyBid } from '../services/auctionListCache'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
@@ -208,20 +208,6 @@ function VisibleMount({ children, rootMargin = '160px 0px' }) {
   return <div ref={ref}>{shown ? children : null}</div>
 }
 
-const AMENITY_I18N_SPECIAL = {
-  pool: 'propertyDetailAmenityPool',
-  garden: 'propertyDetailAmenityGarden',
-  garage: 'propertyDetailAmenityGarage',
-  electricity: 'propertyDetailAmenityElectricity',
-  parking: 'addPropertyAmenitiesParkingSpace',
-  elevator: 'addPropertyAmenitiesElevator',
-  balcony: 'addPropertyAmenitiesBalcony',
-  internet: 'addPropertyAmenitiesInternet',
-  security: 'addPropertyAmenitiesSecurity',
-  furniture: 'addPropertyAmenitiesBuiltInFurniture',
-  security_24_7: 'addPropertyAmenitySecurity247',
-}
-
 function ReservedOverlayLabel({ byYou, t }) {
   return (
     <span
@@ -246,28 +232,7 @@ function ReservedGalleryBanner({ byYou, t }) {
 }
 
 function resolveAmenityLabel(t, key) {
-  if (!key) return ''
-  if (/^feature\d+$/.test(key)) {
-    const i18nKey = `propertyDetailFeature${key.slice(7)}`
-    const translated = t(i18nKey)
-    if (translated && translated !== i18nKey) return translated
-  }
-  const special = AMENITY_I18N_SPECIAL[key]
-  if (special) {
-    const translated = t(special)
-    if (translated && translated !== special) return translated
-  }
-  const camel = String(key)
-    .split('_')
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join('')
-  if (camel) {
-    const addKey = `addPropertyAmenity${camel}`
-    const translated = t(addKey)
-    if (translated && translated !== addKey) return translated
-  }
-  return getAmenityLabelRu(key)
+  return getAmenityLabel(t, key)
 }
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
@@ -1324,7 +1289,7 @@ function PropertyDetailClassic({
 
   const openDebtPropertyDocuments = useCallback(() => {
     if (!processedDocuments.length) {
-      showNotification('Документы по объекту пока не загружены', 'info')
+      showNotification(t('propertyDetailDocsNotLoaded'), 'info')
       return
     }
     if (isAuctionLayout) {
@@ -1338,7 +1303,7 @@ function PropertyDetailClassic({
         document.querySelector('.property-detail-sidebar__documents')
       el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
-  }, [processedDocuments.length, isAuctionLayout])
+  }, [processedDocuments.length, isAuctionLayout, t])
 
   useEffect(() => {
     const titleEl = auctionDesktopTitleRef.current
@@ -2062,15 +2027,14 @@ function PropertyDetailClassic({
               triggerAuctionBidHaptic('outbid')
               showToast({
                 type: 'warning',
-                title: t('toastBidOutbidTitle', 'Вашу ставку перебили'),
+                title: t('toastBidOutbidTitle'),
                 message: t('notificationsOutbidNewMaxBid', {
                   amount: maxBid.toLocaleString(i18n.language || 'en'),
-                  defaultValue: 'Новая максимальная ставка: {{amount}}',
                 }),
                 duration: 6500,
                 dedupeKey: `bid_outbid:${displayProperty.id}`,
                 action: {
-                  label: t('notificationsOutbidCta', 'К торгам'),
+                  label: t('notificationsOutbidCta'),
                   variant: 'link',
                   onClick: () => {
                     const bidForm =

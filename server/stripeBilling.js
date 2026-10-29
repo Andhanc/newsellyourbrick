@@ -126,10 +126,10 @@ function firstReservationPropertyPhotoUrl(property) {
 
 function validateShareSignatureDataUrl(raw) {
   if (typeof raw !== 'string' || raw.length < 80) {
-    return { ok: false, error: 'Подпись не передана' };
+    return { ok: false, error: 'Signature was not provided' };
   }
   if (raw.length > SIGNATURE_DATA_URL_MAX_CHARS) {
-    return { ok: false, error: 'Изображение подписи слишком большое' };
+    return { ok: false, error: 'Signature image is too large' };
   }
   const lower = raw.slice(0, 40).toLowerCase();
   if (
@@ -137,12 +137,12 @@ function validateShareSignatureDataUrl(raw) {
     !lower.startsWith('data:image/jpeg;base64,') &&
     !lower.startsWith('data:image/jpg;base64,')
   ) {
-    return { ok: false, error: 'Подпись должна быть в формате PNG или JPEG (data URL)' };
+    return { ok: false, error: 'Signature must be PNG or JPEG (data URL)' };
   }
   const comma = raw.indexOf(',');
-  if (comma < 12) return { ok: false, error: 'Некорректный формат подписи' };
+  if (comma < 12) return { ok: false, error: 'Invalid signature format' };
   const b64 = raw.slice(comma + 1).replace(/\s/g, '');
-  if (b64.length < 20) return { ok: false, error: 'Пустая подпись' };
+  if (b64.length < 20) return { ok: false, error: 'Empty signature' };
   return { ok: true };
 }
 
@@ -279,7 +279,7 @@ export async function processSharePurchasePaidSession(stripe, session) {
       await withdrawDepositWithLog(
         userId,
         WALLET_DEPOSIT_OFFSET_EUR,
-        'Покупка долей: списание 3000 € с депозита'
+        'Share purchase: deduct 3000 € from deposit'
       );
     }
 
@@ -297,13 +297,13 @@ export async function processSharePurchasePaidSession(stripe, session) {
       policyVersion,
     });
 
-    const shareTitle = property.title || `Объект #${propertyId}`;
+    const shareTitle = property.title || `Property #${propertyId}`;
     try {
       await notificationQueries.create({
         user_id: userId,
         type: 'share_purchase_paid',
-        title: 'Покупка долей завершена',
-        message: `Покупка ${sharesCount} долей объекта «${shareTitle}» успешно подтверждена.`,
+        title: 'Share purchase completed',
+        message: `Purchase of ${sharesCount} shares of “${shareTitle}” confirmed.`,
         data: {
           property_id: propertyId,
           shares_count: sharesCount,
@@ -319,8 +319,8 @@ export async function processSharePurchasePaidSession(stripe, session) {
     await sendPushToUserSafely(
       userId,
       {
-        title: 'Успешная покупка',
-        body: `Покупка ${sharesCount} долей объекта «${shareTitle}» подтверждена.`,
+        title: 'Successful purchase',
+        body: `Purchase of ${sharesCount} shares of “${shareTitle}” confirmed.`,
         data: { type: 'purchase_success', propertyId, path: '/profile' },
         channelId: 'transactions',
       },
@@ -434,12 +434,12 @@ function normalizeStripeCurrency(raw) {
   const c = String(raw || 'usd')
     .trim()
     .toLowerCase();
-  if (!c) return { ok: false, error: 'Пустая валюта объекта' };
+  if (!c) return { ok: false, error: 'Listing currency is empty' };
   if (c === 'byn' || c === 'rub') {
     return {
       ok: false,
       error:
-        'Для оплаты через Stripe укажите валюту объекта EUR или USD (BYN/RUB в Stripe не поддерживаются)',
+        'For Stripe payment set listing currency to EUR or USD (BYN/RUB are not supported by Stripe)',
     };
   }
   return { ok: true, currency: c };
@@ -656,8 +656,8 @@ export async function processPropertyReservationPaidSession(stripe, session) {
   const buyer = await userQueries.getById(userId);
   const buyerName = buyer
     ? `${buyer.first_name || ''} ${buyer.last_name || ''}`.trim().slice(0, 200) ||
-      `Покупатель #${userId}`
-    : `Покупатель #${userId}`;
+      `Buyer #${userId}`
+    : `Buyer #${userId}`;
   const buyerEmail = buyer?.email || sess.customer_email || null;
   const buyerPhone = buyer?.phone_number || null;
 
@@ -740,7 +740,7 @@ export async function processPropertyReservationPaidSession(stripe, session) {
       await withdrawDepositWithLog(
         userId,
         WALLET_DEPOSIT_OFFSET_EUR,
-        'Резерв 10%: списание 3000 € с депозита'
+        '10% reserve: deduct €3,000 from deposit'
       );
     }
 
@@ -755,7 +755,7 @@ export async function processPropertyReservationPaidSession(stripe, session) {
         sellerEmail,
         sellerPhone,
         propertyId,
-        propertyTitle: property.title || `Объект #${propertyId}`,
+        propertyTitle: property.title || `Property #${propertyId}`,
         propertyDescription: property.description || null,
         propertyPrice: minSaleMajor,
         // minSaleMajor выше приведён именно к валюте Checkout.
@@ -882,14 +882,14 @@ export async function processPropertyReservationPaidSession(stripe, session) {
       await notificationQueries.create({
         user_id: userId,
         type: 'property_reservation_paid',
-        title: 'Резерв оплачен',
-        message: `Оплата резерва по объекту «${property.title || `Объект #${propertyId}`}» подтверждена. Сделка уже в обработке.`,
+        title: 'Reserve paid',
+        message: `Reserve payment for “${property.title || `Property #${propertyId}`}” confirmed. The deal is already being processed.`,
         data: {
           purchase_request_id: Number(createdRequestId),
           property_id: Number(propertyId),
           paid: true,
           action_path: `/profile/purchased/${propertyId}`,
-          action_label: 'Следить за сделкой',
+          action_label: 'Track the deal',
         },
         is_read: 0,
         view_count: 0,
@@ -897,8 +897,8 @@ export async function processPropertyReservationPaidSession(stripe, session) {
       await sendPushToUserSafely(
         userId,
         {
-          title: 'Успешная покупка',
-          body: `Оплата резерва по объекту «${property.title || `Объект #${propertyId}`}» подтверждена.`,
+          title: 'Successful purchase',
+          body: `Reserve payment for “${property.title || `Property #${propertyId}`}” confirmed.`,
           data: {
             type: 'purchase_success',
             propertyId: Number(propertyId),
@@ -912,8 +912,8 @@ export async function processPropertyReservationPaidSession(stripe, session) {
         await notificationQueries.create({
           user_id: Number(sellerId),
           type: 'property_reservation_received',
-          title: 'Объект зарезервирован',
-          message: `Покупатель оплатил резерв по объекту «${property.title || `Объект #${propertyId}`}».`,
+          title: 'Property reserved',
+          message: `Buyer paid the reserve for “${property.title || `Property #${propertyId}`}”.`,
           data: {
             purchase_request_id: Number(createdRequestId),
             property_id: Number(propertyId),
@@ -1058,20 +1058,20 @@ async function ensureTestDriveSurveyBuyerNotification({
   });
   if (already) return { created: false, existed: true };
 
-  const propTitle = propertyTitle || `Объект #${propertyId}`;
+  const propTitle = propertyTitle || `Property #${propertyId}`;
   await notificationQueries.create({
     user_id: uid,
     type: 'test_drive_survey',
-    title: 'Пройдите опрос по тест-драйву',
-    message: `Расскажите, что понравилось в «${propTitle}», планируете ли покупку и оцените объект звёздами — это займёт пару минут.`,
+    title: 'Complete the test-drive survey',
+    message: `Tell us what you liked about “${propTitle}”, whether you plan to buy, and rate the listing — it takes a couple of minutes.`,
     data: {
       booking_id: bid,
       property_id: Number(propertyId),
       property_table: propertyTable || 'properties_apartments',
       survey_token: tok,
       action_path: `/test-drive/survey/${tok}`,
-      action_label: 'Пройти опрос',
-      next_step: 'Откройте опрос и поделитесь впечатлениями — это поможет улучшить объекты.',
+      action_label: 'Take the survey',
+      next_step: 'Open the survey and share your feedback — it helps improve the listings.',
     },
     is_read: 0,
     view_count: 0,
@@ -1369,14 +1369,14 @@ export async function processTestDriveBookingPaidSession(stripe, session) {
     const buyerName =
       [buyer?.first_name, buyer?.last_name].filter(Boolean).join(' ') ||
       buyer?.email ||
-      `Пользователь #${userId}`;
-    const title = 'Запрос на тест-драйв';
+      `User #${userId}`;
+    const title = 'Test-drive request';
     const prefCh = normalizeTestDriveContactChannel(sess.metadata?.buyer_contact_channel);
     const prefLabel =
-      prefCh === 'telegram' ? 'Telegram' : prefCh === 'whatsapp' ? 'WhatsApp' : prefCh === 'email' ? 'почта' : '';
-    const message = `${buyerName} оплатил тест-драйв объекта «${
-      property.title || `Объект #${propertyId}`
-    }» с ${startDate} по ${endDate}.${prefLabel ? ` Предпочтительная связь: ${prefLabel}.` : ''} Подтвердите и добавьте комментарий по заселению (ключи, время заезда).`;
+      prefCh === 'telegram' ? 'Telegram' : prefCh === 'whatsapp' ? 'WhatsApp' : prefCh === 'email' ? 'email' : '';
+    const message = `${buyerName} paid for a test drive of “${
+      property.title || `Property #${propertyId}`
+    }” from ${startDate} to ${endDate}.${prefLabel ? ` Preferred contact: ${prefLabel}.` : ''} Confirm and add a check-in note (keys, arrival time).`;
     const notifRun = await notificationQueries.create({
       user_id: Number(property.user_id),
       type: 'test_drive_request',
@@ -1494,9 +1494,9 @@ function isoFromUnix(sec) {
 
 /** Owner subscriptions from metadata, plus legacy Pro / VIP price IDs from .env. */
 const OWNER_SUBSCRIPTION_PLANS = {
-  standard: { name: 'Стандарт', monthlyUsd: 99 },
+  standard: { name: 'Standard', monthlyUsd: 99 },
   pro: { name: 'Pro', monthlyUsd: 490 },
-  institutional: { name: 'Институциональный', monthlyUsd: 1500 },
+  institutional: { name: 'Institutional', monthlyUsd: 1500 },
 };
 
 const OWNER_SUBSCRIPTION_PLAN_KEYS = new Set(Object.keys(OWNER_SUBSCRIPTION_PLANS));
@@ -1684,7 +1684,7 @@ export async function creditWalletDepositFromPaidInvoice(invoice, subscription) 
             user_id: Number(userId),
             type: 'deposit',
             amount: amountEur,
-            description: 'Пополнение депозита (Stripe)',
+            description: 'Deposit top-up (Stripe)',
           },
         });
       } catch (e) {
@@ -1695,8 +1695,8 @@ export async function creditWalletDepositFromPaidInvoice(invoice, subscription) 
     await sendPushToUserSafely(
       userId,
       {
-        title: 'Баланс пополнен',
-        body: `Успешно зачислено ${Number(amountEur).toLocaleString('ru-RU')} € на депозит.`,
+        title: 'Balance topped up',
+        body: `Successfully credited ${Number(amountEur).toLocaleString('en-US')} € to the deposit.`,
         data: { type: 'deposit_top_up_success', path: '/wallet', amount: amountEur },
         channelId: 'transactions',
       },
@@ -2121,7 +2121,7 @@ export function registerStripeBillingRoutes(app) {
       if (!stripe) {
         return res.status(503).json({
           success: false,
-          error: 'Платежи не настроены: задайте STRIPE_SECRET_KEY в .env',
+          error: 'Payments are not configured: set STRIPE_SECRET_KEY in .env',
         });
       }
       const plan = normalizeOwnerSubscriptionPlanKey(req.body?.plan);
@@ -2139,13 +2139,13 @@ export function registerStripeBillingRoutes(app) {
           return res.status(503).json({
             success: false,
             error:
-              'Не задан STRIPE_PRICE_ID_DEPOSIT (в .env: price_... или prod_... продукта Deposit)',
+              'STRIPE_PRICE_ID_DEPOSIT is not set (in .env: price_... or prod_... of the Deposit product)',
           });
         }
         if (!userId || !/^\d+$/.test(userId)) {
           return res.status(400).json({
             success: false,
-            error: 'Укажите числовой userId для привязки платежа к аккаунту',
+            error: 'Provide a numeric userId to link the payment to the account',
           });
         }
         let depositPriceId;
@@ -2155,14 +2155,14 @@ export function registerStripeBillingRoutes(app) {
           console.error('[Stripe] resolve Deposit price:', resolveErr?.message || resolveErr);
           return res.status(503).json({
             success: false,
-            error: resolveErr?.message || 'Не удалось получить цену продукта Deposit в Stripe',
+            error: resolveErr?.message || 'Could not resolve the Deposit product price in Stripe',
           });
         }
         if (!depositPriceId) {
           return res.status(503).json({
             success: false,
             error:
-              'STRIPE_PRICE_ID_DEPOSIT: нет активной цены у продукта или неверный ID (нужен price_... или prod_...)',
+              'STRIPE_PRICE_ID_DEPOSIT: product has no active price or invalid ID (need price_... or prod_...)',
           });
         }
         const session = await stripe.checkout.sessions.create({
@@ -2184,7 +2184,7 @@ export function registerStripeBillingRoutes(app) {
         if (!userId || !/^\d+$/.test(userId)) {
           return res.status(400).json({
             success: false,
-            error: 'Укажите числовой userId для привязки подписки к аккаунту',
+            error: 'Provide a numeric userId to link the subscription to the account',
           });
         }
 
@@ -2226,7 +2226,7 @@ export function registerStripeBillingRoutes(app) {
                 recurring: { interval: billingCycle === 'yearly' ? 'year' : 'month' },
                 product_data: {
                   name: `SellYourBrick ${sellerPlan.name}`,
-                  description: `Подписка продавца: ${sellerPlan.name}.`.slice(0, 500),
+                  description: `Seller subscription: ${sellerPlan.name}.`.slice(0, 500),
                 },
               },
             },
@@ -2256,7 +2256,7 @@ export function registerStripeBillingRoutes(app) {
       if (checkoutKind !== 'buyer' || (plan !== 'pro' && plan !== 'vip')) {
         return res.status(400).json({
           success: false,
-          error: 'Неизвестный план. Доступны: standard, pro, institutional, vip, deposit',
+          error: 'Unknown plan. Available: standard, pro, institutional, vip, deposit',
         });
       }
 
@@ -2278,7 +2278,7 @@ export function registerStripeBillingRoutes(app) {
         console.error('[Stripe] resolve VIP/Pro price:', resolveErr?.message || resolveErr);
         return res.status(503).json({
           success: false,
-          error: resolveErr?.message || 'Не удалось найти цену подписки в Stripe.',
+          error: resolveErr?.message || 'Could not find the subscription price in Stripe.',
         });
       }
 
@@ -2287,11 +2287,11 @@ export function registerStripeBillingRoutes(app) {
           success: false,
           error: isVip
             ? billingCycle === 'yearly'
-              ? 'Не задан STRIPE_PRICE_ID_VIP_YEAR (ID годовой цены VIP из Stripe)'
-              : 'Не задан STRIPE_PRICE_ID_VIP (ID месячной цены VIP из Stripe). Создайте продукт VIP в Stripe или укажите price_ в .env.'
+              ? 'STRIPE_PRICE_ID_VIP_YEAR is not set (yearly VIP price ID from Stripe)'
+              : 'STRIPE_PRICE_ID_VIP is not set (monthly VIP price ID from Stripe). Create a VIP product in Stripe or set price_ in .env.'
             : billingCycle === 'yearly'
-              ? 'Не задан STRIPE_PRICE_ID_PRO_YEAR (ID годовой цены Pro из Stripe)'
-              : 'Не задан STRIPE_PRICE_ID_PRO (ID месячной цены Pro из Stripe)',
+              ? 'STRIPE_PRICE_ID_PRO_YEAR is not set (yearly Pro price ID from Stripe)'
+              : 'STRIPE_PRICE_ID_PRO is not set (monthly Pro price ID from Stripe)',
         });
       }
 
@@ -2304,16 +2304,16 @@ export function registerStripeBillingRoutes(app) {
           success: false,
           error:
             priceErr?.message ||
-            `Не удалось загрузить ${billingCycle === 'yearly' ? 'годовую' : 'месячную'} цену из Stripe.`,
+            `Could not load the ${billingCycle === 'yearly' ? 'yearly' : 'monthly'} price from Stripe.`,
         });
       }
       const tierCurrency = String(tierPrice?.currency || '').toLowerCase();
       if (tierCurrency !== 'eur') {
         return res.status(503).json({
           success: false,
-          error: `Подписка ${isVip ? 'VIP' : 'Pro'} должна быть в EUR в Stripe (указанная цена в ${
+          error: `The ${isVip ? 'VIP' : 'Pro'} subscription must be in EUR in Stripe (listed price currency is ${
             tierCurrency.toUpperCase() || '?'
-          }). Создайте цену в евро и обновите ENV в .env.`,
+          }). Create a euro price and update the ENV in .env.`,
         });
       }
 
@@ -2369,7 +2369,7 @@ export function registerStripeBillingRoutes(app) {
       console.error('[Stripe] create-checkout-session:', err?.message || err);
       return res.status(500).json({
         success: false,
-        error: err?.message || 'Ошибка Stripe',
+        error: err?.message || 'Stripe error',
       });
     }
   });
@@ -2389,7 +2389,7 @@ export function registerStripeBillingRoutes(app) {
         typeof req.body?.signatureDataUrl === 'string' ? req.body.signatureDataUrl.trim() : '';
 
       if (!Number.isFinite(userId) || !Number.isFinite(propertyId)) {
-        return res.status(400).json({ success: false, error: 'Укажите userId и propertyId' });
+        return res.status(400).json({ success: false, error: 'Specify userId and propertyId' });
       }
 
       const sigOk = validateShareSignatureDataUrl(signatureDataUrl);
@@ -2399,7 +2399,7 @@ export function registerStripeBillingRoutes(app) {
 
       const property = await propertyQueries.getById(propertyId, propertyTypeRaw || null);
       if (!property) {
-        return res.status(404).json({ success: false, error: 'Объявление не найдено' });
+        return res.status(404).json({ success: false, error: 'Listing not found' });
       }
 
       const shareBuyNowBlock = getShareBuyNowCheckoutBlock(property, 'buyNow');
@@ -2426,10 +2426,10 @@ export function registerStripeBillingRoutes(app) {
       return res.json({ success: true, signingIntentId: row.id });
     } catch (err) {
       if (err?.message === 'invalid_signature_payload') {
-        return res.status(400).json({ success: false, error: 'Некорректные данные подписи' });
+        return res.status(400).json({ success: false, error: 'Invalid signature data' });
       }
       console.error('[Stripe] property-reservation-signature-intent:', err?.message || err);
-      return res.status(500).json({ success: false, error: err?.message || 'Ошибка сервера' });
+      return res.status(500).json({ success: false, error: err?.message || 'Server error' });
     }
   });
 
@@ -2438,7 +2438,7 @@ export function registerStripeBillingRoutes(app) {
       if (!stripe) {
         return res.status(503).json({
           success: false,
-          error: 'Платежи не настроены: задайте STRIPE_SECRET_KEY в .env',
+          error: 'Payments are not configured: set STRIPE_SECRET_KEY in .env',
         });
       }
       const userIdRaw = req.body?.userId;
@@ -2461,13 +2461,13 @@ export function registerStripeBillingRoutes(app) {
       if (!Number.isFinite(userId) || !Number.isFinite(propertyId)) {
         return res.status(400).json({
           success: false,
-          error: 'Укажите числовой userId и propertyId',
+          error: 'Specify numeric userId and propertyId',
         });
       }
 
       const property = await propertyQueries.getById(propertyId, propertyType || null);
       if (!property) {
-        return res.status(404).json({ success: false, error: 'Объявление не найдено' });
+        return res.status(404).json({ success: false, error: 'Listing not found' });
       }
 
       const buyerRow = await userQueries.getById(userId);
@@ -2475,7 +2475,7 @@ export function registerStripeBillingRoutes(app) {
         return res.status(403).json({
           success: false,
           code: 'OWN_LISTING',
-          error: 'Нельзя купить свой объект',
+          error: 'You cannot buy your own listing',
         });
       }
 
@@ -2486,7 +2486,7 @@ export function registerStripeBillingRoutes(app) {
       if (resInfo.isReserved && resInfo.reservedBy != null && Number(resInfo.reservedBy) !== userId) {
         return res.status(409).json({
           success: false,
-          error: 'Объект уже зарезервирован другим покупателем',
+          error: 'Listing is already reserved by another buyer',
         });
       }
 
@@ -2517,11 +2517,11 @@ export function registerStripeBillingRoutes(app) {
         if (!winner || !Number.isFinite(winningAmount) || winningAmount <= 0) {
           return res.status(403).json({
             success: false,
-            error: 'Оплата доступна только подтверждённому победителю аукциона',
+            error: 'Payment is available only to the confirmed auction winner',
           });
         }
         if (!Number.isFinite(auctionEndedAt) || auctionEndedAt > Date.now()) {
-          return res.status(409).json({ success: false, error: 'Аукцион ещё не завершён' });
+          return res.status(409).json({ success: false, error: 'Auction has not ended yet' });
         }
         minSaleMajor = winningAmount;
         saleCurrencyRaw = winner.currency || property.currency || 'usd';
@@ -2529,7 +2529,7 @@ export function registerStripeBillingRoutes(app) {
       if (!(minSaleMajor > 0)) {
         return res.status(400).json({
           success: false,
-          error: 'Укажите минимальную цену продажи объекта (поле price)',
+          error: 'Specify the minimum sale price (price field)',
         });
       }
 
@@ -2550,7 +2550,7 @@ export function registerStripeBillingRoutes(app) {
         if (dep < WALLET_DEPOSIT_OFFSET_EUR) {
           return res.status(400).json({
             success: false,
-            error: `На депозите недостаточно средств (нужно от ${WALLET_DEPOSIT_OFFSET_EUR} €)`,
+            error: `Insufficient deposit balance (need from ${WALLET_DEPOSIT_OFFSET_EUR} €)`,
           });
         }
       }
@@ -2575,8 +2575,8 @@ export function registerStripeBillingRoutes(app) {
         return res.status(400).json({
           success: false,
           error: useWalletDeposit
-            ? `После вычета 3000 € с депозита сумма к оплате картой в EUR слишком мала. Увеличьте минимальную цену продажи или оплатите без депозита.`
-            : `Сумма резерва слишком мала для Stripe (минимум ${minUnit} в минимальных единицах ${checkoutCurrency.toUpperCase()})`,
+            ? `After deducting €3,000 from the deposit, the card charge in EUR is too small. Raise the minimum sale price or pay without the deposit.`
+            : `Reserve amount is too small for Stripe (minimum ${minUnit} in ${checkoutCurrency.toUpperCase()} minor units)`,
         });
       }
 
@@ -2586,7 +2586,7 @@ export function registerStripeBillingRoutes(app) {
         return res.status(400).json({
           success: false,
           error:
-            'Сначала сохраните подпись: откройте PDF, согласитесь с условиями и поставьте подпись в поле ниже.',
+            'Save the signature first: open the PDF, accept the terms, and sign in the field below.',
         });
       }
 
@@ -2606,28 +2606,28 @@ export function registerStripeBillingRoutes(app) {
       );
       if (!intentReady.ok) {
         const map = {
-          intent_not_found: 'Подпись не найдена — нарисуйте и подтвердите снова',
-          intent_consumed: 'Эта подпись уже использована',
-          intent_checkout_already_started: 'Оплата уже начата. Завершите в Stripe или начните с новой подписи',
-          intent_user_mismatch: 'Несовпадение пользователя',
-          intent_property_mismatch: 'Объект изменился — подпишите снова',
-          intent_property_type_mismatch: 'Тип объекта изменился — подпишите снова',
-          intent_wallet_mismatch: 'Изменился способ оплаты (депозит) — подпишите снова',
-          intent_expired: 'Подпись устарела (30 мин) — нарисуйте заново',
+          intent_not_found: 'Signature not found — draw and confirm again',
+          intent_consumed: 'This signature was already used',
+          intent_checkout_already_started: 'Checkout already started. Finish in Stripe or start with a new signature',
+          intent_user_mismatch: 'User mismatch',
+          intent_property_mismatch: 'Listing changed — sign again',
+          intent_property_type_mismatch: 'Property type changed — sign again',
+          intent_wallet_mismatch: 'Deposit payment method changed — sign again',
+          intent_expired: 'Signature expired (30 min) — draw again',
         };
         return res.status(400).json({
           success: false,
-          error: map[intentReady.error] || 'Недействительная подпись',
+          error: map[intentReady.error] || 'Invalid signature',
         });
       }
 
       const saleMinor = majorToStripeMinor(minSaleMajor, currency);
-      const titleShort = (property.title || `Объект #${propertyId}`).slice(0, 100);
+      const titleShort = (property.title || `Property #${propertyId}`).slice(0, 100);
       const productDesc = useWalletDeposit
-        ? `Резерв 10%: при использовании депозита оплата в EUR, 3000 EUR с депозита, остальное картой. Объект #${propertyId}`
+        ? `10% reserve: with deposit, pay in EUR — €3,000 from deposit, remainder by card. Property #${propertyId}`
         : purchaseVariant === 'auctionWinner'
-          ? `Резерв 10% от выигрышной ставки. Объект #${propertyId}`
-          : `Резерв 10% от цены «Купить сейчас». Объект #${propertyId}`;
+          ? `10% reserve of the winning bid. Property #${propertyId}`
+          : `10% reserve of the Buy Now price. Property #${propertyId}`;
 
       const basePath = returnPath || `/property/${propertyId}`;
       const successUrl = `${frontendOrigin(req)}${basePath}?reservation_checkout=success&session_id={CHECKOUT_SESSION_ID}`;
@@ -2643,7 +2643,7 @@ export function registerStripeBillingRoutes(app) {
               currency: checkoutCurrency,
               unit_amount: unitAmount,
               product_data: {
-                name: `Резерв 10% — ${titleShort}`,
+                name: `10% reserve — ${titleShort}`,
                 description: productDesc.slice(0, 500),
               },
             },
@@ -2681,7 +2681,7 @@ export function registerStripeBillingRoutes(app) {
         }
         return res.status(409).json({
           success: false,
-          error: 'Не удалось привязать подпись к оплате. Нарисуйте подпись ещё раз.',
+          error: 'Could not attach the signature to the payment. Draw the signature again.',
         });
       }
 
@@ -2690,7 +2690,7 @@ export function registerStripeBillingRoutes(app) {
       console.error('[Stripe] create-property-reservation-checkout:', err?.message || err);
       return res.status(500).json({
         success: false,
-        error: err?.message || 'Ошибка Stripe',
+        error: err?.message || 'Stripe error',
       });
     }
   });
@@ -2698,7 +2698,7 @@ export function registerStripeBillingRoutes(app) {
   app.post('/api/billing/create-test-drive-checkout', async (req, res) => {
     try {
       if (!stripe) {
-        return res.status(503).json({ success: false, error: 'Платежи не настроены' });
+        return res.status(503).json({ success: false, error: 'Payments are not configured' });
       }
       await testDriveBookingQueries.ensureTable();
       const userId = parseInt(String(req.body?.userId || '').trim(), 10);
@@ -2721,21 +2721,21 @@ export function registerStripeBillingRoutes(app) {
       if (!buyerContactChannel) {
         return res.status(400).json({
           success: false,
-          error: 'Выберите способ связи: Telegram, WhatsApp или почта',
+          error: 'Choose a contact method: Telegram, WhatsApp, or email',
         });
       }
       if (!Number.isFinite(userId) || !Number.isFinite(propertyId)) {
-        return res.status(400).json({ success: false, error: 'Укажите userId и propertyId' });
+        return res.status(400).json({ success: false, error: 'Specify userId and propertyId' });
       }
       if (!isValidYmd(startDate) || !isValidYmd(endDate)) {
-        return res.status(400).json({ success: false, error: 'Некорректные даты' });
+        return res.status(400).json({ success: false, error: 'Invalid dates' });
       }
       const dayCount = calcDayCountInclusive(startDate, endDate);
       if (!Number.isFinite(dayCount) || dayCount < 5 || dayCount > 21) {
-        return res.status(400).json({ success: false, error: 'Выберите от 5 до 21 дня подряд' });
+        return res.status(400).json({ success: false, error: 'Select 5 to 21 consecutive days' });
       }
       const property = await propertyQueries.getById(propertyId, propertyType || null);
-      if (!property) return res.status(404).json({ success: false, error: 'Объект не найден' });
+      if (!property) return res.status(404).json({ success: false, error: 'Property not found' });
       const tableResolved = property.source_table || propertyTable || 'properties_apartments';
       const existingMine = await findActiveTestDriveBookingForUserProperty(
         userId,
@@ -2747,23 +2747,23 @@ export function registerStripeBillingRoutes(app) {
           success: false,
           error: 'already_requested',
           message:
-            'У вас уже есть активная бронь тест-драйва на этот объект. Откройте «Мои бронирования».',
+            'You already have an active test-drive booking for this listing. Open “My bookings”.',
           data: { booking_id: existingMine.id },
         });
       }
       const testDriveEnabled =
         property.test_drive === 1 || property.test_drive === true || property.test_drive === '1';
       if (!testDriveEnabled) {
-        return res.status(400).json({ success: false, error: 'Тест-драйв недоступен' });
+        return res.status(400).json({ success: false, error: 'Test drive unavailable' });
       }
       if (!propertyRowAllowsTestDriveListing(property)) {
-        return res.status(400).json({ success: false, error: 'Тест-драйв недоступен' });
+        return res.status(400).json({ success: false, error: 'Test drive unavailable' });
       }
       const { dailyPrice, insuranceDeposit } = parseTestDrivePricing(property);
       if (!(dailyPrice > 0)) {
         return res.status(400).json({
           success: false,
-          error: 'Продавец не настроил стоимость тест-драйва за сутки',
+          error: 'Seller has not set a daily test-drive price',
         });
       }
       const curNorm = normalizeStripeCurrency(property.currency || 'usd');
@@ -2775,14 +2775,14 @@ export function registerStripeBillingRoutes(app) {
       const depCents = depMajor > 0 ? majorToStripeMinor(depMajor, currency) : 0;
       const minU = minStripeUnitAmount(currency);
       if (stayCents < minU) {
-        return res.status(400).json({ success: false, error: 'Сумма слишком мала для Stripe' });
+        return res.status(400).json({ success: false, error: 'Amount is too small for Stripe' });
       }
-      const titleShort = (property.title || `Объект #${propertyId}`).slice(0, 80);
+      const titleShort = (property.title || `Property #${propertyId}`).slice(0, 80);
       let lineItems;
       if (depCents > 0 && depCents < minU) {
         const combinedCents = stayCents + depCents;
         if (combinedCents < minU) {
-          return res.status(400).json({ success: false, error: 'Сумма слишком мала для Stripe' });
+          return res.status(400).json({ success: false, error: 'Amount is too small for Stripe' });
         }
         lineItems = [
           {
@@ -2791,9 +2791,9 @@ export function registerStripeBillingRoutes(app) {
               currency,
               unit_amount: combinedCents,
               product_data: {
-                name: `Тест-драйв (${dayCount} дн.) + страховой депозит — ${titleShort}`,
+                name: `Test drive (${dayCount} days) + security deposit — ${titleShort}`,
                 description:
-                  `Проживание и депозит, ${startDate} — ${endDate}. Депозит при отсутствии нарушений возвращается на карту в течение недели после проживания.`.slice(
+                  `Stay and deposit, ${startDate} — ${endDate}. If no issues, the deposit is refunded to the card within a week after the stay.`.slice(
                     0,
                     500
                   ),
@@ -2809,8 +2809,8 @@ export function registerStripeBillingRoutes(app) {
               currency,
               unit_amount: stayCents,
               product_data: {
-                name: `Тест-драйв: проживание (${dayCount} дн.) — ${titleShort}`,
-                description: `Проживание ${startDate} — ${endDate}`.slice(0, 500),
+                name: `Test drive: stay (${dayCount} days) — ${titleShort}`,
+                description: `Stay ${startDate} — ${endDate}`.slice(0, 500),
               },
             },
           },
@@ -2822,9 +2822,9 @@ export function registerStripeBillingRoutes(app) {
               currency,
               unit_amount: depCents,
               product_data: {
-                name: `Страховой депозит — ${titleShort}`,
+                name: `Security deposit — ${titleShort}`,
                 description:
-                  'Депозит удерживается на время проживания; при отсутствии нарушений возвращается на карту в течение недели после выезда.'.slice(
+                  'The deposit is held for the stay; if no issues, it is refunded to the card within a week after checkout.'.slice(
                     0,
                     500
                   ),
@@ -2876,22 +2876,22 @@ export function registerStripeBillingRoutes(app) {
       });
     } catch (err) {
       console.error('[Stripe] create-test-drive-checkout:', err?.message || err);
-      return res.status(500).json({ success: false, error: err?.message || 'Ошибка Stripe' });
+      return res.status(500).json({ success: false, error: err?.message || 'Stripe error' });
     }
   });
 
   app.post('/api/billing/confirm-test-drive-checkout', async (req, res) => {
     try {
       if (!stripe) {
-        return res.status(503).json({ success: false, error: 'Stripe не настроен' });
+        return res.status(503).json({ success: false, error: 'Stripe is not configured' });
       }
       const sessionId = typeof req.body?.session_id === 'string' ? req.body.session_id.trim() : '';
       const userId = String(req.body?.userId || '').trim();
       if (!sessionId || !sessionId.startsWith('cs_')) {
-        return res.status(400).json({ success: false, error: 'Нужен session_id (cs_...)' });
+        return res.status(400).json({ success: false, error: 'session_id is required (cs_...)' });
       }
       if (!/^\d+$/.test(userId)) {
-        return res.status(400).json({ success: false, error: 'Нужен числовой userId' });
+        return res.status(400).json({ success: false, error: 'Numeric userId is required' });
       }
       const session = await stripe.checkout.sessions.retrieve(sessionId, {
         expand: ['payment_intent'],
@@ -2908,17 +2908,17 @@ export function registerStripeBillingRoutes(app) {
         });
         const errorMessages = {
           already_requested:
-            'У вас уже есть активная бронь тест-драйва на этот объект. Повторная оплата возвращена на карту.',
+            'You already have an active test-drive booking for this property. The duplicate payment was refunded to your card.',
           dates_unavailable:
-            'Эти даты уже заняты. Повторная оплата возвращена на карту — выберите другие даты.',
-          not_paid: 'Оплата ещё не подтверждена Stripe. Обновите страницу через минуту.',
-          test_drive_disabled: 'Тест-драйв для этого объекта недоступен.',
-          property_not_found: 'Объект не найден.',
+            'These dates are already taken. The duplicate payment was refunded — please choose other dates.',
+          not_paid: 'Payment is not confirmed by Stripe yet. Refresh the page in a minute.',
+          test_drive_disabled: 'Test drive is not available for this property.',
+          property_not_found: 'Property not found.',
         };
         return res.status(400).json({
           success: false,
           error: result.error || 'confirm_failed',
-          message: errorMessages[result.error] || 'Не удалось подтвердить оплату тест-драйва',
+          message: errorMessages[result.error] || 'Could not confirm the test-drive payment',
           refunded: !!result.refunded,
           data: result.bookingId ? { booking_id: result.bookingId } : undefined,
         });
@@ -2939,14 +2939,14 @@ export function registerStripeBillingRoutes(app) {
       });
     } catch (err) {
       console.error('[Stripe] confirm-test-drive-checkout:', err?.message || err);
-      return res.status(500).json({ success: false, error: err?.message || 'Ошибка Stripe' });
+      return res.status(500).json({ success: false, error: err?.message || 'Stripe error' });
     }
   });
 
   app.post('/api/billing/confirm-property-reservation', async (req, res) => {
     try {
       if (!stripe) {
-        return res.status(503).json({ success: false, error: 'Stripe не настроен' });
+        return res.status(503).json({ success: false, error: 'Stripe is not configured' });
       }
       const sessionId = typeof req.body?.session_id === 'string' ? req.body.session_id.trim() : '';
       const userIdRaw = req.body?.userId;
@@ -2955,7 +2955,7 @@ export function registerStripeBillingRoutes(app) {
           ? parseInt(String(userIdRaw).trim(), 10)
           : NaN;
       if (!sessionId || !sessionId.startsWith('cs_')) {
-        return res.status(400).json({ success: false, error: 'Нужен session_id (cs_...)' });
+        return res.status(400).json({ success: false, error: 'session_id is required (cs_...)' });
       }
       const session = await stripe.checkout.sessions.retrieve(sessionId, {
         expand: ['payment_intent'],
@@ -2963,7 +2963,7 @@ export function registerStripeBillingRoutes(app) {
       const metaUserId = parseInt(String(session.metadata?.app_user_id || ''), 10);
       const effectiveUserId = Number.isFinite(metaUserId) ? metaUserId : clientUserId;
       if (!Number.isFinite(effectiveUserId)) {
-        return res.status(400).json({ success: false, error: 'Не удалось определить покупателя из сессии' });
+        return res.status(400).json({ success: false, error: 'Could not determine the buyer from the session' });
       }
       if (
         Number.isFinite(clientUserId) &&
@@ -2999,7 +2999,7 @@ export function registerStripeBillingRoutes(app) {
       });
     } catch (err) {
       console.error('[Stripe] confirm-property-reservation:', err?.message || err);
-      return res.status(500).json({ success: false, error: err?.message || 'Ошибка' });
+      return res.status(500).json({ success: false, error: err?.message || 'Error' });
     }
   });
 
@@ -3008,7 +3008,7 @@ export function registerStripeBillingRoutes(app) {
       if (!stripe) {
         return res.status(503).json({
           success: false,
-          error: 'Платежи не настроены: задайте STRIPE_SECRET_KEY в .env',
+          error: 'Payments are not configured: set STRIPE_SECRET_KEY in .env',
         });
       }
       const userIdRaw = req.body?.userId;
@@ -3026,13 +3026,13 @@ export function registerStripeBillingRoutes(app) {
       if (!Number.isFinite(userId) || userId < 1) {
         return res.status(400).json({
           success: false,
-          error: 'Укажите числовой userId',
+          error: 'Provide a numeric userId',
         });
       }
 
       const buyer = await userQueries.getById(userId);
       if (!buyer) {
-        return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+        return res.status(404).json({ success: false, error: 'User not found' });
       }
 
       const currency = 'eur';
@@ -3040,7 +3040,7 @@ export function registerStripeBillingRoutes(app) {
       if (unitAmount < minStripeUnitAmount(currency)) {
         return res.status(400).json({
           success: false,
-          error: 'Сумма публикации слишком мала для Stripe',
+          error: 'Publication amount is too small for Stripe',
         });
       }
 
@@ -3057,8 +3057,8 @@ export function registerStripeBillingRoutes(app) {
               currency,
               unit_amount: unitAmount,
               product_data: {
-                name: `Размещение объявления на платформе`,
-                description: `Оплата публикации объекта (${LISTING_PUBLICATION_FEE_MAJOR_EUR} €).`.slice(0, 500),
+                name: `Listing publication on the platform`,
+                description: `Listing publication fee (${LISTING_PUBLICATION_FEE_MAJOR_EUR} €).`.slice(0, 500),
               },
             },
           },
@@ -3078,7 +3078,7 @@ export function registerStripeBillingRoutes(app) {
       console.error('[Stripe] create-listing-publication-checkout:', err?.message || err);
       return res.status(500).json({
         success: false,
-        error: err?.message || 'Ошибка Stripe',
+        error: err?.message || 'Stripe error',
       });
     }
   });
@@ -3086,16 +3086,16 @@ export function registerStripeBillingRoutes(app) {
   app.post('/api/billing/confirm-listing-publication-fee', async (req, res) => {
     try {
       if (!stripe) {
-        return res.status(503).json({ success: false, error: 'Stripe не настроен' });
+        return res.status(503).json({ success: false, error: 'Stripe is not configured' });
       }
       const sessionId = typeof req.body?.session_id === 'string' ? req.body.session_id.trim() : '';
       const userIdRaw = req.body?.userId;
       const userId = userIdRaw != null ? String(userIdRaw).trim() : '';
       if (!sessionId || !sessionId.startsWith('cs_')) {
-        return res.status(400).json({ success: false, error: 'Нужен session_id (cs_...)' });
+        return res.status(400).json({ success: false, error: 'session_id is required (cs_...)' });
       }
       if (!userId || !/^\d+$/.test(userId)) {
-        return res.status(400).json({ success: false, error: 'Нужен числовой userId' });
+        return res.status(400).json({ success: false, error: 'Numeric userId is required' });
       }
       const session = await stripe.checkout.sessions.retrieve(sessionId, {
         expand: ['payment_intent'],
@@ -3125,7 +3125,7 @@ export function registerStripeBillingRoutes(app) {
       return res.json({ success: true, data: { already: !!result.already } });
     } catch (err) {
       console.error('[Stripe] confirm-listing-publication-fee:', err?.message || err);
-      return res.status(500).json({ success: false, error: err?.message || 'Ошибка' });
+      return res.status(500).json({ success: false, error: err?.message || 'Error' });
     }
   });
 
@@ -3140,10 +3140,10 @@ export function registerStripeBillingRoutes(app) {
         typeof req.body?.signatureDataUrl === 'string' ? req.body.signatureDataUrl.trim() : '';
 
       if (!Number.isFinite(userId) || !Number.isFinite(propertyId) || !propertyType) {
-        return res.status(400).json({ success: false, error: 'Укажите userId, propertyId и propertyType' });
+        return res.status(400).json({ success: false, error: 'Specify userId, propertyId, and propertyType' });
       }
       if (!Number.isFinite(sharesCount) || sharesCount < 1) {
-        return res.status(400).json({ success: false, error: 'Укажите число долей' });
+        return res.status(400).json({ success: false, error: 'Specify share count' });
       }
 
       const sigOk = validateShareSignatureDataUrl(signatureDataUrl);
@@ -3153,20 +3153,20 @@ export function registerStripeBillingRoutes(app) {
 
       const property = await propertyQueries.getById(propertyId, propertyType);
       if (!property) {
-        return res.status(404).json({ success: false, error: 'Объект не найден' });
+        return res.status(404).json({ success: false, error: 'Property not found' });
       }
       if (property.moderation_status && property.moderation_status !== 'approved') {
-        return res.status(400).json({ success: false, error: 'Объект недоступен' });
+        return res.status(400).json({ success: false, error: 'Listing unavailable' });
       }
       if (!isShareSaleProperty(property)) {
-        return res.status(400).json({ success: false, error: 'Это не долевой объект' });
+        return res.status(400).json({ success: false, error: 'This is not a share listing' });
       }
 
       const totalShares = property.total_shares != null ? Number(property.total_shares) : 0;
       const sharesSold = property.shares_sold != null ? Number(property.shares_sold) : 0;
       const available = Math.max(0, totalShares - sharesSold);
       if (available <= 0 || sharesCount > available) {
-        return res.status(400).json({ success: false, error: 'Недостаточно свободных долей' });
+        return res.status(400).json({ success: false, error: 'Not enough available shares' });
       }
 
       const row = await sharePurchaseQueries.createSignatureIntent({
@@ -3179,10 +3179,10 @@ export function registerStripeBillingRoutes(app) {
       return res.json({ success: true, signingIntentId: row.id });
     } catch (err) {
       if (err?.message === 'invalid_signature_payload') {
-        return res.status(400).json({ success: false, error: 'Некорректные данные подписи' });
+        return res.status(400).json({ success: false, error: 'Invalid signature data' });
       }
       console.error('[Stripe] share-purchase-signature-intent:', err?.message || err);
-      return res.status(500).json({ success: false, error: err?.message || 'Ошибка сервера' });
+      return res.status(500).json({ success: false, error: err?.message || 'Server error' });
     }
   });
 
@@ -3191,7 +3191,7 @@ export function registerStripeBillingRoutes(app) {
       if (!stripe) {
         return res.status(503).json({
           success: false,
-          error: 'Платежи не настроены: задайте STRIPE_SECRET_KEY в .env',
+          error: 'Payments are not configured: set STRIPE_SECRET_KEY in .env',
         });
       }
       const userId = req.body?.userId != null ? parseInt(String(req.body.userId).trim(), 10) : NaN;
@@ -3213,15 +3213,15 @@ export function registerStripeBillingRoutes(app) {
       }
 
       if (!Number.isFinite(userId) || !Number.isFinite(propertyId) || !propertyType) {
-        return res.status(400).json({ success: false, error: 'Укажите userId, propertyId и propertyType' });
+        return res.status(400).json({ success: false, error: 'Specify userId, propertyId, and propertyType' });
       }
       if (!Number.isFinite(sharesCount) || sharesCount < 1) {
-        return res.status(400).json({ success: false, error: 'Укажите число долей' });
+        return res.status(400).json({ success: false, error: 'Specify share count' });
       }
       if (!signingIntentId || !/^[0-9a-f-]{36}$/i.test(signingIntentId)) {
         return res.status(400).json({
           success: false,
-          error: 'Сначала сохраните нарисованную подпись (обновите страницу и попробуйте снова)',
+          error: 'Save the drawn signature first (refresh the page and try again)',
         });
       }
 
@@ -3234,36 +3234,36 @@ export function registerStripeBillingRoutes(app) {
       );
       if (!intentReady.ok) {
         const map = {
-          intent_not_found: 'Подпись не найдена — нарисуйте и подтвердите снова',
-          intent_consumed: 'Эта подпись уже использована',
-          intent_checkout_already_started: 'Оплата уже начата. Завершите в Stripe или начните с новой подписи',
-          intent_user_mismatch: 'Несовпадение пользователя',
-          intent_property_mismatch: 'Объект или тип изменились — подпишите снова',
-          intent_shares_mismatch: 'Количество долей изменилось — подпишите снова',
-          intent_expired: 'Подпись устарела (30 мин) — нарисуйте заново',
+          intent_not_found: 'Signature not found — draw and confirm again',
+          intent_consumed: 'This signature was already used',
+          intent_checkout_already_started: 'Checkout already started. Finish in Stripe or start with a new signature',
+          intent_user_mismatch: 'User mismatch',
+          intent_property_mismatch: 'Property or type changed — sign again',
+          intent_shares_mismatch: 'Share count changed — sign again',
+          intent_expired: 'Signature expired (30 min) — draw again',
         };
         return res.status(400).json({
           success: false,
-          error: map[intentReady.error] || 'Недействительная подпись',
+          error: map[intentReady.error] || 'Invalid signature',
         });
       }
 
       const property = await propertyQueries.getById(propertyId, propertyType);
       if (!property) {
-        return res.status(404).json({ success: false, error: 'Объект не найден' });
+        return res.status(404).json({ success: false, error: 'Property not found' });
       }
       if (property.moderation_status && property.moderation_status !== 'approved') {
-        return res.status(400).json({ success: false, error: 'Объект недоступен для покупки' });
+        return res.status(400).json({ success: false, error: 'Listing is not available for purchase' });
       }
       if (!isShareSaleProperty(property)) {
-        return res.status(400).json({ success: false, error: 'Это не долевой объект' });
+        return res.status(400).json({ success: false, error: 'This is not a share listing' });
       }
 
       const totalShares = property.total_shares != null ? Number(property.total_shares) : 0;
       const sharesSold = property.shares_sold != null ? Number(property.shares_sold) : 0;
       const available = Math.max(0, totalShares - sharesSold);
       if (available <= 0 || sharesCount > available) {
-        return res.status(400).json({ success: false, error: 'Недостаточно свободных долей' });
+        return res.status(400).json({ success: false, error: 'Not enough available shares' });
       }
 
       const curNorm = normalizeStripeCurrency(property.currency || 'usd');
@@ -3273,7 +3273,7 @@ export function registerStripeBillingRoutes(app) {
       const currency = curNorm.currency;
       const objectPrice = Number(property.price) || 0;
       if (!(objectPrice > 0) || !(totalShares > 0)) {
-        return res.status(400).json({ success: false, error: 'Некорректная цена или число долей объекта' });
+        return res.status(400).json({ success: false, error: 'Invalid listing price or share count' });
       }
       const pricePerShare = objectPrice / totalShares;
       const totalPrice = pricePerShare * sharesCount;
@@ -3291,13 +3291,13 @@ export function registerStripeBillingRoutes(app) {
         if (totalPrice <= walletAppliedMajor) {
           return res.status(400).json({
             success: false,
-            error: 'Сумма покупки должна быть выше эквивалента 3000 € для списания депозита',
+            error: 'Purchase amount must be above the 3000 € equivalent to deduct the deposit',
           });
         }
         const buyer = await userQueries.getById(userId);
         const depositAmount = buyer?.deposit_amount != null ? parseFloat(String(buyer.deposit_amount)) || 0 : 0;
         if (depositAmount < WALLET_DEPOSIT_OFFSET_EUR) {
-          return res.status(400).json({ success: false, error: 'Недостаточно депозита для списания 3000 €' });
+          return res.status(400).json({ success: false, error: 'Insufficient deposit to deduct 3000 €' });
         }
         walletEurApplied = WALLET_DEPOSIT_OFFSET_EUR;
       }
@@ -3307,11 +3307,11 @@ export function registerStripeBillingRoutes(app) {
       if (unitAmount < minUnit) {
         return res.status(400).json({
           success: false,
-          error: `Сумма слишком мала для оплаты картой (минимум Stripe для ${currency.toUpperCase()})`,
+          error: `Amount is too small for card payment (Stripe minimum for ${currency.toUpperCase()})`,
         });
       }
 
-      const titleShort = (property.title || `Объект #${propertyId}`).slice(0, 80);
+      const titleShort = (property.title || `Property #${propertyId}`).slice(0, 80);
       const basePath = returnPath || `/shares/${propertyType}-${propertyId}`;
       const successUrl = `${frontendOrigin(req)}${basePath}?share_checkout=success&session_id={CHECKOUT_SESSION_ID}`;
       const cancelUrl = `${frontendOrigin(req)}${basePath}?share_checkout=canceled`;
@@ -3326,8 +3326,8 @@ export function registerStripeBillingRoutes(app) {
               currency,
               unit_amount: unitAmount,
               product_data: {
-                name: `Доли (${sharesCount} шт.) — ${titleShort}`,
-                description: `Покупка долей в долевой недвижимости. Объект #${propertyId}, тип ${propertyType}.`.slice(
+                name: `Shares (${sharesCount}) — ${titleShort}`,
+                description: `Share purchase in fractional ownership. Property #${propertyId}, type ${propertyType}.`.slice(
                   0,
                   500
                 ),
@@ -3367,7 +3367,7 @@ export function registerStripeBillingRoutes(app) {
         }
         return res.status(409).json({
           success: false,
-          error: 'Не удалось привязать подпись к оплате. Нарисуйте подпись ещё раз.',
+          error: 'Could not attach the signature to the payment. Draw the signature again.',
         });
       }
 
@@ -3376,7 +3376,7 @@ export function registerStripeBillingRoutes(app) {
       console.error('[Stripe] create-share-purchase-checkout:', err?.message || err);
       return res.status(500).json({
         success: false,
-        error: err?.message || 'Ошибка Stripe',
+        error: err?.message || 'Stripe error',
       });
     }
   });
@@ -3384,16 +3384,16 @@ export function registerStripeBillingRoutes(app) {
   app.post('/api/billing/confirm-share-purchase', async (req, res) => {
     try {
       if (!stripe) {
-        return res.status(503).json({ success: false, error: 'Stripe не настроен' });
+        return res.status(503).json({ success: false, error: 'Stripe is not configured' });
       }
       const sessionId = typeof req.body?.session_id === 'string' ? req.body.session_id.trim() : '';
       const userIdRaw = req.body?.userId;
       const userId = userIdRaw != null ? String(userIdRaw).trim() : '';
       if (!sessionId || !sessionId.startsWith('cs_')) {
-        return res.status(400).json({ success: false, error: 'Нужен session_id (cs_...)' });
+        return res.status(400).json({ success: false, error: 'session_id is required (cs_...)' });
       }
       if (!userId || !/^\d+$/.test(userId)) {
-        return res.status(400).json({ success: false, error: 'Нужен числовой userId' });
+        return res.status(400).json({ success: false, error: 'Numeric userId is required' });
       }
       const session = await stripe.checkout.sessions.retrieve(sessionId, {
         expand: ['payment_intent'],
@@ -3436,7 +3436,7 @@ export function registerStripeBillingRoutes(app) {
       });
     } catch (err) {
       console.error('[Stripe] confirm-share-purchase:', err?.message || err);
-      return res.status(500).json({ success: false, error: err?.message || 'Ошибка' });
+      return res.status(500).json({ success: false, error: err?.message || 'Error' });
     }
   });
 
@@ -3445,7 +3445,7 @@ export function registerStripeBillingRoutes(app) {
     try {
       const userId = parseInt(req.params.userId, 10);
       if (!Number.isFinite(userId)) {
-        return res.status(400).json({ success: false, error: 'Некорректный userId' });
+        return res.status(400).json({ success: false, error: 'Invalid userId' });
       }
       const user = await userQueries.getById(userId);
       const email = user?.email ? String(user.email).trim().toLowerCase() : '';
@@ -3481,16 +3481,16 @@ export function registerStripeBillingRoutes(app) {
   app.post('/api/billing/confirm-wallet-deposit', async (req, res) => {
     try {
       if (!stripe) {
-        return res.status(503).json({ success: false, error: 'Stripe не настроен' });
+        return res.status(503).json({ success: false, error: 'Stripe is not configured' });
       }
       const sessionId = typeof req.body?.session_id === 'string' ? req.body.session_id.trim() : '';
       const userIdRaw = req.body?.userId;
       const userId = userIdRaw != null ? String(userIdRaw).trim() : '';
       if (!sessionId || !sessionId.startsWith('cs_')) {
-        return res.status(400).json({ success: false, error: 'Нужен session_id (cs_...)' });
+        return res.status(400).json({ success: false, error: 'session_id is required (cs_...)' });
       }
       if (!userId || !/^\d+$/.test(userId)) {
-        return res.status(400).json({ success: false, error: 'Нужен числовой userId' });
+        return res.status(400).json({ success: false, error: 'Numeric userId is required' });
       }
       const result = await confirmWalletDepositSession(stripe, sessionId, userId);
       if (!result.ok) {
@@ -3507,7 +3507,7 @@ export function registerStripeBillingRoutes(app) {
       });
     } catch (err) {
       console.error('[Stripe] confirm-wallet-deposit:', err?.message || err);
-      return res.status(500).json({ success: false, error: err?.message || 'Ошибка' });
+      return res.status(500).json({ success: false, error: err?.message || 'Error' });
     }
   });
 
@@ -3515,11 +3515,11 @@ export function registerStripeBillingRoutes(app) {
   app.post('/api/billing/confirm-session', async (req, res) => {
     try {
       if (!stripe) {
-        return res.status(503).json({ success: false, error: 'Stripe не настроен' });
+        return res.status(503).json({ success: false, error: 'Stripe is not configured' });
       }
       const sessionId = typeof req.body?.session_id === 'string' ? req.body.session_id.trim() : '';
       if (!sessionId || !sessionId.startsWith('cs_')) {
-        return res.status(400).json({ success: false, error: 'Нужен session_id (cs_...)' });
+        return res.status(400).json({ success: false, error: 'session_id is required (cs_...)' });
       }
       const expectedUserId =
         req.body?.userId != null || req.body?.expectedUserId != null
@@ -3533,7 +3533,7 @@ export function registerStripeBillingRoutes(app) {
       return res.json({ success: true, data: result.data || null });
     } catch (err) {
       console.error('[Stripe] confirm-session:', err?.message || err);
-      return res.status(500).json({ success: false, error: err?.message || 'Ошибка' });
+      return res.status(500).json({ success: false, error: err?.message || 'Error' });
     }
   });
 
@@ -3543,7 +3543,7 @@ export function registerStripeBillingRoutes(app) {
         .trim()
         .toLowerCase();
       if (!/^[a-z]{3}$/.test(currency)) {
-        return res.status(400).json({ success: false, error: 'Некорректная валюта' });
+        return res.status(400).json({ success: false, error: 'Invalid currency' });
       }
       const rate = await getEurToCurrencyRate(currency);
       const amount3000 = roundMoneyMajor(WALLET_DEPOSIT_OFFSET_EUR * rate);
@@ -3558,7 +3558,7 @@ export function registerStripeBillingRoutes(app) {
       });
     } catch (err) {
       console.error('[Stripe] fx eur-to:', err?.message || err);
-      return res.status(500).json({ success: false, error: 'Не удалось получить курс валют' });
+      return res.status(500).json({ success: false, error: 'Could not fetch exchange rates' });
     }
   });
 
@@ -3572,10 +3572,10 @@ export function registerStripeBillingRoutes(app) {
         .toLowerCase();
       const amount = Number(req.query?.amount);
       if (!/^[a-z]{3}$/.test(from) || !/^[a-z]{3}$/.test(to)) {
-        return res.status(400).json({ success: false, error: 'Некорректные валюты' });
+        return res.status(400).json({ success: false, error: 'Invalid currencies' });
       }
       if (!Number.isFinite(amount) || amount < 0) {
-        return res.status(400).json({ success: false, error: 'Некорректная сумма' });
+        return res.status(400).json({ success: false, error: 'Invalid amount' });
       }
       const converted = await convertCurrencyMajor(amount, from, to);
       return res.json({
@@ -3589,7 +3589,7 @@ export function registerStripeBillingRoutes(app) {
       });
     } catch (err) {
       console.error('[Stripe] fx convert:', err?.message || err);
-      return res.status(500).json({ success: false, error: 'Не удалось конвертировать сумму' });
+      return res.status(500).json({ success: false, error: 'Could not convert the amount' });
     }
   });
 
@@ -3598,7 +3598,7 @@ export function registerStripeBillingRoutes(app) {
     try {
       const userId = parseInt(req.params.userId, 10);
       if (!Number.isFinite(userId)) {
-        return res.status(400).json({ success: false, error: 'Некорректный userId' });
+        return res.status(400).json({ success: false, error: 'Invalid userId' });
       }
       const state = await stripeSubscriptionQueries.getStateByUserId(userId);
       const payments = await stripeSubscriptionQueries.listPaymentsByUserId(userId, 50);
@@ -3623,7 +3623,7 @@ export function registerStripeBillingRoutes(app) {
     try {
       const userId = parseInt(req.params.userId, 10);
       if (!Number.isFinite(userId)) {
-        return res.status(400).json({ success: false, error: 'Некорректный userId' });
+        return res.status(400).json({ success: false, error: 'Invalid userId' });
       }
       const rows = await stripeSubscriptionQueries.listReservationPurchasesByUserId(userId, 100);
       const items = await Promise.all(

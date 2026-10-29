@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { Check, Circle } from 'lucide-react'
 import { FiCalendar } from 'react-icons/fi'
@@ -17,10 +18,11 @@ export default function TestDriveSection({
   propertyTable,
   propertyType,
   hasTestDrive,
-  i18nLang,
+  i18nLang: _i18nLang,
   layout = 'default',
   paused = false,
 }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [eligibility, setEligibility] = useState({
@@ -66,7 +68,6 @@ export default function TestDriveSection({
 
   if (!hasTestDrive) return null
 
-  const ru = !i18nLang || i18nLang.startsWith('ru')
   const allDone = eligibility.can_request
 
   const isPromoLayout = layout === 'promo'
@@ -78,19 +79,17 @@ export default function TestDriveSection({
     >
       {paused && !isPromoLayout ? (
         <div className="property-detail-test-drive__paused" role="status">
-          <span>{ru ? 'Тест-драйв приостановлен' : 'Test drive paused'}</span>
+          <span>{t('testDrivePaused')}</span>
         </div>
       ) : null}
       {!isPromoLayout ? (
       <h3 className="property-detail-info-block__title">
-        {ru ? 'Тест-драйв' : 'Test drive'}
+        {t('testDriveSectionTitle')}
       </h3>
       ) : null}
       {!isPromoLayout ? (
       <p className="property-detail-test-drive__intro">
-        {ru
-          ? 'Тест-драйв — возможность прожить в объекте перед сделкой. Выберите от 5 до 21 календарного дня подряд, согласуйте заезд с владельцем и оплатите проживание.'
-          : 'Test drive lets you stay in the property before you buy. Pick 5–21 consecutive calendar days, coordinate with the owner, and pay for the stay.'}
+        {t('testDriveSectionIntro')}
       </p>
       ) : null}
 
@@ -103,9 +102,7 @@ export default function TestDriveSection({
             <Circle className="property-detail-test-drive__circle" size={18} />
           )}
           <span>
-            {ru
-              ? 'Депозит на платформе пополнен: баланс депозита больше нуля'
-              : 'Your platform deposit is funded: deposit balance is above zero'}
+            {t('testDriveDepositCondition')}
           </span>
         </li>
       </ul>
@@ -133,22 +130,14 @@ export default function TestDriveSection({
           </span>
         ) : null}
         {loading
-          ? ru
-            ? 'Проверка…'
-            : 'Checking…'
+          ? t('testDriveChecking')
           : isPromoLayout
-            ? ru
-              ? 'Выбрать даты'
-              : 'Pick dates'
-            : ru
-              ? 'Выбрать даты тест-драйва'
-              : 'Choose test drive dates'}
+            ? t('testDrivePickDates')
+            : t('testDriveChooseDates')}
       </button>
       {!paused && !allDone && !loading && (
         <p className="property-detail-test-drive__hint">
-          {ru
-            ? 'Пополните депозит на платформе, чтобы активировать кнопку.'
-            : 'Top up your platform deposit to enable the button.'}
+          {t('testDriveDepositHint')}
         </p>
       )}
     </div>

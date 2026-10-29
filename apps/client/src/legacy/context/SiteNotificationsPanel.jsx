@@ -87,9 +87,7 @@ function notificationRelativeTime(notification, t, locale) {
 }
 
 function notificationNextStep(notification, dataObj, t) {
-  const explicit = dataObj?.next_step ?? dataObj?.nextStep
-  if (typeof explicit === 'string' && explicit.trim()) return explicit.trim()
-
+  // Prefer type-based i18n so stored RU/EN next_step from the API does not leak into other locales.
   switch (String(notification?.type || '').toLowerCase()) {
     case 'test_drive_request':
       return t('notificationsNext_testDriveRequest', {
@@ -162,8 +160,11 @@ function notificationNextStep(notification, dataObj, t) {
       return t('notificationsNext_propertyRejected', {
         defaultValue: 'Check the reason and resubmit the listing after fixes.',
       })
-    default:
+    default: {
+      const explicit = dataObj?.next_step ?? dataObj?.nextStep
+      if (typeof explicit === 'string' && explicit.trim()) return explicit.trim()
       return null
+    }
   }
 }
 
@@ -224,7 +225,7 @@ function NotificationItem({
         <button
           type="button"
           className="notification-item__dismiss"
-          aria-label={t('notificationsMarkRead', 'Отметить прочитанным')}
+          aria-label={t('notificationsMarkRead', 'Mark as read')}
           onClick={(event) => {
             event.stopPropagation()
             handleNotificationView(notification.id)
@@ -253,7 +254,7 @@ function NotificationItem({
         ) : null}
         {nextStep ? (
           <div className="notification-item__next-step">
-            <span className="notification-item__next-label">{t('notificationsNextStep', 'Что сделать')}</span>
+            <span className="notification-item__next-label">{t('notificationsNextStep', 'What to do')}</span>
             <p className="notification-item__next-copy">{nextStep}</p>
           </div>
         ) : null}
@@ -265,14 +266,14 @@ function NotificationItem({
               className="notification-item__button notification-item__button--approve"
               onClick={() => respondTestDriveRequest(notification, 'approve')}
             >
-              <FiCheck aria-hidden />{t('approve', 'Подтвердить')}
+              <FiCheck aria-hidden />{t('approve', 'Approve')}
             </button>
             <button
               type="button"
               className="notification-item__button notification-item__button--secondary"
               onClick={() => respondTestDriveRequest(notification, 'reject')}
             >
-              {t('reject', 'Отклонить')}
+              {t('reject', 'Reject')}
             </button>
           </div>
         ) : notification.type === 'test_drive_survey' && (route || dataObj?.survey_token) ? (
@@ -287,7 +288,7 @@ function NotificationItem({
                 )
               }}
             >
-              {dataObj?.action_label || t('tdSurvey_openFromNotification', 'Пройти опрос')}
+              {t('tdSurvey_openFromNotification')}
               <FiArrowRight aria-hidden />
             </button>
           </div>
@@ -327,7 +328,7 @@ function NotificationItem({
                 {displayLocation || propertyMeta.name}
               </span>
               <FiArrowRight className="notification-item__property-chevron" aria-hidden />
-              <span className="visually-hidden">{t('notificationsOutbidCta', 'К торгам')}</span>
+              <span className="visually-hidden">{t('notificationsOutbidCta', 'Back to auction')}</span>
             </button>
           ) : (
             <button
@@ -371,7 +372,12 @@ function NotificationItem({
         ) : route ? (
           <div className="notification-item__actions" onClick={(event) => event.stopPropagation()}>
             <button type="button" className="notification-item__button" onClick={() => openRoute(route)}>
-              {dataObj?.action_label || t('goTo')}<FiArrowRight aria-hidden />
+              {notification.type === 'buy_now_completed' || /purchased\//.test(String(route || ''))
+                ? t('buyerCabinet_sellProperty')
+                : notification.type === 'property_reservation_paid'
+                  ? t('notificationsTrackDeal', { defaultValue: 'Track the deal' })
+                  : t('goTo')}
+              <FiArrowRight aria-hidden />
             </button>
           </div>
         ) : null}
@@ -430,7 +436,7 @@ export default function SiteNotificationsPanel({
               <h2 id="notification-panel-title" className="notification-panel__title">{t('notifications')}</h2>
               {unreadCount > 0 ? (
                 <span className="notification-panel__unread">
-                  {t('notificationsNewCount', { count: unreadCount, defaultValue: '{{count}} новых' })}
+                  {t('notificationsNewCount', { count: unreadCount, defaultValue: '{{count}} new' })}
                 </span>
               ) : null}
             </div>
@@ -445,8 +451,8 @@ export default function SiteNotificationsPanel({
           ) : sortedNotifications.length === 0 ? (
             <div className="notification-panel__empty">
               <span className="notification-panel__empty-icon"><FiBell aria-hidden /></span>
-              <h3>{t('notificationsEmptyTitle', 'Пока нет уведомлений')}</h3>
-              <p>{t('notificationsEmptyDesc', 'Здесь появятся ставки, бронирования, оплаты и важные шаги по сделке.')}</p>
+              <h3>{t('notificationsEmptyTitle', 'No notifications yet')}</h3>
+              <p>{t('notificationsEmptyDesc', 'Bids, bookings, payments, and important deal steps will show up here.')}</p>
             </div>
           ) : (
             <section className="notification-panel__group" aria-label={t('notifications')}>

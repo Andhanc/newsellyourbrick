@@ -9,6 +9,11 @@ import {
   CATALOG_ROOM_OPTIONS,
   getCatalogFilterProfile,
 } from '../utils/catalogFilters'
+import {
+  getLocalizedCountryLabelFromOption,
+  normalizeCountryLocale,
+} from '../utils/localizeCountryName'
+import { getLocalizedRegionLabel } from '../utils/localizeBuyerNotification'
 import './AuctionDesktopFilters.css'
 
 function clamp(n, min, max) {
@@ -34,7 +39,11 @@ function CatalogDesktopFilters({
   variant = 'sidebar',
   locationOptions: locationOptionsFromParent,
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const countryLocale = useMemo(
+    () => normalizeCountryLocale(i18n.language),
+    [i18n.language],
+  )
   const [fetchedLocationOptions, setFetchedLocationOptions] = useState([])
   const locationOptions = locationOptionsFromParent ?? fetchedLocationOptions
   const [optionsLoading, setOptionsLoading] = useState(false)
@@ -97,7 +106,7 @@ function CatalogDesktopFilters({
       const country = locationOptions.find((c) => c.key === filters.country)
       chips.push({
         id: 'country',
-        label: country?.label || filters.country,
+        label: getLocalizedCountryLabelFromOption(country || { key: filters.country }, countryLocale),
         onRemove: () => patch({ country: '', region: '' }),
       })
     }
@@ -105,7 +114,7 @@ function CatalogDesktopFilters({
       const region = selectedCountry?.regions?.find((r) => r.key === filters.region)
       chips.push({
         id: 'region',
-        label: region?.label || filters.region,
+        label: getLocalizedRegionLabel(filters.region, region?.label || filters.region, t),
         onRemove: () => patch({ region: '' }),
       })
     }
@@ -153,6 +162,7 @@ function CatalogDesktopFilters({
     filters,
     locationOptions,
     selectedCountry,
+    countryLocale,
     priceBounds.min,
     priceBounds.max,
     onChange,
@@ -244,7 +254,7 @@ function CatalogDesktopFilters({
                 <option value="">{t('catalogFilterAll')}</option>
                 {locationOptions.map((country) => (
                   <option key={country.key} value={country.key}>
-                    {country.label}
+                    {getLocalizedCountryLabelFromOption(country, countryLocale)}
                   </option>
                 ))}
               </select>
@@ -260,7 +270,7 @@ function CatalogDesktopFilters({
                 <option value="">{t('catalogFilterAll')}</option>
                 {(selectedCountry?.regions || []).map((region) => (
                   <option key={region.key} value={region.key}>
-                    {region.label}
+                    {getLocalizedRegionLabel(region.key, region.label, t)}
                   </option>
                 ))}
               </select>

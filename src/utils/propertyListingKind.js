@@ -1,12 +1,25 @@
 import { hasBuyNowOption } from './hasBuyNowOption'
 
+const KIND_LABEL_KEYS = {
+  direct: 'listingKind_direct',
+  shares: 'listingKind_shares',
+  debt: 'listingKind_debt',
+  auction: 'listingKind_auction',
+  auction_buy_now: 'listingKind_auctionBuyNow',
+}
+
 /**
- * Тип размещения объекта для UI (доли, долги, аукцион, аукцион + buy now, прямая продажа).
- * Порядок проверок согласован с админским ObjectsList / главной.
+ * Listing kind for UI (shares, debts, auction, auction + buy now, direct).
+ * Order matches admin ObjectsList / home.
  */
 export function getPropertyListingKind(property) {
   if (!property) {
-    return { key: 'direct', label: 'Прямая продажа', classSuffix: 'direct' }
+    return {
+      key: 'direct',
+      labelKey: KIND_LABEL_KEYS.direct,
+      label: KIND_LABEL_KEYS.direct,
+      classSuffix: 'direct',
+    }
   }
 
   const isShare =
@@ -26,10 +39,20 @@ export function getPropertyListingKind(property) {
     property.has_debt === true
 
   if (isShare) {
-    return { key: 'shares', label: 'Доли', classSuffix: 'shares' }
+    return {
+      key: 'shares',
+      labelKey: KIND_LABEL_KEYS.shares,
+      label: KIND_LABEL_KEYS.shares,
+      classSuffix: 'shares',
+    }
   }
   if (isDebt) {
-    return { key: 'debt', label: 'Долги', classSuffix: 'debt' }
+    return {
+      key: 'debt',
+      labelKey: KIND_LABEL_KEYS.debt,
+      label: KIND_LABEL_KEYS.debt,
+      classSuffix: 'debt',
+    }
   }
 
   const isAuction =
@@ -41,12 +64,28 @@ export function getPropertyListingKind(property) {
     if (hasBuyNowOption(property)) {
       return {
         key: 'auction_buy_now',
-        label: 'Аукцион + купить сейчас',
+        labelKey: KIND_LABEL_KEYS.auction_buy_now,
+        label: KIND_LABEL_KEYS.auction_buy_now,
         classSuffix: 'auction-bn',
       }
     }
-    return { key: 'auction', label: 'Аукцион', classSuffix: 'auction' }
+    return {
+      key: 'auction',
+      labelKey: KIND_LABEL_KEYS.auction,
+      label: KIND_LABEL_KEYS.auction,
+      classSuffix: 'auction',
+    }
   }
 
-  return { key: 'direct', label: 'Прямая продажа', classSuffix: 'direct' }
+  return {
+    key: 'direct',
+    labelKey: KIND_LABEL_KEYS.direct,
+    label: KIND_LABEL_KEYS.direct,
+    classSuffix: 'direct',
+  }
+}
+
+export function getPropertyListingKindLabel(kind, t) {
+  const key = kind?.labelKey || kind?.label || KIND_LABEL_KEYS.direct
+  return typeof t === 'function' ? t(key) : key
 }

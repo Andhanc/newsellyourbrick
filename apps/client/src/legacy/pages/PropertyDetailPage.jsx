@@ -19,6 +19,8 @@ import {
   normalizePropertyTypeQueryParam,
   getPropertyDetailPath,
 } from '../utils/propertyDetailUrl'
+import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
+import { isShareListing } from '../utils/shareProperty'
 import {
   getPropertySlugFromRecord,
   isNumericPropertyRouteParam,
@@ -43,19 +45,19 @@ function normalizePropertyDetailType(prop) {
   return prop.property_type || prop.propertyType || 'apartment'
 }
 
-function buildBuyerDetailPreview({ auctionBuyNow = false } = {}) {
+function buildBuyerDetailPreview({ auctionBuyNow = false, t } = {}) {
   const base = properties.find((item) => item.id === 11) || properties[0] || {}
+  const translate = typeof t === 'function' ? t : (k) => k
 
   return {
     ...base,
     id: 900001,
-    title: 'Вилла с видом на Средиземное море',
-    name: 'Вилла с видом на Средиземное море',
-    description:
-      'Современная вилла в Марбелье с панорамной террасой, приватным бассейном и готовым интерьером. Объект прошёл проверку документов и доступен для онлайн-бронирования.',
-    location: 'Марбелья, Испания',
-    country: 'Испания',
-    city: 'Марбелья',
+    title: translate('buyerDetailPreview_title'),
+    name: translate('buyerDetailPreview_title'),
+    description: translate('buyerDetailPreview_description'),
+    location: translate('buyerDetailPreview_location'),
+    country: translate('buyerDetailPreview_country'),
+    city: translate('buyerDetailPreview_city'),
     price: 1240000,
     currentBid: auctionBuyNow ? 1100000 : 1240000,
     currency: 'EUR',
@@ -93,7 +95,7 @@ function buildBuyerDetailPreview({ auctionBuyNow = false } = {}) {
     seller: 'SellYourBrick Verified',
     moderation_status: 'approved',
     is_reserved: false,
-    amenities: ['Бассейн', 'Терраса', 'Охрана', 'Паркинг'],
+    amenities: [translate('amenityPool'), translate('amenityTerrace'), translate('amenitySecurity'), translate('amenityParking')],
   }
 }
 
@@ -187,7 +189,7 @@ const PropertyDetailPage = () => {
 
     const loadProperty = async () => {
       if (buyerDetailPreview) {
-        setProperty(buildBuyerDetailPreview({ auctionBuyNow: buyerDetailPreview === 'buy-now' }))
+        setProperty(buildBuyerDetailPreview({ t, auctionBuyNow: buyerDetailPreview === 'buy-now' }))
         setError(null)
         setIsLoading(false)
         return
@@ -195,6 +197,13 @@ const PropertyDetailPage = () => {
 
       // Если объект передан из state, используем его один раз как начальные данные
       if (propertyFromState && !initializedFromStateRef.current) {
+        if (isShareListing(propertyFromState)) {
+          navigate(getCoInvestmentDetailPath(propertyFromState), {
+            replace: true,
+            state: location.state,
+          })
+          return
+        }
         setProperty({
           ...propertyFromState,
           source_table: resolveSourceTableForDetail(propertyFromState),
@@ -226,7 +235,7 @@ const PropertyDetailPage = () => {
               navigate('/subscriptions', { replace: true })
               return
             }
-            if (isActive) setError('Ошибка при загрузке объявления')
+            if (isActive) setError(t('propertyDetailLoadError'))
             return
           }
           if (response.status === 404) {
@@ -422,7 +431,7 @@ const PropertyDetailPage = () => {
                 // Информация о продавце
                 seller: prop.first_name && prop.last_name 
                   ? `${prop.first_name} ${prop.last_name}` 
-                  : 'Продавец',
+                  : t('propertyDetailSellerFallback'),
                 sellerEmail: prop.email || null,
                 sellerPhone: prop.phone_number || null,
                 // Документы
@@ -449,11 +458,20 @@ const PropertyDetailPage = () => {
                 reservation_time_remaining: prop.reservation_time_remaining || null,
               }
               if (isActive) {
+                // Долевые объекты — новый ShareDetail layout, старый /property chrome не показываем.
+                if (isShareListing(prop) || isShareListing(formattedProperty)) {
+                  navigate(getCoInvestmentDetailPath({ ...prop, ...formattedProperty }), {
+                    replace: true,
+                    state: location.state,
+                  })
+                  return
+                }
                 setProperty(formattedProperty)
                 const canonicalSlug = getPropertySlugFromRecord(prop)
                 if (canonicalSlug && isNumericPropertyRouteParam(routeId)) {
                   const canonicalPath = getPropertyDetailPath({ ...prop, slug: canonicalSlug }, {
                     classic: new URLSearchParams(location.search || '').get('classic') === '1',
+                    forcePropertyPath: true,
                   })
                   navigate(canonicalPath, { replace: true, state: location.state })
                   return
@@ -474,12 +492,12 @@ const PropertyDetailPage = () => {
               if (isActive) setNotFound(true)
             }
           } else {
-            if (isActive) setError('Ошибка при загрузке объявления')
+            if (isActive) setError(t('propertyDetailLoadError'))
           }
         } catch (err) {
           if (err?.name !== 'AbortError' && isActive) {
             console.error('Ошибка загрузки объявления:', err)
-            setError('Ошибка при загрузке объявления')
+            setError(t('propertyDetailLoadError'))
           }
         } finally {
           if (isActive) setIsLoading(false)
@@ -518,12 +536,12 @@ const PropertyDetailPage = () => {
           <Suspense fallback={null}>
           <BuyerEmptyState
             icon={Building2}
-            eyebrow="Продолжим выбор"
-            title="Объект временно недоступен"
-            description="Не удалось обновить данные этого объявления. Вернитесь к проверенным объектам — фильтры и навигация останутся под рукой."
-            primaryLabel="Вернуться к объектам"
+            eyebrow={t('propertyDetailUnavailableEyebrow')}
+            title={t('propertyDetailUnavailableTitle')}
+            description={t('propertyDetailUnavailableDescription')}
+            primaryLabel={t('propertyDetailUnavailablePrimary')}
             onPrimary={() => navigate('/auction')}
-            secondaryLabel="Все направления"
+            secondaryLabel={t('propertyDetailUnavailableSecondary')}
             onSecondary={() => navigate('/sections')}
           />
           </Suspense>

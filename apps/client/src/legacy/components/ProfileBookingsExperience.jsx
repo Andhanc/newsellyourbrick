@@ -116,14 +116,16 @@ function BookingDetailsDrawer({ ticket, moneyLocale, onClose, onCheckIn, onCance
 
         <div className="profile-booking-drawer__body">
           <div className="profile-booking-drawer__property">
-            <h5>{ticket.title}</h5>
+            <h5>
+              {ticket.titleKey ? t(ticket.titleKey, ticket.titleParams || {}) : ticket.title}
+            </h5>
             {ticket.property_location ? (
               <p><FiMapPin size={15} aria-hidden />{ticket.property_location}</p>
             ) : null}
           </div>
 
           <div className="profile-booking-drawer__facts">
-            <div><FiCalendar size={17} aria-hidden /><span>{t('profileBookings_period')}<strong>{ticket.dateRange}</strong></span></div>
+            <div><FiCalendar size={17} aria-hidden /><span>{t('profileBookings_period')}<strong>{ticket.dateRangeKey ? t(ticket.dateRangeKey) : ticket.dateRange}</strong></span></div>
             <div><FiClock size={17} aria-hidden /><span>{t('profileBookings_duration')}<strong>{formatDaysLabel(ticket.days, t)}</strong></span></div>
             <div><FiCreditCard size={17} aria-hidden /><span>{t('profileBookings_paid')}<strong>{paid}</strong></span></div>
             <div><FiShield size={17} aria-hidden /><span>{t('profileBookings_insuranceDeposit')}<strong>{insurance}</strong></span></div>
@@ -184,16 +186,25 @@ function BookingTicket({ booking, locale, onOpen }) {
             <span className="profile-booking-pass__booking-id">
               {t('profileBookings_bookingNumber', { id: ticket.id })}
             </span>
-            <h4>{ticket.title}</h4>
+            <h4>
+              {ticket.titleKey ? t(ticket.titleKey, ticket.titleParams || {}) : ticket.title}
+            </h4>
             {ticket.property_location ? (
               <p><FiMapPin size={13} aria-hidden />{ticket.property_location}</p>
             ) : null}
-            <span className="profile-booking-pass__dates">{ticket.dateRange}</span>
+            <span className="profile-booking-pass__dates">
+              {ticket.dateRangeKey ? t(ticket.dateRangeKey) : ticket.dateRange}
+            </span>
           </div>
         </div>
         <div className="profile-booking-pass__tear" aria-hidden><span /><span /></div>
         <div className="profile-booking-pass__facts">
-          <div><span>{t('profileBookings_checkInLabel')}</span><strong>{ticket.day} {ticket.month}</strong></div>
+          <div>
+            <span>{t('profileBookings_checkInLabel')}</span>
+            <strong>
+              {ticket.day} {ticket.monthKey ? t(ticket.monthKey) : ticket.month}
+            </strong>
+          </div>
           <div><span>{t('profileBookings_year')}</span><strong>{ticket.year}</strong></div>
           <div><span>{t('profileBookings_periodShort')}</span><strong>{formatDaysLabel(ticket.days, t)}</strong></div>
           <div><span>{t('profileBookings_status')}</span><strong>{getStatusLabel(ticket.statusKey, t)}</strong></div>

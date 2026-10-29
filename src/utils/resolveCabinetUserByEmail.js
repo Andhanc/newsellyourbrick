@@ -6,8 +6,8 @@ export function normalizeOAuthCabinetRole(role) {
 }
 
 /**
- * Кабинет для Clerk-синхронизации: не подменять активную сессию продавца
- * кабинетом покупателя с тем же email (и наоборот).
+ * Cabinet role for Clerk sync: do not replace an active seller session
+ * with a buyer cabinet that shares the same email (and vice versa).
  */
 export function resolveClerkSyncCabinetRole({
   oauthRole = null,
@@ -23,8 +23,8 @@ export function resolveClerkSyncCabinetRole({
 }
 
 /**
- * Находит пользователя в БД для выбранного кабинета (покупатель или продавец) по email.
- * При двух кабинетах на один email возвращает нужную запись, а не первую попавшуюся.
+ * Finds the DB user for the chosen cabinet (buyer or seller) by email.
+ * When two cabinets share an email, returns the matching role row — not the first hit.
  */
 export async function fetchCabinetUserByEmail(email, intendedRole = 'buyer', apiBase = getApiBaseUrlSync()) {
   const emailLower = String(email || '').trim().toLowerCase()
@@ -60,7 +60,7 @@ export async function fetchCabinetUserByEmail(email, intendedRole = 'buyer', api
   return userData.data
 }
 
-/** Есть ли хотя бы один кабинет (покупатель или продавец) с этим email. */
+/** Whether any cabinet (buyer or seller) exists for this email. */
 export async function hasAnyCabinetUserByEmail(email, apiBase = getApiBaseUrlSync()) {
   const emailLower = String(email || '').trim().toLowerCase()
   if (!emailLower) return false
@@ -74,7 +74,7 @@ export async function hasAnyCabinetUserByEmail(email, apiBase = getApiBaseUrlSyn
   return Boolean(linkedData.buyer || linkedData.seller)
 }
 
-/** Собирает объект для saveUserData из строки БД + данных Clerk OAuth. */
+/** Builds a saveUserData payload from a DB row + Clerk OAuth overlay. */
 export function mapDbUserToSessionUser(dbUser, clerkOverlay = {}) {
   if (!dbUser?.id) return null
 
@@ -84,7 +84,7 @@ export function mapDbUserToSessionUser(dbUser, clerkOverlay = {}) {
     [dbUser.first_name, dbUser.last_name].filter(Boolean).join(' ').trim() ||
     clerkOverlay.name ||
     dbUser.email ||
-    'Пользователь'
+    'User'
 
   return {
     name,

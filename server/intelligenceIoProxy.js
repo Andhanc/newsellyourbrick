@@ -45,10 +45,10 @@ export function registerIntelligenceIoProxy(app) {
               : String(errObj?.message || parsed?.details?.error?.message || '')
           if (upstream.status === 402 || /PAYMENT_REQUIRED|budget too low|Insufficient/i.test(errMsg)) {
             message =
-              'AI-провайдер вернул 402 (нужны кредиты/Pollen). Добавьте OPENROUTER_API_KEY или GROQ_API_KEY в .env, либо пополните ключ Pollinations на enter.pollinations.ai.'
+              'AI provider returned 402 (credits/Pollen required). Add OPENROUTER_API_KEY or GROQ_API_KEY in .env, or top up Pollinations at enter.pollinations.ai.'
           } else if (parsed?.deprecation_notice && provider.id === 'pollinations' && provider.apiKey) {
             message =
-              'Ошибка Pollinations API. Уберите POLLINATIONS_API_KEY из .env (для тестов ключ не нужен) и перезапустите npm start.'
+              'Pollinations API error. Remove POLLINATIONS_API_KEY from .env (not needed for tests) and restart npm start.'
           } else if (errMsg) {
             message = errMsg
           } else if (parsed?.error) {

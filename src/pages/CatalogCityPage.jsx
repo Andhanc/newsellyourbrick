@@ -18,6 +18,7 @@ import {
 } from '../utils/catalogGeoUrl'
 import CatalogCityInternalLinks from '../components/CatalogCityInternalLinks'
 import { getCanonicalRegionLabel, matchCountryKey, getCountryLabel } from '../utils/propertySearchLocation'
+import { getLocalizedRegionLabel } from '../utils/localizeBuyerNotification'
 import { usePageSeoOverride } from '../context/PageSeoContext'
 import NotFoundPage from '../components/NotFoundPage'
 import { buildCatalogPageSeo } from '../utils/pageSeoBuilders'
@@ -44,7 +45,7 @@ function isShareListing(property) {
 }
 
 const CatalogCityPage = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const params = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -117,6 +118,16 @@ const CatalogCityPage = () => {
     setCurrentPage(1)
   }, [route.country, route.city, route.typePlural, sale])
 
+  const countryLabel = useMemo(() => {
+    const key = matchCountryKey(route.country) || route.country
+    return getCountryLabel(key, route.country, i18n.language)
+  }, [route.country, i18n.language])
+
+  const localizedCityLabel = useMemo(
+    () => getLocalizedRegionLabel(route.city, cityLabel, t),
+    [route.city, cityLabel, t, i18n.language],
+  )
+
   const catalogSeo = useMemo(() => {
     if (!countryValid || !typeValid) return null
     return buildCatalogPageSeo(
@@ -125,17 +136,13 @@ const CatalogCityPage = () => {
         city: route.city,
         typePlural: route.typePlural,
         sale,
-        cityLabel,
+        cityLabel: localizedCityLabel,
+        locale: i18n.language,
       },
       t,
     )
-  }, [countryValid, typeValid, route.country, route.city, route.typePlural, sale, cityLabel, t])
+  }, [countryValid, typeValid, route.country, route.city, route.typePlural, sale, localizedCityLabel, t, i18n.language])
   usePageSeoOverride(catalogSeo)
-
-  const countryLabel = useMemo(() => {
-    const key = matchCountryKey(route.country) || route.country
-    return getCountryLabel(key, route.country)
-  }, [route.country])
 
   const openProperty = (property) => {
     if (!ensureCanOpenProperty()) return
@@ -169,7 +176,7 @@ const CatalogCityPage = () => {
             <span aria-hidden>/</span>
             <Link to={basePath}>{countryLabel}</Link>
             <span aria-hidden>/</span>
-            <Link to={basePath}>{cityLabel}</Link>
+            <Link to={basePath}>{localizedCityLabel}</Link>
             {route.typePlural ? (
               <>
                 <span aria-hidden>/</span>
@@ -195,21 +202,21 @@ const CatalogCityPage = () => {
             <div className="catalog-city__mobile-hero-content">
               <p><MapPin size={14} aria-hidden /> {countryLabel}</p>
               <h1 id="catalog-city-mobile-title">
-                {cityLabel}
+                {localizedCityLabel}
                 {route.typePlural
                   ? ` — ${CATALOG_TYPE_I18N[route.typePlural] ? t(CATALOG_TYPE_I18N[route.typePlural]) : route.typePlural}`
                   : ''}
               </h1>
-              <span>{properties.length} {t('mapFiltersObjects', { defaultValue: 'объектов' })}</span>
+              <span>{properties.length} {t('mapFiltersObjects')}</span>
             </div>
-            <Link to="/map" className="catalog-city__map-link" aria-label="Показать объекты на карте">
+            <Link to="/map" className="catalog-city__map-link" aria-label={t('catalogCity_mapAria')}>
               <Map size={18} aria-hidden />
-              <span>Карта</span>
+              <span>{t('catalogCity_mapLabel')}</span>
             </Link>
           </section>
 
           <h1 className="catalog-city__title">
-            {cityLabel}
+            {localizedCityLabel}
             {route.typePlural
               ? ` — ${CATALOG_TYPE_I18N[route.typePlural] ? t(CATALOG_TYPE_I18N[route.typePlural]) : route.typePlural}`
               : ''}
@@ -290,7 +297,7 @@ const CatalogCityPage = () => {
             country={route.country}
             city={route.city}
             typePlural={route.typePlural}
-            cityLabel={cityLabel}
+            cityLabel={localizedCityLabel}
           />
         </div>
       </main>

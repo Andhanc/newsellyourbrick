@@ -8,6 +8,7 @@ import {
   validatePassword,
   validateEmail,
 } from '../services/authService'
+import { formatPasswordValidationMessage } from '../utils/passwordValidationMessage'
 import './ForgotPasswordModal.css'
 
 const CODE_LENGTH = 4
@@ -186,7 +187,7 @@ export default function ForgotPasswordModal({
 
     const validation = validatePassword(password)
     if (!validation.valid) {
-      setError(validation.message)
+      setError(formatPasswordValidationMessage(validation, t))
       return
     }
 
@@ -210,7 +211,7 @@ export default function ForgotPasswordModal({
       if (err.status === 'password_same_as_other') {
         setError(err.message)
       } else if (err.passwordValidation) {
-        setError(err.message)
+        setError(formatPasswordValidationMessage(err.passwordValidation, t))
       } else {
         setError(err.message || t('forgotPassword_saveError'))
       }

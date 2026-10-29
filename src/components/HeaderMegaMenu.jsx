@@ -402,7 +402,7 @@ export default function HeaderMegaMenu({
                   <span className="header-mega-menu__link-label">{t(link.labelKey)}</span>
                   {locked ? (
                     <span className="header-mega-menu__link-lock">
-                      {t('softLaunchUnavailableBadge', { defaultValue: 'Пока недоступно' })}
+                      {t('softLaunchUnavailableBadge', { defaultValue: 'Unavailable for now' })}
                     </span>
                   ) : null}
                 </button>

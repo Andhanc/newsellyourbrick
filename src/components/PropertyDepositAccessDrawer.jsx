@@ -1,12 +1,14 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { FiArrowRight, FiCheck, FiX } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 import { sheetHandleDragProps, useBottomSheetDrag } from '../hooks/useBottomSheetDrag'
 import { useDrawerDismiss } from '../hooks/useDrawerDismiss'
 import '../styles/drawerDismiss.css'
 import './PropertyDepositAccessDrawer.css'
 
 export default function PropertyDepositAccessDrawer({ isOpen, onClose, onGoToDeposit }) {
+  const { t } = useTranslation()
   const closeButtonRef = useRef(null)
   const { visible, isClosing, requestClose } = useDrawerDismiss(isOpen, onClose)
   const sheetDrag = useBottomSheetDrag({
@@ -43,7 +45,7 @@ export default function PropertyDepositAccessDrawer({ isOpen, onClose, onGoToDep
         type="button"
         className={`property-deposit-drawer__backdrop${isClosing ? ' drawer-dismiss-backdrop--closing' : ''}`}
         onClick={() => requestClose()}
-        aria-label="Закрыть окно"
+        aria-label={t('depositAccess_closeWindowAria')}
       />
       <section
         ref={sheetDrag.panelRef}
@@ -61,7 +63,7 @@ export default function PropertyDepositAccessDrawer({ isOpen, onClose, onGoToDep
           type="button"
           className="property-deposit-drawer__close"
           onClick={() => requestClose()}
-          aria-label="Закрыть"
+          aria-label={t('close')}
         >
           <FiX size={21} />
         </button>
@@ -74,18 +76,18 @@ export default function PropertyDepositAccessDrawer({ isOpen, onClose, onGoToDep
           />
         </div>
         <div className="property-deposit-drawer__content">
-          <span className="property-deposit-drawer__eyebrow">Безопасный доступ</span>
-          <h2 id="property-deposit-drawer-title">Откройте все детали объекта</h2>
-          <p>Пополните депозит, чтобы увидеть документы и точное расположение объекта.</p>
+          <span className="property-deposit-drawer__eyebrow">{t('depositAccess_eyebrow')}</span>
+          <h2 id="property-deposit-drawer-title">{t('depositAccess_title')}</h2>
+          <p>{t('depositAccess_text')}</p>
           <ul>
-            <li><FiCheck size={16} aria-hidden /> Проверенные документы</li>
-            <li><FiCheck size={16} aria-hidden /> Точка объекта на карте</li>
+            <li><FiCheck size={16} aria-hidden /> {t('depositAccess_benefitDocs')}</li>
+            <li><FiCheck size={16} aria-hidden /> {t('depositAccess_benefitMap')}</li>
           </ul>
           <button type="button" className="property-deposit-drawer__cta" onClick={goToDeposit}>
-            Пополнить депозит
+            {t('depositAccess_cta')}
             <FiArrowRight size={19} aria-hidden />
           </button>
-          <span className="property-deposit-drawer__note">Средства остаются на вашем балансе</span>
+          <span className="property-deposit-drawer__note">{t('depositAccess_note')}</span>
         </div>
       </section>
     </div>,

@@ -6,28 +6,28 @@ export function buildVerificationRejectedCopy(rejectionReason, { siteUrl } = {})
   const reason =
     rejectionReason && String(rejectionReason).trim() ? String(rejectionReason).trim() : null;
   const base = String(siteUrl || resolvePublicFrontendBase()).replace(/\/+$/, '');
-  const subject = 'Верификация отклонена — SellYourBrick';
+  const subject = 'Verification rejected — SellYourBrick';
 
   const reasonLine = reason
-    ? `Ваша верификация была отклонена администратором. Причина: ${reason}.`
-    : 'Ваша верификация была отклонена администратором.';
+    ? `Your verification was rejected by an administrator. Reason: ${reason}.`
+    : 'Your verification was rejected by an administrator.';
 
   const emailBody = [
-    'Здравствуйте!',
+    'Hello!',
     '',
     reasonLine,
     '',
-    'Пожалуйста, пройдите верификацию повторно на сайте: загрузите фото паспорта, селфи и селфи с паспортом.',
-    'После повторной отправки документы снова попадут на проверку в админку.',
+    'Please complete verification again on the site: upload a passport photo, a selfie, and a selfie with your passport.',
+    'After you resubmit, the documents will go back to admin review.',
     '',
-    `Открыть сайт: ${base}`,
+    `Open the site: ${base}`,
     '',
     'SellYourBrick',
   ].join('\n');
 
   const whatsappBody = reason
-    ? `❌ Верификация отклонена\n\nПричина: ${reason}\n\nПройдите верификацию повторно на сайте — загрузите паспорт, селфи и селфи с паспортом. После отправки документы снова попадут на проверку.\n\n${base}`
-    : `❌ Верификация отклонена\n\nПройдите верификацию повторно на сайте — загрузите паспорт, селфи и селфи с паспортом. После отправки документы снова попадут на проверку.\n\n${base}`;
+    ? `❌ Verification rejected\n\nReason: ${reason}\n\nPlease complete verification again on the site — upload a passport photo, a selfie, and a selfie with your passport. After you resubmit, the documents will go back to review.\n\n${base}`
+    : `❌ Verification rejected\n\nPlease complete verification again on the site — upload a passport photo, a selfie, and a selfie with your passport. After you resubmit, the documents will go back to review.\n\n${base}`;
 
   return { subject, emailBody, whatsappBody, reason };
 }

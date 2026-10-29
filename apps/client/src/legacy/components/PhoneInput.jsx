@@ -1,6 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FiChevronDown } from 'react-icons/fi'
 import { detectPhoneDialByGeo, pickPhoneCountryFromDial } from '../utils/detectPhoneCountryByGeo'
+import {
+  getLocalizedCountryName,
+  normalizeCountryLocale,
+} from '../utils/localizeCountryName'
 
 
 // Полный список всех стран с телефонными кодами
@@ -220,8 +225,14 @@ const PhoneInput = ({
   disabled,
   autoDetectCountry = false,
   variant = 'default',
-  placeholder = 'Укажите свой номер телефона',
+  placeholder = null,
 }) => {
+  const { t, i18n } = useTranslation()
+  const locale = useMemo(
+    () => normalizeCountryLocale(i18n.language || 'ru'),
+    [i18n.language],
+  )
+  const localizePhoneCountry = (name) => getLocalizedCountryName(name, locale)
   const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES.find(c => c.code === '1') || COUNTRY_CODES[0]) // США по умолчанию
   const [phoneNumber, setPhoneNumber] = useState('')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -319,11 +330,16 @@ const PhoneInput = ({
     }
   }, [isDropdownOpen])
 
-  // Фильтрация стран по поисковому запросу
-  const filteredCountries = COUNTRY_CODES.filter(country =>
-    country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    country.code.includes(searchQuery)
-  )
+  // Фильтрация стран по поисковому запросу (локализованное имя + код)
+  const filteredCountries = COUNTRY_CODES.filter((country) => {
+    const q = searchQuery.toLowerCase()
+    const localized = localizePhoneCountry(country.name).toLowerCase()
+    return (
+      localized.includes(q) ||
+      country.name.toLowerCase().includes(q) ||
+      country.code.includes(searchQuery)
+    )
+  })
 
   const parsePhoneNumber = (phone) => {
     // Удаляем все нецифровые символы, кроме +
@@ -438,7 +454,7 @@ const PhoneInput = ({
           className="phone-input-country-selector"
           onClick={() => !disabled && setIsDropdownOpen(!isDropdownOpen)}
           disabled={disabled}
-          aria-label="Код страны"
+          aria-label={t('phoneCountryCodeAria')}
           aria-expanded={isDropdownOpen}
         >
           <span className="phone-input-flag">{selectedCountry.flag}</span>
@@ -464,7 +480,7 @@ const PhoneInput = ({
                 ref={searchInputRef}
                 type="text"
                 className="phone-input-search-input"
-                placeholder="Поиск страны..."
+                placeholder={t('buyerData_countrySearchPlaceholder', { defaultValue: 'Search country...' })}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onClick={(e) => e.stopPropagation()}
@@ -480,13 +496,13 @@ const PhoneInput = ({
                     onClick={() => handleCountrySelect(country)}
                   >
                     <span className="phone-input-flag">{country.flag}</span>
-                    <span className="phone-input-country-name">{country.name}</span>
+                    <span className="phone-input-country-name">{localizePhoneCountry(country.name)}</span>
                     <span className="phone-input-country-code">+{country.code}</span>
                   </button>
                 ))
               ) : (
                 <div className="phone-input-no-results">
-                  Страны не найдены
+                  {t('countryNoResults', { defaultValue: 'No countries found' })}
                 </div>
               )}
             </div>
@@ -511,7 +527,7 @@ const PhoneInput = ({
               },
             })
           }}
-          placeholder={placeholder}
+          placeholder={placeholder ?? t('phoneInputPlaceholder', { defaultValue: 'Enter your phone number' })}
           disabled={disabled}
           maxLength={20}
         />

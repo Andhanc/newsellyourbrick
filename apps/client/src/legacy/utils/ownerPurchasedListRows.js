@@ -15,7 +15,7 @@ const SHARE_IMAGE_FALLBACK =
 
 export const PURCHASED_TAB_ID = 'purchased'
 
-export function formatOwnerPurchaseMoney(amount, currency = 'USD', locale = 'ru-RU') {
+export function formatOwnerPurchaseMoney(amount, currency = 'USD', locale = 'en-US') {
   const symbol = getCurrencySymbol(currency)
   const n = Number(amount)
   if (!Number.isFinite(n)) return '—'
@@ -112,7 +112,7 @@ function buildPurchasedRow({
   }
 }
 
-export function mapAuctionWinToOwnerListRow(winner, { locale = 'ru-RU', fallbackTitle = 'Объект' } = {}) {
+export function mapAuctionWinToOwnerListRow(winner, { locale = 'en-US', fallbackTitle = 'Property' } = {}) {
   const property = winner?.property || {}
   const propertyId = winner?.property_id
   const currency = winner?.currency || property.currency || 'USD'
@@ -144,7 +144,7 @@ export function mapAuctionWinToOwnerListRow(winner, { locale = 'ru-RU', fallback
 
 export function mapReservationToOwnerListRow(
   row,
-  { locale = 'ru-RU', completedPurchaseRequestIds = null, fallbackTitle = 'Объект' } = {},
+  { locale = 'en-US', completedPurchaseRequestIds = null, fallbackTitle = 'Property' } = {},
 ) {
   const purchase = mapReservationPurchase(row)
   const billing = row?.billing && typeof row.billing === 'object' ? row.billing : {}
@@ -188,7 +188,7 @@ export function mapReservationToOwnerListRow(
   })
 }
 
-export function mapSharePurchaseToOwnerListRow(row, { locale = 'ru-RU', fallbackTitle = 'Объект' } = {}) {
+export function mapSharePurchaseToOwnerListRow(row, { locale = 'en-US', fallbackTitle = 'Property' } = {}) {
   const pid = row?.property_id
   const currency = String(row?.currency || 'USD').toUpperCase()
   const priceAmount = Number(row?.total_price ?? row?.total_paid)

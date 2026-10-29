@@ -38,7 +38,7 @@ import {
   getPropertyCardImage,
   PROPERTY_CARD_IMAGE_FALLBACK,
 } from '../utils/propertyImage'
-import { visibleAssistantButtons } from '../utils/siteAssistantHelpers'
+import { getSiteLinkLabel, visibleAssistantButtons } from '../utils/siteAssistantHelpers'
 import { WhatsAppIcon, TelegramIcon } from './icons/ContactChannelIcons'
 
 const STARTERS = [
@@ -346,7 +346,13 @@ export default function AiChatPanel({
                       <div><span>{t('chatYieldMonthly')}</span><strong>{formatEuro(message.yieldEstimate.monthlyIncome)}</strong></div>
                       <div><span>{t('chatYieldRate')}</span><strong>{message.yieldEstimate.yieldPercent}%</strong></div>
                     </div>
-                    {message.yieldEstimate.note ? <p className="chat-widget__yield-note">{message.yieldEstimate.note}</p> : null}
+                    {message.yieldEstimate.note ? (
+                      <p className="chat-widget__yield-note">
+                        {String(message.yieldEstimate.note).includes('_') && !String(message.yieldEstimate.note).includes(' ')
+                          ? t(message.yieldEstimate.note)
+                          : message.yieldEstimate.note}
+                      </p>
+                    ) : null}
                     <button type="button" className="chat-widget__yield-cta" onClick={() => openNavigationPath('/calculator')}>
                       {t('chatYieldInvestorCta')} <FiArrowRight aria-hidden />
                     </button>
@@ -367,7 +373,7 @@ export default function AiChatPanel({
                             onClick={() => openNavigationPath(nav.path)}
                           >
                             <span className="chat-widget__navigation-icon"><Icon aria-hidden /></span>
-                            <span className="chat-widget__navigation-label">{nav.label}</span>
+                            <span className="chat-widget__navigation-label">{getSiteLinkLabel(nav, t)}</span>
                             <span className="chat-widget__navigation-arrow"><FiArrowRight aria-hidden /></span>
                           </button>
                         )

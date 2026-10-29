@@ -7,6 +7,11 @@ import {
   AUCTION_DESKTOP_PROPERTY_TYPE_ITEMS,
   AUCTION_DESKTOP_SALE_TYPE_ITEMS,
 } from '../utils/auctionDesktopFilterMatch'
+import {
+  getLocalizedCountryLabelFromOption,
+  normalizeCountryLocale,
+} from '../utils/localizeCountryName'
+import { getLocalizedRegionLabel } from '../utils/localizeBuyerNotification'
 import './AuctionDesktopFilters.css'
 
 const PROPERTY_TYPE_ITEMS = AUCTION_DESKTOP_PROPERTY_TYPE_ITEMS
@@ -44,7 +49,11 @@ function AuctionDesktopFilters({
   onApply,
   variant = 'sidebar',
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const countryLocale = useMemo(
+    () => normalizeCountryLocale(i18n.language),
+    [i18n.language],
+  )
 
   const activeSectionKeys = useMemo(() => {
     const keys = []
@@ -107,8 +116,11 @@ function AuctionDesktopFilters({
       }
     })
     if (country) {
-      const countryLabel =
-        locationOptions.find((item) => item.key === country)?.label || country
+      const countryOpt = locationOptions.find((item) => item.key === country)
+      const countryLabel = getLocalizedCountryLabelFromOption(
+        countryOpt || { key: country },
+        countryLocale,
+      )
       chips.push({
         id: `country-${country}`,
         label: countryLabel,
@@ -120,7 +132,7 @@ function AuctionDesktopFilters({
     }
     if (city) {
       const cityLabel =
-        regionOptions.find((item) => item.key === city)?.label || city
+        getLocalizedRegionLabel(city, regionOptions.find((item) => item.key === city)?.label || city, t)
       chips.push({
         id: `city-${city}`,
         label: cityLabel,
@@ -169,6 +181,7 @@ function AuctionDesktopFilters({
     city,
     locationOptions,
     regionOptions,
+    countryLocale,
     setCountry,
     setCity,
     t,
@@ -274,7 +287,7 @@ function AuctionDesktopFilters({
                 <option value="">{t('catalogFilterAll')}</option>
                 {locationOptions.map((item) => (
                   <option key={item.key} value={item.key}>
-                    {item.label}
+                    {getLocalizedCountryLabelFromOption(item, countryLocale)}
                   </option>
                 ))}
               </select>
@@ -289,7 +302,7 @@ function AuctionDesktopFilters({
                 <option value="">{t('catalogFilterAll')}</option>
                 {regionOptions.map((item) => (
                   <option key={item.key} value={item.key}>
-                    {item.label}
+                    {getLocalizedRegionLabel(item.key, item.label, t)}
                   </option>
                 ))}
               </select>

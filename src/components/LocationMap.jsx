@@ -58,7 +58,7 @@ const LocationMap = ({
   const [mapFailed, setMapFailed] = useState(false)
   const [mapReady, setMapReady] = useState(false)
   const [activeMapType, setActiveMapType] = useState(mapType)
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const mapsLang = toYandexMapsLang(i18n.language)
   const mapTypeRef = useRef(activeMapType)
 
@@ -483,8 +483,8 @@ const LocationMap = ({
               type="button"
               className="location-map-controls-column__btn location-map-controls-column__btn--expand"
               onClick={toggleFullscreen}
-              aria-label={isFullscreen ? 'Свернуть карту' : 'Открыть карту'}
-              title={isFullscreen ? 'Свернуть карту' : 'Открыть карту'}
+              aria-label={isFullscreen ? t('locationMapCollapse') : t('locationMapExpand')}
+              title={isFullscreen ? t('locationMapCollapse') : t('locationMapExpand')}
             >
               {isFullscreen ? <FiMinimize2 size={16} /> : <FiMaximize2 size={16} />}
             </button>
@@ -493,8 +493,8 @@ const LocationMap = ({
             type="button"
             className="location-map-controls-column__btn"
             onClick={handleZoomIn}
-            aria-label="Увеличить"
-            title="Увеличить"
+            aria-label={t('locationMapZoomIn')}
+            title={t('locationMapZoomIn')}
           >
             +
           </button>
@@ -502,8 +502,8 @@ const LocationMap = ({
             type="button"
             className="location-map-controls-column__btn"
             onClick={handleZoomOut}
-            aria-label="Уменьшить"
-            title="Уменьшить"
+            aria-label={t('locationMapZoomOut')}
+            title={t('locationMapZoomOut')}
           >
             −
           </button>
@@ -524,8 +524,8 @@ const LocationMap = ({
             type="button"
             className="location-map-fullscreen-btn"
             onClick={toggleFullscreen}
-            aria-label={isFullscreen ? 'Свернуть карту' : 'Открыть карту'}
-            title={isFullscreen ? 'Свернуть карту' : 'Открыть карту'}
+            aria-label={isFullscreen ? t('locationMapCollapse') : t('locationMapExpand')}
+            title={isFullscreen ? t('locationMapCollapse') : t('locationMapExpand')}
           >
             {isFullscreen ? <FiMinimize2 size={15} /> : <FiMaximize2 size={15} />}
           </button>
@@ -533,8 +533,8 @@ const LocationMap = ({
       ))}
       {useDefaultZoom ? (
         <div className="location-map-zoom">
-          <button type="button" onClick={handleZoomIn} aria-label="Увеличить">+</button>
-          <button type="button" onClick={handleZoomOut} aria-label="Уменьшить">−</button>
+          <button type="button" onClick={handleZoomIn} aria-label={t('locationMapZoomIn')}>+</button>
+          <button type="button" onClick={handleZoomOut} aria-label={t('locationMapZoomOut')}>−</button>
         </div>
       ) : null}
       {showMapTypeSwitcher && !useColumnControls && !hideControls ? (
@@ -550,7 +550,7 @@ const LocationMap = ({
       <div ref={mapContainerRef} className="location-map" />
       {mapFailed ? (
         <div className="location-map-fallback" role="status">
-          Не удалось загрузить Яндекс Карту
+          {t('locationMapLoadFailed')}
         </div>
       ) : null}
     </div>

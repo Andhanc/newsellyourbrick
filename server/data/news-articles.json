@@ -4,10 +4,10 @@
       "id": "0a68f6da-696f-4607-b444-9b85f7085dce",
       "slug": "5-neobychnyh-postroek-v-barselone",
       "status": "published",
-      "badge": "Идеи для поездок",
-      "title": "5 необычных построек в Барселоне",
-      "lead": "Барселона славится своей архитектурой, но здесь есть и менее известные, но не менее захватывающие постройки, которые стоит увидеть.",
-      "excerpt": "От готических шедевров до футуристических сооружений — в этой статье мы расскажем о пяти необычных построениях Барселоны, которые удивят даже самых искушённых путешественников.",
+      "badge": "Travel ideas",
+      "title": "5 unusual buildings in Barcelona",
+      "lead": "Barcelona is famous for its architecture, but it also hides lesser-known gems that are just as captivating.",
+      "excerpt": "From Gothic masterpieces to futuristic landmarks — five unusual Barcelona buildings that surprise even seasoned travellers.",
       "image": "/images/external/photo-1469854523086-cc02fe5d8800-5a351c34bc.jpg",
       "imageSearchQuery": "Barcelona skyline modern historic",
       "imagePrompt": "A twilight panorama of Barcelona’s skyline featuring the soaring Sagrada Família, the undulating curves of Casa Milà, the vibrant mosaics of Park Güell, and the glowing glass façade of Torre Agbar, all bathed in warm sunset light.",
@@ -16,89 +16,89 @@
       "sections": [
         {
           "id": "s1",
-          "title": "Саграда Фамилия: храм, который меняется со временем",
+          "title": "Sagrada Família: a temple that keeps changing",
           "level": 2
         },
         {
           "id": "s2",
-          "title": "Парк Гуэля: сказочный парк с мозаикой и скульптурами",
+          "title": "Park Güell: a fairytale park of mosaics and sculptures",
           "level": 2
         },
         {
           "id": "s3",
-          "title": "Каса Мила и Бункер Парк: от волнообразного дома до скрытой подземной зоны",
+          "title": "Casa Milà and Bunker Park: from a wave-like house to a hidden underground zone",
           "level": 2
         },
         {
           "id": "s4",
-          "title": "Торре Агбар: современный небоскрёб, меняющий цвет",
+          "title": "Torre Agbar: a modern skyscraper that changes colour",
           "level": 2
         }
       ],
       "body": [
         {
           "type": "p",
-          "text": "Барселона славится своей архитектурой, но здесь есть и менее известные, но не менее захватывающие постройки, которые стоит увидеть.",
+          "text": "Barcelona is famous for its architecture, but it also hides lesser-known gems that are just as captivating.",
           "emphasis": false
         },
         {
           "type": "h2",
-          "text": "Саграда Фамилия: храм, который меняется со временем",
+          "text": "Sagrada Família: a temple that keeps changing",
           "id": "s1"
         },
         {
           "type": "p",
-          "text": "Саграда Фамилия, проект Антонио Гауди, открыта в 1882 году и продолжается до сих пор. Каждый новый этап добавляет уникальные детали.",
+          "text": "The Sagrada Família, Antoni Gaudí’s project, opened in 1882 and is still under construction. Each new stage adds unique details.",
           "emphasis": false
         },
         {
           "type": "p",
-          "text": "Внутри храма можно увидеть световые эффекты, меняющиеся в зависимости от времени дня, а также экспозицию, рассказывающую историю строительства.",
+          "text": "Inside the temple you can see light effects that change with the time of day, plus an exhibition telling the story of its construction.",
           "emphasis": false
         },
         {
           "type": "h2",
-          "text": "Парк Гуэля: сказочный парк с мозаикой и скульптурами",
+          "text": "Park Güell: a fairytale park of mosaics and sculptures",
           "id": "s2"
         },
         {
           "type": "p",
-          "text": "Парк Гуэля, созданный Гауди, поражает яркими мозаичными элементами и причудливыми скульптурами, которые будто оживают на солнце.",
+          "text": "Park Güell, created by Gaudí, dazzles with bright mosaics and whimsical sculptures that seem to come alive in the sun.",
           "emphasis": false
         },
         {
           "type": "p",
-          "text": "Городской парк предлагает панорамный вид на Барселону, а также уютные уголки для прогулок и фотосессий.",
+          "text": "The city park offers a panoramic view of Barcelona and cosy corners for walks and photos.",
           "emphasis": false
         },
         {
           "type": "h2",
-          "text": "Каса Мила и Бункер Парк: от волнообразного дома до скрытой подземной зоны",
+          "text": "Casa Milà and Bunker Park: from a wave-like house to a hidden underground zone",
           "id": "s3"
         },
         {
           "type": "p",
-          "text": "Каса Мила, известная как Ла Педрера, демонстрирует волнообразные стены и кованые балконы, а в подземном бункере скрыта история военной защиты.",
+          "text": "Casa Milà, also known as La Pedrera, shows undulating walls and wrought-iron balconies, while the underground bunker holds a story of wartime defence.",
           "emphasis": false
         },
         {
           "type": "p",
-          "text": "Посетители могут пройти по подземным коридорам, увидеть оригинальные артефакты и узнать о роли здания во время гражданской войны.",
+          "text": "Visitors can walk the underground corridors, see original artefacts and learn about the building’s role during the civil war.",
           "emphasis": false
         },
         {
           "type": "h2",
-          "text": "Торре Агбар: современный небоскрёб, меняющий цвет",
+          "text": "Torre Agbar: a modern skyscraper that changes colour",
           "id": "s4"
         },
         {
           "type": "p",
-          "text": "Торре Агбар, спроектированная Жаном Нувелем, меняет цвет благодаря светодиодной подсветке, создавая эффект живого фасада.",
+          "text": "Torre Agbar, designed by Jean Nouvel, changes colour thanks to LED lighting, creating a living façade effect.",
           "emphasis": false
         },
         {
           "type": "p",
-          "text": "На верхнем этаже находится ресторан с панорамным видом, а в ночное время башня сияет в разных оттенках синего и розового.",
+          "text": "The top floor has a restaurant with panoramic views, and at night the tower glows in shades of blue and pink.",
           "emphasis": false
         }
       ],
@@ -107,16 +107,16 @@
       "likes": 0,
       "publishedAt": "2026-05-31T20:00:18.441Z",
       "updatedAt": "2026-05-31T20:00:18.441Z",
-      "date": "31 мая 2026"
+      "date": "31 May 2026"
     },
     {
       "id": "f80fcb69-fb89-4bc0-8fc4-67e2fdc8acf6",
       "slug": "3-prichiny-kupit-dom-u-morya",
       "status": "published",
-      "badge": "Идеи для поездок",
-      "title": "3 причины купить дом у моря",
-      "lead": "Дом у моря — это не только живописные виды, но и инвестиционная выгода, здоровье и свобода от городской суеты.",
-      "excerpt": "Узнайте, почему покупка недвижимости у моря становится популярной среди тех, кто ищет комфорт, доход и отдых.",
+      "badge": "Travel ideas",
+      "title": "3 reasons to buy a house by the sea",
+      "lead": "A seaside home is more than the view — it can mean investment upside, wellbeing and escape from city noise.",
+      "excerpt": "Why coastal property is popular with people looking for comfort, income and a place to unwind.",
       "image": "/images/external/photo-1469854523086-cc02fe5d8800-5a351c34bc.jpg",
       "imageSearchQuery": "house by sea coastal living",
       "size": "medium",
@@ -124,39 +124,39 @@
       "sections": [
         {
           "id": "section-one",
-          "title": "Экономическая выгода",
+          "title": "Economic upside",
           "level": 2
         },
         {
           "id": "section-two",
-          "title": "Здоровье и благополучие",
+          "title": "Health and wellbeing",
           "level": 2
         }
       ],
       "body": [
         {
           "type": "p",
-          "text": "Дом у моря привлекает своей уникальной атмосферой и возможностью жить в гармонии с природой.",
+          "text": "A house by the sea draws people with its unique atmosphere and a chance to live closer to nature.",
           "emphasis": false
         },
         {
           "type": "h2",
-          "text": "Экономическая выгода",
+          "text": "Economic upside",
           "id": "section-one"
         },
         {
           "type": "h3",
-          "text": "Высокий потенциал роста стоимости",
-          "id": "высокий-потенциал-роста-стоимости"
+          "text": "Strong potential for value growth",
+          "id": "value-growth-potential"
         },
         {
           "type": "p",
-          "text": "Недвижимость в прибрежных районах стабильно растет, а спрос на неё постоянно повышается, обеспечивая выгодный доход от аренды.",
+          "text": "Coastal property tends to rise steadily in value, and demand stays strong — supporting attractive rental income.",
           "emphasis": false
         },
         {
           "type": "h2",
-          "text": "Здоровье и благополучие",
+          "text": "Health and wellbeing",
           "id": "section-two"
         }
       ],
@@ -165,16 +165,16 @@
       "likes": 0,
       "publishedAt": "2026-05-25T21:41:51.759Z",
       "updatedAt": "2026-05-25T21:41:51.759Z",
-      "date": "26 мая 2026"
+      "date": "26 May 2026"
     },
     {
       "id": "e14e3a86-8d2a-444d-8615-391cb5ecad0e",
       "slug": "top-5-razvlecheniy-v-barselone-kak-provesti-nezabyvaemoe-vremya",
       "status": "published",
-      "badge": "Идеи для поездок",
-      "title": "Топ-5 развлечений в Барселоне: как провести незабываемое время",
-      "lead": "Барселона – город контрастов, где современность встречается с историей. Узнайте, какие активности стоит включить в ваш маршрут, чтобы почувствовать её дух.",
-      "excerpt": "От прогулки по Ла Рамбла до квеста в готическом квартале – 5 идей, которые сделают ваш отдых ярче.",
+      "badge": "Travel ideas",
+      "title": "Top 5 things to do in Barcelona for an unforgettable trip",
+      "lead": "Barcelona is a city of contrasts where modern life meets history. Here’s what belongs on your itinerary.",
+      "excerpt": "From a stroll on La Rambla to a Gothic Quarter quest — five ideas to brighten your stay.",
       "image": "/images/external/photo-1565008576549-57569a49371d-6ab9ddf58d.jpg",
       "imageSearchQuery": "Barcelona cityscape street art architecture",
       "size": "medium",
@@ -182,52 +182,52 @@
       "sections": [
         {
           "id": "section-one",
-          "title": "Исторические прогулки"
+          "title": "Historic walks"
         },
         {
           "id": "section-two",
-          "title": "Современные развлечения"
+          "title": "Modern entertainment"
         }
       ],
       "body": [
         {
           "type": "p",
-          "text": "Барселона – это не только архитектура Гауди, но и живописные улицы, которые ждут, чтобы их исследовали.",
+          "text": "Barcelona is more than Gaudí — its lively streets are waiting to be explored.",
           "emphasis": false
         },
         {
           "type": "h2",
-          "text": "Исторические прогулки",
+          "text": "Historic walks",
           "id": "section-one"
         },
         {
           "type": "p",
-          "text": "Начните день с прогулки по Ла Рамбла, где можно увидеть уличных музыкантов, цветочные рынки и знаменитый рынок Бокерия.",
+          "text": "Start the day with a walk along La Rambla, where you will find street musicians, flower stalls and the famous Boqueria market.",
           "emphasis": false
         },
         {
           "type": "h3",
-          "text": "Погружение в искусство",
-          "id": "погружение-в-искусство"
+          "text": "Immersion in art",
+          "id": "immersion-in-art"
         },
         {
           "type": "p",
-          "text": "Посетите музей Пикассо и насладитесь коллекцией, посвященной его ранним работам. Это место подарит вам глубокое понимание искусства и истории города.",
+          "text": "Visit the Picasso Museum and enjoy a collection focused on his early work — a deep look at the city’s art and history.",
           "emphasis": true
         },
         {
           "type": "h2",
-          "text": "Современные развлечения",
+          "text": "Modern entertainment",
           "id": "section-two"
         },
         {
           "type": "p",
-          "text": "Погрузитесь в атмосферу квест-рума «Квест в Барселоне», где вам предстоит разгадать головоломки в готическом квартале.",
+          "text": "Dive into a Barcelona quest room where you solve puzzles in the Gothic Quarter.",
           "emphasis": false
         },
         {
           "type": "p",
-          "text": "Не забудьте про вечерний круиз по побережью, чтобы увидеть ночную Барселону с воды.",
+          "text": "Do not miss an evening coastal cruise to see Barcelona’s night lights from the water.",
           "emphasis": false
         }
       ],
@@ -236,7 +236,7 @@
       "likes": 0,
       "publishedAt": "2026-05-25T21:25:48.166Z",
       "updatedAt": "2026-05-25T21:25:48.166Z",
-      "date": "26 мая 2026"
+      "date": "26 May 2026"
     }
   ]
 }

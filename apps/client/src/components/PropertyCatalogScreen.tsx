@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { apiFetch } from '../api/client'
 import { CatalogProperty, PropertyCard } from './PropertyCard'
 import { colors, rounded } from '../theme/tokens'
+import { nativeT } from '../i18n/nativeStrings'
+import { storage } from '../platform/storage'
 
 type FilterMode = 'all' | 'auction' | 'buy_now' | 'debts' | 'shares'
 type CatalogSource = 'approved' | 'test-drive'
@@ -43,6 +45,13 @@ export function PropertyCatalogScreen({
   const [items, setItems] = useState<CatalogProperty[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [locale, setLocale] = useState('en')
+
+  useEffect(() => {
+    void storage.getItem('i18nextLng').then((lng) => {
+      if (lng) setLocale(lng)
+    })
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -58,11 +67,11 @@ export function PropertyCatalogScreen({
           : []
       setItems(applyFilter(list, filter, query))
     } catch (e) {
-      setError((e as { message?: string })?.message || 'Не удалось загрузить каталог')
+      setError((e as { message?: string })?.message || nativeT('catalogLoadError', locale))
     } finally {
       setLoading(false)
     }
-  }, [filter, query, source])
+  }, [filter, query, source, locale])
 
   useEffect(() => {
     void load()
@@ -88,7 +97,7 @@ export function PropertyCatalogScreen({
         <View style={styles.center}>
           <Text style={styles.error}>{error}</Text>
           <Pressable style={styles.retry} onPress={() => void load()}>
-            <Text style={styles.retryText}>Повторить</Text>
+            <Text style={styles.retryText}>{nativeT('retryAction', locale)}</Text>
           </Pressable>
         </View>
       ) : (
@@ -96,8 +105,8 @@ export function PropertyCatalogScreen({
           data={items}
           keyExtractor={(item, index) => `${item.id}-${item.slug || item.property_type || 'x'}-${index}`}
           contentContainerStyle={styles.list}
-          ListEmptyComponent={<Text style={styles.empty}>Объектов пока нет</Text>}
-          renderItem={({ item }) => <PropertyCard item={item} />}
+          ListEmptyComponent={<Text style={styles.empty}>{nativeT('catalogEmpty', locale)}</Text>}
+          renderItem={({ item }) => <PropertyCard item={item} locale={locale} />}
         />
       )}
     </View>

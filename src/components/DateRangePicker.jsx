@@ -1,19 +1,26 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
+import { getMonthLabels, resolveCalendarLocale } from '../utils/testDriveCalendarLocale'
 import './DateRangePicker.css'
 
 const DateRangePicker = ({ startDate, endDate, onStartDateChange, onEndDateChange, label }) => {
+  const { t, i18n } = useTranslation()
+  const locale = resolveCalendarLocale(undefined, i18n.language)
   const [currentMonth, setCurrentMonth] = useState(() => {
     const date = startDate ? new Date(startDate) : new Date()
     return new Date(date.getFullYear(), date.getMonth(), 1)
   })
 
-  const monthNames = [
-    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
-  ]
-
-  const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
+  const monthNames = useMemo(() => getMonthLabels(locale), [locale])
+  const weekDays = useMemo(() => {
+    const monday = new Date(2024, 0, 1)
+    return Array.from({ length: 7 }, (_, index) => {
+      const day = new Date(monday)
+      day.setDate(monday.getDate() + index)
+      return day.toLocaleDateString(locale, { weekday: 'short' })
+    })
+  }, [locale])
 
   const getDaysInMonth = (date) => {
     const year = date.getFullYear()
@@ -43,11 +50,9 @@ const DateRangePicker = ({ startDate, endDate, onStartDateChange, onEndDateChang
     const dateStr = date.toISOString().split('T')[0]
     
     if (!startDate || (startDate && endDate) || (startDate && date < new Date(startDate))) {
-      // Начинаем новый выбор
       onStartDateChange(dateStr)
       onEndDateChange('')
     } else if (startDate && !endDate) {
-      // Завершаем выбор диапазона
       if (date >= new Date(startDate)) {
         onEndDateChange(dateStr)
       } else {
@@ -160,17 +165,17 @@ const DateRangePicker = ({ startDate, endDate, onStartDateChange, onEndDateChang
           <div className="date-range-picker__selected">
             {startDate && (
               <div className="date-range-picker__selected-item">
-                <span className="date-range-picker__selected-label">С:</span>
+                <span className="date-range-picker__selected-label">{t('dateRangeFrom')}</span>
                 <span className="date-range-picker__selected-value">
-                  {new Date(startDate).toLocaleDateString('ru-RU')}
+                  {new Date(startDate).toLocaleDateString(locale)}
                 </span>
               </div>
             )}
             {endDate && (
               <div className="date-range-picker__selected-item">
-                <span className="date-range-picker__selected-label">По:</span>
+                <span className="date-range-picker__selected-label">{t('dateRangeTo')}</span>
                 <span className="date-range-picker__selected-value">
-                  {new Date(endDate).toLocaleDateString('ru-RU')}
+                  {new Date(endDate).toLocaleDateString(locale)}
                 </span>
               </div>
             )}

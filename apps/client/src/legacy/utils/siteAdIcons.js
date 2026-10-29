@@ -12,16 +12,16 @@ import {
 } from 'lucide-react'
 
 export const SITE_AD_ICONS = [
-  { id: 'megaphone', label: 'Мегафон' },
-  { id: 'gift', label: 'Подарок' },
-  { id: 'percent', label: 'Скидка' },
-  { id: 'star', label: 'Звезда' },
-  { id: 'home', label: 'Дом' },
-  { id: 'trending', label: 'Рост' },
-  { id: 'zap', label: 'Молния' },
-  { id: 'heart', label: 'Сердце' },
-  { id: 'tag', label: 'Тег' },
-  { id: 'building', label: 'Здание' },
+  { id: 'megaphone', labelKey: 'siteAdIcon_megaphone' },
+  { id: 'gift', labelKey: 'siteAdIcon_gift' },
+  { id: 'percent', labelKey: 'siteAdIcon_percent' },
+  { id: 'star', labelKey: 'siteAdIcon_star' },
+  { id: 'home', labelKey: 'siteAdIcon_home' },
+  { id: 'trending', labelKey: 'siteAdIcon_trending' },
+  { id: 'zap', labelKey: 'siteAdIcon_zap' },
+  { id: 'heart', labelKey: 'siteAdIcon_heart' },
+  { id: 'tag', labelKey: 'siteAdIcon_tag' },
+  { id: 'building', labelKey: 'siteAdIcon_building' },
 ]
 
 const ICON_MAP = {
@@ -43,6 +43,12 @@ export const DEFAULT_SITE_AD_ICON = 'megaphone'
 
 export function getSiteAdIconComponent(iconId) {
   return ICON_MAP[iconId] || Megaphone
+}
+
+export function getSiteAdIconLabel(icon, t) {
+  if (!icon) return ''
+  if (icon.labelKey && typeof t === 'function') return t(icon.labelKey)
+  return icon.label || icon.id || ''
 }
 
 export function isExternalAdUrl(url) {

@@ -1,11 +1,13 @@
+import { useTranslation } from 'react-i18next'
 import '../styles/owner-cabinet-skeleton.css'
 import './OwnerTestCabinetPageFallback.css'
 
 /** Instant shell while /owner-test lazy chunk loads — matches cabinet background, not blank white */
 export default function OwnerTestCabinetPageFallback() {
+  const { t } = useTranslation()
   return (
     <div className="owner-cab-fallback" role="status" aria-live="polite">
-      <span className="owner-cab-fallback__sr">Загрузка кабинета</span>
+      <span className="owner-cab-fallback__sr">{t('ownerCabFallbackLoading')}</span>
       <aside className="owner-cab-fallback__sidebar owner-cab-fallback__desktop-only" aria-hidden="true">
         <span className="owner-cab-skel-line owner-cab-skel-line--lg" />
         <div className="owner-cab-fallback__nav">

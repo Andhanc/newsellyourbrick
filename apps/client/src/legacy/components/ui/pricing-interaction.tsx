@@ -2,6 +2,7 @@ import NumberFlow from '@number-flow/react'
 import React from 'react'
 import { cn } from '@/lib/utils'
 import './pricing-interaction.css'
+import { getUiIntlLocale } from '../../utils/uiIntlLocale'
 
 export type PricingInteractionPlan = {
   id: string
@@ -130,7 +131,7 @@ export function PricingInteraction({
                 >
                   {showDiscountLayout ? (
                     <span className="pricing-interaction__plan-was" aria-hidden="true">
-                      €{strikethroughPrice.toLocaleString('ru-RU')}
+                      €{strikethroughPrice.toLocaleString(getUiIntlLocale())}
                     </span>
                   ) : null}
                   <span className="pricing-interaction__plan-amount">

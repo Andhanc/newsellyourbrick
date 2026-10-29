@@ -145,10 +145,10 @@ export default function ProfileHistoryExperience({
         category.items.map((item) => ({
           ...item,
           categoryKey: category.key,
-          categoryTitle: category.title,
+          categoryTitle: category.titleKey ? t(category.titleKey) : category.title,
         })),
       ),
-    [categories],
+    [categories, t],
   )
 
   const visibleItems = useMemo(() => {
@@ -160,7 +160,12 @@ export default function ProfileHistoryExperience({
   const categoryDots = useMemo(
     () => [
       { key: 'all', label: t('profileHistory_all') },
-      ...categories.map((category) => ({ key: category.key, label: category.chipTitle || category.title })),
+      ...categories.map((category) => ({
+        key: category.key,
+        label: category.chipTitleKey
+          ? t(category.chipTitleKey)
+          : category.chipTitle || category.title,
+      })),
     ],
     [categories, t],
   )
@@ -264,7 +269,7 @@ export default function ProfileHistoryExperience({
                         activeCategory === category.key ? ' profile-history-cat-chip--active' : ''
                       }`}
                       onClick={() => setActiveCategory(category.key)}
-                      aria-label={`${category.title}, ${category.items.length}`}
+                      aria-label={`${category.titleKey ? t(category.titleKey) : category.title}, ${category.items.length}`}
                     >
                       <span className="profile-history-cat-chip__icon-wrap">
                         <span className="profile-history-cat-chip__icon" aria-hidden>
@@ -273,7 +278,9 @@ export default function ProfileHistoryExperience({
                         <span className="profile-history-cat-chip__count">{category.items.length}</span>
                       </span>
                       <span className="profile-history-cat-chip__label">
-                        {category.chipTitle || category.title}
+                        {category.chipTitleKey
+                          ? t(category.chipTitleKey)
+                          : category.chipTitle || category.title}
                       </span>
                     </button>
                   )

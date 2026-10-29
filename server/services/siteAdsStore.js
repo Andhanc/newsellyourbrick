@@ -66,26 +66,26 @@ function validateAdPayload(payload, { partial = false } = {}) {
   const rawButtonUrl = String(payload?.buttonUrl || '').trim()
   const buttonEnabled = Boolean(payload?.buttonEnabled) || Boolean(rawButtonUrl)
   let buttonUrl = ''
-  const buttonLabel = String(payload?.buttonLabel || 'Подробнее').trim().slice(0, 40) || 'Подробнее'
+  const buttonLabel = String(payload?.buttonLabel || 'Learn more').trim().slice(0, 40) || 'Learn more'
 
   if (!partial || payload?.type != null) {
-    if (!VALID_TYPES.has(type)) errors.push('Укажите тип: modal или block')
+    if (!VALID_TYPES.has(type)) errors.push('Specify type: modal or block')
   }
   if (!partial || payload?.title != null) {
-    if (!title) errors.push('Заголовок обязателен')
-    if (title.length > 120) errors.push('Заголовок не длиннее 120 символов')
+    if (!title) errors.push('Title is required')
+    if (title.length > 120) errors.push('Title must be at most 120 characters')
   }
   if (!partial || payload?.description != null) {
-    if (!description) errors.push('Описание обязательно')
-    if (description.length > 500) errors.push('Описание не длиннее 500 символов')
+    if (!description) errors.push('Description is required')
+    if (description.length > 500) errors.push('Description must be at most 500 characters')
   }
   if (!partial || payload?.pages != null) {
-    if (!pages.length) errors.push('Выберите хотя бы одну страницу')
+    if (!pages.length) errors.push('Select at least one page')
   }
   if (buttonEnabled || rawButtonUrl) {
     buttonUrl = normalizeButtonUrl(rawButtonUrl)
-    if (!buttonUrl) errors.push('Укажите ссылку для кнопки')
-    else if (buttonUrl.length > 500) errors.push('Ссылка не длиннее 500 символов')
+    if (!buttonUrl) errors.push('Provide a button link')
+    else if (buttonUrl.length > 500) errors.push('Link must be at most 500 characters')
   }
 
   return { errors, type, title, description, pages, icon, buttonEnabled: Boolean(buttonUrl) || buttonEnabled, buttonUrl, buttonLabel }
@@ -150,7 +150,7 @@ export function toPublicAd(ad) {
     icon: normalizeIcon(ad.icon),
     buttonEnabled,
     buttonUrl: buttonEnabled ? buttonUrl : '',
-    buttonLabel: String(ad.buttonLabel || 'Подробнее').trim() || 'Подробнее',
+    buttonLabel: String(ad.buttonLabel || 'Learn more').trim() || 'Learn more',
     createdAt: ad.createdAt,
   }
 }

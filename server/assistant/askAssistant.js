@@ -34,44 +34,44 @@ import {
 } from './userContext.js'
 
 const SITE_NAV = [
-  { path: '/', label: 'Главная' },
-  { path: '/sellyourbrick', label: 'О возможностях SellYourBrick' },
-  { path: '/auction', label: 'Аукционы' },
-  { path: '/auction/pre-auction', label: 'Предстоящие аукционы' },
-  { path: '/auction/buy-now', label: 'Купить сейчас' },
-  { path: '/auction/bidding', label: 'Активные торги' },
-  { path: '/auction/ended', label: 'Завершённые торги' },
-  { path: '/search-results', label: 'Поиск объектов' },
-  { path: '/map', label: 'Карта объектов' },
-  { path: '/co-investment', label: 'Доли / совместные инвестиции' },
-  { path: '/calculator', label: 'Умная панель инвестора' },
-  { path: '/compare', label: 'Сравнение объектов' },
-  { path: '/test-drive', label: 'Test-drive объектов' },
-  { path: '/favorites', label: 'Избранное' },
-  { path: '/news', label: 'Новости' },
-  { path: '/about', label: 'О платформе' },
-  { path: '/buyer', label: 'Покупателям' },
-  { path: '/debts', label: 'Долги / Distressed' },
+  { path: '/', label: 'Home' },
+  { path: '/sellyourbrick', label: 'SellYourBrick features' },
+  { path: '/auction', label: 'Auctions' },
+  { path: '/auction/pre-auction', label: 'Upcoming auctions' },
+  { path: '/auction/buy-now', label: 'Buy now' },
+  { path: '/auction/bidding', label: 'Live bidding' },
+  { path: '/auction/ended', label: 'Ended auctions' },
+  { path: '/search-results', label: 'Property search' },
+  { path: '/map', label: 'Property map' },
+  { path: '/co-investment', label: 'Shares / co-investment' },
+  { path: '/calculator', label: 'Smart investor panel' },
+  { path: '/compare', label: 'Compare properties' },
+  { path: '/test-drive', label: 'Property test-drive' },
+  { path: '/favorites', label: 'Favorites' },
+  { path: '/news', label: 'News' },
+  { path: '/about', label: 'About the platform' },
+  { path: '/buyer', label: 'For buyers' },
+  { path: '/debts', label: 'Debts / Distressed' },
   { path: '/development', label: 'Development' },
   { path: '/private-club', label: 'Private Club' },
-  { path: '/subscriptions', label: 'Подписки' },
-  { path: '/bonuses', label: 'Бонусы покупателя' },
-  { path: '/bonuses?tab=seller', label: 'Бонусы продавца' },
-  { path: '/wallet', label: 'Кошелёк и депозит' },
-  { path: '/deposit', label: 'Пополнить депозит' },
-  { path: '/sections', label: 'Все сервисы' },
-  { path: '/chat', label: 'Чат с помощником' },
-  { path: '/chat?manager=1', label: 'Поддержка' },
-  { path: '/profile', label: 'Личный кабинет' },
-  { path: '/profile?history=1', label: 'История операций' },
-  { path: '/profile?bookings=1', label: 'Мои бронирования' },
-  { path: '/data', label: 'Личные данные и документы' },
-  { path: '/seller', label: 'Продавцам' },
-  { path: '/owner-test', label: 'Кабинет продавца' },
-  { path: '/owner-test/properties', label: 'Мои объявления' },
-  { path: '/owner/property/new', label: 'Разместить объект' },
-  { path: '/app', label: 'Мобильное приложение' },
-  { path: '/lottery', label: 'Лотерея' },
+  { path: '/subscriptions', label: 'Subscriptions' },
+  { path: '/bonuses', label: 'Buyer bonuses' },
+  { path: '/bonuses?tab=seller', label: 'Seller bonuses' },
+  { path: '/wallet', label: 'Wallet and deposit' },
+  { path: '/deposit', label: 'Top up deposit' },
+  { path: '/sections', label: 'All services' },
+  { path: '/chat', label: 'Assistant chat' },
+  { path: '/chat?manager=1', label: 'Support' },
+  { path: '/profile', label: 'Personal cabinet' },
+  { path: '/profile?history=1', label: 'Transaction history' },
+  { path: '/profile?bookings=1', label: 'My bookings' },
+  { path: '/data', label: 'Personal data and documents' },
+  { path: '/seller', label: 'For sellers' },
+  { path: '/owner-test', label: 'Seller cabinet' },
+  { path: '/owner-test/properties', label: 'My listings' },
+  { path: '/owner/property/new', label: 'List a property' },
+  { path: '/app', label: 'Mobile app' },
+  { path: '/lottery', label: 'Lottery' },
 ]
 
 const ALLOWED_PATHS = new Set(SITE_NAV.map((item) => item.path))
@@ -85,12 +85,12 @@ export function detectReplyLanguage(text = '') {
   if (/\b(hej|tack|fastighet|bostad|auktion)\b/i.test(t) || /å/i.test(t)) return 'sv'
   if (/\b(hallo|danke|immobilie|wohnung|auktion)\b/i.test(t) || /[üß]/i.test(t)) return 'de'
   if (/[a-z]/i.test(t)) return 'en'
-  return 'ru'
+  return 'en'
 }
 
 const SUPPORTED_LANGUAGES = new Set(['ru', 'en', 'es', 'de', 'fr', 'pl', 'sv'])
 
-function normalizeSelectedLanguage(value, fallback = 'ru') {
+function normalizeSelectedLanguage(value, fallback = 'en') {
   const code = String(value || '').toLowerCase().split('-')[0]
   return SUPPORTED_LANGUAGES.has(code) ? code : fallback
 }
@@ -170,25 +170,25 @@ function sanitizeNavigation(navigation) {
 }
 
 const NAV_HINTS = [
-  { path: '/auction', label: 'Аукционы', aliases: ['аукцион', 'торг', 'лот', 'ставк', 'auction', 'bid'] },
-  { path: '/auction/buy-now', label: 'Купить сейчас', aliases: ['купить сейчас', 'buy now', 'buy-now', 'фиксирован'] },
-  { path: '/map', label: 'Карта объектов', aliases: ['карта', 'map', 'на карте'] },
-  { path: '/co-investment', label: 'Доли (Shares)', aliases: ['доли', 'shares', 'соинвест', 'фракцион'] },
-  { path: '/debts', label: 'Долги / Distressed', aliases: ['долг', 'debt', 'distress'] },
+  { path: '/auction', label: 'Auctions', aliases: ['аукцион', 'торг', 'лот', 'ставк', 'auction', 'bid'] },
+  { path: '/auction/buy-now', label: 'Buy now', aliases: ['купить сейчас', 'buy now', 'buy-now', 'фиксирован'] },
+  { path: '/map', label: 'Property map', aliases: ['карта', 'map', 'на карте'] },
+  { path: '/co-investment', label: 'Shares', aliases: ['доли', 'shares', 'соинвест', 'фракцион'] },
+  { path: '/debts', label: 'Debts / Distressed', aliases: ['долг', 'debt', 'distress'] },
   { path: '/development', label: 'Development', aliases: ['development', 'девелоп', 'совместн развит', 'проект развит'] },
-  { path: '/calculator', label: 'Умная панель инвестора', aliases: ['калькулятор', 'панель инвест', 'доходност', 'roi', 'yield'] },
-  { path: '/compare', label: 'Сравнение', aliases: ['сравн', 'compare'] },
-  { path: '/favorites', label: 'Избранное', aliases: ['избран', 'favorite', 'favourite'] },
+  { path: '/calculator', label: 'Smart investor panel', aliases: ['калькулятор', 'панель инвест', 'доходност', 'roi', 'yield'] },
+  { path: '/compare', label: 'Compare', aliases: ['сравн', 'compare'] },
+  { path: '/favorites', label: 'Favorites', aliases: ['избран', 'favorite', 'favourite'] },
   { path: '/test-drive', label: 'Test-drive', aliases: ['тест-драйв', 'test-drive', 'testdrive'] },
   { path: '/private-club', label: 'Private Club', aliases: ['private club', 'vip', 'клуб'] },
-  { path: '/subscriptions', label: 'Подписки', aliases: ['подписк', 'тариф', 'pro', 'subscription'] },
-  { path: '/wallet', label: 'Кошелёк и депозит', aliases: ['кошел', 'депозит', 'wallet', 'deposit', 'баланс'] },
-  { path: '/bonuses', label: 'Бонусы', aliases: ['бонус', 'промокод', 'реферал', 'bonus', 'promo'] },
-  { path: '/sections', label: 'Все сервисы', aliases: ['все сервис', 'разделы', 'карта сервис', 'sections', 'меню'] },
-  { path: '/profile', label: 'Личный кабинет', aliases: ['профил', 'кабинет', 'profile', 'account'] },
-  { path: '/seller', label: 'Продавцам', aliases: ['продав', 'seller', 'размест'] },
-  { path: '/chat?manager=1', label: 'Поддержка', aliases: ['поддержк', 'менеджер', 'support', 'manager'] },
-  { path: '/about', label: 'О платформе', aliases: ['о платформ', 'о нас', 'about'] },
+  { path: '/subscriptions', label: 'Subscriptions', aliases: ['подписк', 'тариф', 'pro', 'subscription'] },
+  { path: '/wallet', label: 'Wallet and deposit', aliases: ['кошел', 'депозит', 'wallet', 'deposit', 'баланс'] },
+  { path: '/bonuses', label: 'Bonuses', aliases: ['бонус', 'промокод', 'реферал', 'bonus', 'promo'] },
+  { path: '/sections', label: 'All services', aliases: ['все сервис', 'разделы', 'карта сервис', 'sections', 'меню'] },
+  { path: '/profile', label: 'Personal cabinet', aliases: ['профил', 'кабинет', 'profile', 'account'] },
+  { path: '/seller', label: 'For sellers', aliases: ['продав', 'seller', 'размест'] },
+  { path: '/chat?manager=1', label: 'Support', aliases: ['поддержк', 'менеджер', 'support', 'manager'] },
+  { path: '/about', label: 'About the platform', aliases: ['о платформ', 'о нас', 'about'] },
 ]
 
 function navigationFromMessage(text = '') {
@@ -206,14 +206,14 @@ function enrichNavigationWithMentionedSections(text = '', navigation = []) {
     if (out.some((item) => item.path === path)) return
     out.push({ path, label })
   }
-  if (/долг|distress|обремен/i.test(lower)) ensure('/debts', 'Долги / Distressed')
+  if (/долг|distress|обремен/i.test(lower)) ensure('/debts', 'Debts / Distressed')
   if (/development|девелоп|совместн\w*\s+развит|проект\w*\s+развит/i.test(lower)) {
     ensure('/development', 'Development')
   }
   if (/test.?drive|тест.?драйв/i.test(lower)) ensure('/test-drive', 'Test-drive')
-  if (/доли|shares|соинвест|фракцион/i.test(lower)) ensure('/co-investment', 'Доли / совместные инвестиции')
-  if (/купить\s+сейчас|buy\s*now/i.test(lower)) ensure('/auction/buy-now', 'Купить сейчас')
-  if (/аукцион|торг|auction/i.test(lower)) ensure('/auction', 'Аукционы')
+  if (/доли|shares|соинвест|фракцион/i.test(lower)) ensure('/co-investment', 'Shares / co-investment')
+  if (/купить\s+сейчас|buy\s*now/i.test(lower)) ensure('/auction/buy-now', 'Buy now')
+  if (/аукцион|торг|auction/i.test(lower)) ensure('/auction', 'Auctions')
   return sanitizeNavigation(out).slice(0, 6)
 }
 
@@ -803,7 +803,7 @@ export function buildAssistantContext({
 }) {
   const history = normalizeHistory(messages)
   const lastUser = [...history].reverse().find((m) => m.sender === 'user')?.text || ''
-  const siteLanguage = normalizeSelectedLanguage(selectedLanguage, 'ru')
+  const siteLanguage = normalizeSelectedLanguage(selectedLanguage, 'en')
   // Язык последнего сообщения пользователя важнее языка интерфейса сайта.
   const inputLanguage = normalizeSelectedLanguage(
     detectedLanguage,

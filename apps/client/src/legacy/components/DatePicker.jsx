@@ -1,8 +1,12 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import './DatePicker.css'
 
 const DatePicker = ({ value, onChange, label, minDate }) => {
+  const { i18n } = useTranslation()
+  const locale = (i18n.language || 'en').split('-')[0]
+
   const [currentMonth, setCurrentMonth] = useState(() => {
     if (value) {
       const date = new Date(value)
@@ -13,12 +17,22 @@ const DatePicker = ({ value, onChange, label, minDate }) => {
 
   const [selectedDate, setSelectedDate] = useState(value ? new Date(value) : null)
 
-  const monthNames = [
-    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
-  ]
+  const monthNames = useMemo(() => {
+    const fmt = new Intl.DateTimeFormat(locale, { month: 'long' })
+    return Array.from({ length: 12 }, (_, month) => {
+      const labelText = fmt.format(new Date(2020, month, 1))
+      return labelText.charAt(0).toUpperCase() + labelText.slice(1)
+    })
+  }, [locale])
 
-  const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
+  const weekDays = useMemo(() => {
+    const fmt = new Intl.DateTimeFormat(locale, { weekday: 'short' })
+    // Monday-first week (2021-01-04 is a Monday)
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = fmt.format(new Date(2021, 0, 4 + i))
+      return day.charAt(0).toUpperCase() + day.slice(1)
+    })
+  }, [locale])
 
   const getDaysInMonth = (date) => {
     const year = date.getFullYear()
@@ -26,26 +40,20 @@ const DatePicker = ({ value, onChange, label, minDate }) => {
     const firstDay = new Date(year, month, 1)
     const lastDay = new Date(year, month + 1, 0)
     const daysInMonth = lastDay.getDate()
-    const startingDayOfWeek = (firstDay.getDay() + 6) % 7 // Понедельник = 0
+    const startingDayOfWeek = (firstDay.getDay() + 6) % 7
 
     const days = []
-    
-    // Пустые ячейки для дней предыдущего месяца
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null)
     }
-    
-    // Дни текущего месяца
     for (let i = 1; i <= daysInMonth; i++) {
       days.push(new Date(year, month, i))
     }
-    
     return days
   }
 
   const handleDateClick = (date) => {
     if (!date) return
-    
     const dateStr = date.toISOString().split('T')[0]
     setSelectedDate(date)
     onChange(dateStr)
@@ -101,7 +109,7 @@ const DatePicker = ({ value, onChange, label, minDate }) => {
             <FiChevronRight size={20} />
           </button>
         </div>
-        
+
         <div className="date-picker__weekdays">
           {weekDays.map((day, index) => (
             <div key={index} className="date-picker__weekday">
@@ -109,7 +117,7 @@ const DatePicker = ({ value, onChange, label, minDate }) => {
             </div>
           ))}
         </div>
-        
+
         <div className="date-picker__days">
           {days.map((date, index) => (
             <button

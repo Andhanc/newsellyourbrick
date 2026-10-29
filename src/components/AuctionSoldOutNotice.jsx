@@ -115,7 +115,7 @@ export default function AuctionSoldOutNotice({ open, onClose, property, isMobile
             type="button"
             className="auction-sold-notice-drawer__close"
             onClick={() => requestClose()}
-            aria-label={t('closeAria') || 'Закрыть'}
+            aria-label={t('closeAria')}
           >
             <FiX size={20} />
           </button>
@@ -124,15 +124,14 @@ export default function AuctionSoldOutNotice({ open, onClose, property, isMobile
             <AuctionSoldOutIllustration />
 
             <h2 id="auction-sold-notice-title" className="auction-sold-notice__title">
-              Объект продан
+              {t('auctionSoldOutTitle')}
             </h2>
             <p className="auction-sold-notice__lead">
-              Этот объект уже продан. Посмотрите похожие предложения: возможно, среди них есть вариант,
-              который подойдёт вам даже лучше.
+              {t('auctionSoldOutLead')}
             </p>
 
             <button type="button" className="auction-sold-notice__cta" onClick={onNavigateToCatalog}>
-              Перейти к похожим
+              {t('auctionSoldOutCta')}
               <FiArrowRight size={18} aria-hidden />
             </button>
           </div>
@@ -156,7 +155,7 @@ export default function AuctionSoldOutNotice({ open, onClose, property, isMobile
             type="button"
             className="auction-sold-notice-modal__close"
             onClick={() => requestClose()}
-            aria-label={t('closeAria') || 'Закрыть'}
+            aria-label={t('closeAria')}
           >
             <FiX size={20} />
           </button>
@@ -165,15 +164,14 @@ export default function AuctionSoldOutNotice({ open, onClose, property, isMobile
             <AuctionSoldOutIllustration />
 
             <h2 id="auction-sold-notice-title" className="auction-sold-notice__title">
-              Объект продан
+              {t('auctionSoldOutTitle')}
             </h2>
             <p className="auction-sold-notice__lead">
-              Этот объект уже продан. Посмотрите похожие предложения: возможно, среди них есть вариант,
-              который подойдёт вам даже лучше.
+              {t('auctionSoldOutLead')}
             </p>
 
             <button type="button" className="auction-sold-notice__cta" onClick={onNavigateToCatalog}>
-              Перейти к похожим
+              {t('auctionSoldOutCta')}
               <FiArrowRight size={18} aria-hidden />
             </button>
           </div>

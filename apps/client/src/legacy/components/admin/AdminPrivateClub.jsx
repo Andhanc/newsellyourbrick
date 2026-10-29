@@ -1,17 +1,20 @@
 import React, { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FaGem } from 'react-icons/fa'
 import { getApiBaseUrl } from '../../utils/apiConfig'
 import { showNotification } from '../../utils/toastHelper'
 import './AdminPrivateClub.css'
+import { getUiIntlLocale } from '../../utils/uiIntlLocale'
 
 function formatDt(iso) {
   if (!iso) return '—'
   const d = new Date(iso)
   if (!Number.isFinite(d.getTime())) return '—'
-  return d.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleString(getUiIntlLocale(), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 const AdminPrivateClub = () => {
+  const { t } = useTranslation()
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState(null)
@@ -25,15 +28,15 @@ const AdminPrivateClub = () => {
       if (data.success && Array.isArray(data.data)) {
         setList(data.data)
       } else {
-        showNotification(data.error || 'Не удалось загрузить список')
+        showNotification(data.error || t('admin_privateClub_listFail'))
       }
     } catch (e) {
       console.error(e)
-      showNotification('Ошибка сети при загрузке')
+      showNotification(t('admin_privateClub_networkLoad'))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     void load()
@@ -41,7 +44,7 @@ const AdminPrivateClub = () => {
 
   const revoke = async (row) => {
     if (!row.can_revoke_db) return
-    if (!window.confirm(`Снять доступ закрытого клуба у пользователя #${row.id}? Будут обнулены vip_until и vip_granted_at.`)) {
+    if (!window.confirm(t('admin_snyat_dostup_zakrytogo_kluba_85dccb28', { id: row.id }))) {
       return
     }
     try {
@@ -50,22 +53,22 @@ const AdminPrivateClub = () => {
       const res = await fetch(`${API_BASE_URL}/admin/private-club/members/${row.id}/revoke`, { method: 'POST' })
       const data = await res.json()
       if (!data.success) {
-        showNotification(data.error || 'Ошибка')
+        showNotification(data.error || t('admin_error'))
         return
       }
       if (data.data?.still_has_vip_access) {
         showNotification(
-          'Поля в БД сброшены, но у пользователя остаётся активная подписка Stripe VIP — доступ к клубу сохраняется.',
+          t('admin_privateClub_stripeStillActive'),
           'info',
           8000,
         )
       } else {
-        showNotification('Доступ снят, пользователь получит уведомление в кабинете.', 'success')
+        showNotification(t('admin_privateClub_accessRevoked'), 'success')
       }
       await load()
     } catch (e) {
       console.error(e)
-      showNotification('Ошибка сети')
+      showNotification(t('admin_networkError'))
     } finally {
       setBusyId(null)
     }
@@ -76,30 +79,29 @@ const AdminPrivateClub = () => {
       <div className="admin-private-club__header">
         <h2>
           <FaGem style={{ marginRight: 8, verticalAlign: 'middle', color: '#0099A9' }} size={20} />
-          Закрытый клуб
+          {t('admin_panel_privateClub')}
         </h2>
         <p>
-          Участники с активным сроком в базе (vip_until) или активной подпиской VIP в Stripe. «Исключить» обнуляет даты в
-          БД; если остаётся только Stripe VIP, кнопка недоступна — отмена подписки в Stripe.
+          {t('admin_uchastniki_s_aktivnym_srokom_265db5ee')}
         </p>
       </div>
       <div className="admin-private-club__toolbar">
         <button type="button" disabled={loading} onClick={() => void load()}>
-          Обновить
+          {t('admin_sa_refresh')}
         </button>
       </div>
       {loading ? (
-        <div className="admin-private-club__loading">Загрузка…</div>
+        <div className="admin-private-club__loading">{t('admin_loadingEllipsis')}</div>
       ) : list.length === 0 ? (
-        <div className="admin-private-club__empty">Нет активных участников.</div>
+        <div className="admin-private-club__empty">{t('admin_net_aktivnyh_uchastnikov_be0a2f84')}</div>
       ) : (
         <div className="admin-private-club__table-wrap">
           <table>
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Пользователь</th>
-                <th>Контакты</th>
+                <th>{t('admin_polzovatel_51aff185')}</th>
+                <th>{t('admin_sa_contacts')}</th>
                 <th>vip_until</th>
                 <th>vip_granted_at</th>
                 <th>Stripe</th>
@@ -131,7 +133,7 @@ const AdminPrivateClub = () => {
                         <span className="admin-private-club__pill admin-private-club__pill--muted">—</span>
                       )}
                       {row.stripe_period_end ? (
-                        <div className="admin-private-club__hint">период до {String(row.stripe_period_end)}</div>
+                        <div className="admin-private-club__hint">{t('admin_period_do_41c4965c')} {String(row.stripe_period_end)}</div>
                       ) : null}
                     </td>
                     <td>
@@ -141,12 +143,12 @@ const AdminPrivateClub = () => {
                         disabled={!row.can_revoke_db || busyId === row.id}
                         title={
                           row.can_revoke_db
-                            ? 'Снять статус в БД (vip_until, vip_granted_at)'
-                            : 'Нет активного срока в БД — только Stripe VIP или доступ уже снят'
+                            ? t('admin_snyat_status_v_bd_3c035611')
+                            : t('admin_net_aktivnogo_sroka_v_0c605908')
                         }
                         onClick={() => void revoke(row)}
                       >
-                        {busyId === row.id ? '…' : 'Исключить'}
+                        {busyId === row.id ? '…' : t('admin_isklyuchit_85961c9f')}
                       </button>
                     </td>
                   </tr>

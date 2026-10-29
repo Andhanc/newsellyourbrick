@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   isAuctionListingEnded,
   isPreAuctionPhaseActive,
 } from '../../utils/auctionReminderBounds';
 import { getApiBaseUrlSync } from '../../utils/apiConfig';
 import './AdminAuctions.css';
+import { getUiIntlLocale } from '../../utils/uiIntlLocale'
 
 const API_BASE = getApiBaseUrlSync();
 
@@ -21,23 +23,24 @@ function resolveBidSourceTable(p) {
 function formatMoney(amount) {
   const n = Number(amount);
   if (!Number.isFinite(n)) return '—';
-  return `$${n.toLocaleString('ru-RU', { maximumFractionDigits: 0 })}`;
+  return `$${n.toLocaleString(getUiIntlLocale(), { maximumFractionDigits: 0 })}`;
 }
 
 function formatDateTime(iso) {
   if (iso == null || iso === '') return '—';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return String(iso);
-  return d.toLocaleString('ru-RU', { dateStyle: 'short', timeStyle: 'short' });
+  return d.toLocaleString(getUiIntlLocale(), { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function AdminAuctionBidsModal({ property, bidSourceTable, onClose }) {
+  const { t } = useTranslation();
   const [bids, setBids] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const pid = property?.id;
-  const title = property?.title || property?.name || `Объект #${pid}`;
+  const title = property?.title || property?.name || t('admin_objectNum_tmpl', { id: pid });
   const img =
     property?.image ||
     (Array.isArray(property?.images) && property.images[0]) ||
@@ -55,16 +58,16 @@ function AdminAuctionBidsModal({ property, bidSourceTable, onClose }) {
       const res = await fetch(`${API_BASE}/admin/auctions/${pid}/bids${q}`);
       const json = await res.json();
       if (!res.ok || !json.success) {
-        throw new Error(json.error || `Ошибка ${res.status}`);
+        throw new Error(json.error || t('admin_errorStatus_tmpl', { status: res.status }));
       }
       setBids(Array.isArray(json.data) ? json.data : []);
     } catch (e) {
-      setError(e?.message || 'Не удалось загрузить ставки');
+      setError(e?.message || t('admin_auctions_bidsLoadFail'));
       setBids([]);
     } finally {
       setLoading(false);
     }
-  }, [pid, bidSourceTable]);
+  }, [pid, bidSourceTable, t]);
 
   useEffect(() => {
     load();
@@ -76,11 +79,11 @@ function AdminAuctionBidsModal({ property, bidSourceTable, onClose }) {
     const lines = [
       name || '—',
       u.email ? `Email: ${u.email}` : null,
-      u.phone_number ? `Тел.: ${u.phone_number}` : null,
-      u.country ? `Страна: ${u.country}` : null,
+      u.phone_number ? t('admin_tel_tmpl', { phone: u.phone_number }) : null,
+      u.country ? t('admin_country_tmpl', { country: u.country }) : null,
       u.telegram_username ? `TG: @${String(u.telegram_username).replace(/^@/, '')}` : null,
       u.user_id_number ? `ID: ${u.user_id_number}` : null,
-      u.role ? `Роль: ${u.role}` : null,
+      u.role ? t('admin_role_tmpl', { role: u.role }) : null,
     ].filter(Boolean);
     return (
       <div>
@@ -109,36 +112,36 @@ function AdminAuctionBidsModal({ property, bidSourceTable, onClose }) {
             <img src={typeof img === 'string' ? img : img?.url || ''} alt="" />
           ) : null}
           <div className="admin-auctions-modal__head-text">
-            <h2 id="admin-auction-bids-title">Ставки: {title}</h2>
+            <h2 id="admin-auction-bids-title">{t('admin_stavki_title_3d8445fd', { title })}</h2>
             <p>
-              Лот #{pid}
+              {t('admin_lotNum_tmpl', { id: pid })}
               {bidSourceTable ? ` · ${bidSourceTable}` : ''}
             </p>
           </div>
           <button
             type="button"
             className="admin-auctions-modal__close"
-            aria-label="Закрыть"
+            aria-label={t('admin_close')}
             onClick={onClose}
           >
             ×
           </button>
         </div>
         <div className="admin-auctions-modal__body">
-          {loading && <p>Загрузка ставок…</p>}
+          {loading && <p>{t('admin_zagruzka_stavok_a83cd336')}</p>}
           {error && <p style={{ color: '#b91c1c' }}>{error}</p>}
           {!loading && !error && bids.length === 0 && (
-            <p className="admin-auctions-modal__muted">По этому лоту ставок пока нет.</p>
+            <p className="admin-auctions-modal__muted">{t('admin_po_etomu_lotu_stavok_fb741e2c')}</p>
           )}
           {!loading && !error && bids.length > 0 && (
             <div className="admin-auctions-modal__table-wrap">
               <table>
                 <thead>
                   <tr>
-                    <th>Сумма</th>
-                    <th>Дата</th>
+                    <th>{t('admin_summa_99d74083')}</th>
+                    <th>{t('admin_data_a5b49d2e')}</th>
                     <th>User DB id</th>
-                    <th>Участник</th>
+                    <th>{t('admin_uchastnik_76ffe26d')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -163,6 +166,7 @@ function AdminAuctionBidsModal({ property, bidSourceTable, onClose }) {
 }
 
 const AdminAuctions = () => {
+  const { t } = useTranslation();
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -180,14 +184,14 @@ const AdminAuctions = () => {
         const res = await fetch(`${API_BASE}/properties/auctions?lang=${lang}`);
         const json = await res.json();
         if (!res.ok || !json.success) {
-          throw new Error(json.error || `Ошибка ${res.status}`);
+          throw new Error(json.error || t('admin_errorStatus_tmpl', { status: res.status }));
         }
         if (!cancelled) {
           setList(Array.isArray(json.data) ? json.data : []);
         }
       } catch (e) {
         if (!cancelled) {
-          setError(e?.message || 'Не удалось загрузить аукционы');
+          setError(e?.message || t('admin_auctions_loadFail'));
           setList([]);
         }
       } finally {
@@ -225,7 +229,7 @@ const AdminAuctions = () => {
   if (loading && list.length === 0) {
     return (
       <div className="admin-auctions">
-        <p className="admin-auctions__empty">Загрузка аукционов…</p>
+        <p className="admin-auctions__empty">{t('admin_zagruzka_aukcionov_43ffd1de')}</p>
       </div>
     );
   }
@@ -249,23 +253,23 @@ const AdminAuctions = () => {
             className={`admin-auctions__tab${tab === 'active' ? ' admin-auctions__tab--active' : ''}`}
             onClick={() => setTab('active')}
           >
-            Текущие ({active.length})
+            {t('admin_tekuschie_n_6799254a', { n: active.length })}
           </button>
           <button
             type="button"
             className={`admin-auctions__tab${tab === 'completed' ? ' admin-auctions__tab--active' : ''}`}
             onClick={() => setTab('completed')}
           >
-            Завершённые ({completed.length})
+            {t('admin_zavershennye_n_4f5932a7', { n: completed.length })}
           </button>
         </div>
         <div className="admin-auctions__search">
           <input
             type="search"
-            placeholder="Поиск по названию или локации…"
+            placeholder={t('admin_searchTitleOrLocation')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            aria-label="Поиск"
+            aria-label={t('admin_search')}
           />
         </div>
       </div>
@@ -273,8 +277,8 @@ const AdminAuctions = () => {
       {shown.length === 0 ? (
         <p className="admin-auctions__empty">
           {tab === 'active'
-            ? 'Нет активных аукционов по текущим фильтрам.'
-            : 'Нет завершённых аукционов по текущим фильтрам.'}
+            ? t('admin_net_aktivnyh_aukcionov_po_371d3200')
+            : t('admin_net_zavershennyh_aukcionov_po_71fba36b')}
         </p>
       ) : (
         <div className="admin-auctions__grid">
@@ -282,10 +286,10 @@ const AdminAuctions = () => {
             const ended = isAuctionListingEnded(p);
             const pre = !ended && isPreAuctionPhaseActive(p);
             const phaseLabel = ended
-              ? 'Завершён'
+              ? t('admin_zavershen_ac117293')
               : pre
-                ? 'Преаукцион'
-                : 'Аукцион';
+                ? t('admin_preaukcion_17cf3996')
+                : t('admin_auction');
             const phaseClass = ended
               ? 'admin-auctions__badge--done'
               : pre
@@ -308,7 +312,7 @@ const AdminAuctions = () => {
                   type="button"
                   className="admin-auctions__thumb-wrap"
                   onClick={() => setModalProperty(p)}
-                  title="Показать все ставки"
+                  title={t('admin_showAllBids')}
                 >
                   <img
                     src={
@@ -317,18 +321,18 @@ const AdminAuctions = () => {
                     }
                     alt=""
                   />
-                  <span className="admin-auctions__thumb-hint">Ставки — нажмите</span>
+                  <span className="admin-auctions__thumb-hint">{t('admin_stavki_nazhmite_448e6916')}</span>
                 </button>
                 <div className="admin-auctions__body">
                   <div className="admin-auctions__badges">
                     <span className={`admin-auctions__badge ${phaseClass}`}>{phaseLabel}</span>
                   </div>
-                  <h3 className="admin-auctions__title">{p.title || p.name || `Лот #${p.id}`}</h3>
+                  <h3 className="admin-auctions__title">{p.title || p.name || t('admin_lotNum_tmpl', { id: p.id })}</h3>
                   <p className="admin-auctions__meta">{p.location || '—'}</p>
                   <p className="admin-auctions__meta">
-                    Старт: {formatMoney(p.auction_starting_price ?? p.auctionStartingPrice)}
+                    {t('admin_start_price_f2c9b7e1', { price: formatMoney(p.auction_starting_price ?? p.auctionStartingPrice) })}
                     {p.price != null && Number(p.price) > 0 && (
-                      <> · Купить сейчас: {formatMoney(p.price)}</>
+                      <> {t('admin_kupit_seychas_price_5fca9102', { price: formatMoney(p.price) })}</>
                     )}
                   </p>
                   <a
@@ -337,7 +341,7 @@ const AdminAuctions = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Открыть карточку на сайте
+                    {t('admin_otkryt_kartochku_na_sayte_be644024')}
                   </a>
                 </div>
               </article>

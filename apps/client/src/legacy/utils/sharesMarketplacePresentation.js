@@ -30,24 +30,42 @@ function splitLocation(location) {
   return { city: parts[0] || '', country: '' }
 }
 
+/** Stable type → i18n key (English fallback below). */
+const PROPERTY_TYPE_KEYS = {
+  apartment: 'propertyTypeApartment',
+  apartments: 'propertyTypeApartments',
+  properties_apartments: 'propertyTypeApartments',
+  flat: 'propertyTypeFlat',
+  flats: 'propertyTypeFlats',
+  house: 'propertyTypeHouse',
+  houses: 'propertyTypeHouses',
+  properties_houses: 'propertyTypeHouses',
+  villa: 'propertyTypeVilla',
+  villas: 'propertyTypeVillas',
+  commercial: 'propertyTypeCommercial',
+  townhouse: 'propertyTypeTownhouse',
+  penthouse: 'propertyTypePenthouse',
+}
+
+const PROPERTY_TYPE_EN = {
+  apartment: 'Apartment',
+  apartments: 'Apartments',
+  properties_apartments: 'Apartments',
+  flat: 'Flat',
+  flats: 'Flats',
+  house: 'House',
+  houses: 'Houses',
+  properties_houses: 'Houses',
+  villa: 'Villa',
+  villas: 'Villas',
+  commercial: 'Commercial property',
+  townhouse: 'Townhouse',
+  penthouse: 'Penthouse',
+}
+
 function humanizePropertyType(value) {
   const normalized = String(value || '').trim().toLowerCase()
-  const labels = {
-    apartment: 'Апартаменты',
-    apartments: 'Апартаменты',
-    properties_apartments: 'Апартаменты',
-    flat: 'Квартира',
-    flats: 'Квартиры',
-    house: 'Дом',
-    houses: 'Дома',
-    properties_houses: 'Дома',
-    villa: 'Вилла',
-    villas: 'Виллы',
-    commercial: 'Коммерческая',
-    townhouse: 'Таунхаус',
-    penthouse: 'Пентхаус',
-  }
-  return labels[normalized] || String(value || '').trim()
+  return PROPERTY_TYPE_EN[normalized] || String(value || '').trim()
 }
 
 export function resolveShareMarketplaceState(share = {}, now = new Date()) {
@@ -72,18 +90,30 @@ export function resolveShareMarketplaceState(share = {}, now = new Date()) {
     now,
   )
   const blocksInvestment = Boolean(listingState.blocksPurchase || soldOut)
-  const shareListingState = listingState.state === 'sold'
-    ? { ...listingState, label: 'Сбор завершён' }
-    : listingState
+  const shareListingState =
+    listingState.state === 'sold'
+      ? {
+          ...listingState,
+          labelKey: 'sharesPage_statusCompleted',
+          label: 'Funding closed',
+        }
+      : listingState
 
   return {
     ...shareListingState,
     blocksInvestment,
-    ctaLabel: shareListingState.state === 'sold'
-      ? 'Сбор завершён'
-      : blocksInvestment
-        ? shareListingState.label
-        : 'Подробнее',
+    ctaLabelKey:
+      shareListingState.state === 'sold'
+        ? 'sharesPage_statusCompleted'
+        : blocksInvestment
+          ? shareListingState.labelKey
+          : 'sharesPage_learnMore',
+    ctaLabel:
+      shareListingState.state === 'sold'
+        ? 'Funding closed'
+        : blocksInvestment
+          ? shareListingState.label
+          : 'Learn more',
   }
 }
 
@@ -111,6 +141,24 @@ export function normalizeMarketplaceShare(raw = {}) {
     raw.annualYield ?? raw.annual_yield ?? raw.yield_percent,
   )
   const state = resolveShareMarketplaceState({ ...raw, totalShares, sharesSold })
+  const statusKey = resolveShareStatusKey(state, collectedPercent)
+  const typeRaw = raw.type || raw.property_category || raw.property_type
+  const typeKey = PROPERTY_TYPE_KEYS[String(typeRaw || '').trim().toLowerCase()] || null
+
+  let statusLabelKey = state.ctaLabelKey
+  let statusLabel = state.ctaLabel
+  if (!state.blocksInvestment) {
+    if (collectedPercent == null) {
+      statusLabelKey = 'sharesPage_statusPending'
+      statusLabel = 'Terms TBD'
+    } else if (collectedPercent >= 80) {
+      statusLabelKey = 'sharesPage_statusAlmostFull'
+      statusLabel = 'Almost funded'
+    } else {
+      statusLabelKey = 'sharesPage_statusOpen'
+      statusLabel = 'Funding open'
+    }
+  }
 
   return {
     ...raw,
@@ -121,7 +169,8 @@ export function normalizeMarketplaceShare(raw = {}) {
     location,
     city: String(raw.city || parsedLocation.city || '').trim(),
     country: String(raw.country || parsedLocation.country || '').trim(),
-    type: humanizePropertyType(raw.type || raw.property_category || raw.property_type),
+    typeKey,
+    type: humanizePropertyType(typeRaw),
     image: typeof raw.image === 'string' ? raw.image.trim() : '',
     totalPrice,
     totalShares,
@@ -133,15 +182,9 @@ export function normalizeMarketplaceShare(raw = {}) {
     currency: String(raw.currency || 'EUR').trim().toUpperCase(),
     sale_type: 'share',
     is_shared_ownership: true,
-    statusKey: resolveShareStatusKey(state, collectedPercent),
-    statusLabel:
-      state.blocksInvestment
-        ? state.ctaLabel
-        : collectedPercent == null
-          ? 'Условия уточняются'
-          : collectedPercent >= 80
-            ? 'Почти собрано'
-            : 'Сбор открыт',
+    statusKey,
+    statusLabelKey,
+    statusLabel,
   }
 }
 
@@ -158,23 +201,27 @@ export function resolveShareStatusKey(state = {}, collectedPercent = null) {
   return 'open'
 }
 
-export function formatForecastYield(value, locale = 'ru-RU') {
+export function formatForecastYield(value, locale = 'en-US') {
   const yieldValue = finiteNumber(value)
   if (yieldValue == null) {
     return {
-      label: 'Прогноз доходности',
+      labelKey: 'sharesPage_yieldForecast',
+      noteKey: 'sharesPage_yieldUnpublished',
+      label: 'Yield forecast',
       value: '—',
-      note: 'Прогноз не опубликован',
+      note: 'Forecast not published',
     }
   }
 
   return {
-    label: 'Прогноз доходности',
+    labelKey: 'sharesPage_yieldForecast',
+    noteKey: 'sharesPage_yieldNote',
+    label: 'Yield forecast',
     value: `${new Intl.NumberFormat(locale, {
       minimumFractionDigits: 0,
       maximumFractionDigits: 1,
     }).format(yieldValue)}%`,
-    note: 'Прогноз, не гарантия',
+    note: 'Forecast, not a guarantee',
   }
 }
 

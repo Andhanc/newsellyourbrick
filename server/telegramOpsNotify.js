@@ -72,7 +72,7 @@ function formatMoney(amount, currency) {
   const n = Number(amount);
   const cur = String(currency || 'EUR').toUpperCase();
   if (!Number.isFinite(n)) return `— ${cur}`;
-  return `${n.toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ${cur}`;
+  return `${n.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${cur}`;
 }
 
 function displayName(userOrName) {
@@ -97,7 +97,7 @@ function previewText(text, max = 800) {
 function formatOpsDateTime(value) {
   const date = value instanceof Date ? value : new Date(value || Date.now());
   const valid = Number.isNaN(date.getTime()) ? new Date() : date;
-  return new Intl.DateTimeFormat('ru-RU', {
+  return new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Europe/Moscow',
     day: 'numeric',
     month: 'long',
@@ -118,16 +118,16 @@ function liveChatClientLabel(data = {}) {
   if (name && name !== '—') return name;
   const lead = data.leadEmail || data.lead_email;
   if (lead) return String(lead).trim();
-  return 'гость';
+  return 'guest';
 }
 
 function liveChatFromLabel(data = {}) {
   const who = liveChatClientLabel(data);
   const userId = data.userId ?? data.user_id;
   const hasUser = userId != null && String(userId).trim() !== '' && Number(userId) > 0;
-  if (hasUser && who && who !== 'гость') return `${who} (#${userId})`;
-  if (hasUser) return `пользователь #${userId}`;
-  return who || 'гость';
+  if (hasUser && who && who !== 'guest') return `${who} (#${userId})`;
+  if (hasUser) return `user #${userId}`;
+  return who || 'guest';
 }
 
 function ensureDataDir() {
@@ -240,7 +240,7 @@ async function validateTelegramToken() {
       return true;
     }
     if (data.error_code === 401) {
-      disableTelegramApi('неверный TELEGRAM_BOT_TOKEN (401)');
+      disableTelegramApi('invalid TELEGRAM_BOT_TOKEN (401)');
       return false;
     }
     disableTelegramApi(data.description || 'getMe failed');
@@ -334,17 +334,17 @@ export function buildKycPendingMessage(data = {}) {
   const docType = escapeHtml(data.documentType || data.document_type || '—');
   const docId = data.documentId ?? data.document_id;
   return [
-    '🛡 <b>KYC на проверке</b>',
-    `Пользователь #${escapeHtml(userId)} · ${name}`,
-    `Роль: ${role}`,
-    `Документ: ${docType}${docId != null ? ` (#${escapeHtml(docId)})` : ''}`,
-    'Админка → Модерация',
+    '🛡 <b>KYC pending review</b>',
+    `User #${escapeHtml(userId)} · ${name}`,
+    `Role: ${role}`,
+    `Document: ${docType}${docId != null ? ` (#${escapeHtml(docId)})` : ''}`,
+    'Admin → Moderation',
   ].join('\n');
 }
 
 export function buildPropertyPendingMessage(data = {}) {
   const propertyId = data.propertyId ?? data.id ?? '—';
-  const title = escapeHtml(data.title || data.propertyTitle || 'без названия');
+  const title = escapeHtml(data.title || data.propertyTitle || 'untitled');
   const type = escapeHtml(data.propertyType || data.property_type || '—');
   const isAuction =
     data.isAuction === 1 ||
@@ -353,11 +353,11 @@ export function buildPropertyPendingMessage(data = {}) {
     data.is_auction === true;
   const userId = data.userId ?? data.user_id ?? '—';
   return [
-    '🏠 <b>Объект на модерации</b>',
+    '🏠 <b>Listing pending moderation</b>',
     `#${escapeHtml(propertyId)} «${title}»`,
-    `Тип: ${type} · Аукцион: ${isAuction ? 'да' : 'нет'}`,
-    `Продавец: #${escapeHtml(userId)}`,
-    'Админка → Модерация → Объекты',
+    `Type: ${type} · Auction: ${isAuction ? 'yes' : 'no'}`,
+    `Seller: #${escapeHtml(userId)}`,
+    'Admin → Moderation → Listings',
   ].join('\n');
 }
 
@@ -369,12 +369,12 @@ export function buildPurchaseRequestMessage(data = {}) {
   const phone = escapeHtml(data.buyerPhone || data.phone || '—');
   const status = escapeHtml(data.status || 'pending');
   return [
-    `🛒 <b>Запрос на покупку</b> #${escapeHtml(requestId)}`,
+    `🛒 <b>Purchase request</b> #${escapeHtml(requestId)}`,
     `«${title}»`,
-    `Цена: ${escapeHtml(amount)}`,
-    `Покупатель: ${buyer} · ${phone}`,
-    `Статус: ${status}`,
-    'Админка → Запросы на покупку',
+    `Price: ${escapeHtml(amount)}`,
+    `Buyer: ${buyer} · ${phone}`,
+    `Status: ${status}`,
+    'Admin → Purchase requests',
   ].join('\n');
 }
 
@@ -385,10 +385,10 @@ export function buildReservationPaidMessage(data = {}) {
   const sellerId = data.sellerId ?? '—';
   const title = data.propertyTitle ? ` «${escapeHtml(data.propertyTitle)}»` : '';
   return [
-    '💳 <b>Резерв оплачен — нужна финализация</b>',
-    `Заявка #${escapeHtml(requestId)} · объект #${escapeHtml(propertyId)}${title}`,
-    `Покупатель #${escapeHtml(buyerId)} · продавец #${escapeHtml(sellerId)}`,
-    'Админка → Запросы на покупку → завершить сделку',
+    '💳 <b>Reservation paid — finalize deal</b>',
+    `Request #${escapeHtml(requestId)} · listing #${escapeHtml(propertyId)}${title}`,
+    `Buyer #${escapeHtml(buyerId)} · seller #${escapeHtml(sellerId)}`,
+    'Admin → Purchase requests → complete the deal',
   ].join('\n');
 }
 
@@ -403,10 +403,10 @@ export function buildBidMessage(data = {}) {
       ? `#${escapeHtml(userId)} · ${escapeHtml(name)}`
       : `#${escapeHtml(userId)}`;
   return [
-    '🔨 <b>Ставка</b>',
-    `Лот #${escapeHtml(propertyId)} «${title}»`,
-    `Сумма: ${escapeHtml(amount)}`,
-    `Участник: ${who}`,
+    '🔨 <b>Bid</b>',
+    `Lot #${escapeHtml(propertyId)} «${title}»`,
+    `Amount: ${escapeHtml(amount)}`,
+    `Bidder: ${who}`,
   ].join('\n');
 }
 
@@ -423,10 +423,10 @@ export function buildAuctionWonMessage(data = {}) {
       )
     : '—';
   return [
-    '🏆 <b>Победа в аукционе</b>',
-    `Лот #${escapeHtml(propertyId)} «${title}»`,
-    `Ставка: ${escapeHtml(amount)} · победитель #${escapeHtml(userId)}`,
-    `Депозит до: ${due}`,
+    '🏆 <b>Auction won</b>',
+    `Lot #${escapeHtml(propertyId)} «${title}»`,
+    `Bid: ${escapeHtml(amount)} · winner #${escapeHtml(userId)}`,
+    `Deposit due: ${due}`,
   ].join('\n');
 }
 
@@ -481,15 +481,15 @@ export function buildLiveChatMessage(data = {}) {
   const email = data.clientEmail || data.client_email || data.leadEmail || data.lead_email;
   const phone = data.clientPhone || data.client_phone;
   const lines = [
-    '💬 <b>Новое сообщение в поддержку</b>',
+    '💬 <b>New support chat message</b>',
     '',
-    `От: ${from}`,
+    `From: ${from}`,
   ];
   if (email) lines.push(`Email: ${escapeHtml(email)}`);
-  if (phone) lines.push(`Телефон: ${escapeHtml(phone)}`);
-  lines.push(`Когда: ${when}`);
+  if (phone) lines.push(`Phone: ${escapeHtml(phone)}`);
+  lines.push(`When: ${when}`);
   lines.push('');
-  lines.push(`Сообщение: ${preview}`);
+  lines.push(`Message: ${preview}`);
   return lines.join('\n');
 }
 
@@ -521,13 +521,13 @@ async function handleBotCommand(msg) {
     await replyToChat(
       chatId,
       [
-        'SellYourBrick ops-бот',
+        'SellYourBrick ops bot',
         '',
-        'Шлёт в этот чат алерты: KYC, объекты на модерации, Buy Now, ставки, чат поддержки.',
+        'Sends alerts to this chat: KYC, listings pending moderation, Buy Now, bids, support chat.',
         '',
-        'Команды:',
-        '/whoami — показать chat id и зарегистрировать чат',
-        '/status — статус ops-алертов',
+        'Commands:',
+        '/whoami — show chat id and register the chat',
+        '/status — ops alert status',
       ].join('\n'),
     );
     registerAlertChat(chatId, {
@@ -548,8 +548,8 @@ async function handleBotCommand(msg) {
         `chat.id = <code>${escapeHtml(chatId)}</code>`,
         `type = ${escapeHtml(chat.type || '—')}`,
         '',
-        'Чат зарегистрирован для алертов.',
-        'Можно также прописать в .env:',
+        'Chat registered for alerts.',
+        'You can also set in .env:',
         `TELEGRAM_CHAT_ID=${escapeHtml(chatId)}`,
       ].join('\n'),
     );

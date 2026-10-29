@@ -70,7 +70,7 @@ export function mapReservationPurchase(row = {}) {
   return {
     propertyId: billing.property_id ?? row.property_id ?? null,
     propertyType: billing.property_type || row.property_type || null,
-    title: String(row.property_title || `Объект #${billing.property_id ?? '—'}`).trim(),
+    title: String(row.property_title || `Property #${billing.property_id ?? '—'}`).trim(),
     location: resolvePurchaseLocation(row),
     imageSrc: normalizeImageSrc(row.property_image),
     paidAmount,

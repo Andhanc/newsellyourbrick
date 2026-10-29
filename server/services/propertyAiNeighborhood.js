@@ -1,11 +1,11 @@
 import { fetchNearbyPlacesForCategory } from './mapNearbyPlacesService.js'
 
 const CATEGORY_LABELS = Object.freeze({
-  schools: 'Образование',
-  transport: 'Транспорт',
-  medical: 'Медицина',
-  recreation: 'Отдых и спорт',
-  shops: 'Магазины и сервисы',
+  schools: 'Education',
+  transport: 'Transport',
+  medical: 'Healthcare',
+  recreation: 'Leisure and sports',
+  shops: 'Shops and services',
 })
 
 function validCoordinates(lat, lng) {

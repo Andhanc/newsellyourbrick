@@ -3,6 +3,7 @@
  */
 
 import emailjs from '@emailjs/browser'
+import { getUiIntlLocale } from '../utils/uiIntlLocale'
 
 import { getEmailJsConfig, isDevelopment, loadRuntimeConfig } from '../utils/env'
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
@@ -130,7 +131,8 @@ if (isDevelopment()) {
 
 /**
  * Валидация пароля на клиенте
- * Проверяет наличие заглавной буквы, спецсимволов и цифр
+ * Проверяет наличие заглавной буквы, спецсимволов и цифр.
+ * `missing` / `present` — стабильные ключи: upper | special | digit (локализуются в UI).
  * @param {string} password - Пароль для проверки
  * @returns {object} - { valid: boolean, errors: string[], missing: string[], present: string[] }
  */
@@ -139,28 +141,25 @@ export function validatePassword(password) {
   const missing = []
   const present = []
 
-  // Проверка наличия заглавной буквы
   if (!/[A-ZА-Я]/.test(password)) {
-    errors.push('Пароль должен содержать хотя бы одну заглавную букву')
-    missing.push('заглавную букву')
+    errors.push('upper')
+    missing.push('upper')
   } else {
-    present.push('заглавную букву')
+    present.push('upper')
   }
 
-  // Проверка наличия спецсимволов
   if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password)) {
-    errors.push('Пароль должен содержать хотя бы один спецсимвол (!@#$%^&*()_+-=[]{}|;:,.<>?)')
-    missing.push('спецсимвол')
+    errors.push('special')
+    missing.push('special')
   } else {
-    present.push('спецсимвол')
+    present.push('special')
   }
 
-  // Проверка наличия цифры
   if (!/[0-9]/.test(password)) {
-    errors.push('Пароль должен содержать хотя бы одну цифру')
-    missing.push('цифру')
+    errors.push('digit')
+    missing.push('digit')
   } else {
-    present.push('цифру')
+    present.push('digit')
   }
 
   return {
@@ -168,9 +167,11 @@ export function validatePassword(password) {
     errors,
     missing,
     present,
-    message: errors.length > 0 
-      ? `Пароль не соответствует требованиям. Добавьте: ${missing.join(', ')}. ${present.length > 0 ? `Уже есть: ${present.join(', ')}.` : ''}`
-      : 'Пароль соответствует всем требованиям'
+    // English fallback only — UI should use formatPasswordValidationMessage(t)
+    message:
+      errors.length > 0
+        ? `Password does not meet requirements. Add: ${missing.join(', ')}.`
+        : 'Password meets all requirements',
   }
 }
 
@@ -787,18 +788,18 @@ const verifyCode = (phone, code, removeOnSuccess = false) => {
   
   if (!codeData) {
     console.warn('⚠️ Код не найден для номера:', phone, 'Доступные номера:', Object.keys(codes))
-    return { valid: false, error: 'Код не найден. Возможно, вы ввели код для другого номера.' }
+    return { valid: false, error: 'Code not found. You may have entered the code for a different number.' }
   }
   
   if (Date.now() > codeData.expiresAt) {
     delete codes[phone]
     localStorage.setItem('whatsappCodes', JSON.stringify(codes))
-    return { valid: false, error: 'Код истек. Запросите новый код.' }
+    return { valid: false, error: 'Code expired. Request a new code.' }
   }
   
   if (codeData.code !== code) {
-    console.warn('⚠️ Неверный код:', { введен: code, ожидается: codeData.code })
-    return { valid: false, error: 'Неверный код' }
+    console.warn('⚠️ Invalid code:', { введен: code, ожидается: codeData.code })
+    return { valid: false, error: 'Invalid code' }
   }
   
   // Код верный, удаляем его только если требуется
@@ -839,21 +840,21 @@ const getCountryByPhoneCode = (phone) => {
   
   // Маппинг кодов стран (от самых длинных к коротким)
   const countryMap = {
-    '375': { name: 'Беларусь', code: 'BY', flag: '🇧🇾' },
-    '380': { name: 'Украина', code: 'UA', flag: '🇺🇦' },
-    '971': { name: 'ОАЭ', code: 'AE', flag: '🇦🇪' },
-    '7': { name: 'Россия/Казахстан', code: 'RU', flag: '🇷🇺' },
-    '1': { name: 'США/Канада', code: 'US', flag: '🇺🇸' },
-    '44': { name: 'Великобритания', code: 'GB', flag: '🇬🇧' },
-    '49': { name: 'Германия', code: 'DE', flag: '🇩🇪' },
-    '33': { name: 'Франция', code: 'FR', flag: '🇫🇷' },
-    '39': { name: 'Италия', code: 'IT', flag: '🇮🇹' },
-    '34': { name: 'Испания', code: 'ES', flag: '🇪🇸' },
-    '90': { name: 'Турция', code: 'TR', flag: '🇹🇷' },
-    '86': { name: 'Китай', code: 'CN', flag: '🇨🇳' },
-    '81': { name: 'Япония', code: 'JP', flag: '🇯🇵' },
-    '82': { name: 'Южная Корея', code: 'KR', flag: '🇰🇷' },
-    '91': { name: 'Индия', code: 'IN', flag: '🇮🇳' },
+    '375': { name: 'Belarus', code: 'BY', flag: '🇧🇾' },
+    '380': { name: 'Ukraine', code: 'UA', flag: '🇺🇦' },
+    '971': { name: 'UAE', code: 'AE', flag: '🇦🇪' },
+    '7': { name: 'Russia/Kazakhstan', code: 'RU', flag: '🇷🇺' },
+    '1': { name: 'USA/Canada', code: 'US', flag: '🇺🇸' },
+    '44': { name: 'United Kingdom', code: 'GB', flag: '🇬🇧' },
+    '49': { name: 'Germany', code: 'DE', flag: '🇩🇪' },
+    '33': { name: 'France', code: 'FR', flag: '🇫🇷' },
+    '39': { name: 'Italy', code: 'IT', flag: '🇮🇹' },
+    '34': { name: 'Spain', code: 'ES', flag: '🇪🇸' },
+    '90': { name: 'Turkey', code: 'TR', flag: '🇹🇷' },
+    '86': { name: 'China', code: 'CN', flag: '🇨🇳' },
+    '81': { name: 'Japan', code: 'JP', flag: '🇯🇵' },
+    '82': { name: 'South Korea', code: 'KR', flag: '🇰🇷' },
+    '91': { name: 'India', code: 'IN', flag: '🇮🇳' },
     '55': { name: 'Бразилия', code: 'BR', flag: '🇧🇷' },
     '52': { name: 'Мексика', code: 'MX', flag: '🇲🇽' },
     '61': { name: 'Австралия', code: 'AU', flag: '🇦🇺' },
@@ -927,11 +928,11 @@ export const validatePhoneNumber = (phone) => {
   const digitsOnly = cleaned.replace(/\+/g, '')
   
   if (digitsOnly.length < 10) {
-    return { valid: false, error: 'Номер слишком короткий' }
+    return { valid: false, error: 'Phone number is too short' }
   }
   
   if (digitsOnly.length > 15) {
-    return { valid: false, error: 'Номер слишком длинный' }
+    return { valid: false, error: 'Phone number is too long' }
   }
   
   return { valid: true }
@@ -1018,13 +1019,13 @@ export const sendWhatsAppVerificationCode = async (phone) => {
       if (response.ok && data.success) {
         return {
           success: true,
-          message: data.message || 'Код отправлен в WhatsApp'
+          message: data.message || 'Code sent to WhatsApp'
         }
       }
 
       // Обработка ошибки 503 - WhatsApp клиент не готов
       if (response.status === 503) {
-        const errorMessage = data.error || 'WhatsApp сервис временно недоступен. Пожалуйста, подождите несколько секунд и попробуйте снова.'
+        const errorMessage = data.error || 'WhatsApp service is temporarily unavailable. Please wait a few seconds and try again.'
         console.warn('⚠️ WhatsApp клиент не готов:', errorMessage)
         
         // В dev-режиме показываем код для отладки
@@ -1032,7 +1033,7 @@ export const sendWhatsAppVerificationCode = async (phone) => {
           console.log(`🔐 В режиме разработки используйте код: ${code}`)
           return {
             success: true,
-            message: 'WhatsApp сервис недоступен. В режиме разработки используйте код из консоли.',
+            message: 'WhatsApp service unavailable. In development mode, use the code from the console.',
             code,
             devMode: true,
             warning: errorMessage
@@ -1047,11 +1048,11 @@ export const sendWhatsAppVerificationCode = async (phone) => {
 
       // Если backend ответил другой ошибкой, но мы в dev-режиме — покажем код для отладки
       if (import.meta.env?.DEV) {
-        console.warn('⚠️ Не удалось отправить код через backend WhatsApp:', data.error || response.statusText)
+        console.warn('⚠️ Could not send the code через backend WhatsApp:', data.error || response.statusText)
         console.log(`🔐 В режиме разработки используйте код: ${code}`)
         return {
           success: true,
-          message: 'Не удалось отправить код автоматически, используйте код из консоли (режим разработки)',
+          message: 'Could not send the code automatically; use the code from the console (development mode)',
           code,
           devMode: true
         }
@@ -1059,7 +1060,7 @@ export const sendWhatsAppVerificationCode = async (phone) => {
 
       return {
         success: false,
-        error: data.error || 'Не удалось отправить код через WhatsApp'
+        error: data.error || 'Could not send the code via WhatsApp'
       }
     } catch (error) {
       console.error('Ошибка запроса к backend для WhatsApp:', error)
@@ -1069,7 +1070,7 @@ export const sendWhatsAppVerificationCode = async (phone) => {
         console.log(`🔐 Код для ${formattedPhone}: ${code}`)
         return {
           success: true,
-          message: 'Backend недоступен. В режиме разработки используйте код из консоли.',
+          message: 'Backend unavailable. In development mode, use the code from the console.',
           code,
           devMode: true
         }
@@ -1077,14 +1078,14 @@ export const sendWhatsAppVerificationCode = async (phone) => {
 
       return {
         success: false,
-        error: 'Не удалось отправить код. Попробуйте позже.'
+        error: 'Could not send the code. Please try again later.'
       }
     }
   } catch (error) {
     console.error('Ошибка отправки кода:', error)
     return {
       success: false,
-      error: 'Не удалось отправить код. Попробуйте позже.'
+      error: 'Could not send the code. Please try again later.'
     }
   }
 }
@@ -1103,7 +1104,7 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
     if (!verification.valid) {
       return {
         success: false,
-        error: verification.error || 'Неверный код'
+        error: verification.error || 'Invalid code'
       }
     }
     
@@ -1144,7 +1145,7 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
         body: JSON.stringify({
           phone: formattedPhone,
           code,
-          name: whatsappInfo?.name || `Пользователь ${formattedPhone.substring(formattedPhone.length - 4)}`,
+          name: whatsappInfo?.name || `User ${formattedPhone.substring(formattedPhone.length - 4)}`,
           phoneFormatted: formatPhoneForDisplay(formattedPhone),
           countryFlag: countryInfo.flag,
           role: role,
@@ -1161,7 +1162,7 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
           if (data.user.is_blocked === true || data.user.is_blocked === 1) {
             return {
               success: false,
-              error: 'Пользователь заблокирован',
+              error: 'User is blocked',
               is_blocked: true
             }
           }
@@ -1188,12 +1189,12 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
         }
       } else {
         const errorData = await response.json().catch(() => ({}))
-        console.error('Ошибка при сохранении в БД:', errorData.error || 'Неизвестная ошибка')
+        console.error('Ошибка при сохранении в БД:', errorData.error || 'Unknown error')
         
         if (response.status === 403 && errorData.is_blocked) {
           return {
             success: false,
-            error: errorData.error || 'Пользователь заблокирован',
+            error: errorData.error || 'User is blocked',
             is_blocked: true
           }
         }
@@ -1201,7 +1202,7 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
         if (response.status === 409) {
           return {
             success: false,
-            error: errorData.error || 'Вы уже зарегистрированы с этим номером. Войдите в аккаунт.',
+            error: errorData.error || 'You are already registered with this number. Please sign in.',
             code: 'ALREADY_REGISTERED',
             is_blocked: false
           }
@@ -1210,7 +1211,7 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
         if (response.status === 404) {
           return {
             success: false,
-            error: errorData.error || 'Пользователь с таким номером не найден. Сначала зарегистрируйтесь через WhatsApp.',
+            error: errorData.error || 'No user found with this number. Please register via WhatsApp first.',
             code: 'NEED_REGISTER',
             is_blocked: false
           }
@@ -1218,7 +1219,7 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
         
         return {
           success: false,
-          error: errorData.error || 'Ошибка при сохранении данных',
+          error: errorData.error || 'Could not save data',
           is_blocked: false
         }
       }
@@ -1254,7 +1255,7 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
       const userData = {
         phone: formattedPhone,
         phoneFormatted: formatPhoneForDisplay(formattedPhone),
-        name: whatsappInfo?.name || `Пользователь ${formattedPhone.substring(formattedPhone.length - 4)}`,
+        name: whatsappInfo?.name || `User ${formattedPhone.substring(formattedPhone.length - 4)}`,
         id: `whatsapp_${formattedPhone}`,
         role: role || 'buyer', // Используем переданную роль
         country: countryInfo.name,
@@ -1277,7 +1278,7 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
     console.error('Ошибка верификации кода:', error)
     return {
       success: false,
-      error: 'Не удалось проверить код. Попробуйте позже.'
+      error: 'Could not verify the code. Please try again later.'
     }
   }
 }
@@ -1301,12 +1302,12 @@ export const handleGoogleAuth = async (googleResponse, options = {}) => {
       return await handleGoogleAccessToken(googleResponse.access_token, googleResponse, mode)
     }
     
-    throw new Error('Неизвестный формат ответа от Google')
+    throw new Error('Unknown Google response format')
   } catch (error) {
     console.error('Ошибка Google авторизации:', error)
     return {
       success: false,
-      error: error.message || 'Не удалось обработать данные авторизации'
+      error: error.message || 'Could not process authentication data'
     }
   }
 }
@@ -1339,20 +1340,20 @@ const handleGoogleCredential = async (credential, mode = 'register') => {
     if (response.status === 409) {
       return {
         success: false,
-        error: errorData.error || 'Вы уже зарегистрированы. Войдите в аккаунт.',
+        error: errorData.error || 'You are already registered. Please sign in.',
         code: 'ALREADY_REGISTERED'
       }
     }
     if (response.status === 404) {
       return {
         success: false,
-        error: errorData.error || 'Аккаунт не найден. Сначала зарегистрируйтесь через Google.',
+        error: errorData.error || 'Account not found. Please register with Google first.',
         code: 'NEED_REGISTER'
       }
     }
     return {
       success: false,
-      error: errorData.error || 'Ошибка авторизации через Google'
+      error: errorData.error || 'Google sign-in failed'
     }
   } catch (error) {
     console.log('Бэкенд недоступен, используем локальную обработку:', error.message)
@@ -1381,7 +1382,7 @@ const handleGoogleCredential = async (credential, mode = 'register') => {
     console.error('Ошибка обработки токена:', fallbackError)
     return {
       success: false,
-      error: 'Не удалось обработать данные авторизации'
+      error: 'Could not process authentication data'
     }
   }
 }
@@ -1402,7 +1403,7 @@ const handleGoogleAccessToken = async (accessToken, fullResponse = {}, mode = 'r
     })
 
     if (!userInfoResponse.ok) {
-      throw new Error('Не удалось получить данные пользователя')
+      throw new Error('Could not fetch user data')
     }
 
     const userInfo = await userInfoResponse.json()
@@ -1433,20 +1434,20 @@ const handleGoogleAccessToken = async (accessToken, fullResponse = {}, mode = 'r
       if (response.status === 409) {
         return {
           success: false,
-          error: errorData.error || 'Вы уже зарегистрированы. Войдите в аккаунт.',
+          error: errorData.error || 'You are already registered. Please sign in.',
           code: 'ALREADY_REGISTERED'
         }
       }
       if (response.status === 404) {
         return {
           success: false,
-          error: errorData.error || 'Аккаунт не найден. Сначала зарегистрируйтесь через Google.',
+          error: errorData.error || 'Account not found. Please register with Google first.',
           code: 'NEED_REGISTER'
         }
       }
       return {
         success: false,
-        error: errorData.error || 'Ошибка авторизации через Google'
+        error: errorData.error || 'Google sign-in failed'
       }
     } catch (backendError) {
       console.log('Бэкенд недоступен, используем локальные данные:', backendError.message)
@@ -1471,7 +1472,7 @@ const handleGoogleAccessToken = async (accessToken, fullResponse = {}, mode = 'r
     console.error('Ошибка получения данных пользователя:', error)
     return {
       success: false,
-      error: 'Не удалось получить данные пользователя от Google'
+      error: 'Could not fetch user data from Google'
     }
   }
 }
@@ -1506,7 +1507,7 @@ export const verifyTelegramAuth = async (telegramData, mode = 'register', role =
     if (!response.ok) {
       return {
         success: false,
-        error: data.error || 'Ошибка авторизации через Telegram',
+        error: data.error || 'Telegram sign-in failed',
         code: response.status === 409 ? 'ALREADY_REGISTERED' : response.status === 404 ? 'NEED_REGISTER' : undefined
       }
     }
@@ -1529,7 +1530,7 @@ export const verifyTelegramAuth = async (telegramData, mode = 'register', role =
     console.error('Ошибка verifyTelegramAuth:', error)
     return {
       success: false,
-      error: error.message || 'Не удалось войти через Telegram'
+      error: error.message || 'Could not sign in with Telegram'
     }
   }
 }
@@ -1623,7 +1624,7 @@ export const validateSession = async () => {
     if (result.success && result.data) {
       // Проверяем, заблокирован ли пользователь
       if (result.data.is_blocked === 1) {
-        console.warn('🚫 Пользователь заблокирован')
+        console.warn('🚫 User is blocked')
         return { valid: true, user: result.data, is_blocked: true }
       }
       return { valid: true, user: result.data, is_blocked: false }
@@ -1700,7 +1701,7 @@ export const validateEmail = async (email) => {
   // Базовая проверка формата email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(email)) {
-    return { valid: false, error: 'Неверный формат email адреса' }
+    return { valid: false, error: 'Invalid email format' }
   }
 
   // Извлекаем домен из email
@@ -1784,17 +1785,17 @@ const verifyEmailCodeLocal = (email, code) => {
   const codeData = codes[emailLower]
   
   if (!codeData) {
-    return { valid: false, error: 'Код не найден. Запросите новый код.' }
+    return { valid: false, error: 'Code not found. Request a new code.' }
   }
   
   if (Date.now() > codeData.expiresAt) {
     delete codes[emailLower]
     localStorage.setItem('emailCodes', JSON.stringify(codes))
-    return { valid: false, error: 'Код истек. Запросите новый код.' }
+    return { valid: false, error: 'Code expired. Request a new code.' }
   }
   
   if (codeData.code !== code) {
-    return { valid: false, error: 'Неверный код' }
+    return { valid: false, error: 'Invalid code' }
   }
   
   // Код верный, возвращаем данные регистрации
@@ -1839,7 +1840,7 @@ export const sendEmailVerificationCode = async (email) => {
       
       if (response.ok) {
         const data = await response.json().catch(() => ({}))
-        console.log('✅ Backend подтвердил отправку кода:', data.message || 'Код отправлен')
+        console.log('✅ Backend подтвердил отправку кода:', data.message || 'Code sent')
         if (data.warning) {
           console.warn('⚠️ Backend предупреждение:', data.warning)
         }
@@ -1847,7 +1848,7 @@ export const sendEmailVerificationCode = async (email) => {
         if (!data.warning) {
           return {
             success: true,
-            message: data.message || 'Код отправлен на email'
+            message: data.message || 'Code sent to email'
           }
         }
         // Если есть warning, продолжаем с EmailJS на клиенте
@@ -1877,7 +1878,7 @@ export const sendEmailVerificationCode = async (email) => {
       try {
         // Вычисляем время истечения (10 минут от текущего времени)
         const expirationTime = new Date(Date.now() + 10 * 60 * 1000)
-        const expirationTimeString = expirationTime.toLocaleString('ru-RU', {
+        const expirationTimeString = expirationTime.toLocaleString(getUiIntlLocale(), {
           day: '2-digit',
           month: '2-digit',
           year: 'numeric',
@@ -1894,7 +1895,7 @@ export const sendEmailVerificationCode = async (email) => {
           to_email: emailLower,
           verification_code: code,
           from_name: 'Sellyourbrick',
-          message: `Ваш код подтверждения: ${code}. Код действителен в течение 10 минут.`
+          message: `Your verification code: ${code}. The code is valid for 10 minutes.`
         }
         
         console.log('📧 Отправка email через EmailJS...', {
@@ -1914,7 +1915,7 @@ export const sendEmailVerificationCode = async (email) => {
           console.log('✅ Email успешно отправлен через EmailJS')
           return {
             success: true,
-            message: 'Код отправлен на email'
+            message: 'Code sent to email'
           }
         } else {
           console.error('❌ EmailJS вернул статус:', result.status)
@@ -1923,22 +1924,22 @@ export const sendEmailVerificationCode = async (email) => {
             console.log('🔐 В режиме разработки используйте код:', code)
             return {
               success: true,
-              message: `EmailJS вернул статус ${result.status}. В режиме разработки используйте код:`,
+              message: `EmailJS returned status ${result.status}. In development mode, use the code:`,
               code: code,
               devMode: true,
-              warning: `EmailJS вернул статус ${result.status}. Проверьте настройки EmailJS.`
+              warning: `EmailJS returned status ${result.status}. Check EmailJS settings.`
             }
           }
           return {
             success: false,
-            error: 'Не удалось отправить код. Попробуйте позже.'
+            error: 'Could not send the code. Please try again later.'
           }
         }
       } catch (emailjsError) {
         console.error('❌ Ошибка отправки через EmailJS:', emailjsError)
         
         // Проверяем тип ошибки и выводим понятное сообщение
-        let errorMessage = 'Не удалось отправить код на email'
+        let errorMessage = 'Could not send the code to email'
         
         if (emailjsError.status === 400) {
           const errorText = emailjsError.text || emailjsError.message || ''
@@ -1947,23 +1948,23 @@ export const sendEmailVerificationCode = async (email) => {
           if (errorText.includes('template') || errorText.includes('Template')) {
             console.error('❌ Template ID не найден. Проверьте VITE_EMAILJS_TEMPLATE_ID в .env.local')
             console.error('   Убедитесь, что шаблон существует в EmailJS Dashboard')
-            errorMessage = 'Неверный Template ID. Проверьте VITE_EMAILJS_TEMPLATE_ID в .env.local'
+            errorMessage = 'Invalid Template ID. Check VITE_EMAILJS_TEMPLATE_ID in .env.local'
           } else if (errorText.includes('service') || errorText.includes('Service')) {
             console.error('❌ Service ID не найден. Проверьте VITE_EMAILJS_SERVICE_ID в .env.local')
-            errorMessage = 'Неверный Service ID. Проверьте VITE_EMAILJS_SERVICE_ID в .env.local'
+            errorMessage = 'Invalid Service ID. Check VITE_EMAILJS_SERVICE_ID in .env.local'
           } else if (errorText.includes('Public Key') || errorText.includes('public key')) {
             console.error('❌ Public Key неверный. Проверьте VITE_EMAILJS_PUBLIC_KEY в .env.local')
-            errorMessage = 'Неверный Public Key. Проверьте VITE_EMAILJS_PUBLIC_KEY в .env.local'
+            errorMessage = 'Invalid Public Key. Check VITE_EMAILJS_PUBLIC_KEY in .env.local'
           } else {
             console.error('❌ Ошибка EmailJS:', errorText)
-            errorMessage = `Ошибка EmailJS: ${errorText.substring(0, 100)}`
+            errorMessage = `EmailJS error: ${errorText.substring(0, 100)}`
           }
         } else if (emailjsError.status === 401 || emailjsError.status === 403) {
           console.error('❌ Ошибка авторизации EmailJS (401/403). Проверьте Public Key')
-          errorMessage = 'Ошибка авторизации EmailJS. Проверьте VITE_EMAILJS_PUBLIC_KEY в .env.local'
+          errorMessage = 'EmailJS authorization error. Check VITE_EMAILJS_PUBLIC_KEY in .env.local'
         } else {
-          console.error('❌ Неизвестная ошибка EmailJS:', emailjsError)
-          errorMessage = `Ошибка отправки: ${emailjsError.message || 'Неизвестная ошибка'}`
+          console.error('❌ Unknown error EmailJS:', emailjsError)
+          errorMessage = `Send error: ${emailjsError.message || 'Unknown error'}`
         }
         
         // В режиме разработки показываем код в консоли и возвращаем его для UI
@@ -1972,7 +1973,7 @@ export const sendEmailVerificationCode = async (email) => {
           console.log(`🔐 Код верификации для ${emailLower}: ${code}`)
           return {
             success: true,
-            message: `Код не отправлен через EmailJS (ошибка выше). В режиме разработки используйте код: ${code}`,
+            message: `Code was not sent via EmailJS (see error above). In development mode, use the code: ${code}`,
             code: code,
             devMode: true,
             error: errorMessage
@@ -1999,23 +2000,23 @@ export const sendEmailVerificationCode = async (email) => {
       // В режиме разработки возвращаем успех с кодом, чтобы можно было протестировать
       return {
         success: true,
-        message: `EmailJS не настроен. В режиме разработки используйте код ниже:`,
+        message: `EmailJS is not configured. In development mode, use the code below:`,
         code: isDevelopment() ? code : undefined,
         devMode: true,
-        warning: 'Для отправки реальных email настройте EmailJS в .env.local'
+        warning: 'To send real emails, configure EmailJS in .env.local'
       }
     }
     
     // Если дошли сюда, значит что-то пошло не так
     return {
       success: false,
-      error: 'Не удалось отправить код. Попробуйте позже.'
+      error: 'Could not send the code. Please try again later.'
     }
   } catch (error) {
     console.error('Ошибка отправки кода:', error)
     return {
       success: false,
-      error: 'Не удалось отправить код. Попробуйте позже.'
+      error: 'Could not send the code. Please try again later.'
     }
   }
 }
@@ -2028,7 +2029,7 @@ export const checkSellerRegistrationEmail = async (email, password = null) => {
   try {
     const emailLower = email.toLowerCase().trim()
     if (!emailLower.includes('@')) {
-      return { success: false, error: 'Укажите корректный email' }
+      return { success: false, error: 'Enter a valid email' }
     }
     const base = await getApiBaseUrl()
     const response = await fetch(`${base.replace(/\/$/, '')}/auth/email/check-seller-registration`, {
@@ -2044,7 +2045,7 @@ export const checkSellerRegistrationEmail = async (email, password = null) => {
       return {
         success: false,
         status: data.status,
-        error: data.error || 'Не удалось проверить email',
+        error: data.error || 'Could not verify email',
       }
     }
     return {
@@ -2054,7 +2055,7 @@ export const checkSellerRegistrationEmail = async (email, password = null) => {
     }
   } catch (e) {
     console.error('checkSellerRegistrationEmail:', e)
-    return { success: false, error: 'Ошибка сети. Попробуйте позже.' }
+    return { success: false, error: 'Network error. Please try again later.' }
   }
 }
 
@@ -2077,7 +2078,7 @@ export const verifyEmailCode = async (email, code, password, name, role = 'buyer
     if (!verification.valid) {
       return {
         success: false,
-        error: verification.error || 'Неверный код'
+        error: verification.error || 'Invalid code'
       }
     }
     
@@ -2121,31 +2122,24 @@ export const verifyEmailCode = async (email, code, password, name, role = 'buyer
           // Backend вернул ошибку
           return {
             success: false,
-            error: data.error || 'Не удалось зарегистрировать пользователя'
+            error: data.error || 'Could not register the user'
           }
         }
       } else {
         // Обрабатываем ошибки валидации пароля и другие ошибки
         const errorData = await response.json().catch(() => ({}))
         if (response.status === 400 && errorData.passwordValidation) {
-          let errorMessage = errorData.error || errorData.message || 'Пароль не соответствует требованиям'
-          if (errorData.passwordValidation.missing && errorData.passwordValidation.missing.length > 0) {
-            errorMessage += `\n\nДобавьте: ${errorData.passwordValidation.missing.join(', ')}`
-          }
-          if (errorData.passwordValidation.present && errorData.passwordValidation.present.length > 0) {
-            errorMessage += `\nУже есть: ${errorData.passwordValidation.present.join(', ')}`
-          }
           return {
             success: false,
-            error: errorMessage,
-            passwordValidation: errorData.passwordValidation
+            error: errorData.error || errorData.message || 'password_validation_failed',
+            passwordValidation: errorData.passwordValidation,
           }
         }
         // Общая обработка других ошибок (409 - пользователь уже существует, и т.д.)
-        console.error('❌ Ошибка при сохранении в БД:', errorData.error || 'Неизвестная ошибка')
+        console.error('❌ Ошибка при сохранении в БД:', errorData.error || 'Unknown error')
         return {
           success: false,
-          error: errorData.error || 'Не удалось зарегистрировать пользователя'
+          error: errorData.error || 'Could not register the user'
         }
       }
     } catch (backendError) {
@@ -2176,14 +2170,14 @@ export const verifyEmailCode = async (email, code, password, name, role = 'buyer
       return {
         success: true,
         user: userData,
-        warning: 'Пользователь сохранен локально. Backend недоступен.'
+        warning: 'User saved locally. Backend unavailable.'
       }
     }
   } catch (error) {
     console.error('Ошибка верификации кода:', error)
     return {
       success: false,
-      error: 'Не удалось проверить код. Попробуйте позже.'
+      error: 'Could not verify the code. Please try again later.'
     }
   }
 }
@@ -2198,7 +2192,7 @@ export const registerWithEmail = async (email, password, name) => {
     if (!emailValidation.valid) {
       return {
         success: false,
-        error: emailValidation.error || 'Неверный email адрес'
+        error: emailValidation.error || 'Invalid email address'
       }
     }
     
@@ -2206,7 +2200,7 @@ export const registerWithEmail = async (email, password, name) => {
     if (!password || password.length < 6) {
       return {
         success: false,
-        error: 'Пароль должен содержать минимум 6 символов'
+        error: 'Password must contain at least 6 characters'
       }
     }
     
@@ -2214,7 +2208,7 @@ export const registerWithEmail = async (email, password, name) => {
     if (!name || name.trim().length < 2) {
       return {
         success: false,
-        error: 'Имя должно содержать минимум 2 символа'
+        error: 'Name must contain at least 2 characters'
       }
     }
     
@@ -2224,20 +2218,20 @@ export const registerWithEmail = async (email, password, name) => {
     if (!codeResult.success) {
       return {
         success: false,
-        error: codeResult.error || 'Не удалось отправить код'
+        error: codeResult.error || 'Could not send the code'
       }
     }
     
     return {
       success: true,
-      message: 'Код отправлен на email',
+      message: 'Code sent to email',
       code: codeResult.code // Только для разработки
     }
   } catch (error) {
     console.error('Ошибка регистрации:', error)
     return {
       success: false,
-      error: 'Произошла ошибка при регистрации'
+      error: 'An error occurred during registration'
     }
   }
 }
@@ -2255,7 +2249,7 @@ export const verifyEmailForProfileUpdate = async (userId, email, code) => {
     if (!verification.valid) {
       return {
         success: false,
-        error: verification.error || 'Неверный код'
+        error: verification.error || 'Invalid code'
       }
     }
     
@@ -2286,35 +2280,35 @@ export const verifyEmailForProfileUpdate = async (userId, email, code) => {
           
           return {
             success: true,
-            message: 'Email успешно подтвержден',
+            message: 'Email confirmed successfully',
             user: data.data
           }
         }
       } else {
         const errorData = await response.json().catch(() => ({}))
-        console.error('Ошибка при обновлении email:', errorData.error || 'Неизвестная ошибка')
+        console.error('Ошибка при обновлении email:', errorData.error || 'Unknown error')
         return {
           success: false,
-          error: errorData.error || 'Не удалось подтвердить email'
+          error: errorData.error || 'Could not confirm email'
         }
       }
     } catch (backendError) {
       console.error('❌ Backend недоступен:', backendError.message)
       return {
         success: false,
-        error: 'Не удалось подключиться к серверу. Попробуйте позже.'
+        error: 'Could not connect to the server. Please try again later.'
       }
     }
     
     return {
       success: false,
-      error: 'Не удалось подтвердить email'
+      error: 'Could not confirm email'
     }
   } catch (error) {
     console.error('Ошибка верификации email:', error)
     return {
       success: false,
-      error: 'Не удалось проверить код. Попробуйте позже.'
+      error: 'Could not verify the code. Please try again later.'
     }
   }
 }
@@ -2329,7 +2323,7 @@ export const loginWithEmail = async (email, password, role = null) => {
     if (!emailLower || !password) {
       return {
         success: false,
-        error: 'Необходимо указать email и пароль'
+        error: 'Email and password are required'
       }
     }
     
@@ -2356,14 +2350,14 @@ export const loginWithEmail = async (email, password, role = null) => {
         if (response.status === 403 && errorData.is_blocked) {
           return {
             success: false,
-            error: errorData.error || 'Пользователь заблокирован',
+            error: errorData.error || 'User is blocked',
             is_blocked: true
           }
         }
         
         return {
           success: false,
-          error: errorData.error || 'Неверный email или пароль',
+          error: errorData.error || 'Invalid email or password',
           is_blocked: false
         }
       }
@@ -2385,14 +2379,14 @@ export const loginWithEmail = async (email, password, role = null) => {
           const userData = {
             id: data.user.id,
             email: data.user.email,
-            name: data.user.name || data.user.email || 'Пользователь',
+            name: data.user.name || data.user.email || 'User',
             role: data.user.role || 'buyer'
           };
           localStorage.setItem('userData', JSON.stringify(userData));
           
           return {
             success: false,
-            error: 'Пользователь заблокирован',
+            error: 'User is blocked',
             is_blocked: true,
             user: data.user
           }
@@ -2417,7 +2411,7 @@ export const loginWithEmail = async (email, password, role = null) => {
       } else {
         return {
           success: false,
-          error: data.error || 'Неверный email или пароль',
+          error: data.error || 'Invalid email or password',
           is_blocked: false
         }
       }
@@ -2426,19 +2420,19 @@ export const loginWithEmail = async (email, password, role = null) => {
       if (backendError.message === 'Failed to fetch') {
         return {
           success: false,
-          error: 'Не удалось подключиться к серверу. Убедитесь, что сервер запущен на порту 3000.'
+          error: 'Could not connect to the server. Make sure the server is running on port 3000.'
         }
       }
       return {
         success: false,
-        error: 'Произошла ошибка при входе. Попробуйте позже.'
+        error: 'An error occurred while signing in. Please try again later.'
       }
     }
   } catch (error) {
     console.error('❌ Ошибка входа:', error)
     return {
       success: false,
-      error: 'Произошла ошибка при входе'
+      error: 'An error occurred while signing in'
     }
   }
 }
@@ -2461,13 +2455,13 @@ export const loginWithEmailOrUsername = async (emailOrUsername, password) => {
     // Пока просто возвращаем ошибку
     return {
       success: false,
-      error: 'Неверный email или пароль'
+      error: 'Invalid email or password'
     }
   } catch (error) {
     console.error('Ошибка входа:', error)
     return {
       success: false,
-      error: 'Произошла ошибка при входе'
+      error: 'An error occurred while signing in'
     }
   }
 }
@@ -2485,7 +2479,7 @@ export async function sendForgotPasswordCode(email) {
     })
     const data = await response.json().catch(() => ({}))
     if (!response.ok) {
-      return { success: false, error: data.error || 'Не удалось отправить код' }
+      return { success: false, error: data.error || 'Could not send the code' }
     }
     return {
       success: true,
@@ -2496,7 +2490,7 @@ export async function sendForgotPasswordCode(email) {
     }
   } catch (error) {
     console.error('sendForgotPasswordCode:', error)
-    return { success: false, error: 'Не удалось отправить код. Попробуйте позже.' }
+    return { success: false, error: 'Could not send the code. Please try again later.' }
   }
 }
 
@@ -2512,7 +2506,7 @@ export async function verifyForgotPasswordCode(email, code) {
     })
     const data = await response.json().catch(() => ({}))
     if (!response.ok) {
-      return { success: false, error: data.error || 'Неверный код' }
+      return { success: false, error: data.error || 'Invalid code' }
     }
     return {
       success: true,
@@ -2522,7 +2516,7 @@ export async function verifyForgotPasswordCode(email, code) {
     }
   } catch (error) {
     console.error('verifyForgotPasswordCode:', error)
-    return { success: false, error: 'Ошибка проверки кода' }
+    return { success: false, error: 'Code verification failed' }
   }
 }
 
@@ -2542,10 +2536,10 @@ export async function resetPasswordWithToken(email, resetToken, password, role =
   })
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
-    const err = new Error(data.error || 'Не удалось сохранить пароль')
+    const err = new Error(data.error || 'Could not save password')
     err.status = data.status
     err.passwordValidation = data.passwordValidation
     throw err
   }
-  return { success: true, message: data.message || 'Пароль обновлён' }
+  return { success: true, message: data.message || 'Password updated' }
 }

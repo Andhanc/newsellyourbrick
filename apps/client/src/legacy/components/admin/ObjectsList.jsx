@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FiSearch, FiSliders } from 'react-icons/fi';
 import { MdBed, MdOutlineBathtub } from 'react-icons/md';
 import { BiArea } from 'react-icons/bi';
@@ -6,10 +7,12 @@ import PropertyTimer from '../PropertyTimer';
 import BiddingHistoryModal from '../BiddingHistoryModal';
 import './ObjectsList.css';
 import { getApiBaseUrlSync } from '../../utils/apiConfig';
+import { getUiIntlLocale } from '../../utils/uiIntlLocale'
 
 const API_BASE_URL = getApiBaseUrlSync();
 
 const ObjectsList = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -24,7 +27,7 @@ const ObjectsList = () => {
   const formatPrice = (price) => {
     if (price == null) return '—';
     const value = Number(price) || 0;
-    return `$${value.toLocaleString('ru-RU')}`;
+    return `$${value.toLocaleString(getUiIntlLocale())}`;
   };
 
   const getCategory = (property) => {
@@ -155,7 +158,7 @@ const ObjectsList = () => {
         setProperties(Array.from(byId.values()));
       } catch (e) {
         console.error('Ошибка при загрузке объявлений для админ-объектов:', e);
-        setError('Не удалось загрузить объявления. Попробуйте обновить страницу.');
+        setError(t('admin_objectsLoadFail'));
       } finally {
         setLoading(false);
       }
@@ -218,7 +221,7 @@ const ObjectsList = () => {
   if (loading && properties.length === 0) {
     return (
       <div className="objects-list-container">
-        <p style={{ padding: '1.5rem' }}>Загрузка объектов...</p>
+        <p style={{ padding: '1.5rem' }}>{t('admin_zagruzka_obektov_06bf4a8c')}</p>
       </div>
     );
   }
@@ -238,7 +241,7 @@ const ObjectsList = () => {
           <FiSearch size={20} />
           <input
             type="text"
-            placeholder="Поиск по названию или локации..."
+            placeholder={t('admin_searchTitleOrLocation')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -246,44 +249,44 @@ const ObjectsList = () => {
 
         <div className="objects-list__filter-group">
           <div className="objects-list__filter">
-            <label>Категория:</label>
+            <label>{t('admin_kategoriya_83d86641')}</label>
             <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-              <option value="all">Все</option>
-              <option value="auction">Аукцион</option>
-              <option value="buy_now">Купить сейчас</option>
-              <option value="debt">Долги</option>
-              <option value="share">Доли</option>
+              <option value="all">{t('admin_all')}</option>
+              <option value="auction">{t('admin_auction')}</option>
+              <option value="buy_now">{t('admin_buyNow')}</option>
+              <option value="debt">{t('admin_dolgi_6d124eac')}</option>
+              <option value="share">{t('admin_doli_a0493352')}</option>
             </select>
           </div>
 
           <div className="objects-list__filter">
             <FiSliders size={18} />
-            <label>Тип:</label>
+            <label>{t('admin_tip_2345ad64')}</label>
             <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
-              <option value="all">Все типы</option>
-              <option value="house">Дома</option>
-              <option value="apartment">Квартиры</option>
-              <option value="villa">Виллы</option>
-              <option value="commercial">Апартаменты/коммерческая</option>
+              <option value="all">{t('admin_vse_tipy_c21a23a5')}</option>
+              <option value="house">{t('admin_doma_b12b665b')}</option>
+              <option value="apartment">{t('admin_kvartiry_5aaf7953')}</option>
+              <option value="villa">{t('admin_villy_0f595628')}</option>
+              <option value="commercial">{t('admin_apartamenty_kommercheskaya_64239005')}</option>
             </select>
           </div>
 
           <div className="objects-list__filter">
-            <label>Цена:</label>
+            <label>{t('admin_cena_6715b185')}</label>
             <select value={priceRange} onChange={(e) => setPriceRange(e.target.value)}>
-              <option value="all">Все цены</option>
-              <option value="low">До 500 000 $</option>
+              <option value="all">{t('admin_vse_ceny_b50179c9')}</option>
+              <option value="low">{t('admin_do_500_000_a6041e9a')}</option>
               <option value="medium">500 000 - 1 000 000 $</option>
-              <option value="high">От 1 000 000 $</option>
+              <option value="high">{t('admin_ot_1_000_000_e37220df')}</option>
             </select>
           </div>
 
           <div className="objects-list__filter">
-            <label>Тип продажи:</label>
+            <label>{t('admin_tip_prodazhi_c7e494ef')}</label>
             <select value={saleTypeFilter} onChange={(e) => setSaleTypeFilter(e.target.value)}>
-              <option value="all">Все</option>
-              <option value="auction">Аукционные</option>
-              <option value="sale">Продажа</option>
+              <option value="all">{t('admin_all')}</option>
+              <option value="auction">{t('admin_aukcionnye_750ede77')}</option>
+              <option value="sale">{t('admin_prodazha_9be19a0e')}</option>
             </select>
           </div>
         </div>
@@ -318,7 +321,7 @@ const ObjectsList = () => {
                 const email = owner.email || property.email || '';
                 const display = fullName || email;
                 return display ? (
-                  <p className="property-card__owner">Продавец: {display}</p>
+                  <p className="property-card__owner">{t('admin_prodavec_857f12fa')} {display}</p>
                 ) : null;
               })()}
               <div className="property-card__info">
@@ -332,7 +335,7 @@ const ObjectsList = () => {
                 </div>
                 <div className="property-card__info-item">
                   <BiArea size={16} />
-                  <span>{property.sqft || 0} м²</span>
+                  <span>{t('admin_area_m2', { n: property.sqft || 0 })}</span>
                 </div>
               </div>
               <p className="property-card__location">{property.location}</p>
@@ -356,10 +359,10 @@ const ObjectsList = () => {
                     return (
                       <>
                         <span className="property-card__price-label">
-                          Минимальная цена продажи: {regularPrice ? formatPrice(regularPrice) : '—'}
+                          {t('admin_minimalnaya_cena_prodazhi_c15bf81d')} {regularPrice ? formatPrice(regularPrice) : '—'}
                         </span>
                         <span className="property-card__price-label">
-                          Стартовая сумма ставки: {startingPrice ? formatPrice(startingPrice) : '—'}
+                          {t('admin_startovaya_summa_stavki_31e88723')} {startingPrice ? formatPrice(startingPrice) : '—'}
                         </span>
                         <button
                           type="button"
@@ -369,7 +372,7 @@ const ObjectsList = () => {
                             setSelectedAuctionForHistory(property);
                           }}
                         >
-                          История ставок
+                          {t('admin_istoriya_stavok_f4799dde')}
                         </button>
                       </>
                     );
@@ -390,7 +393,7 @@ const ObjectsList = () => {
                   className="property-card__link"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  Перейти к объекту
+                  {t('admin_pereyti_k_obektu_a61b5d25')}
                 </a>
               </div>
             </div>
@@ -401,7 +404,7 @@ const ObjectsList = () => {
       {hasMore && (
         <div className="objects-list__load-more">
           <button className="objects-list__load-more-btn" onClick={handleLoadMore}>
-            Смотреть еще
+            {t('admin_smotret_esche_91f66812')}
           </button>
         </div>
       )}

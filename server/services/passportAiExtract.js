@@ -144,7 +144,7 @@ export function normalizePassportAiPayload(raw = {}) {
 
 export function parsePassportAiModelContent(content) {
   if (typeof content !== 'string' || !content.trim()) {
-    throw new Error('Модель вернула пустой ответ')
+    throw new Error('Model returned an empty response')
   }
   let text = content.trim()
   if (text.startsWith('```')) {
@@ -161,21 +161,21 @@ export function parsePassportAiModelContent(content) {
  */
 export async function extractPassportFieldsWithGemini(input = {}, overrides = {}) {
   const apiKey = normalizeApiKey(overrides.apiKey || process.env.OPENROUTER_API_KEY)
-  if (!apiKey) throw new Error('OPENROUTER_API_KEY не настроен')
+  if (!apiKey) throw new Error('OPENROUTER_API_KEY is not configured')
 
   const { mimeType: fromDataUrl, base64 } = stripDataUrlPrefix(input.imageBase64 || '')
   if (!base64 || base64.length < 32) {
-    throw new Error('Изображение паспорта не предоставлено')
+    throw new Error('Passport image was not provided')
   }
 
   const mimeType = (input.mimeType || fromDataUrl || 'image/jpeg').split(';')[0].trim() || 'image/jpeg'
   if (!/^image\//i.test(mimeType)) {
-    throw new Error('Нужен файл изображения')
+    throw new Error('An image file is required')
   }
 
   // ~8MB base64 ≈ разумный верхний предел для vision-запроса
   if (base64.length > 11_000_000) {
-    throw new Error('Файл слишком большой. Сожмите фото и попробуйте снова.')
+    throw new Error('File is too large. Compress the photo and try again.')
   }
 
   const fetchImpl = overrides.fetchImpl || fetch
@@ -211,7 +211,7 @@ export async function extractPassportFieldsWithGemini(input = {}, overrides = {}
 
   const data = await response.json().catch(() => ({}))
   if (!response.ok) {
-    throw new Error(data?.error?.message || data?.error || `OpenRouter вернул ${response.status}`)
+    throw new Error(data?.error?.message || data?.error || `OpenRouter returned ${response.status}`)
   }
 
   const answer = data?.choices?.[0]?.message?.content
@@ -219,7 +219,7 @@ export async function extractPassportFieldsWithGemini(input = {}, overrides = {}
 
   if (!extracted.isPassport) {
     const err = new Error(
-      'На фото не распознан паспорт или удостоверение личности. Снимите страницу с данными документа.',
+      'No passport or ID card was recognized in the photo. Capture the document data page.',
     )
     err.code = 'NOT_PASSPORT'
     throw err
@@ -227,7 +227,7 @@ export async function extractPassportFieldsWithGemini(input = {}, overrides = {}
 
   if (!extracted.passportNumber && !extracted.identificationNumber) {
     const err = new Error(
-      'Не удалось прочитать номер документа и идентификационный номер. Попробуйте более чёткое фото.',
+      'Could not read the document number and identification number. Try a sharper photo.',
     )
     err.code = 'EMPTY_FIELDS'
     throw err

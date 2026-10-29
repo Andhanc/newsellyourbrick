@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FaPlus, FaEdit, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
 import './AccessManagement.css';
 import { getApiBaseUrlSync } from '../../utils/apiConfig';
@@ -6,6 +7,7 @@ import { getApiBaseUrlSync } from '../../utils/apiConfig';
 const API_BASE_URL = getApiBaseUrlSync();
 
 const AccessManagement = () => {
+  const { t } = useTranslation();
   const [administrators, setAdministrators] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -80,7 +82,7 @@ const AccessManagement = () => {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Вы уверены, что хотите удалить этого администратора?')) {
+    if (!window.confirm(t('admin_vy_uvereny_chto_hotite_536feb78'))) {
       return;
     }
 
@@ -91,16 +93,16 @@ const AccessManagement = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          alert('Администратор успешно удален');
+          alert(t('admin_administrator_uspeshno_udalen_6917d720'));
           loadAdministrators();
         }
       } else {
         const errorData = await response.json();
-        alert(errorData.error || 'Ошибка при удалении администратора');
+        alert(errorData.error || t('admin_oshibka_pri_udalenii_administratora_035d614a'));
       }
     } catch (error) {
       console.error('Ошибка при удалении администратора:', error);
-      alert('Ошибка при удалении администратора');
+      alert(t('admin_oshibka_pri_udalenii_administratora_035d614a'));
     }
   };
 
@@ -108,7 +110,7 @@ const AccessManagement = () => {
     e.preventDefault();
 
     if (!formData.username || (!formData.password && !editingAdmin)) {
-      alert('Необходимо указать username и пароль');
+      alert(t('admin_neobhodimo_ukazat_username_i_1bad80d5'));
       return;
     }
 
@@ -147,18 +149,18 @@ const AccessManagement = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          alert(editingAdmin ? 'Администратор успешно обновлен' : 'Администратор успешно создан');
+          alert(editingAdmin ? t('admin_administrator_uspeshno_obnovlen_e1e6e358') : t('admin_administrator_uspeshno_sozdan_3db3cf9d'));
           setShowCreateModal(false);
           setEditingAdmin(null);
           loadAdministrators();
         }
       } else {
         const errorData = await response.json();
-        alert(errorData.error || 'Ошибка при сохранении администратора');
+        alert(errorData.error || t('admin_oshibka_pri_sohranenii_administrator_5e8ff105'));
       }
     } catch (error) {
       console.error('Ошибка при сохранении администратора:', error);
-      alert('Ошибка при сохранении администратора');
+      alert(t('admin_oshibka_pri_sohranenii_administrator_5e8ff105'));
     }
   };
 
@@ -170,25 +172,25 @@ const AccessManagement = () => {
   };
 
   if (loading) {
-    return <div className="access-management-loading">Загрузка...</div>;
+    return <div className="access-management-loading">{t('admin_loading')}</div>;
   }
 
   return (
     <div className="access-management">
       <div className="access-management-header">
-        <h2>Управление доступами</h2>
+        <h2>{t('admin_upravlenie_dostupami_d9aae4e3')}</h2>
         <button 
           className="btn btn-primary access-create-btn" 
           onClick={handleCreate}
         >
-          <FaPlus style={{ fontSize: '0.75rem' }} /> Создать администратора
+          <FaPlus style={{ fontSize: '0.75rem' }} /> {t('admin_sozdat_administratora_3ac094f2')}
         </button>
       </div>
 
       <div className="access-management-list">
         {administrators.length === 0 ? (
           <div className="access-management-empty">
-            Нет администраторов. Создайте первого администратора.
+            {t('admin_net_administratorov_sozdayte_pervogo_98315f24')}
           </div>
         ) : (
           <table className="access-management-table">
@@ -196,10 +198,10 @@ const AccessManagement = () => {
               <tr>
                 <th>Username</th>
                 <th>Email</th>
-                <th>Полное имя</th>
-                <th>Статус</th>
-                <th>Доступы</th>
-                <th>Действия</th>
+                <th>{t('admin_polnoe_imya_ce215315')}</th>
+                <th>{t('admin_status_f7f293b5')}</th>
+                <th>{t('admin_panel_access')}</th>
+                <th>{t('admin_deystviya_9978ac34')}</th>
               </tr>
             </thead>
             <tbody>
@@ -210,29 +212,29 @@ const AccessManagement = () => {
                   <td>{admin.full_name || '-'}</td>
                   <td>
                     {admin.is_super_admin ? (
-                      <span className="badge badge-super">Супер-админ</span>
+                      <span className="badge badge-super">{t('admin_super_admin_38283fb6')}</span>
                     ) : (
-                      <span className="badge badge-admin">Администратор</span>
+                      <span className="badge badge-admin">{t('admin_administrator_36d00fd7')}</span>
                     )}
                   </td>
                   <td>
                     <div className="permissions-list">
-                      {admin.can_access_statistics && <span className="permission-tag">Статистика</span>}
-                      {admin.can_access_users && <span className="permission-tag">Пользователи</span>}
-                      {admin.can_access_moderation && <span className="permission-tag">Модерация</span>}
-                      {admin.can_access_chat && <span className="permission-tag">Чат</span>}
-                      {admin.can_access_objects && <span className="permission-tag">Объекты</span>}
+                      {admin.can_access_statistics && <span className="permission-tag">{t('admin_panel_statistics')}</span>}
+                      {admin.can_access_users && <span className="permission-tag">{t('admin_panel_users')}</span>}
+                      {admin.can_access_moderation && <span className="permission-tag">{t('admin_panel_moderation')}</span>}
+                      {admin.can_access_chat && <span className="permission-tag">{t('admin_panel_chat')}</span>}
+                      {admin.can_access_objects && <span className="permission-tag">{t('admin_panel_objects')}</span>}
                       {admin.can_access_seo && (
                         <span className="permission-tag">
                           SEO{admin.seo_role ? ` (${admin.seo_role})` : ''}
                         </span>
                       )}
-                      {admin.can_access_access_management && <span className="permission-tag">Доступы</span>}
+                      {admin.can_access_access_management && <span className="permission-tag">{t('admin_panel_access')}</span>}
                       {!admin.can_access_statistics && !admin.can_access_users && 
                        !admin.can_access_moderation && !admin.can_access_chat && 
                        !admin.can_access_objects && !admin.can_access_seo &&
                        !admin.can_access_access_management && (
-                        <span className="permission-tag permission-tag--none">Нет доступа</span>
+                        <span className="permission-tag permission-tag--none">{t('admin_net_dostupa_fabe7ed7')}</span>
                       )}
                     </div>
                   </td>
@@ -243,14 +245,14 @@ const AccessManagement = () => {
                           <button
                             className="btn btn-icon btn-edit"
                             onClick={() => handleEdit(admin)}
-                            title="Редактировать"
+                            title={t('admin_edit')}
                           >
                             <FaEdit />
                           </button>
                           <button
                             className="btn btn-icon btn-delete"
                             onClick={() => handleDelete(admin.id)}
-                            title="Удалить"
+                            title={t('admin_delete')}
                           >
                             <FaTrash />
                           </button>
@@ -269,7 +271,7 @@ const AccessManagement = () => {
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{editingAdmin ? 'Редактировать администратора' : 'Создать администратора'}</h3>
+              <h3>{editingAdmin ? t('admin_redaktirovat_administratora_a7d90f78') : t('admin_sozdat_administratora_3ac094f2')}</h3>
               <button className="modal-close" onClick={() => setShowCreateModal(false)}>
                 <FaTimes />
               </button>
@@ -288,7 +290,7 @@ const AccessManagement = () => {
 
               {!editingAdmin && (
                 <div className="form-group">
-                  <label>Пароль *</label>
+                  <label>{t('admin_parol_15889b08')}</label>
                   <input
                     type="password"
                     value={formData.password}
@@ -308,7 +310,7 @@ const AccessManagement = () => {
               </div>
 
               <div className="form-group">
-                <label>Полное имя</label>
+                <label>{t('admin_polnoe_imya_ce215315')}</label>
                 <input
                   type="text"
                   value={formData.full_name}
@@ -317,7 +319,7 @@ const AccessManagement = () => {
               </div>
 
               <div className="form-group">
-                <label className="permissions-label">Права доступа:</label>
+                <label className="permissions-label">{t('admin_prava_dostupa_99625f1e')}</label>
                 <div className="permissions-checkboxes">
                   <label className="checkbox-label">
                     <input
@@ -325,7 +327,7 @@ const AccessManagement = () => {
                       checked={formData.can_access_statistics}
                       onChange={() => handleCheckboxChange('can_access_statistics')}
                     />
-                    <span>Статистика</span>
+                    <span>{t('admin_panel_statistics')}</span>
                   </label>
                   <label className="checkbox-label">
                     <input
@@ -333,7 +335,7 @@ const AccessManagement = () => {
                       checked={formData.can_access_users}
                       onChange={() => handleCheckboxChange('can_access_users')}
                     />
-                    <span>Пользователи</span>
+                    <span>{t('admin_panel_users')}</span>
                   </label>
                   <label className="checkbox-label">
                     <input
@@ -341,7 +343,7 @@ const AccessManagement = () => {
                       checked={formData.can_access_moderation}
                       onChange={() => handleCheckboxChange('can_access_moderation')}
                     />
-                    <span>Модерация</span>
+                    <span>{t('admin_panel_moderation')}</span>
                   </label>
                   <label className="checkbox-label">
                     <input
@@ -349,7 +351,7 @@ const AccessManagement = () => {
                       checked={formData.can_access_chat}
                       onChange={() => handleCheckboxChange('can_access_chat')}
                     />
-                    <span>Чат</span>
+                    <span>{t('admin_panel_chat')}</span>
                   </label>
                   <label className="checkbox-label">
                     <input
@@ -357,7 +359,7 @@ const AccessManagement = () => {
                       checked={formData.can_access_objects}
                       onChange={() => handleCheckboxChange('can_access_objects')}
                     />
-                    <span>Объекты</span>
+                    <span>{t('admin_panel_objects')}</span>
                   </label>
                   <label className="checkbox-label">
                     <input
@@ -365,18 +367,18 @@ const AccessManagement = () => {
                       checked={formData.can_access_seo}
                       onChange={() => handleCheckboxChange('can_access_seo')}
                     />
-                    <span>SEO-кабинет</span>
+                    <span>{t('admin__kabinet_268c0b65')}</span>
                   </label>
                   {formData.can_access_seo && (
                     <div className="form-group">
-                      <label>Роль SEO</label>
+                      <label>{t('admin_rol__f3535302')}</label>
                       <select
                         value={formData.seo_role}
                         onChange={(e) => setFormData({ ...formData, seo_role: e.target.value })}
                       >
-                        <option value="editor">Редактор</option>
-                        <option value="marketer">Маркетолог</option>
-                        <option value="admin">Админ SEO</option>
+                        <option value="editor">{t('admin_redaktor_65d42cf1')}</option>
+                        <option value="marketer">{t('admin_marketolog_ee657e73')}</option>
+                        <option value="admin">{t('admin_admin__eb73c9f3')}</option>
                       </select>
                     </div>
                   )}
@@ -385,10 +387,10 @@ const AccessManagement = () => {
 
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowCreateModal(false)}>
-                  Отмена
+                  {t('admin_otmena_0ec753be')}
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  <FaSave /> {editingAdmin ? 'Сохранить' : 'Создать'}
+                  <FaSave /> {editingAdmin ? t('admin_save') : t('admin_sozdat_84370a20')}
                 </button>
               </div>
             </form>

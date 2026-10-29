@@ -1,16 +1,19 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MdBed, MdOutlineBathtub } from 'react-icons/md';
 import { BiArea } from 'react-icons/bi';
 import BiddingHistoryModal from '../BiddingHistoryModal';
 import PropertyTimer from '../PropertyTimer';
 import './NearestAuctionsSlider.css';
+import { getUiIntlLocale } from '../../utils/uiIntlLocale'
 
 const AuctionCardItem = ({ auction, onHistoryClick }) => {
+  const { t } = useTranslation();
   const getTypeLabel = (type) => {
     const types = {
-      apartment: 'Квартира',
-      villa: 'Вилла',
-      house: 'Дом'
+      apartment: t('admin_apartment'),
+      villa: t('admin_villa'),
+      house: t('admin_house'),
     };
     return types[type] || type;
   };
@@ -24,7 +27,7 @@ const AuctionCardItem = ({ auction, onHistoryClick }) => {
         <PropertyTimer
           endTime={endRaw}
           compact
-          auctionEndedLabel={auctionHasEnded ? 'Аукцион завершён' : undefined}
+          auctionEndedLabel={auctionHasEnded ? t('admin_aukcion_zavershen_7a5cf008') : undefined}
         />
       </div>
       <div className="nearest-auction-content">
@@ -46,7 +49,7 @@ const AuctionCardItem = ({ auction, onHistoryClick }) => {
             </div>
             <div className="nearest-auction-stat">
               <BiArea size={16} />
-              <span>{auction.area || 120} м²</span>
+              <span>{t('admin_area_m2', { n: auction.area || 120 })}</span>
             </div>
           </div>
           <div className="nearest-auction-object-location">
@@ -54,7 +57,7 @@ const AuctionCardItem = ({ auction, onHistoryClick }) => {
             {auction.object_location}
           </div>
           <div className="nearest-auction-price">
-            <div className="price-label">Текущая ставка:</div>
+            <div className="price-label">{t('admin_tekuschaya_stavka_b8a8827e')}</div>
             <div className="price-value">
               ${Number(
                 auction.current_bid ??
@@ -62,17 +65,17 @@ const AuctionCardItem = ({ auction, onHistoryClick }) => {
                 auction.auction_starting_price ??
                 auction.starting_price ??
                 0
-              ).toLocaleString('ru-RU')}
+              ).toLocaleString(getUiIntlLocale())}
             </div>
           </div>
           {auctionHasEnded && auction.winner_user_id != null && (
             <div className="auction-card-winner-line" role="status">
-              Победитель — пользователь ID {auction.winner_user_id}
+              {t('admin_pobeditel_polzovatel__id_dcf5c13c', { id: auction.winner_user_id })}
             </div>
           )}
           {auctionHasEnded && auction.winner_user_id == null && (
             <div className="auction-card-winner-line auction-card-winner-line--muted" role="status">
-              Победитель будет отображён после фиксации в системе
+              {t('admin_pobeditel_budet_otobrazhen_posle_9e5d744f')}
             </div>
           )}
           <button 
@@ -86,7 +89,7 @@ const AuctionCardItem = ({ auction, onHistoryClick }) => {
             }}
             type="button"
           >
-            <i className="fas fa-history"></i> История ставок
+            <i className="fas fa-history"></i> {t('admin_istoriya_stavok_f4799dde')}
           </button>
         </div>
       </div>
@@ -95,15 +98,16 @@ const AuctionCardItem = ({ auction, onHistoryClick }) => {
 };
 
 const NearestAuctionsSlider = ({ auctions }) => {
+  const { t } = useTranslation();
   // Проверка на пустой массив
   if (!auctions || auctions.length === 0) {
     return (
       <div className="nearest-auctions-slider-container">
         <div className="slider-header">
-          <h3 className="slider-title">Ближайшие аукционы</h3>
+          <h3 className="slider-title">{t('admin_blizhayshie_aukciony_50f85658')}</h3>
         </div>
         <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
-          Нет доступных аукционов
+          {t('admin_net_dostupnyh_aukcionov_1c08ced2')}
         </div>
       </div>
     );
@@ -318,7 +322,7 @@ const NearestAuctionsSlider = ({ auctions }) => {
   return (
     <div className="nearest-auctions-slider-container">
       <div className="slider-header">
-        <h3 className="slider-title">Ближайшие аукционы</h3>
+        <h3 className="slider-title">{t('admin_blizhayshie_aukciony_50f85658')}</h3>
       </div>
       
       <div className="slider-wrapper">
@@ -326,7 +330,7 @@ const NearestAuctionsSlider = ({ auctions }) => {
           className="slider-arrow slider-arrow-left" 
           onClick={prevSlide}
           disabled={isTransitioning || isDragging}
-          aria-label="Предыдущий слайд"
+          aria-label={t('admin_prevSlide')}
         >
           <i className="fas fa-chevron-left"></i>
         </button>
@@ -356,7 +360,7 @@ const NearestAuctionsSlider = ({ auctions }) => {
           className="slider-arrow slider-arrow-right" 
           onClick={nextSlide}
           disabled={isTransitioning || isDragging}
-          aria-label="Следующий слайд"
+          aria-label={t('admin_nextSlide')}
         >
           <i className="fas fa-chevron-right"></i>
         </button>

@@ -3,6 +3,7 @@ import { getCurrencySymbol } from './currency'
 import { fetchDedupe } from './fetchDedupe'
 import { formatMoneyFromMinorUnits } from './formatStripeMoney'
 import { getPropertyCardImage } from './propertyImage'
+import { getUiIntlLocale } from './uiIntlLocale'
 
 export const OWNER_TEST_DRIVE_BOOKINGS_CHANGED = 'owner-test-drive-bookings-changed'
 
@@ -12,31 +13,39 @@ const FALLBACK_IMAGE =
   '/images/external/photo-1568605114967-8130f3a36994-bc29e86e2f.jpg'
 
 const STATUS_MAP = {
-  pending: { status: 'Ожидает', statusKey: 'pending', tab: 'pending' },
-  paid: { status: 'Ожидает', statusKey: 'pending', tab: 'pending' },
-  approved: { status: 'Подтверждено', statusKey: 'confirmed', tab: 'confirmed' },
-  cancelled: { status: 'Отменено', statusKey: 'cancelled', tab: 'cancelled' },
-  rejected: { status: 'Отменено', statusKey: 'cancelled', tab: 'cancelled' },
+  pending: { statusLabelKey: 'ownerTdStatusPending', statusKey: 'pending', tab: 'pending' },
+  paid: { statusLabelKey: 'ownerTdStatusPending', statusKey: 'pending', tab: 'pending' },
+  approved: { statusLabelKey: 'ownerTdStatusConfirmed', statusKey: 'confirmed', tab: 'confirmed' },
+  cancelled: { statusLabelKey: 'ownerTdStatusCancelled', statusKey: 'cancelled', tab: 'cancelled' },
+  rejected: { statusLabelKey: 'ownerTdStatusCancelled', statusKey: 'cancelled', tab: 'cancelled' },
 }
 
-function formatDateRange(start, end) {
+function resolveDateLocale(locale) {
+  const base = String(locale || 'en').split(/[-_]/)[0].toLowerCase()
+  const map = { ru: 'ru-RU', en: 'en-US', de: 'de-DE', es: 'es-ES', fr: 'fr-FR', pl: 'pl-PL', sv: 'sv-SE' }
+  return map[base] || 'en-US'
+}
+
+function formatDateRange(start, end, locale = 'en') {
   try {
     const s = new Date(`${start}T12:00:00`)
     const e = new Date(`${end}T12:00:00`)
     const opts = { day: 'numeric', month: 'long', year: 'numeric' }
-    return `${s.toLocaleDateString('ru-RU', opts)} — ${e.toLocaleDateString('ru-RU', opts)}`
+    const loc = resolveDateLocale(locale)
+    return `${s.toLocaleDateString(loc, opts)} — ${e.toLocaleDateString(loc, opts)}`
   } catch {
     return `${start || '—'} — ${end || '—'}`
   }
 }
 
-function formatDateRangeShort(start, end) {
+function formatDateRangeShort(start, end, locale = 'en') {
   try {
     const s = new Date(`${start}T12:00:00`)
     const e = new Date(`${end}T12:00:00`)
     const opts = { day: 'numeric', month: 'short' }
-    const startLabel = s.toLocaleDateString('ru-RU', opts).replace(/\.$/, '')
-    const endLabel = e.toLocaleDateString('ru-RU', opts).replace(/\.$/, '')
+    const loc = resolveDateLocale(locale)
+    const startLabel = s.toLocaleDateString(loc, opts).replace(/\.$/, '')
+    const endLabel = e.toLocaleDateString(loc, opts).replace(/\.$/, '')
     return `${startLabel} — ${endLabel}`
   } catch {
     return `${start || '—'} — ${end || '—'}`
@@ -48,13 +57,13 @@ function formatDeposit(booking) {
   if (Number.isFinite(insurance) && insurance > 0) {
     const currency = String(booking.paid_currency || 'USD').toUpperCase()
     const sym = getCurrencySymbol(currency)
-    return `${sym}${insurance.toLocaleString('ru-RU', { maximumFractionDigits: 0 })}`
+    return `${sym}${insurance.toLocaleString(getUiIntlLocale(), { maximumFractionDigits: 0 })}`
   }
 
   const cents = Number(booking.paid_amount_cents)
   if (Number.isFinite(cents) && cents > 0) {
     return (
-      formatMoneyFromMinorUnits(cents, booking.paid_currency || 'EUR', 'ru-RU') || '—'
+      formatMoneyFromMinorUnits(cents, booking.paid_currency || 'EUR', getUiIntlLocale()) || '—'
     )
   }
 
@@ -78,7 +87,7 @@ async function enrichBookingsWithLocations(bookings) {
         if (!response.ok) return
         const result = await response.json()
         if (!result.success || !result.data) return
-        const location = result.data.location || result.data.address || 'Не указано'
+        const location = result.data.location || result.data.address || ''
         locationByKey.set(key, location)
       } catch {
         /* ignore */
@@ -89,16 +98,21 @@ async function enrichBookingsWithLocations(bookings) {
   return locationByKey
 }
 
-const CHECK_IN_STATUS_LABELS = {
-  pending_checkin: 'Ожидает вашего подтверждения',
-  awaiting_buyer_checkin: 'Ожидает заселения покупателя',
-  checked_in: 'Клиент заселился',
-  issues_reported: 'Покупатель сообщил о проблемах',
+const CHECK_IN_STATUS_LABEL_KEYS = {
+  pending_checkin: 'ownerTdCheckInPendingOwner',
+  awaiting_buyer_checkin: 'ownerTdCheckInAwaitingBuyer',
+  checked_in: 'ownerTdCheckInCheckedIn',
+  issues_reported: 'ownerTdCheckInIssues',
 }
 
-export function getCheckInStatusLabel(status) {
+export function getCheckInStatusLabelKey(status) {
   const key = String(status || '').toLowerCase()
-  return CHECK_IN_STATUS_LABELS[key] || null
+  return CHECK_IN_STATUS_LABEL_KEYS[key] || null
+}
+
+/** @deprecated use getCheckInStatusLabelKey + t() */
+export function getCheckInStatusLabel(status) {
+  return getCheckInStatusLabelKey(status)
 }
 
 export function canOwnerConfirmBooking(rawStatus) {
@@ -124,16 +138,21 @@ export function mapOwnerTestDriveBooking(booking, locationByKey = new Map()) {
     id: booking.id,
     bookingId: booking.id,
     displayId: `TD-${booking.id}`,
-    title: booking.property_title || `Объект #${booking.property_id}`,
-    location: locationByKey.get(cacheKey) || 'Не указано',
+    title: booking.property_title || null,
+    titleFallbackKey: 'ownerTdPropertyFallback',
+    titleFallbackId: booking.property_id,
+    location: locationByKey.get(cacheKey) || null,
+    locationFallbackKey: 'ownerTdLocationUnknown',
     image,
-    buyer: booking.buyer_display || 'Покупатель',
+    buyer: booking.buyer_display || null,
+    buyerFallbackKey: 'ownerTdBuyerFallback',
     dates: formatDateRange(booking.start_date, booking.end_date),
     datesShort: formatDateRangeShort(booking.start_date, booking.end_date),
     startDate: booking.start_date,
     endDate: booking.end_date,
     amount: formatDeposit(booking),
-    status: statusUi.status,
+    statusLabelKey: statusUi.statusLabelKey,
+    status: statusUi.statusLabelKey,
     statusKey: statusUi.statusKey,
     rawStatus: statusKey,
     tab: statusUi.tab,
@@ -153,7 +172,7 @@ export async function fetchOwnerTestDriveBookings(ownerUserId) {
 
   const response = await fetch(`${API_BASE_URL}/test-drive-bookings/owner/${ownerUserId}`)
   if (!response.ok) {
-    throw new Error('Не удалось загрузить заявки на тест-драйв')
+    throw new Error('ownerTdLoadBookingsFailed')
   }
 
   const result = await response.json()
@@ -227,7 +246,7 @@ export async function respondOwnerTestDriveBooking(userId, bookingId, action, ow
   })
   const json = await response.json().catch(() => ({}))
   if (!response.ok || !json.success) {
-    throw new Error(json.error || 'Не удалось выполнить действие')
+    throw new Error(json.error || 'ownerTdActionFailed')
   }
   notifyOwnerTestDriveBookingsChanged()
   return json
@@ -241,7 +260,7 @@ export async function cancelOwnerTestDriveBooking(userId, bookingId, reason) {
   })
   const json = await response.json().catch(() => ({}))
   if (!response.ok || !json.success) {
-    throw new Error(json.error || 'Не удалось снять бронь')
+    throw new Error(json.error || 'ownerTdCancelBookingFailed')
   }
   notifyOwnerTestDriveBookingsChanged()
   return json

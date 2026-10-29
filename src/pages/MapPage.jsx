@@ -1217,18 +1217,18 @@ const MapPage = () => {
                 ? <FiMinimize2 size={18} aria-hidden />
                 : <HiOutlineArrowsExpand size={18} aria-hidden />}
             </button>
-            <div className="map-page-zoom" role="group" aria-label="Масштаб карты">
+            <div className="map-page-zoom" role="group" aria-label={t('mapPage_zoomGroupAria')}>
               <button
                 type="button"
                 onClick={() => mapInstanceRef.current?.zoomIn({ duration: 200 })}
-                aria-label="Увеличить"
+                aria-label={t('mapPage_zoomInAria')}
               >
                 +
               </button>
               <button
                 type="button"
                 onClick={() => mapInstanceRef.current?.zoomOut({ duration: 200 })}
-                aria-label="Уменьшить"
+                aria-label={t('mapPage_zoomOutAria')}
               >
                 −
               </button>

@@ -15,7 +15,7 @@ async function propertyAiRequest(path, { userId, body, signal } = {}) {
   })
   if (!response.ok) {
     const data = await response.json().catch(() => ({}))
-    throw new Error(data?.detail || `Ошибка сервера (${response.status})`)
+    throw new Error(data?.detail || `Server error (${response.status})`)
   }
   return response
 }

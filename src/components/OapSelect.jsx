@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useLayoutEffect, useId, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react'
 import './OapSelect.css'
 
@@ -26,12 +27,14 @@ export default function OapSelect({
   value,
   onChange,
   options,
-  placeholder = 'Выберите',
+  placeholder,
   className = '',
   id,
   disabled = false,
   'aria-label': ariaLabel,
 }) {
+  const { t } = useTranslation()
+  const resolvedPlaceholder = placeholder ?? t('oapSelectPlaceholder')
   const [open, setOpen] = useState(false)
   const [dropUp, setDropUp] = useState(false)
   const [menuScrollable, setMenuScrollable] = useState(false)
@@ -146,7 +149,7 @@ export default function OapSelect({
         onClick={() => setOpen((prev) => !prev)}
       >
         <span className={selected ? 'oap-select__value' : 'oap-select__placeholder'}>
-          {selected?.label || placeholder}
+          {selected?.label || resolvedPlaceholder}
         </span>
         <ChevronDown size={18} className="oap-select__chevron" aria-hidden />
       </button>

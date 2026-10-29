@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useUser, useAuth } from '@clerk/clerk-react'
 import { saveUserData, getReferrerId, clearReferrerId } from '../services/authService'
 import {
@@ -17,6 +18,7 @@ const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
  * Работает аналогично WhatsApp авторизации - сохраняет данные сразу после успешного входа
  */
 const ClerkAuthSync = () => {
+  const { t } = useTranslation()
   const { user, isLoaded: userLoaded } = useUser()
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
   const hasSyncedRef = useRef(false)
@@ -54,7 +56,7 @@ const ClerkAuthSync = () => {
       }
 
       // Формируем имя пользователя
-      let userName = 'Пользователь'
+      let userName = t('clerkOauth_defaultUserName')
       if (user.fullName) {
         userName = user.fullName
       } else if (user.firstName || user.lastName) {
@@ -126,7 +128,7 @@ const ClerkAuthSync = () => {
             if (foundUser?.id) {
               dbUserId = foundUser.id
               console.log(
-                '✅ ClerkAuthSync: Пользователь найден в БД по email и кабинету:',
+                '✅ ClerkAuthSync: user found in DB by email and cabinet:',
                 dbUserId,
                 intendedCabinetRole,
               )
@@ -180,7 +182,7 @@ const ClerkAuthSync = () => {
             }
 
             const nameParts = userName.split(' ')
-            const firstName = nameParts[0] || 'Пользователь'
+            const firstName = nameParts[0] || t('clerkOauth_defaultUserName')
             const lastName = nameParts.slice(1).join(' ') || ''
             
             console.log('ClerkAuthSync: Создание пользователя с ролью:', userRole)
@@ -257,7 +259,7 @@ const ClerkAuthSync = () => {
       console.log('ClerkAuthSync: User not signed in, clearing Clerk data')
       hasSyncedRef.current = false
     }
-  }, [user, userLoaded, isSignedIn, authLoaded])
+  }, [user, userLoaded, isSignedIn, authLoaded, t])
 
   return null // Этот компонент не рендерит ничего
 }

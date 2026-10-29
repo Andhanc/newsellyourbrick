@@ -9,9 +9,9 @@ const billing = await readFile(new URL('../../server/stripeBilling.js', import.m
 
 test('test-drive confirmation is a guided accessible buyer drawer', () => {
   assert.match(drawer, /BuyerSheetShell/)
-  assert.match(drawer, /Тест-драйв забронирован/)
-  assert.match(drawer, /Открыть мои бронирования/)
-  assert.match(drawer, /Вернуться к объекту/)
+  assert.match(drawer, /testDriveSuccess_title/)
+  assert.match(drawer, /testDriveSuccess_openBookings/)
+  assert.match(drawer, /testDriveSuccess_backToProperty/)
   assert.match(css, /min-height:\s*52px/)
 })
 

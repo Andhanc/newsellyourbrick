@@ -12,12 +12,12 @@ export function PropertyDetailDesktopTrustPromo({ moderationStatus = 'approved' 
         <ShieldCheck size={22} strokeWidth={2} />
       </span>
       <div className="pdd-promo__body">
-        <p className="pdd-promo__kicker">{t('propertyDetailSecurityTitle', 'Безопасность')}</p>
+        <p className="pdd-promo__kicker">{t('propertyDetailSecurityTitle')}</p>
         <h3 className="pdd-promo__title">
-          {isApproved ? 'Объект прошёл модерацию' : 'Проверка объекта'}
+          {isApproved ? t('pddPromoModerated') : t('pddPromoChecking')}
         </h3>
         <p className="pdd-promo__text">
-          Документы, локация и условия сделки доступны до участия в аукционе — без скрытых блоков.
+          {t('pddPromoTrustText')}
         </p>
       </div>
     </article>
@@ -33,13 +33,13 @@ export function PropertyDetailDesktopConciergePromo({ onContact }) {
         <Headphones size={22} strokeWidth={2} />
       </span>
       <div className="pdd-promo__body">
-        <p className="pdd-promo__kicker">Персональный менеджер</p>
-        <h3 className="pdd-promo__title">Нужна консультация по объекту?</h3>
+        <p className="pdd-promo__kicker">{t('pddPromoConciergeKicker')}</p>
+        <h3 className="pdd-promo__title">{t('pddPromoConciergeTitle')}</h3>
         <p className="pdd-promo__text">
-          Поможем с осмотром, ставкой и оформлением — ответим в рабочее время.
+          {t('pddPromoConciergeText')}
         </p>
         <button type="button" className="pdd-promo__cta" onClick={onContact}>
-          {t('propertyDetailContactManager', 'Связаться с менеджером')}
+          {t('propertyDetailContactManager')}
         </button>
       </div>
     </article>
@@ -47,6 +47,8 @@ export function PropertyDetailDesktopConciergePromo({ onContact }) {
 }
 
 export function PropertyDetailDesktopInvestStrip({ yieldPercent, onOpenCalc }) {
+  const { t } = useTranslation()
+
   return (
     <article className="pdd-promo pdd-promo--invest">
       <span className="pdd-promo__icon" aria-hidden>
@@ -54,16 +56,18 @@ export function PropertyDetailDesktopInvestStrip({ yieldPercent, onOpenCalc }) {
       </span>
       <div className="pdd-promo__body pdd-promo__body--row">
         <div>
-          <p className="pdd-promo__kicker">Инвестиционный потенциал</p>
+          <p className="pdd-promo__kicker">{t('pddPromoInvestKicker')}</p>
           <h3 className="pdd-promo__title">
-            {yieldPercent ? `Ориентир доходности ~${yieldPercent}% годовых` : 'Рассчитайте доходность'}
+            {yieldPercent
+              ? t('pddPromoInvestYield', { percent: yieldPercent })
+              : t('pddPromoInvestCalc')}
           </h3>
           <p className="pdd-promo__text">
-            Оцените аренду и окупаемость на калькуляторе ниже — цифры можно менять.
+            {t('pddPromoInvestText')}
           </p>
         </div>
         <button type="button" className="pdd-promo__cta pdd-promo__cta--outline" onClick={onOpenCalc}>
-          Открыть калькулятор
+          {t('pddPromoOpenCalc')}
         </button>
       </div>
     </article>
@@ -71,19 +75,21 @@ export function PropertyDetailDesktopInvestStrip({ yieldPercent, onOpenCalc }) {
 }
 
 export function PropertyDetailDesktopVipPromo({ onLearnMore }) {
+  const { t } = useTranslation()
+
   return (
     <article className="pdd-promo pdd-promo--vip">
       <span className="pdd-promo__icon" aria-hidden>
         <Sparkles size={22} strokeWidth={2} />
       </span>
       <div className="pdd-promo__body">
-        <p className="pdd-promo__kicker">VIP-клуб</p>
-        <h3 className="pdd-promo__title">Ранний доступ к закрытым лотам</h3>
+        <p className="pdd-promo__kicker">{t('pddPromoVipKicker')}</p>
+        <h3 className="pdd-promo__title">{t('pddPromoVipTitle')}</h3>
         <p className="pdd-promo__text">
-          Подписка открывает эксклюзивные объекты и приоритет в очереди на test-drive.
+          {t('pddPromoVipText')}
         </p>
         <button type="button" className="pdd-promo__cta" onClick={onLearnMore}>
-          Узнать о VIP
+          {t('pddPromoVipCta')}
         </button>
       </div>
     </article>

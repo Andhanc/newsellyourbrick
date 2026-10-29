@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import {
@@ -32,13 +33,15 @@ export default function BuyerSheetShell({
   labelledBy,
   describedBy,
   tone = 'detail',
-  closeLabel = 'Закрыть',
+  closeLabel,
   dismissible = true,
   footer = null,
   initialFocusRef,
   children,
   className = '',
 }) {
+  const { t } = useTranslation()
+  const resolvedCloseLabel = closeLabel ?? t('closeAria')
   const surfaceRef = useRef(null)
   const closeButtonRef = useRef(null)
   const previouslyFocusedRef = useRef(null)
@@ -168,7 +171,7 @@ export default function BuyerSheetShell({
             type="button"
             className="buyer-sheet__close buyer-touch-target"
             onClick={handleRequestClose}
-            aria-label={closeLabel}
+            aria-label={resolvedCloseLabel}
           >
             <X size={22} strokeWidth={2} aria-hidden="true" />
           </button>

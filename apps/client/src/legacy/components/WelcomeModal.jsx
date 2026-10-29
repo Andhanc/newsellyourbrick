@@ -1,8 +1,12 @@
 import { FiX, FiCheckCircle } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 import './WelcomeModal.css'
 
-const WelcomeModal = ({ isOpen, onClose, userName = 'Иван Иванов' }) => {
+const WelcomeModal = ({ isOpen, onClose, userName }) => {
+  const { t } = useTranslation()
   if (!isOpen) return null
+
+  const displayName = userName || t('welcomeModal_defaultName')
 
   return (
     <div className="welcome-modal-overlay" onClick={onClose}>
@@ -10,7 +14,7 @@ const WelcomeModal = ({ isOpen, onClose, userName = 'Иван Иванов' }) =
         <button 
           className="welcome-modal__close" 
           onClick={onClose}
-          aria-label="Закрыть"
+          aria-label={t('close')}
         >
           <FiX size={24} />
         </button>
@@ -21,20 +25,18 @@ const WelcomeModal = ({ isOpen, onClose, userName = 'Иван Иванов' }) =
           </div>
           
           <h2 className="welcome-modal__title">
-            Добро пожаловать, {userName}!
+            {t('welcomeModal_title', { name: displayName })}
           </h2>
           
           <p className="welcome-modal__text">
-            Вы успешно вошли в панель управления недвижимостью.
-            Здесь вы можете управлять своими объявлениями, отслеживать статистику
-            и анализировать эффективность продаж.
+            {t('welcomeModal_text')}
           </p>
 
           <button 
             className="welcome-modal__button"
             onClick={onClose}
           >
-            Начать
+            {t('welcomeModal_cta')}
           </button>
         </div>
       </div>

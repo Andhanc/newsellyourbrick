@@ -18,7 +18,7 @@ function investorAiRateLimit(req, res, next) {
     res.setHeader('Retry-After', Math.ceil((WINDOW_MS - (now - current.startedAt)) / 1000))
     return res.status(429).json({
       success: false,
-      detail: 'Слишком много AI-расчётов. Повторите немного позже.',
+      detail: 'Too many AI calculations. Try again a bit later.',
     })
   }
   return next()

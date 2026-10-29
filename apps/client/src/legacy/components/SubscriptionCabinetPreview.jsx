@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { FiCheck } from 'react-icons/fi'
 import './SubscriptionCabinetPreview.css'
+import { getUiIntlLocale } from '../utils/uiIntlLocale'
 
 const TIERS = {
   starter: {
@@ -38,7 +39,7 @@ function formatPeriodEnd(iso) {
   if (!iso) return null
   const d = new Date(iso)
   if (!Number.isFinite(d.getTime())) return null
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+  return d.toLocaleDateString(getUiIntlLocale(), { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 export default function SubscriptionCabinetPreview({

@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { showNotification } from '../utils/toastHelper'
@@ -12,9 +13,8 @@ const SHOWCASE_SECTIONS = [
     id: 'auction',
     sectionId: 'invest-objects-auction',
     variant: 'auction',
-    title: 'Аукцион',
-    subtitle: 'Находите скрытые возможности и приобретайте объекты по лучшей цене',
-    ctaLabel: 'Перейти',
+    titleKey: 'auction',
+    subtitleKey: 'discoverPage_showcaseAuctionSubtitle',
     to: '/auction?filter=auction',
     itemsKey: 'auctionSection',
   },
@@ -22,9 +22,8 @@ const SHOWCASE_SECTIONS = [
     id: 'buy_now',
     sectionId: 'invest-objects-buy-now',
     variant: 'buyNow',
-    title: 'Купить сейчас',
-    subtitle: 'Готовые объекты по фиксированной цене без торгов',
-    ctaLabel: 'Перейти',
+    titleKey: 'buyNowSectionTitle',
+    subtitleKey: 'discoverPage_showcaseBuyNowSubtitle',
     to: '/auction/buy-now',
     itemsKey: 'buyNowSection',
   },
@@ -32,9 +31,8 @@ const SHOWCASE_SECTIONS = [
     id: 'shares',
     sectionId: 'invest-objects-shares',
     variant: 'shares',
-    title: 'Доли',
-    subtitle: 'Инвестируйте в доли крупных объектов от минимальных сумм',
-    ctaLabel: 'Перейти',
+    titleKey: 'shares',
+    subtitleKey: 'discoverPage_showcaseSharesSubtitle',
     to: '/shares',
     itemsKey: 'sharesSection',
   },
@@ -42,9 +40,8 @@ const SHOWCASE_SECTIONS = [
     id: 'debts',
     sectionId: 'invest-objects-debts',
     variant: 'debts',
-    title: 'Долги',
-    subtitle: 'Инвестируйте в долговые инструменты под залог недвижимости',
-    ctaLabel: 'Перейти',
+    titleKey: 'debtsTitle',
+    subtitleKey: 'discoverPage_showcaseDebtsSubtitle',
     to: '/debts',
     itemsKey: 'debtsSection',
   },
@@ -52,6 +49,7 @@ const SHOWCASE_SECTIONS = [
 
 export default function InvestorHomeShowcases({ activeStrategyTab = 'all' }) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const {
     loading,
@@ -70,12 +68,12 @@ export default function InvestorHomeShowcases({ activeStrategyTab = 'all' }) {
 
   const showPropertyAuthRequiredToast = useCallback(() => {
     showNotification(
-      'Войдите в аккаунт, чтобы открыть карточку объекта.',
+      t('discoverPage_authToOpenProperty'),
       'warning',
       7000,
     )
     requestOpenLoginModal({ wizard: true })
-  }, [])
+  }, [t])
 
   const visibleSections = SHOWCASE_SECTIONS.filter(
     (section) => activeStrategyTab === 'all' || activeStrategyTab === section.id,
@@ -87,9 +85,9 @@ export default function InvestorHomeShowcases({ activeStrategyTab = 'all' }) {
         <InvestorPropertyShowcaseSection
           key={section.id}
           sectionId={section.sectionId}
-          title={section.title}
-          subtitle={section.subtitle}
-          ctaLabel={section.ctaLabel}
+          title={t(section.titleKey)}
+          subtitle={t(section.subtitleKey)}
+          ctaLabel={t('goTo')}
           onCtaClick={() => navigate(section.to)}
           loading={loading}
           items={itemsByKey[section.itemsKey]}
