@@ -6,8 +6,15 @@ import {
   splitTranslationForStore,
   parseExtraJson,
   ALL_TRANSLATION_FIELDS,
+  normalizeTranslationPropertyTable,
+  isUntranslatedTarget,
+  applyPhrasebook,
+  SITE_LANG_CODES,
 } from './aiPropertyTranslate.js'
-import { applyPropertyTranslationRow } from '../propertyListBatch.js'
+import {
+  applyPropertyTranslationRow,
+  translationPropertyTable,
+} from '../propertyListBatch.js'
 
 test('extracts all free-text listing fields and skips empties', () => {
   const texts = extractListingTexts({
@@ -71,4 +78,43 @@ test('parseExtraJson tolerates invalid payloads', () => {
   assert.deepEqual(parseExtraJson(null), {})
   assert.deepEqual(parseExtraJson('{'), {})
   assert.deepEqual(parseExtraJson({ city: 'Valencia' }), { city: 'Valencia' })
+})
+
+test('normalizes apartments/houses aliases to properties_* tables', () => {
+  assert.equal(normalizeTranslationPropertyTable('apartments'), 'properties_apartments')
+  assert.equal(normalizeTranslationPropertyTable('houses'), 'properties_houses')
+  assert.equal(normalizeTranslationPropertyTable('properties_apartments'), 'properties_apartments')
+  assert.equal(translationPropertyTable('apartments', 'apartment'), 'properties_apartments')
+  assert.equal(translationPropertyTable('houses', 'villa'), 'properties_houses')
+  assert.equal(translationPropertyTable(null, 'house'), 'properties_houses')
+})
+
+test('detects untranslated cyrillic copies in target languages', () => {
+  const source = {
+    title: 'Долевое участие, корпус 4',
+    description: 'Тенерифе. Порт',
+  }
+  assert.equal(
+    isUntranslatedTarget(source, { title: source.title, description: source.description }, 'en'),
+    true,
+  )
+  assert.equal(
+    isUntranslatedTarget(source, { title: 'Shared ownership, building 4', description: 'Tenerife. Port' }, 'en'),
+    false,
+  )
+  assert.equal(isUntranslatedTarget(source, source, 'ru'), false)
+})
+
+test('site languages include polish', () => {
+  assert.ok(SITE_LANG_CODES.includes('pl'))
+})
+
+test('phrasebook translates key russian listing phrases', () => {
+  const en = applyPhrasebook('Talaïa Residences — долевое участие, корпус 4', 'en')
+  assert.match(en, /equity participation/i)
+  assert.match(en, /building 4/i)
+  assert.equal(/[а-яё]/i.test(en), false)
+  const sv = applyPhrasebook('Испания, бассейн, вид на океан', 'sv')
+  assert.match(sv, /Spanien/i)
+  assert.match(sv, /havsutsikt/i)
 })

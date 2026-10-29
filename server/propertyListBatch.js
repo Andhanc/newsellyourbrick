@@ -4,8 +4,10 @@
 import { getPrisma } from './database/prismaClient.js';
 import {
   EXTRA_TRANSLATION_FIELDS,
+  normalizeTranslationPropertyTable,
   parseExtraJson,
   SITE_LANG_CODES,
+  translationPropertyTableAliases,
 } from './services/aiPropertyTranslate.js';
 
 const LIST_LANGS = new Set(SITE_LANG_CODES);
@@ -25,16 +27,11 @@ export function normalizeListLang(lang) {
 }
 
 /**
- * property_table для property_translations (как в старых findUnique).
- * Если source_table нет (сырой ряд из Prisma), ориентируемся на property_type.
+ * property_table для property_translations.
+ * Списки часто отдают source_table=apartments/houses — нормализуем к properties_*.
  */
 export function translationPropertyTable(sourceTable, propertyType) {
-  if (sourceTable != null && sourceTable !== '') {
-    return String(sourceTable);
-  }
-  const pt = String(propertyType || '');
-  if (pt === 'house' || pt === 'villa') return 'properties_houses';
-  return 'properties_apartments';
+  return normalizeTranslationPropertyTable(sourceTable, propertyType);
 }
 
 function trMapKey(propertyId, propertyTable) {
@@ -67,11 +64,17 @@ export async function mergePropertyTranslations(props, lang) {
   const lc = normalizeListLang(lang);
 
   for (const part of chunk(props, 120)) {
-    const or = part.map((p) => ({
-      property_id: Number(p.id),
-      property_table: translationPropertyTable(p.source_table, p.property_type),
-      lang_code: lc,
-    }));
+    const or = [];
+    for (const p of part) {
+      const canonical = translationPropertyTable(p.source_table, p.property_type);
+      for (const property_table of translationPropertyTableAliases(canonical)) {
+        or.push({
+          property_id: Number(p.id),
+          property_table,
+          lang_code: lc,
+        });
+      }
+    }
     const rows = await prisma.property_translations.findMany({
       where: { OR: or },
       select: {
@@ -84,10 +87,21 @@ export async function mergePropertyTranslations(props, lang) {
         extra_json: true,
       },
     });
-    const byKey = new Map(rows.map((r) => [trMapKey(r.property_id, r.property_table), r]));
+    const byId = new Map();
+    for (const r of rows) {
+      const id = Number(r.property_id);
+      const prev = byId.get(id);
+      if (!prev) {
+        byId.set(id, r);
+        continue;
+      }
+      // Предпочитаем канонические properties_* над legacy apartments/houses
+      const prevCanon = String(prev.property_table).startsWith('properties_');
+      const nextCanon = String(r.property_table).startsWith('properties_');
+      if (nextCanon && !prevCanon) byId.set(id, r);
+    }
     for (const prop of part) {
-      const table = translationPropertyTable(prop.source_table, prop.property_type);
-      const tr = byKey.get(trMapKey(prop.id, table));
+      const tr = byId.get(Number(prop.id));
       if (!tr) continue;
       applyPropertyTranslationRow(prop, tr);
     }

@@ -104,6 +104,10 @@ export default function Shares() {
   const [page, setPage] = useState(1)
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false)
 
+  const listLang = String(i18n.resolvedLanguage || i18n.language || 'ru')
+    .toLowerCase()
+    .split(/[-_]/)[0]
+
   useEffect(() => {
     let cancelled = false
     setLoading(true)
@@ -114,8 +118,13 @@ export default function Shares() {
         const records = []
         let offset = 0
         while (true) {
+          const params = new URLSearchParams({
+            limit: String(API_PAGE_SIZE),
+            offset: String(offset),
+            lang: listLang,
+          })
           const response = await fetchDedupe(
-            `${API_BASE}/properties/shares?limit=${API_PAGE_SIZE}&offset=${offset}`,
+            `${API_BASE}/properties/shares?${params.toString()}`,
           )
           const payload = await response.json().catch(() => null)
           if (!response.ok || payload?.success === false || !Array.isArray(payload?.data)) {
@@ -139,7 +148,7 @@ export default function Shares() {
     return () => {
       cancelled = true
     }
-  }, [reloadKey])
+  }, [reloadKey, listLang])
 
   useEffect(() => {
     const prefilter = readHeroSearchPrefilter(location.state)
@@ -165,8 +174,10 @@ export default function Shares() {
   const filteredShares = useMemo(() => {
     const search = normalizeText(query, intlLocale)
     const filtered = shares.filter((share) => {
+      const typeText = share.typeLabelKey ? t(share.typeLabelKey) : share.type
+      const statusText = share.statusLabelKey ? t(share.statusLabelKey) : share.statusLabel
       const haystack = normalizeText(
-        `${share.title} ${share.location} ${share.type} ${share.statusLabel}`,
+        `${share.title} ${share.location} ${typeText} ${statusText}`,
         intlLocale,
       )
       const yieldMatches =
@@ -194,6 +205,7 @@ export default function Shares() {
     sharePriceMax,
     shares,
     sort,
+    t,
     yieldMax,
   ])
 
@@ -524,6 +536,18 @@ function SharesFiltersPanel({
           options={typeOptions}
           values={selectedTypes}
           onToggle={onToggleType}
+          getLabel={(option) => {
+            const keyMap = {
+              apartment: 'propertyTypeApartment',
+              flat: 'propertyTypeFlat',
+              house: 'propertyTypeHouse',
+              villa: 'propertyTypeVilla',
+              commercial: 'propertyTypeCommercial',
+              townhouse: 'propertyTypeTownhouse',
+              penthouse: 'propertyTypePenthouse',
+            }
+            return keyMap[option] ? t(keyMap[option]) : option
+          }}
         />
       ) : null}
       {locationOptions.length ? (

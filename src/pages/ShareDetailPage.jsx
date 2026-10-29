@@ -219,17 +219,20 @@ const ShareDetailPage = () => {
     if (!id || !isShareDbRouteId(id)) return Promise.resolve()
     const prefetched = location.state?.sharePrefetch
     if (prefetched && String(prefetched.id) === String(shareRoutePropertyId(id))) {
+      // Optimistic paint from catalog, then refresh with lang so titles match UI language.
       setShareObject(prefetched)
-      setLoadingShare(false)
-      return Promise.resolve()
     }
     setLoadingShare(true)
     const legacyMatch = id.match(/^(apartment|commercial|house|villa)-(\d+)$/i)
     const apiKey = legacyMatch ? legacyMatch[2] : id
-    const typeQ = legacyMatch
-      ? `property_type=${encodeURIComponent(legacyMatch[1].toLowerCase())}`
-      : ''
-    const url = `${API_BASE}/properties/${encodeURIComponent(apiKey)}${typeQ ? `?${typeQ}` : ''}`
+    const params = new URLSearchParams()
+    if (legacyMatch) params.set('property_type', legacyMatch[1].toLowerCase())
+    const lang = String(i18n.resolvedLanguage || i18n.language || 'ru')
+      .toLowerCase()
+      .split(/[-_]/)[0]
+    if (lang) params.set('lang', lang)
+    const qs = params.toString()
+    const url = `${API_BASE}/properties/${encodeURIComponent(apiKey)}${qs ? `?${qs}` : ''}`
     return fetch(url)
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Not found'))))
       .then((json) => {
@@ -277,7 +280,7 @@ const ShareDetailPage = () => {
       })
       .catch(() => setShareObject(null))
       .finally(() => setLoadingShare(false))
-  }, [id, navigate, location.state])
+  }, [id, navigate, location.state, i18n.language, i18n.resolvedLanguage])
 
   // React re-runs layout effects when a Suspense boundary reveals this subtree again
   // (lazy detail chunks); only a real route/prefetch change may reset loading.

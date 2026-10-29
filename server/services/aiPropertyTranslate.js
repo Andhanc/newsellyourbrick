@@ -18,11 +18,32 @@ export const SITE_LANGUAGES = [
   { code: 'de', name: 'German' },
   { code: 'es', name: 'Spanish' },
   { code: 'fr', name: 'French' },
+  { code: 'pl', name: 'Polish' },
   { code: 'sv', name: 'Swedish' },
 ];
 
 export const SITE_LANG_CODES = SITE_LANGUAGES.map((l) => l.code);
 export const TARGET_LANG_CODES = SITE_LANG_CODES.filter((code) => code !== 'ru');
+
+/** Канонические имена таблиц в property_translations (списки часто отдают apartments/houses). */
+export function normalizeTranslationPropertyTable(sourceTable, propertyType) {
+  const raw = sourceTable != null ? String(sourceTable).trim() : '';
+  const lower = raw.toLowerCase();
+  if (lower === 'apartments' || lower === 'properties_apartments') return 'properties_apartments';
+  if (lower === 'houses' || lower === 'properties_houses') return 'properties_houses';
+  if (lower === 'properties') return 'properties';
+  if (raw) return raw;
+  const pt = String(propertyType || '').toLowerCase();
+  if (pt === 'house' || pt === 'villa') return 'properties_houses';
+  return 'properties_apartments';
+}
+
+export function translationPropertyTableAliases(canonicalTable) {
+  const table = String(canonicalTable || '');
+  if (table === 'properties_apartments') return ['properties_apartments', 'apartments'];
+  if (table === 'properties_houses') return ['properties_houses', 'houses'];
+  return [table];
+}
 
 export const CORE_TRANSLATION_FIELDS = [
   'title',
@@ -106,6 +127,11 @@ function detectSourceLang(texts) {
   return 'ru';
 }
 
+function isMyMemoryQuotaOrError(text) {
+  const s = String(text || '');
+  return /MYMEMORY WARNING|YOU USED ALL AVAILABLE FREE TRANSLATIONS|QUERY LENGTH LIMIT/i.test(s);
+}
+
 async function translateChunk(chunk, sourceLang, targetLang) {
   if (!chunk || !String(chunk).trim()) return '';
   const url = `${MYMEMORY_URL}?q=${encodeURIComponent(chunk)}&langpair=${sourceLang}|${targetLang}`;
@@ -116,14 +142,334 @@ async function translateChunk(chunk, sourceLang, targetLang) {
     clearTimeout(timeoutId);
     if (!res.ok) return chunk;
     const data = await res.json();
-    if (data.responseStatus === 200 && data.responseData?.translatedText) {
-      return data.responseData.translatedText;
+    const translated = data.responseData?.translatedText;
+    if (data.responseStatus === 200 && translated && !isMyMemoryQuotaOrError(translated)) {
+      return translated;
     }
   } catch (e) {
     clearTimeout(timeoutId);
     console.warn('[translate] MyMemory request failed:', e.message);
   }
   return chunk;
+}
+
+/**
+ * Словарный fallback RU → целевые языки для типичных фраз объявлений.
+ * Используется, когда AI/MyMemory недоступны или вернули кириллическую копию.
+ */
+const PHRASEBOOK = {
+  en: [
+    ['без прямого вида на океан', 'no direct ocean view'],
+    ['частичный вид на океан', 'partial ocean view'],
+    ['вид на океан', 'ocean view'],
+    ['подготовка зарядки электромобиля', 'EV charging readiness'],
+    ['канальный кондиционер', 'ducted air conditioning'],
+    ['солнечные панели', 'solar panels'],
+    ['в каждом объекте', 'in each unit'],
+    ['в одном проекте', 'in one project'],
+    ['Одна доля соответствует одному объекту', 'One share corresponds to one unit'],
+    ['Инфраструктура комплекса', 'Complex amenities'],
+    ['долевое участие', 'equity participation'],
+    ['общая стоимость', 'total value'],
+    ['Состав проекта', 'Project composition'],
+    ['Портфель из', 'Portfolio of'],
+    ['энергокласс', 'energy class'],
+    ['Новостройка', 'New build'],
+    ['машиноместо', 'parking space'],
+    ['кладовая', 'storage'],
+    ['терраса', 'terrace'],
+    ['бассейны', 'pools'],
+    ['бассейн', 'pool'],
+    ['спортзал', 'gym'],
+    ['кондиционер', 'air conditioning'],
+    ['парковка', 'parking'],
+    ['объектов', 'units'],
+    ['объекта', 'unit'],
+    ['корпуса', 'buildings'],
+    ['корпус', 'building'],
+    ['на первой линии', 'frontline'],
+    ['целиком', 'entirely'],
+    ['часть', 'part of'],
+    ['года', ''],
+    ['Испания', 'Spain'],
+    ['Тенерифе', 'Tenerife'],
+    ['хаммам', 'hammam'],
+    ['сауна', 'sauna'],
+    ['сады', 'gardens'],
+    ['аэротермия', 'aerothermal system'],
+    ['сантехника', 'sanitary fittings'],
+    ['кухня', 'kitchen'],
+    ['гараж', 'garage'],
+    ['сад', 'garden'],
+    ['спа', 'spa'],
+    ['сп.', 'bed'],
+    ['м²', 'm²'],
+    [' и ', ' and '],
+  ],
+  de: [
+    ['без прямого вида на океан', 'ohne direkten Meerblick'],
+    ['частичный вид на океан', 'teilweiser Meerblick'],
+    ['вид на океан', 'Meerblick'],
+    ['подготовка зарядки электромобиля', 'Vorbereitung für E-Auto-Ladung'],
+    ['канальный кондиционер', 'Kanalklimaanlage'],
+    ['солнечные панели', 'Solarmodule'],
+    ['в каждом объекте', 'in jeder Einheit'],
+    ['в одном проекте', 'in einem Projekt'],
+    ['Одна доля соответствует одному объекту', 'Ein Anteil entspricht einer Einheit'],
+    ['Инфраструктура комплекса', 'Anlageinfrastruktur'],
+    ['долевое участие', 'Beteiligung'],
+    ['общая стоимость', 'Gesamtwert'],
+    ['Состав проекта', 'Projektzusammensetzung'],
+    ['Портфель из', 'Portfolio aus'],
+    ['энергокласс', 'Energieklasse'],
+    ['Новостройка', 'Neubau'],
+    ['машиноместо', 'Stellplatz'],
+    ['кладовая', 'Abstellraum'],
+    ['терраса', 'Terrasse'],
+    ['бассейны', 'Pools'],
+    ['бассейн', 'Pool'],
+    ['спортзал', 'Fitnessraum'],
+    ['кондиционер', 'Klimaanlage'],
+    ['парковка', 'Parkplatz'],
+    ['объектов', 'Einheiten'],
+    ['объекта', 'Einheit'],
+    ['корпуса', 'Gebäude'],
+    ['корпус', 'Gebäude'],
+    ['Испания', 'Spanien'],
+    ['Тенерифе', 'Teneriffa'],
+    ['хаммам', 'Hammam'],
+    ['сауна', 'Sauna'],
+    ['сады', 'Gärten'],
+    ['аэротермия', 'Aerothermie'],
+    ['сантехника', 'Sanitär'],
+    ['кухня', 'Küche'],
+    ['гараж', 'Garage'],
+    ['сад', 'Garten'],
+    ['спа', 'Spa'],
+    ['сп.', 'Zi.'],
+    ['на первой линии', 'in erster Reihe'],
+    ['целиком', 'vollständig'],
+    ['часть', 'Teil von'],
+    ['года', ''],
+    ['м²', 'm²'],
+    [' и ', ' und '],
+  ],
+  es: [
+    ['без прямого вида на океан', 'sin vistas directas al océano'],
+    ['частичный вид на океан', 'vistas parciales al océano'],
+    ['вид на океан', 'vistas al océano'],
+    ['подготовка зарядки электромобиля', 'preparación para carga de vehículo eléctrico'],
+    ['канальный кондиционер', 'aire acondicionado por conductos'],
+    ['солнечные панели', 'paneles solares'],
+    ['в каждом объекте', 'en cada unidad'],
+    ['в одном проекте', 'en un proyecto'],
+    ['Одна доля соответствует одному объекту', 'Una participación corresponde a una unidad'],
+    ['Инфраструктура комплекса', 'Instalaciones del complejo'],
+    ['долевое участие', 'participación'],
+    ['общая стоимость', 'valor total'],
+    ['Состав проекта', 'Composición del proyecto'],
+    ['Портфель из', 'Cartera de'],
+    ['энергокласс', 'clase energética'],
+    ['Новостройка', 'Obra nueva'],
+    ['машиноместо', 'plaza de aparcamiento'],
+    ['кладовая', 'trastero'],
+    ['терраса', 'terraza'],
+    ['бассейны', 'piscinas'],
+    ['бассейн', 'piscina'],
+    ['спортзал', 'gimnasio'],
+    ['кондиционер', 'aire acondicionado'],
+    ['парковка', 'aparcamiento'],
+    ['объектов', 'unidades'],
+    ['объекта', 'unidad'],
+    ['корпуса', 'edificios'],
+    ['корпус', 'edificio'],
+    ['Испания', 'España'],
+    ['Тенерифе', 'Tenerife'],
+    ['хаммам', 'hammam'],
+    ['сауна', 'sauna'],
+    ['сады', 'jardines'],
+    ['аэротермия', 'aerotermia'],
+    ['сантехника', 'sanitarios'],
+    ['кухня', 'cocina'],
+    ['гараж', 'garaje'],
+    ['сад', 'jardín'],
+    ['спа', 'spa'],
+    ['сп.', 'dorm.'],
+    ['на первой линии', 'en primera línea'],
+    ['целиком', 'completo'],
+    ['часть', 'parte de'],
+    ['года', ''],
+    ['м²', 'm²'],
+    [' и ', ' y '],
+  ],
+  fr: [
+    ['без прямого вида на океан', 'sans vue directe sur l’océan'],
+    ['частичный вид на океан', 'vue partielle sur l’océan'],
+    ['вид на океан', 'vue sur l’océan'],
+    ['подготовка зарядки электромобиля', 'préparation pour borne de recharge'],
+    ['канальный кондиционер', 'climatisation gainable'],
+    ['солнечные панели', 'panneaux solaires'],
+    ['в каждом объекте', 'dans chaque unité'],
+    ['в одном проекте', 'dans un projet'],
+    ['Одна доля соответствует одному объекту', 'Une part correspond à une unité'],
+    ['Инфраструктура комплекса', 'Infrastructures du complexe'],
+    ['долевое участие', 'participation'],
+    ['общая стоимость', 'valeur totale'],
+    ['Состав проекта', 'Composition du projet'],
+    ['Портфель из', 'Portefeuille de'],
+    ['энергокласс', 'classe énergétique'],
+    ['Новостройка', 'Construction neuve'],
+    ['машиноместо', 'place de parking'],
+    ['кладовая', 'cellier'],
+    ['терраса', 'terrasse'],
+    ['бассейны', 'piscines'],
+    ['бассейн', 'piscine'],
+    ['спортзал', 'salle de sport'],
+    ['кондиционер', 'climatisation'],
+    ['парковка', 'parking'],
+    ['объектов', 'unités'],
+    ['объекта', 'unité'],
+    ['корпуса', 'bâtiments'],
+    ['корпус', 'bâtiment'],
+    ['Испания', 'Espagne'],
+    ['Тенерифе', 'Ténérife'],
+    ['хаммам', 'hammam'],
+    ['сауна', 'sauna'],
+    ['сады', 'jardins'],
+    ['аэротермия', 'aérothermie'],
+    ['сантехника', 'sanitaires'],
+    ['кухня', 'cuisine'],
+    ['гараж', 'garage'],
+    ['сад', 'jardin'],
+    ['спа', 'spa'],
+    ['сп.', 'ch.'],
+    ['на первой линии', 'en première ligne'],
+    ['целиком', 'entièrement'],
+    ['часть', 'partie de'],
+    ['года', ''],
+    ['м²', 'm²'],
+    [' и ', ' et '],
+  ],
+  pl: [
+    ['без прямого вида на океан', 'bez bezpośredniego widoku na ocean'],
+    ['частичный вид на океан', 'częściowy widok na ocean'],
+    ['вид на океан', 'widok na ocean'],
+    ['подготовка зарядки электромобиля', 'przygotowanie pod ładowanie EV'],
+    ['канальный кондиционер', 'klimatyzacja kanałowa'],
+    ['солнечные панели', 'panele słoneczne'],
+    ['в каждом объекте', 'w każdej jednostce'],
+    ['в одном проекте', 'w jednym projekcie'],
+    ['Одна доля соответствует одному объекту', 'Jeden udział odpowiada jednej jednostce'],
+    ['Инфраструктура комплекса', 'Infrastruktura kompleksu'],
+    ['долевое участие', 'udział własnościowy'],
+    ['общая стоимость', 'wartość całkowita'],
+    ['Состав проекта', 'Skład projektu'],
+    ['Портфель из', 'Portfel z'],
+    ['энергокласс', 'klasa energetyczna'],
+    ['Новостройка', 'Nowa inwestycja'],
+    ['машиноместо', 'miejsce parkingowe'],
+    ['кладовая', 'komórka'],
+    ['терраса', 'taras'],
+    ['бассейны', 'baseny'],
+    ['бассейн', 'basen'],
+    ['спортзал', 'siłownia'],
+    ['кондиционер', 'klimatyzacja'],
+    ['парковка', 'parking'],
+    ['объектов', 'jednostek'],
+    ['объекта', 'jednostki'],
+    ['корпуса', 'budynki'],
+    ['корпус', 'budynek'],
+    ['Испания', 'Hiszpania'],
+    ['Тенерифе', 'Teneryfa'],
+    ['хаммам', 'hammam'],
+    ['сауна', 'sauna'],
+    ['сады', 'ogrody'],
+    ['аэротермия', 'aerotermia'],
+    ['сантехника', 'armatura'],
+    ['кухня', 'kuchnia'],
+    ['гараж', 'garaż'],
+    ['сад', 'ogród'],
+    ['спа', 'spa'],
+    ['сп.', 'pok.'],
+    ['на первой линии', 'w pierwszej linii'],
+    ['целиком', 'w całości'],
+    ['часть', 'część'],
+    ['года', ''],
+    ['м²', 'm²'],
+    [' и ', ' i '],
+  ],
+  sv: [
+    ['без прямого вида на океан', 'utan direkt havsutsikt'],
+    ['частичный вид на океан', 'delvis havsutsikt'],
+    ['вид на океан', 'havsutsikt'],
+    ['подготовка зарядки электромобиля', 'förberett för elbilsladdning'],
+    ['канальный кондиционер', 'kanalbunden luftkonditionering'],
+    ['солнечные панели', 'solpaneler'],
+    ['в каждом объекте', 'i varje enhet'],
+    ['в одном проекте', 'i ett projekt'],
+    ['Одна доля соответствует одному объекту', 'En andel motsvarar en enhet'],
+    ['Инфраструктура комплекса', 'Komplexets faciliteter'],
+    ['долевое участие', 'andelägande'],
+    ['общая стоимость', 'totalt värde'],
+    ['Состав проекта', 'Projektets sammansättning'],
+    ['Портфель из', 'Portfölj med'],
+    ['энергокласс', 'energiklass'],
+    ['Новостройка', 'Nybyggnation'],
+    ['машиноместо', 'parkeringsplats'],
+    ['кладовая', 'förråd'],
+    ['терраса', 'terrass'],
+    ['бассейны', 'pooler'],
+    ['бассейн', 'pool'],
+    ['спортзал', 'gym'],
+    ['кондиционер', 'luftkonditionering'],
+    ['парковка', 'parkering'],
+    ['объектов', 'enheter'],
+    ['объекта', 'enhet'],
+    ['корпуса', 'byggnader'],
+    ['корпус', 'byggnad'],
+    ['Испания', 'Spanien'],
+    ['Тенерифе', 'Teneriffa'],
+    ['хаммам', 'hammam'],
+    ['сауна', 'bastu'],
+    ['сады', 'trädgårdar'],
+    ['аэротермия', 'aerotermi'],
+    ['сантехника', 'sanitet'],
+    ['кухня', 'kök'],
+    ['гараж', 'garage'],
+    ['сад', 'trädgård'],
+    ['спа', 'spa'],
+    ['сп.', 'sovrum'],
+    ['на первой линии', 'i första linjen'],
+    ['целиком', 'helt'],
+    ['часть', 'del av'],
+    ['года', ''],
+    ['м²', 'm²'],
+    [' и ', ' och '],
+  ],
+};
+
+export function applyPhrasebook(text, targetLang) {
+  const pairs = PHRASEBOOK[targetLang];
+  if (!pairs || !text) return text || '';
+  let out = String(text);
+  for (const [from, to] of pairs) {
+    if (!from) continue;
+    out = out.split(from).join(to);
+  }
+  return out;
+}
+
+function translateTextsWithPhrasebook(texts, sourceLang) {
+  const result = emptyResultFromSource(texts);
+  result[sourceLang] = { ...texts };
+  for (const code of TARGET_LANG_CODES) {
+    const translated = {};
+    for (const [key, value] of Object.entries(texts)) {
+      translated[key] = applyPhrasebook(value, code);
+    }
+    result[code] = translated;
+  }
+  return result;
 }
 
 function chunkText(text) {
@@ -162,6 +508,33 @@ function emptyResultFromSource(texts) {
     result[code] = { ...texts };
   }
   return result;
+}
+
+function looksCyrillic(text) {
+  return /[а-яё]/i.test(String(text || ''));
+}
+
+/**
+ * Целевой язык всё ещё с русским исходником — перевод не прошёл.
+ * Для en/de/... не принимаем копию кириллического title/description.
+ */
+export function isUntranslatedTarget(sourceTexts, translated, targetLang) {
+  if (!targetLang || targetLang === 'ru') return false;
+  const srcTitle = trimText(sourceTexts?.title);
+  const srcDesc = trimText(sourceTexts?.description);
+  const dstTitle = trimText(translated?.title);
+  const dstDesc = trimText(translated?.description);
+  if (srcTitle && dstTitle && srcTitle === dstTitle && looksCyrillic(srcTitle)) return true;
+  if (srcDesc && dstDesc && srcDesc === dstDesc && looksCyrillic(srcDesc)) return true;
+  return false;
+}
+
+function countUntranslatedTargets(texts, translations) {
+  let bad = 0;
+  for (const code of TARGET_LANG_CODES) {
+    if (isUntranslatedTarget(texts, translations?.[code], code)) bad += 1;
+  }
+  return bad;
 }
 
 function parseJsonFromModel(raw) {
@@ -307,54 +680,104 @@ export async function translatePropertyToAllLanguages(property) {
   }
 
   const sourceLang = detectSourceLang(texts);
+  let aiResult = null;
   try {
-    const aiResult = await translateWithAi(texts, sourceLang);
-    if (aiResult) {
+    aiResult = await translateWithAi(texts, sourceLang);
+    if (aiResult && countUntranslatedTargets(texts, aiResult) === 0) {
       console.log(`[translate] AI translations ready for property_id=${property?.id || '?'}`);
       return aiResult;
+    }
+    if (aiResult) {
+      console.warn(
+        `[translate] AI left ${countUntranslatedTargets(texts, aiResult)} target lang(s) untranslated, trying MyMemory`
+      );
     }
   } catch (err) {
     console.warn('[translate] AI failed, falling back to MyMemory:', err.message);
   }
 
-  return translateWithMyMemoryAll(texts, sourceLang);
+  const memoryResult = await translateWithMyMemoryAll(texts, sourceLang);
+  if (countUntranslatedTargets(texts, memoryResult) === 0) {
+    return memoryResult;
+  }
+
+  const phrasebookResult = translateTextsWithPhrasebook(texts, sourceLang);
+
+  // Смешиваем: MyMemory → AI → phrasebook.
+  const merged = emptyResultFromSource(texts);
+  merged[sourceLang] = { ...texts };
+  for (const code of TARGET_LANG_CODES) {
+    const fromMemory = memoryResult?.[code];
+    const fromAi = aiResult?.[code];
+    const fromBook = phrasebookResult?.[code];
+    if (fromMemory && !isUntranslatedTarget(texts, fromMemory, code)) {
+      merged[code] = fromMemory;
+    } else if (fromAi && !isUntranslatedTarget(texts, fromAi, code)) {
+      merged[code] = fromAi;
+    } else if (fromBook && !isUntranslatedTarget(texts, fromBook, code)) {
+      merged[code] = fromBook;
+    } else if (fromMemory) {
+      merged[code] = fromMemory;
+    } else if (fromAi) {
+      merged[code] = fromAi;
+    } else if (fromBook) {
+      merged[code] = fromBook;
+    }
+  }
+
+  const stillBad = countUntranslatedTargets(texts, merged);
+  const totalTargets = TARGET_LANG_CODES.length;
+  if (stillBad === totalTargets) {
+    console.warn(
+      `[translate] APIs failed, using phrasebook for property_id=${property?.id || '?'}`
+    );
+    return phrasebookResult;
+  }
+  if (stillBad > 0) {
+    console.warn(
+      `[translate] partial success for property_id=${property?.id || '?'}: ${totalTargets - stillBad}/${totalTargets} languages ok`
+    );
+  }
+  return merged;
 }
 
 export async function persistPropertyTranslations(prisma, { propertyId, propertyTable, translations }) {
   const pid = Number(propertyId);
-  const table = String(propertyTable);
+  const table = normalizeTranslationPropertyTable(propertyTable);
+  const aliases = translationPropertyTableAliases(table);
   await prisma.property_translations.deleteMany({
-    where: { property_id: pid, property_table: table },
+    where: { property_id: pid, property_table: { in: aliases } },
   });
 
   for (const [langCode, translated] of Object.entries(translations || {})) {
     const split = splitTranslationForStore(translated);
-    const row = {
-      property_id: pid,
-      property_table: table,
-      lang_code: String(langCode),
-      title: split.title || '',
-      description: split.description || '',
-      additional_amenities: split.additional_amenities || '',
-      location: split.location || '',
-      extra_json: Object.keys(split.extra).length ? JSON.stringify(split.extra) : null,
-      created_at: new Date().toISOString(),
-    };
-    try {
-      await prisma.property_translations.create({ data: row });
-    } catch (err) {
-      if (!/extra_json/i.test(String(err?.message || ''))) throw err;
-      const { extra_json: _ignored, ...withoutExtra } = row;
-      await prisma.property_translations.create({ data: withoutExtra });
+    // Пишем и в каноническую таблицу, и в legacy-алиас (apartments/houses),
+    // чтобы старые списки с source_table=apartments тоже находили перевод.
+    for (const property_table of aliases) {
+      const row = {
+        property_id: pid,
+        property_table,
+        lang_code: String(langCode),
+        title: split.title || '',
+        description: split.description || '',
+        additional_amenities: split.additional_amenities || '',
+        location: split.location || '',
+        extra_json: Object.keys(split.extra).length ? JSON.stringify(split.extra) : null,
+        created_at: new Date().toISOString(),
+      };
+      try {
+        await prisma.property_translations.create({ data: row });
+      } catch (err) {
+        if (!/extra_json/i.test(String(err?.message || ''))) throw err;
+        const { extra_json: _ignored, ...withoutExtra } = row;
+        await prisma.property_translations.create({ data: withoutExtra });
+      }
     }
   }
 }
 
 export function resolveTranslationTable(property) {
-  if (property?.source_table) return String(property.source_table);
-  const pt = String(property?.property_type || '');
-  if (pt === 'house' || pt === 'villa') return 'properties_houses';
-  return 'properties_apartments';
+  return normalizeTranslationPropertyTable(property?.source_table, property?.property_type);
 }
 
 export async function translateAndPersistProperty(prisma, property) {

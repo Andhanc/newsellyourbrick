@@ -11727,6 +11727,7 @@ app.get('/api/properties/shares', async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit, 10) || 100, 100);
     const offset = parseInt(req.query.offset, 10) || 0;
+    const lang = req.query.lang && String(req.query.lang).trim().toLowerCase();
     const properties = await propertyQueries.getShares(limit, offset);
     // Нормализуем только подтверждённые поля; отсутствие фото остаётся явным.
     const list = properties.map((p) => {
@@ -11746,6 +11747,13 @@ app.get('/api/properties/shares', async (req, res) => {
       const photosNorm = normalizePhotosListInput(photosRaw);
       return formatShareMarketplaceApiItem(p, photosNorm);
     });
+    if (lang && SITE_LANG_CODES.includes(lang)) {
+      try {
+        await mergePropertyTranslations(list, lang);
+      } catch (e) {
+        console.warn('GET /api/properties/shares - подстановка перевода:', e.message);
+      }
+    }
     res.json({ success: true, data: list });
   } catch (err) {
     console.error('GET /api/properties/shares error:', err);
