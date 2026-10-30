@@ -84,7 +84,13 @@ const CatalogCityPage = () => {
         setLoading(true)
         const base = await getApiBaseUrl()
         const typeSeg = route.typePlural ? `/${route.typePlural}` : ''
-        const qs = sale !== 'all' ? `?sale=${encodeURIComponent(sale)}` : ''
+        const params = new URLSearchParams()
+        if (sale !== 'all') params.set('sale', sale)
+        const listLang = String(i18n.resolvedLanguage || i18n.language || 'ru')
+          .toLowerCase()
+          .split(/[-_]/)[0]
+        if (listLang) params.set('lang', listLang)
+        const qs = params.toString() ? `?${params.toString()}` : ''
         const res = await fetch(
           `${base || API_BASE_FALLBACK}/catalog/${route.country}/${route.city}${typeSeg}${qs}`,
         )
@@ -112,7 +118,7 @@ const CatalogCityPage = () => {
     return () => {
       cancelled = true
     }
-  }, [countryValid, typeValid, route.country, route.city, route.typePlural, sale])
+  }, [countryValid, typeValid, route.country, route.city, route.typePlural, sale, i18n.language, i18n.resolvedLanguage])
 
   useEffect(() => {
     setCurrentPage(1)

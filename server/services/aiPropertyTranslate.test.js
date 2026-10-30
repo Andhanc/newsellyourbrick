@@ -114,7 +114,19 @@ test('phrasebook translates key russian listing phrases', () => {
   assert.match(en, /equity participation/i)
   assert.match(en, /building 4/i)
   assert.equal(/[а-яё]/i.test(en), false)
+  const unit = applyPhrasebook('Talaïa Residences — квартира E1_P1_3F, 2 спальни, Adeje', 'es')
+  assert.match(unit, /apartamento/i)
+  assert.match(unit, /dormitorios/i)
+  assert.equal(/[а-яё]/i.test(unit), false)
   const sv = applyPhrasebook('Испания, бассейн, вид на океан', 'sv')
   assert.match(sv, /Spanien/i)
   assert.match(sv, /havsutsikt/i)
+})
+
+test('flags partial cyrillic leftovers in target titles', () => {
+  const source = { title: 'квартира E1, 2 спальни', description: 'Тенерифе' }
+  assert.equal(
+    isUntranslatedTarget(source, { title: 'квартира E1, 2 spaльни', description: 'Tenerife' }, 'en'),
+    true,
+  )
 })

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   buildCatalogCityPath,
   countryLabelToUrlSlug,
@@ -13,12 +14,12 @@ import { getApiBaseUrlSync } from '../utils/apiConfig'
 const relatedListingsCache = new Map()
 const relatedListingsInflight = new Map()
 
-function buildRelatedListingsCacheKey(countrySlug, citySlug, typePlural, propertyId, limit) {
-  return `${countrySlug}/${citySlug}/${typePlural || '_'}|${propertyId ?? '_'}|${limit}`
+function buildRelatedListingsCacheKey(countrySlug, citySlug, typePlural, propertyId, limit, lang) {
+  return `${countrySlug}/${citySlug}/${typePlural || '_'}|${propertyId ?? '_'}|${limit}|${lang || 'ru'}`
 }
 
-async function fetchRelatedListings({ countrySlug, citySlug, typePlural, propertyId, limit }) {
-  const cacheKey = buildRelatedListingsCacheKey(countrySlug, citySlug, typePlural, propertyId, limit)
+async function fetchRelatedListings({ countrySlug, citySlug, typePlural, propertyId, limit, lang }) {
+  const cacheKey = buildRelatedListingsCacheKey(countrySlug, citySlug, typePlural, propertyId, limit, lang)
   if (relatedListingsCache.has(cacheKey)) {
     return relatedListingsCache.get(cacheKey)
   }
@@ -30,6 +31,10 @@ async function fetchRelatedListings({ countrySlug, citySlug, typePlural, propert
     const apiBase = getApiBaseUrlSync().replace(/\/$/, '')
     let path = `${apiBase}/catalog/${countrySlug}/${citySlug}`
     if (typePlural) path += `/${typePlural}`
+    const params = new URLSearchParams()
+    if (lang) params.set('lang', lang)
+    const qs = params.toString()
+    if (qs) path += `?${qs}`
 
     const res = await fetch(path)
     if (!res.ok) {
@@ -64,6 +69,10 @@ async function fetchRelatedListings({ countrySlug, citySlug, typePlural, propert
  * @param {{ limit?: number, enabled?: boolean }} [options]
  */
 export function usePropertyRelatedListings(property, { limit = 4, enabled = true } = {}) {
+  const { i18n } = useTranslation()
+  const lang = String(i18n.resolvedLanguage || i18n.language || 'ru')
+    .toLowerCase()
+    .split(/[-_]/)[0]
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
 
@@ -109,7 +118,7 @@ export function usePropertyRelatedListings(property, { limit = 4, enabled = true
     }
 
     let cancelled = false
-    const cacheKey = buildRelatedListingsCacheKey(countrySlug, citySlug, typePlural, propertyId, limit)
+    const cacheKey = buildRelatedListingsCacheKey(countrySlug, citySlug, typePlural, propertyId, limit, lang)
     const cached = relatedListingsCache.get(cacheKey)
 
     if (cached) {
@@ -120,7 +129,7 @@ export function usePropertyRelatedListings(property, { limit = 4, enabled = true
 
     setLoading(true)
 
-    void fetchRelatedListings({ countrySlug, citySlug, typePlural, propertyId, limit })
+    void fetchRelatedListings({ countrySlug, citySlug, typePlural, propertyId, limit, lang })
       .then((rows) => {
         if (!cancelled) setItems(rows)
       })
@@ -131,7 +140,7 @@ export function usePropertyRelatedListings(property, { limit = 4, enabled = true
     return () => {
       cancelled = true
     }
-  }, [enabled, countrySlug, citySlug, typePlural, propertyId, limit])
+  }, [enabled, countrySlug, citySlug, typePlural, propertyId, limit, lang])
 
   return { items, loading, geo }
 }

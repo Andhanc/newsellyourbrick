@@ -159,6 +159,17 @@ async function translateChunk(chunk, sourceLang, targetLang) {
  */
 const PHRASEBOOK = {
   en: [
+    ['квартира', 'apartment'],
+    ['таунхаус', 'townhouse'],
+    ['спальни', 'bedrooms'],
+    ['спальня', 'bedroom'],
+    ['портал', 'portal'],
+    ['этаж', 'floor'],
+    ['тип ', 'type '],
+    ['внутри', 'indoor'],
+    ['Частный сад', 'Private garden'],
+    ['Кладовая', 'Storage'],
+    ['частный сад', 'private garden'],
     ['без прямого вида на океан', 'no direct ocean view'],
     ['частичный вид на океан', 'partial ocean view'],
     ['вид на океан', 'ocean view'],
@@ -207,6 +218,17 @@ const PHRASEBOOK = {
     [' и ', ' and '],
   ],
   de: [
+    ['квартира', 'Wohnung'],
+    ['таунхаус', 'Reihenhaus'],
+    ['спальни', 'Schlafzimmer'],
+    ['спальня', 'Schlafzimmer'],
+    ['портал', 'Portal'],
+    ['этаж', 'Etage'],
+    ['тип ', 'Typ '],
+    ['внутри', 'innen'],
+    ['Частный сад', 'Privatgarten'],
+    ['Кладовая', 'Abstellraum'],
+    ['частный сад', 'Privatgarten'],
     ['без прямого вида на океан', 'ohne direkten Meerblick'],
     ['частичный вид на океан', 'teilweiser Meerblick'],
     ['вид на океан', 'Meerblick'],
@@ -255,6 +277,18 @@ const PHRASEBOOK = {
     [' и ', ' und '],
   ],
   es: [
+    ['Talaïa Residences', 'Residencias Talaïa'],
+    ['квартира', 'apartamento'],
+    ['таунхаус', 'adosado'],
+    ['спальни', 'dormitorios'],
+    ['спальня', 'dormitorio'],
+    ['портал', 'portal'],
+    ['этаж', 'planta'],
+    ['тип ', 'tipo '],
+    ['внутри', 'interior'],
+    ['Частный сад', 'Jardín privado'],
+    ['Кладовая', 'Trastero'],
+    ['частный сад', 'jardín privado'],
     ['без прямого вида на океан', 'sin vistas directas al océano'],
     ['частичный вид на океан', 'vistas parciales al océano'],
     ['вид на океан', 'vistas al océano'],
@@ -303,6 +337,18 @@ const PHRASEBOOK = {
     [' и ', ' y '],
   ],
   fr: [
+    ['Talaïa Residences', 'Résidences Talaïa'],
+    ['квартира', 'appartement'],
+    ['таунхаус', 'maison de ville'],
+    ['спальни', 'chambres'],
+    ['спальня', 'chambre'],
+    ['портал', 'portail'],
+    ['этаж', 'étage'],
+    ['тип ', 'type '],
+    ['внутри', 'intérieur'],
+    ['Частный сад', 'Jardin privé'],
+    ['Кладовая', 'Cellier'],
+    ['частный сад', 'jardin privé'],
     ['без прямого вида на океан', 'sans vue directe sur l’océan'],
     ['частичный вид на океан', 'vue partielle sur l’océan'],
     ['вид на океан', 'vue sur l’océan'],
@@ -351,6 +397,17 @@ const PHRASEBOOK = {
     [' и ', ' et '],
   ],
   pl: [
+    ['квартира', 'mieszkanie'],
+    ['таунхаус', 'segment'],
+    ['спальни', 'sypialnie'],
+    ['спальня', 'sypialnia'],
+    ['портал', 'klatka'],
+    ['этаж', 'piętro'],
+    ['тип ', 'typ '],
+    ['внутри', 'wewnątrz'],
+    ['Частный сад', 'Prywatny ogród'],
+    ['Кладовая', 'Komórka'],
+    ['частный сад', 'prywatny ogród'],
     ['без прямого вида на океан', 'bez bezpośredniego widoku na ocean'],
     ['частичный вид на океан', 'częściowy widok na ocean'],
     ['вид на океан', 'widok na ocean'],
@@ -399,6 +456,17 @@ const PHRASEBOOK = {
     [' и ', ' i '],
   ],
   sv: [
+    ['квартира', 'lägenhet'],
+    ['таунхаус', 'radhus'],
+    ['спальни', 'sovrum'],
+    ['спальня', 'sovrum'],
+    ['портал', 'portal'],
+    ['этаж', 'våning'],
+    ['тип ', 'typ '],
+    ['внутри', 'inomhus'],
+    ['Частный сад', 'Privat trädgård'],
+    ['Кладовая', 'Förråd'],
+    ['частный сад', 'privat trädgård'],
     ['без прямого вида на океан', 'utan direkt havsutsikt'],
     ['частичный вид на океан', 'delvis havsutsikt'],
     ['вид на океан', 'havsutsikt'],
@@ -454,7 +522,24 @@ export function applyPhrasebook(text, targetLang) {
   let out = String(text);
   for (const [from, to] of pairs) {
     if (!from) continue;
-    out = out.split(from).join(to);
+    if (out.includes(from)) {
+      out = out.split(from).join(to);
+      continue;
+    }
+    // Кириллица часто с заглавной в начале предложения.
+    const fromCap = from.charAt(0).toUpperCase() + from.slice(1);
+    const toCap = to ? to.charAt(0).toUpperCase() + to.slice(1) : to;
+    if (fromCap !== from && out.includes(fromCap)) {
+      out = out.split(fromCap).join(toCap);
+    }
+  }
+  // Кириллические «похожие» буквы в кодах типа А/В/С → латиница.
+  const lookalikes = [
+    ['А', 'A'], ['В', 'B'], ['С', 'C'], ['Е', 'E'], ['Н', 'H'], ['К', 'K'], ['М', 'M'],
+    ['О', 'O'], ['Р', 'P'], ['Т', 'T'], ['Х', 'X'],
+  ];
+  for (const [from, to] of lookalikes) {
+    if (out.includes(from)) out = out.split(from).join(to);
   }
   return out;
 }
@@ -526,6 +611,12 @@ export function isUntranslatedTarget(sourceTexts, translated, targetLang) {
   const dstDesc = trimText(translated?.description);
   if (srcTitle && dstTitle && srcTitle === dstTitle && looksCyrillic(srcTitle)) return true;
   if (srcDesc && dstDesc && srcDesc === dstDesc && looksCyrillic(srcDesc)) return true;
+  // Частичный AI-перевод с остатками кириллицы (напр. «spaльни») — тоже брак.
+  if (srcTitle && looksCyrillic(srcTitle) && dstTitle && looksCyrillic(dstTitle)) return true;
+  if (srcDesc && looksCyrillic(srcDesc) && dstDesc && looksCyrillic(dstDesc)) {
+    const cyrRatio = (dstDesc.match(/[а-яё]/gi) || []).length / Math.max(dstDesc.length, 1);
+    if (cyrRatio >= 0.08) return true;
+  }
   return false;
 }
 

@@ -8,6 +8,8 @@ import {
 } from '../src/utils/propertySearchLocation.js';
 import { apartmentQueries, houseQueries } from './database/database.js';
 import { passesApprovedFilters } from './database/module2PropertyPrisma.js';
+import { mergePropertyTranslations } from './propertyListBatch.js';
+import { SITE_LANG_CODES } from './services/aiPropertyTranslate.js';
 
 const CATALOG_BATCH_SIZE = 2000;
 const CATALOG_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -186,6 +188,7 @@ export function registerCatalogRoutes(app) {
         ? String(req.params.typePlural).trim().toLowerCase()
         : null;
       const sale = String(req.query.sale || 'all').trim().toLowerCase();
+      const lang = req.query.lang && String(req.query.lang).trim().toLowerCase();
 
       if (!isValidCatalogCountrySlug(countrySlug)) {
         return res.status(404).json({ success: false, error: 'Unknown country' });
@@ -229,6 +232,23 @@ export function registerCatalogRoutes(app) {
         sale,
       });
 
+      // Копии, чтобы не портить кэш каталога подстановкой переводов.
+      const properties = filtered.map((row) => ({
+        ...row,
+        source_table:
+          row.source_table ||
+          (row.property_type === 'house' || row.property_type === 'villa'
+            ? 'properties_houses'
+            : 'properties_apartments'),
+      }));
+      if (lang && SITE_LANG_CODES.includes(lang)) {
+        try {
+          await mergePropertyTranslations(properties, lang);
+        } catch (e) {
+          console.warn('GET /api/catalog - подстановка перевода:', e.message);
+        }
+      }
+
       const cityLabel = getCanonicalRegionLabel(citySlug, citySlug);
 
       return res.json({
@@ -239,8 +259,8 @@ export function registerCatalogRoutes(app) {
           cityLabel,
           typePlural,
           sale,
-          total: filtered.length,
-          properties: filtered,
+          total: properties.length,
+          properties,
         },
       });
     } catch (err) {
