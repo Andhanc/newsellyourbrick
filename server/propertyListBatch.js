@@ -4,6 +4,9 @@
 import { getPrisma } from './database/prismaClient.js';
 import {
   EXTRA_TRANSLATION_FIELDS,
+  applyEnMarketingPhrasebook,
+  applyPhrasebook,
+  detectSourceLang,
   normalizeTranslationPropertyTable,
   parseExtraJson,
   SITE_LANG_CODES,
@@ -38,15 +41,64 @@ function trMapKey(propertyId, propertyTable) {
   return `${Number(propertyId)}::${propertyTable}`;
 }
 
-export function applyPropertyTranslationRow(prop, tr) {
+/**
+ * Подставляет перевод. Если строка в БД — копия исходника (EN→fr и т.п.),
+ * поднимаем phrasebook-fallback, чтобы карточки на деплое не оставались на EN.
+ * @param {string} [lang]
+ */
+export function applyPropertyTranslationRow(prop, tr, lang) {
   if (!prop || !tr) return prop;
+  const lc = lang ? String(lang).trim().toLowerCase() : '';
+  const sourceTexts = {
+    title: prop.title || prop.name || '',
+    description: prop.description || '',
+    location: prop.location || '',
+    additional_amenities: prop.additional_amenities || '',
+  };
+  const sourceLang = detectSourceLang(sourceTexts);
+
+  const heal = (value) => {
+    if (value == null || value === '') return value;
+    let next = applyPhrasebook(String(value), lc);
+    if (sourceLang === 'en' || !/[а-яё]/i.test(String(value))) {
+      next = applyEnMarketingPhrasebook(next, lc);
+    }
+    return next;
+  };
+
+  const fieldStale = (src, dst) =>
+    Boolean(
+      lc &&
+        src &&
+        dst &&
+        String(src).trim() === String(dst).trim() &&
+        lc !== sourceLang,
+    );
+
   if (tr.title) {
-    prop.title = tr.title;
-    prop.name = tr.title;
+    const title = fieldStale(sourceTexts.title, tr.title)
+      ? heal(sourceTexts.title || tr.title)
+      : tr.title;
+    prop.title = title;
+    prop.name = title;
   }
-  if (tr.description) prop.description = tr.description;
-  if (tr.additional_amenities != null) prop.additional_amenities = tr.additional_amenities;
-  if (tr.location != null) prop.location = tr.location;
+  if (tr.description) {
+    prop.description = fieldStale(sourceTexts.description, tr.description)
+      ? heal(sourceTexts.description || tr.description)
+      : tr.description;
+  }
+  if (tr.additional_amenities != null) {
+    prop.additional_amenities = fieldStale(
+      sourceTexts.additional_amenities,
+      tr.additional_amenities,
+    )
+      ? heal(sourceTexts.additional_amenities || tr.additional_amenities)
+      : tr.additional_amenities;
+  }
+  if (tr.location != null) {
+    // Локации часто совпадают между языками (Calle…); не считаем это stale-copy.
+    prop.location = tr.location;
+  }
   const extra = parseExtraJson(tr.extra_json);
   for (const key of EXTRA_TRANSLATION_FIELDS) {
     if (extra[key] != null && extra[key] !== '') prop[key] = extra[key];
@@ -102,8 +154,28 @@ export async function mergePropertyTranslations(props, lang) {
     }
     for (const prop of part) {
       const tr = byId.get(Number(prop.id));
-      if (!tr) continue;
-      applyPropertyTranslationRow(prop, tr);
+      if (!tr) {
+        // Нет строки перевода — для EN-исходников всё равно локализуем title через phrasebook.
+        if (lc && lc !== 'en') {
+          const sourceTexts = {
+            title: prop.title || prop.name || '',
+            description: prop.description || '',
+          };
+          const sourceLang = detectSourceLang(sourceTexts);
+          if (sourceLang === 'en' && sourceTexts.title) {
+            const healed = applyEnMarketingPhrasebook(
+              applyPhrasebook(sourceTexts.title, lc),
+              lc,
+            );
+            if (healed && healed !== sourceTexts.title) {
+              prop.title = healed;
+              prop.name = healed;
+            }
+          }
+        }
+        continue;
+      }
+      applyPropertyTranslationRow(prop, tr, lc);
     }
   }
 }

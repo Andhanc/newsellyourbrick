@@ -23,7 +23,14 @@ export const SITE_LANGUAGES = [
 ];
 
 export const SITE_LANG_CODES = SITE_LANGUAGES.map((l) => l.code);
+/** Цели при исходнике на русском (обратная совместимость). */
 export const TARGET_LANG_CODES = SITE_LANG_CODES.filter((code) => code !== 'ru');
+
+/** Целевые языки относительно фактического языка исходника. */
+export function targetLangCodesFor(sourceLang) {
+  const src = String(sourceLang || 'ru').toLowerCase();
+  return SITE_LANG_CODES.filter((code) => code !== src);
+}
 
 /** Канонические имена таблиц в property_translations (списки часто отдают apartments/houses). */
 export function normalizeTranslationPropertyTable(sourceTable, propertyType) {
@@ -115,7 +122,7 @@ export function parseExtraJson(raw) {
   }
 }
 
-function detectSourceLang(texts) {
+export function detectSourceLang(texts) {
   const sample = [texts.title, texts.description, texts.location, texts.additional_amenities]
     .filter(Boolean)
     .join(' ');
@@ -123,7 +130,10 @@ function detectSourceLang(texts) {
   if (/[äöüß]/i.test(sample)) return 'de';
   if (/[àâçéèêëîïôùû]/i.test(sample)) return 'fr';
   if (/[áéíóúñ¿¡]/i.test(sample)) return 'es';
+  if (/[ąćęłńóśźż]/i.test(sample)) return 'pl';
   if (/[åäö]/i.test(sample)) return 'sv';
+  // Latin marketing titles (Luxury Villa…) are English, not Russian.
+  if (/[a-z]/i.test(sample)) return 'en';
   return 'ru';
 }
 
@@ -588,8 +598,71 @@ const PHRASEBOOK = {
   ],
 };
 
-export function applyPhrasebook(text, targetLang) {
-  const pairs = PHRASEBOOK[targetLang];
+/** EN → target fallback for Latin marketing titles when AI/MyMemory fail. */
+const EN_MARKETING_PHRASEBOOK = {
+  ru: [
+    ['Exclusive Luxury Villa', 'Эксклюзивная люксовая вилла'],
+    ['Luxurious Villa', 'Роскошная вилла'],
+    ['Luxury Villa for Sale', 'Люксовая вилла на продажу'],
+    ['Luxury Villa', 'Люксовая вилла'],
+    ['Villa for Sale', 'Вилла на продажу'],
+    ['for Sale in', 'на продажу в'],
+    ['for Sale', 'на продажу'],
+    ['Complex ', 'Комплекс '],
+  ],
+  de: [
+    ['Exclusive Luxury Villa', 'Exklusive Luxusvilla'],
+    ['Luxurious Villa', 'Luxuriöse Villa'],
+    ['Luxury Villa for Sale', 'Luxusvilla zum Verkauf'],
+    ['Luxury Villa', 'Luxusvilla'],
+    ['Villa for Sale', 'Villa zum Verkauf'],
+    ['for Sale in', 'zum Verkauf in'],
+    ['for Sale', 'zum Verkauf'],
+    ['Complex ', 'Anlage '],
+  ],
+  es: [
+    ['Exclusive Luxury Villa', 'Villa de lujo exclusiva'],
+    ['Luxurious Villa', 'Villa lujosa'],
+    ['Luxury Villa for Sale', 'Villa de lujo en venta'],
+    ['Luxury Villa', 'Villa de lujo'],
+    ['Villa for Sale', 'Villa en venta'],
+    ['for Sale in', 'en venta en'],
+    ['for Sale', 'en venta'],
+    ['Complex ', 'Complejo '],
+  ],
+  fr: [
+    ['Exclusive Luxury Villa', 'Villa de luxe exclusive'],
+    ['Luxurious Villa', 'Villa luxueuse'],
+    ['Luxury Villa for Sale', 'Villa de luxe à vendre'],
+    ['Luxury Villa', 'Villa de luxe'],
+    ['Villa for Sale', 'Villa à vendre'],
+    ['for Sale in', 'à vendre à'],
+    ['for Sale', 'à vendre'],
+    ['Complex ', 'Complexe '],
+  ],
+  pl: [
+    ['Exclusive Luxury Villa', 'Ekskluzywna luksusowa willa'],
+    ['Luxurious Villa', 'Luksusowa willa'],
+    ['Luxury Villa for Sale', 'Luksusowa willa na sprzedaż'],
+    ['Luxury Villa', 'Luksusowa willa'],
+    ['Villa for Sale', 'Willa na sprzedaż'],
+    ['for Sale in', 'na sprzedaż w'],
+    ['for Sale', 'na sprzedaż'],
+    ['Complex ', 'Kompleks '],
+  ],
+  sv: [
+    ['Exclusive Luxury Villa', 'Exklusiv lyxvilla'],
+    ['Luxurious Villa', 'Lyxig villa'],
+    ['Luxury Villa for Sale', 'Lyxvilla till salu'],
+    ['Luxury Villa', 'Lyxvilla'],
+    ['Villa for Sale', 'Villa till salu'],
+    ['for Sale in', 'till salu i'],
+    ['for Sale', 'till salu'],
+    ['Complex ', 'Komplex '],
+  ],
+};
+
+function applyPhrasePairs(text, pairs) {
   if (!pairs || !text) return text || '';
   let out = String(text);
   for (const [from, to] of pairs) {
@@ -598,13 +671,18 @@ export function applyPhrasebook(text, targetLang) {
       out = out.split(from).join(to);
       continue;
     }
-    // Кириллица часто с заглавной в начале предложения.
     const fromCap = from.charAt(0).toUpperCase() + from.slice(1);
     const toCap = to ? to.charAt(0).toUpperCase() + to.slice(1) : to;
     if (fromCap !== from && out.includes(fromCap)) {
       out = out.split(fromCap).join(toCap);
     }
   }
+  return out;
+}
+
+export function applyPhrasebook(text, targetLang) {
+  if (!text) return '';
+  let out = applyPhrasePairs(String(text), PHRASEBOOK[targetLang]);
   // Кириллические «похожие» буквы в кодах типа А/В/С → латиница.
   const lookalikes = [
     ['А', 'A'], ['В', 'B'], ['С', 'C'], ['Е', 'E'], ['Н', 'H'], ['К', 'K'], ['М', 'M'],
@@ -616,13 +694,22 @@ export function applyPhrasebook(text, targetLang) {
   return out;
 }
 
+export function applyEnMarketingPhrasebook(text, targetLang) {
+  return applyPhrasePairs(text, EN_MARKETING_PHRASEBOOK[targetLang]);
+}
+
 function translateTextsWithPhrasebook(texts, sourceLang) {
   const result = emptyResultFromSource(texts);
   result[sourceLang] = { ...texts };
-  for (const code of TARGET_LANG_CODES) {
+  const useEnMarketing = sourceLang === 'en' || !looksCyrillic(Object.values(texts).join(' '));
+  for (const code of targetLangCodesFor(sourceLang)) {
     const translated = {};
     for (const [key, value] of Object.entries(texts)) {
-      translated[key] = applyPhrasebook(value, code);
+      let next = applyPhrasebook(value, code);
+      if (useEnMarketing && code !== 'en') {
+        next = applyEnMarketingPhrasebook(next, code);
+      }
+      translated[key] = next;
     }
     result[code] = translated;
   }
@@ -672,30 +759,34 @@ function looksCyrillic(text) {
 }
 
 /**
- * Целевой язык всё ещё с русским исходником — перевод не прошёл.
- * Для en/de/... не принимаем копию кириллического title/description.
+ * Целевой перевод не удался: копия исходника или кириллица в non-ru локали.
+ * @param {string} [sourceLang]
  */
-export function isUntranslatedTarget(sourceTexts, translated, targetLang) {
-  if (!targetLang || targetLang === 'ru') return false;
+export function isUntranslatedTarget(sourceTexts, translated, targetLang, sourceLang = 'ru') {
+  if (!targetLang || targetLang === sourceLang) return false;
   const srcTitle = trimText(sourceTexts?.title);
   const srcDesc = trimText(sourceTexts?.description);
   const dstTitle = trimText(translated?.title);
   const dstDesc = trimText(translated?.description);
-  if (srcTitle && dstTitle && srcTitle === dstTitle && looksCyrillic(srcTitle)) return true;
-  if (srcDesc && dstDesc && srcDesc === dstDesc && looksCyrillic(srcDesc)) return true;
+  // Exact copy of source title/description into another language = failed translation
+  // (covers English listings wrongly stored as fr/de/… before detectSourceLang fix).
+  if (srcTitle && dstTitle && srcTitle === dstTitle) return true;
+  if (srcDesc && dstDesc && srcDesc === dstDesc && srcDesc.length >= 24) return true;
   // Частичный AI-перевод с остатками кириллицы (напр. «spaльни») — тоже брак.
-  if (srcTitle && looksCyrillic(srcTitle) && dstTitle && looksCyrillic(dstTitle)) return true;
-  if (srcDesc && looksCyrillic(srcDesc) && dstDesc && looksCyrillic(dstDesc)) {
-    const cyrRatio = (dstDesc.match(/[а-яё]/gi) || []).length / Math.max(dstDesc.length, 1);
-    if (cyrRatio >= 0.08) return true;
+  if (targetLang !== 'ru') {
+    if (srcTitle && looksCyrillic(srcTitle) && dstTitle && looksCyrillic(dstTitle)) return true;
+    if (srcDesc && looksCyrillic(srcDesc) && dstDesc && looksCyrillic(dstDesc)) {
+      const cyrRatio = (dstDesc.match(/[а-яё]/gi) || []).length / Math.max(dstDesc.length, 1);
+      if (cyrRatio >= 0.08) return true;
+    }
   }
   return false;
 }
 
-function countUntranslatedTargets(texts, translations) {
+function countUntranslatedTargets(texts, translations, sourceLang = 'ru') {
   let bad = 0;
-  for (const code of TARGET_LANG_CODES) {
-    if (isUntranslatedTarget(texts, translations?.[code], code)) bad += 1;
+  for (const code of targetLangCodesFor(sourceLang)) {
+    if (isUntranslatedTarget(texts, translations?.[code], code, sourceLang)) bad += 1;
   }
   return bad;
 }
@@ -725,8 +816,9 @@ function normalizeAiTranslations(parsed, texts, sourceLang) {
   if (!parsed || typeof parsed !== 'object') return null;
   const result = emptyResultFromSource(texts);
   result[sourceLang] = { ...texts };
+  const targets = targetLangCodesFor(sourceLang);
 
-  for (const code of TARGET_LANG_CODES) {
+  for (const code of targets) {
     const row = parsed[code];
     if (!row || typeof row !== 'object') continue;
     const merged = { ...texts };
@@ -743,6 +835,7 @@ async function translateWithAi(texts, sourceLang) {
   const provider = getActiveAiProvider();
   if (provider.needsKey && !provider.apiKey) return null;
 
+  const targets = targetLangCodesFor(sourceLang);
   const fieldSchema = {
     type: 'object',
     additionalProperties: false,
@@ -755,8 +848,8 @@ async function translateWithAi(texts, sourceLang) {
     schema: {
       type: 'object',
       additionalProperties: false,
-      required: TARGET_LANG_CODES,
-      properties: Object.fromEntries(TARGET_LANG_CODES.map((code) => [code, fieldSchema])),
+      required: targets,
+      properties: Object.fromEntries(targets.map((code) => [code, fieldSchema])),
     },
   };
 
@@ -767,7 +860,7 @@ Preserve meaning, tone, and paragraph breaks. Do not add marketing text.`;
 
   const user = JSON.stringify({
     source_language: sourceLang,
-    target_languages: TARGET_LANG_CODES.map((code) => ({ code, name: LANG_NAMES[code] })),
+    target_languages: targets.map((code) => ({ code, name: LANG_NAMES[code] })),
     fields: texts,
   });
 
@@ -846,13 +939,13 @@ export async function translatePropertyToAllLanguages(property) {
   let aiResult = null;
   try {
     aiResult = await translateWithAi(texts, sourceLang);
-    if (aiResult && countUntranslatedTargets(texts, aiResult) === 0) {
+    if (aiResult && countUntranslatedTargets(texts, aiResult, sourceLang) === 0) {
       console.log(`[translate] AI translations ready for property_id=${property?.id || '?'}`);
       return aiResult;
     }
     if (aiResult) {
       console.warn(
-        `[translate] AI left ${countUntranslatedTargets(texts, aiResult)} target lang(s) untranslated, trying MyMemory`
+        `[translate] AI left ${countUntranslatedTargets(texts, aiResult, sourceLang)} target lang(s) untranslated, trying MyMemory`
       );
     }
   } catch (err) {
@@ -860,24 +953,25 @@ export async function translatePropertyToAllLanguages(property) {
   }
 
   const memoryResult = await translateWithMyMemoryAll(texts, sourceLang);
-  if (countUntranslatedTargets(texts, memoryResult) === 0) {
+  if (countUntranslatedTargets(texts, memoryResult, sourceLang) === 0) {
     return memoryResult;
   }
 
   const phrasebookResult = translateTextsWithPhrasebook(texts, sourceLang);
 
   // Смешиваем: MyMemory → AI → phrasebook.
+  const targets = targetLangCodesFor(sourceLang);
   const merged = emptyResultFromSource(texts);
   merged[sourceLang] = { ...texts };
-  for (const code of TARGET_LANG_CODES) {
+  for (const code of targets) {
     const fromMemory = memoryResult?.[code];
     const fromAi = aiResult?.[code];
     const fromBook = phrasebookResult?.[code];
-    if (fromMemory && !isUntranslatedTarget(texts, fromMemory, code)) {
+    if (fromMemory && !isUntranslatedTarget(texts, fromMemory, code, sourceLang)) {
       merged[code] = fromMemory;
-    } else if (fromAi && !isUntranslatedTarget(texts, fromAi, code)) {
+    } else if (fromAi && !isUntranslatedTarget(texts, fromAi, code, sourceLang)) {
       merged[code] = fromAi;
-    } else if (fromBook && !isUntranslatedTarget(texts, fromBook, code)) {
+    } else if (fromBook && !isUntranslatedTarget(texts, fromBook, code, sourceLang)) {
       merged[code] = fromBook;
     } else if (fromMemory) {
       merged[code] = fromMemory;
@@ -888,8 +982,8 @@ export async function translatePropertyToAllLanguages(property) {
     }
   }
 
-  const stillBad = countUntranslatedTargets(texts, merged);
-  const totalTargets = TARGET_LANG_CODES.length;
+  const stillBad = countUntranslatedTargets(texts, merged, sourceLang);
+  const totalTargets = targets.length;
   if (stillBad === totalTargets) {
     console.warn(
       `[translate] APIs failed, using phrasebook for property_id=${property?.id || '?'}`

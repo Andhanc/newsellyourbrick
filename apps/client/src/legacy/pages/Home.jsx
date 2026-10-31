@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import Header from '../components/Header'
 import Hero from '../components/Hero'
 import PropertyList from '../components/PropertyList'
@@ -65,6 +66,8 @@ function formatPropertyForList(prop, isAuction) {
 }
 
 function Home() {
+  const { i18n } = useTranslation()
+  const listLang = String(i18n.resolvedLanguage || i18n.language || 'ru').split(/[-_]/)[0]
   const [auctionProperties, setAuctionProperties] = useState(() => getCachedList())
   const [loading, setLoading] = useState(() => !hasCachedList())
   const [userDeposit, setUserDeposit] = useState(0)
@@ -105,10 +108,10 @@ function Home() {
 
   const homeListRef = useRef(null)
 
-  // Сразу запрашиваем данные при монтировании (кэш уже может быть от prefetch в App)
+  // Сразу запрашиваем данные при монтировании и при смене языка UI
   useEffect(() => {
     loadProperties(hasCachedList())
-  }, [loadProperties])
+  }, [loadProperties, listLang])
 
   // Подписка на новые объекты аукциона по SSE — без polling, только push от сервера при одобрении админом
   useEffect(() => {

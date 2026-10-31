@@ -94,6 +94,10 @@ import { navigateToSearchCatalog } from '../utils/searchCatalogNavigation'
 import { getPropertyShareUrl, sharePropertyListing } from '../utils/shareProperty'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { collectAmenityKeys, getAmenityLabel } from '../utils/tzAmenityLabels'
+import {
+  formatPropertyBuildingType,
+  formatPropertyCommercialType,
+} from '../utils/formatPropertyBuildingType'
 import { getAmenityIcon } from './oapAmenityIcons'
 import { patchCachedAuctionPropertyBid } from '../services/auctionListCache'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
@@ -3172,17 +3176,7 @@ function PropertyDetailClassic({
   const renderPropertyBuildingTypeValue = () => {
     const buildingType =
       displayProperty.building_type || displayProperty.construction_type
-    if (!buildingType) return '—'
-    if (buildingType === 'monolithic') return t('addPropertyDetailsBuildingMonolithic')
-    if (buildingType === 'brick') return t('addPropertyDetailsBuildingBrick')
-    if (buildingType === 'panel') return t('addPropertyDetailsBuildingPanel')
-    if (buildingType === 'block') return t('addPropertyDetailsBuildingBlock')
-    if (buildingType === 'wood') return t('addPropertyDetailsBuildingWood')
-    if (buildingType === 'frame') return t('addPropertyDetailsBuildingFrame')
-    if (buildingType === 'aerated_concrete') return t('addPropertyDetailsBuildingAerated')
-    if (buildingType === 'foam_concrete') return t('addPropertyDetailsBuildingFoam')
-    if (buildingType === 'other') return t('addPropertyDetailsBuildingOther')
-    return buildingType
+    return formatPropertyBuildingType(buildingType, t, { fallback: '—' })
   }
 
   const getPropertyMainDetailItems = () => {
@@ -3313,7 +3307,7 @@ function PropertyDetailClassic({
       items.push({
         key: 'commercial_type',
         label: t('propertyDetailCommercialType'),
-        value: displayProperty.commercial_type,
+        value: formatPropertyCommercialType(displayProperty.commercial_type, t),
       })
     }
     if (displayProperty.business_hours) {

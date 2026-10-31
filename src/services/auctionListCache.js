@@ -101,15 +101,29 @@ function formatPropertyForList(prop, isAuction) {
   }
 }
 
-let cachedList = []
+/** Кэш списков по UI-языку — иначе FR видит EN-заголовки из prefetch на другом locale. */
+const cachedListByLang = new Map()
 let cacheTimestamp = 0
 
+function resolveUiLang() {
+  try {
+    if (typeof window === 'undefined') return 'ru'
+    const raw = window.localStorage?.getItem('i18nextLng') || 'ru'
+    return String(raw).split('-')[0] || 'ru'
+  } catch {
+    return 'ru'
+  }
+}
+
 export function getCachedList() {
-  return cachedList.length ? [...cachedList] : []
+  const lang = resolveUiLang()
+  const list = cachedListByLang.get(lang)
+  return list?.length ? [...list] : []
 }
 
 export function setCachedList(list) {
-  cachedList = Array.isArray(list) ? [...list] : []
+  const lang = resolveUiLang()
+  cachedListByLang.set(lang, Array.isArray(list) ? [...list] : [])
   cacheTimestamp = Date.now()
 }
 
@@ -120,25 +134,32 @@ export function patchCachedAuctionPropertyBid(propertyId, bidAmount, sourceTable
   const table = resolvePropertySourceTable({ source_table: sourceTable })
   const matchKey = compositeBidAmountKey(id, table)
   setBidOverride(id, nextBid, table)
-  if (!Array.isArray(cachedList) || cachedList.length === 0) return true
 
   let updated = false
-  cachedList = cachedList.map((item) => {
-    if (compositeBidAmountKey(item.id, resolvePropertySourceTable(item)) !== matchKey) return item
-    updated = true
-    const current = resolveAuctionCurrentBidValue(item)
-    return {
-      ...item,
-      currentBid: Math.max(current, nextBid),
+  for (const [lang, list] of cachedListByLang.entries()) {
+    if (!Array.isArray(list) || list.length === 0) continue
+    let langUpdated = false
+    const nextList = list.map((item) => {
+      if (compositeBidAmountKey(item.id, resolvePropertySourceTable(item)) !== matchKey) return item
+      langUpdated = true
+      const current = resolveAuctionCurrentBidValue(item)
+      return {
+        ...item,
+        currentBid: Math.max(current, nextBid),
+      }
+    })
+    if (langUpdated) {
+      cachedListByLang.set(lang, nextList)
+      updated = true
     }
-  })
+  }
 
   if (updated) cacheTimestamp = Date.now()
-  return updated
+  return updated || cachedListByLang.size === 0
 }
 
 export function hasCachedList() {
-  return cachedList.length > 0
+  return (cachedListByLang.get(resolveUiLang()) || []).length > 0
 }
 
 async function fetchMaxBidForProperty(apiBaseUrl, propertyId, sourceTable) {
@@ -235,28 +256,20 @@ export async function fetchAuctionList(explicitViewerUserId, options = {}) {
   const catalogMode =
     options.catalogs === 'auction' || options.catalogs === 'buyNow' ? options.catalogs : 'all'
   const includeTestTimers = options.includeTestTimers !== false
+  const lang = resolveUiLang()
   const viewerKey =
     resolved != null &&
     String(resolved).trim() !== '' &&
     Number.isFinite(Number(resolved)) &&
     Number(resolved) >= 1
-      ? `${String(Number(resolved))}|${catalogMode}|t${includeTestTimers ? 1 : 0}`
-      : `|${catalogMode}|t${includeTestTimers ? 1 : 0}`
+      ? `${String(Number(resolved))}|${catalogMode}|t${includeTestTimers ? 1 : 0}|${lang}`
+      : `|${catalogMode}|t${includeTestTimers ? 1 : 0}|${lang}`
 
   const existing = fetchAuctionListInFlightByKey.get(viewerKey)
   if (existing) return existing
 
   const promise = (async () => {
   const API_BASE_URL = getApiBaseUrlSync()
-  const lang = (() => {
-    try {
-      if (typeof window === 'undefined') return 'ru'
-      const raw = window.localStorage?.getItem('i18nextLng') || 'ru'
-      return String(raw).split('-')[0] || 'ru'
-    } catch {
-      return 'ru'
-    }
-  })()
 
   const allAuctionProperties = []
   const allNonAuctionProperties = []
@@ -270,20 +283,19 @@ export async function fetchAuctionList(explicitViewerUserId, options = {}) {
   const includeDebts = catalogMode !== 'auction'
   const includeShares = catalogMode === 'buyNow'
   try {
-    /** test-timers не использует lang на бэкенде — без query для лучшего попадания в серверный кэш */
     const requests = [
       includeTestTimers
-        ? fetchDedupe(`${API_BASE_URL}/properties/test-timers`)
+        ? fetchDedupe(`${API_BASE_URL}/properties/test-timers?lang=${langQ}`)
         : Promise.resolve({ ok: false }),
       fetchDedupe(`${API_BASE_URL}/properties/auctions?lang=${langQ}${viewerQ}`),
       includeApproved
         ? fetchDedupe(`${API_BASE_URL}/properties/approved?lang=${langQ}`)
         : Promise.resolve({ ok: false }),
       includeDebts
-        ? fetchDedupe(`${API_BASE_URL}/properties/debts`)
+        ? fetchDedupe(`${API_BASE_URL}/properties/debts?lang=${langQ}`)
         : Promise.resolve({ ok: false }),
       includeShares
-        ? fetchDedupe(`${API_BASE_URL}/properties/shares?limit=10000`)
+        ? fetchDedupe(`${API_BASE_URL}/properties/shares?limit=10000&lang=${langQ}`)
         : Promise.resolve({ ok: false }),
     ]
     const [testRes, auctionAllRes, approvedAllRes, debtsRes, sharesRes] = await Promise.all(requests)

@@ -10942,6 +10942,15 @@ app.get('/api/properties/debts', async (req, res) => {
       return formatted;
     });
 
+    const lang = req.query.lang && String(req.query.lang).trim().toLowerCase();
+    if (lang && formattedProperties.length > 0) {
+      try {
+        await mergePropertyTranslations(formattedProperties, lang);
+      } catch (e) {
+        console.warn('GET /api/properties/debts - подстановка переводов:', e.message);
+      }
+    }
+
     res.setHeader('Cache-Control', 'public, max-age=20, stale-while-revalidate=120');
     res.json({ success: true, data: formattedProperties });
   } catch (error) {
@@ -11503,9 +11512,22 @@ app.get('/api/properties/test-timers', async (req, res) => {
         // Дополнительные поля для домов/вилл
         floors: prop.floors || prop.total_floors || null,
         total_floors: prop.total_floors || prop.floors || null,
-        land_area: prop.land_area || null
+        land_area: prop.land_area || null,
+        source_table:
+          propertyType === 'house' || propertyType === 'villa'
+            ? 'properties_houses'
+            : 'properties_apartments',
       };
     });
+
+    const lang = req.query.lang && String(req.query.lang).trim().toLowerCase();
+    if (lang && formattedProperties.length > 0) {
+      try {
+        await mergePropertyTranslations(formattedProperties, lang);
+      } catch (e) {
+        console.warn('GET /api/properties/test-timers - подстановка переводов:', e.message);
+      }
+    }
 
     res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=120');
     res.json({

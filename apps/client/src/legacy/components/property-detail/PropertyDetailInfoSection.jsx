@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { formatPropertyBuildingType } from '../../utils/formatPropertyBuildingType'
 import { getResolvedAmenityLabels } from '../../utils/tzAmenityLabels'
 
 export default function PropertyDetailInfoSection({
@@ -64,7 +65,9 @@ export default function PropertyDetailInfoSection({
             <span className="property-detail-info-label">{t('addPropertyDetailsBuildingMaterialLabel')}:</span>
             <span className="property-detail-info-value">
               {displayProperty.building_type
-                ? formatBuildingType(displayProperty.building_type, t)
+                ? formatPropertyBuildingType(displayProperty.building_type, t, {
+                    fallback: '—',
+                  })
                 : '—'}
             </span>
           </div>
@@ -128,7 +131,9 @@ export default function PropertyDetailInfoSection({
           <span className="property-detail-info-label">{t('propertyDetailBuildingTypeShort')}:</span>
           <span className="property-detail-info-value">
             {displayProperty.building_type
-              ? formatBuildingType(displayProperty.building_type, t)
+              ? formatPropertyBuildingType(displayProperty.building_type, t, {
+                  fallback: '—',
+                })
               : '—'}
           </span>
         </div>
@@ -213,20 +218,4 @@ export default function PropertyDetailInfoSection({
       )}
     </div>
   )
-}
-
-function formatBuildingType(type, t) {
-  const map = {
-    monolithic: 'addPropertyDetailsBuildingMonolithic',
-    brick: 'addPropertyDetailsBuildingBrick',
-    panel: 'addPropertyDetailsBuildingPanel',
-    block: 'addPropertyDetailsBuildingBlock',
-    wood: 'addPropertyDetailsBuildingWood',
-    frame: 'addPropertyDetailsBuildingFrame',
-    aerated_concrete: 'addPropertyDetailsBuildingAerated',
-    foam_concrete: 'addPropertyDetailsBuildingFoam',
-    other: 'addPropertyDetailsBuildingOther',
-  }
-  const key = map[type]
-  return key ? t(key) : type
 }
