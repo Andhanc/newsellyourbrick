@@ -165,6 +165,26 @@
         }
       },
       "updatedAt": "2026-09-08T02:25:00+03:00"
+    },
+    "development:investment-drawer": {
+      "targetKind": "new-ui",
+      "projectId": "5ce4b7ef-64e1-4013-baaa-5d9088682986",
+      "activeDraftId": "eca697b9-b6fb-4bab-9fe9-f0a4d0754d5b",
+      "designSystemPath": ".superdesign/design-system.md",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        "src/features/development/DevelopmentFundingOverview.jsx",
+        "src/components/AuctionBidDrawer.jsx",
+        "src/components/AuctionBidDrawer.css"
+      ],
+      "drafts": {
+        "eca697b9-b6fb-4bab-9fe9-f0a4d0754d5b": {
+          "title": "Develop Investment Mobile Drawer",
+          "currentVersion": 1,
+          "visualDirection": "Light Tiffany #63CDD4, white fundraising card, generated glass villa, fundraising and investor tabs"
+        }
+      },
+      "updatedAt": "2026-10-24T09:58:51.350Z"
     }
   }
 }

@@ -863,6 +863,7 @@ model transactions {
 }
 
 model users {
+  development_investments development_investments[]
   development_projects development_projects[] @relation("DevelopmentOwner")
   development_interests development_interests[]
   development_funding development_funding[] @relation("FundingRecorder")
@@ -1043,6 +1044,7 @@ model seo_page_history {
 }
 
 model development_projects {
+  investments development_investments[]
   owner users @relation("DevelopmentOwner", fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   interests development_interests[]
   funding development_funding[]
@@ -1130,4 +1132,23 @@ model deal_events {
   country    String?
   created_at DateTime @default(now()) @db.Timestamptz(6)
   @@index([asset_key, created_at])
+}
+
+model development_investments {
+  id String @id
+  project_id Int
+  user_id Int
+  project development_projects @relation(fields: [project_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user users @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  amount Decimal @db.Decimal(18, 2)
+  currency String
+  wallet_eur Decimal @default(0) @db.Decimal(18, 2)
+  card_amount Decimal @db.Decimal(18, 2)
+  status String @default("pending")
+  session_id String? @unique
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  expires_at DateTime @db.Timestamptz(6)
+  paid_at DateTime? @db.Timestamptz(6)
+  @@index([project_id, status])
+  @@index([user_id])
 }

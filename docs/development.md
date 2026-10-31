@@ -60,8 +60,26 @@ The opt-in integration test creates isolated disposable users/projects and clean
 
 The wider regression run has four unrelated failures reproduced from HEAD: two old profile empty-state text assertions in `BuyerAccountMobileExperience.test.js` and two AI PDF color assertions in `PropertyAiExperience.colors.test.js`. Carousel, stories, SectionInfoDrawer, role switch, property detail, investor flow, compare picker and debt-risk checks otherwise pass. Native routes and legacy parity are included; no device build was performed.
 
-### Single-investor update
+### Pooled investments (October 2026)
 
-DEVELOP now presents one full investment per project. Enquiries are prospective investor applications for the entire required capital; they are not pooled commitments. Funding accepts one full-capital record, under a project row lock, and closes further applications once recorded. Partial and repeat funding is rejected. Publication and project management require a seller/owner role. The public catalogue has two columns and no publishing actions; sellers enter via My Properties → DEVELOP.
+DEVELOP supports multiple investors through the project investment drawer. The Collection tab shows confirmed funding, the target, a chosen amount, its percentage of the required capital and a payment split. Up to EUR 3,000 of the buyer’s existing deposit can be applied, matching the existing checkout offset; the remainder goes through hosted Stripe Checkout. Non-EUR projects use the same server FX conversion as the existing checkout.
 
-The generic property detail template no longer mounts `InvestmentDecision`. Development-specific public information and the progress banner remain on `/development/:slug`.
+The `development_investments` table tracks pending, paid and cancelled payments. Project and wallet row locks protect capacity and wallet balances; the client request UUID prevents duplicate charges. Pending payments reserve capacity and any wallet portion, but do not increase confirmed funding. Stripe session verification, the signed webhook or the authenticated return path confirm payment idempotently. Expiry/cancellation returns the held wallet amount. Stale checkout reservations reconcile on the next wallet/checkout request. Apply migration `20261024130000_development_investments` before deploying.
+
+The Investors tab groups only confirmed investment payments by public user ID, country and share of the required capital. It does not expose names, contacts, checkout references or passport information. Seller-reported external funds contribute to funding totals but do not invent an investor identity. The old interest endpoint remains available for existing full-capital enquiries. Sellers can record partial external funding; all confirmed and pending funds count toward the capacity limit. Project economics lock while a payment is pending or paid.
+
+Publication and project management still require a seller/owner role. The public catalogue remains in two columns; sellers enter via My Properties → DEVELOP. Gallery, document access, waterfall and stage-evidence rules are preserved.
+
+Validation: `RUN_DEVELOPMENT_DB_TESTS=1 node --test server/developmentInvestments.test.js server/developmentRoutes.test.js`, the development math/parity tests and the wider UX regression tests. The investment integration test uses local disposable users/projects and a fake Stripe provider; it checks wallet debits, repeat requests, card confirmation, cancellation refunds, privacy and concurrent capacity claims without charging a card.
+
+Generated artwork (built-in `image_gen`, transparent WebP, mirrored to `apps/client/public/`):
+- `public/images/development/investment-villa-tiffany-v1.webp`: premium isometric 3D white porcelain villa, Tiffany glass roof/pedestal, silver and champagne coins, subtle growth blocks; exact Tiffany accent `#63CDD4`, soft studio lighting, transparent background, no text or UI.
+- `public/images/development/investment-community-tiffany-v1.webp`: three abstract white porcelain investor busts on overlapping frosted Tiffany glass discs with a silver coin; exact Tiffany accent `#63CDD4`, soft studio lighting, transparent background, no text or UI.
+
+### Portfolio and repeat investments
+
+A successful payment now dismisses the investment form and opens a separate confirmation sheet with the confirmed payment amount, **Open portfolio** and **Invest again**. Closing the confirmation or investing again leaves the collection form available whenever project capacity remains. The visible “Invest” toolbar heading has been removed; the dialog keeps its accessible title.
+
+`GET /api/development/portfolio` and `/portfolio/:projectId` use the authenticated session, return only that user's confirmed investments and aggregate repeated payments into one project card. The account history adds a DEVELOP category when there are investments. Opening a card fetches a fresh total, share and project stage; it does not expose another buyer's identity, payment session, owner IDs or private stage notes. Money receipts keep cents when present.
+
+Project publishers enter **My properties → DEVELOP → Manage stages**. The existing owner-only stage endpoint remains the authority, retaining sequential stages, funding prerequisites and evidence notes. Portfolio stage history comes from that same project record. Tests cover repeat contributions, private portfolio access and a seller stage change appearing in the buyer's portfolio. UI checks use an isolated local fixture with synthetic data; no real payment is performed.

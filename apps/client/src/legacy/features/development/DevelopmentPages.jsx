@@ -31,7 +31,8 @@ import DevelopmentFields, {
 } from './DevelopmentFields'
 import { DealAnalytics } from './DealRoom'
 import DevelopmentGallery from './DevelopmentGallery'
-import AuctionBidDrawer from '../../components/AuctionBidDrawer'
+import DevelopmentInvestmentDrawer from './DevelopmentInvestmentDrawer'
+import DevelopmentInvestmentSuccessDrawer from './DevelopmentInvestmentSuccessDrawer'
 import DevelopmentProjectHeader from './DevelopmentProjectHeader'
 import DevelopmentLoginGate from './DevelopmentLoginGate'
 import DevelopmentFundingOverview from './DevelopmentFundingOverview'
@@ -52,7 +53,7 @@ export function DealError({ error }) {
     </div>
   ) : null
 }
-export function DevelopmentCard({ project: p }) {
+export function DevelopmentCard({ project: p, manage = false }) {
   const { t } = useTranslation(),
     fmt = useDealFormat(p.currency)
   return (
@@ -73,8 +74,8 @@ export function DevelopmentCard({ project: p }) {
           <div className="auction-card__spec"><dt className="auction-card__spec-label">{t('develop.termMonths')}</dt><dd className="auction-card__spec-value">{p.terms.termMonths} {t('develop.months')}</dd></div>
         </dl>
         <div className="auction-card__actions auction-card__actions--single">
-          <Link className="auction-card__btn auction-card__btn--primary" to={`/development/${p.slug}`}>
-            {t('develop.openProject')} <ArrowUpRight size={15} aria-hidden="true" />
+          <Link className="auction-card__btn auction-card__btn--primary" to={`/development/${p.slug}${manage ? '#development-manage' : ''}`}>
+            {t(manage ? 'develop.manageStages' : 'develop.openProject')} <ArrowUpRight size={15} aria-hidden="true" />
           </Link>
         </div>
       </div>
@@ -232,7 +233,7 @@ export default function DevelopmentPages({ mine = false }) {
               {!data.length && <p>{t('develop.empty')}</p>}
               <div className="dev-card-grid discover-auction-cards">
                 {data.map((p) => (
-                  <DevelopmentCard key={p.id} project={p} />
+                  <DevelopmentCard key={p.id} project={p} manage={mine} />
                 ))}
               </div>
             </>
@@ -251,17 +252,22 @@ function DevelopmentProject({ project: p, onChange }) {
     [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false),
     [editing, setEditing] = useState(false),
-    [interestOpen, setInterestOpen] = useState(false),
+    [investmentConfirmation, setInvestmentConfirmation] = useState(null),
+    [interestOpen, setInterestOpen] = useState(() => new URLSearchParams(window.location.search).has('development_payment')),
     [terms, setTerms] = useState(p.terms)
   const localUser = getUserData(),
     owner = ['seller', 'owner'].includes(localUser?.role) && Number(localUser?.id || localUser?.userId) === p.owner_id
-  const canApply = Number(localUser?.id || localUser?.userId) !== p.owner_id && p.stage === 'fundraising' && !p.funded
+  const canApply = Number(localUser?.id || localUser?.userId) !== p.owner_id && p.stage === 'fundraising' && Number(p.funded || 0) < Number(p.terms.requiredCapital)
   const openInterest = (event) => {
     event.currentTarget.focus({ preventScroll: true })
     setError('')
     setMessage('')
     setInterestOpen(true)
   }
+  useEffect(() => {
+    if (owner && window.location.hash === '#development-manage')
+      document.getElementById('development-manage')?.scrollIntoView({ behavior: 'smooth' })
+  }, [owner, p.id])
   const nextStage = DEVELOPMENT_STAGES[DEVELOPMENT_STAGES.indexOf(p.stage) + 1]
   useEffect(() => {
     recordDealView(`development:${p.id}`).catch(() => {})
@@ -335,7 +341,7 @@ function DevelopmentProject({ project: p, onChange }) {
       <DevelopmentProjectResources project={p} owner={owner} onChange={onChange} />
       {owner && (
         <>
-          <section className="dev-panel">
+          <section id="development-manage" className="dev-panel">
             <h2>{t('develop.manageProject')}</h2>
             <div className="dev-actions">
               {!p.published && (
@@ -403,11 +409,11 @@ function DevelopmentProject({ project: p, onChange }) {
                 </button>
               </form>
             ) : null}
-            {p.stage === 'fundraising' && !p.funded && (
+            {p.stage === 'fundraising' && Number(p.funded || 0) < Number(p.terms.requiredCapital) && (
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
-                  act('/funding', { amount: p.terms.requiredCapital, reference })
+                  act('/funding', { amount: Math.max(0, Number(p.terms.requiredCapital) - Number(p.funded || 0)), reference })
                 }}
               >
                 <h3>{t('develop.recordFunding')}</h3>
@@ -415,7 +421,7 @@ function DevelopmentProject({ project: p, onChange }) {
                 <div className="dev-form-grid">
                   <label>
                     {t('develop.amount')} ({p.currency})
-                    <input readOnly value={fmt(p.terms.requiredCapital)} />
+                    <input readOnly value={fmt(Math.max(0, Number(p.terms.requiredCapital) - Number(p.funded || 0)))} />
                   </label>
                   <label>
                     {t('develop.reference')}
@@ -451,53 +457,32 @@ function DevelopmentProject({ project: p, onChange }) {
               aria-haspopup="dialog"
               onClick={openInterest}
             >
-              {t('develop.expressInterest')}
+              {t('develop.investNow')}
               <ArrowUpRight size={18} />
             </button>
           </div>
-          <AuctionBidDrawer
-            isOpen={interestOpen}
-            onClose={() => setInterestOpen(false)}
-            title={t('develop.expressInterest')}
-            contextAnchorSelector=".dev-project-hero"
-          >
-            <div className="dev-feature dev-interest-drawer">
-              <div className="dev-interest-drawer__project">
-                <strong>{p.title}</strong>
-                <span>
-                  {p.terms.preferredReturn}% · {p.terms.termMonths}{' '}
-                  {t('develop.months')}
-                </span>
-              </div>
-              {message === 'interestSaved' ? (
-                <p className="dev-notice" role="status">
-                  {t('develop.interestSaved')}
-                </p>
-              ) : (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    act('/interest', { amount: p.terms.requiredCapital })
-                  }}
-                >
-                  <DealError error={error} />
-                  <label>
-                    {t('develop.interestAmount')} ({p.currency})
-                    <input readOnly value={fmt(p.terms.requiredCapital)} />
-                  </label>
-                  <button className="dev-button" disabled={busy}>
-                    {t('develop.expressInterest')}
-                  </button>
-                  <p className="dev-muted">{t('develop.interestNote')}</p>
-                  <Link to="/buyer-passport" tabIndex={0}>
-                    {t('develop.completePassport')}
-                  </Link>
-                </form>
-              )}
-            </div>
-          </AuctionBidDrawer>
+
         </>
       )}
+      <DevelopmentInvestmentDrawer
+        project={p}
+        isOpen={interestOpen}
+        onClose={() => setInterestOpen(false)}
+        canInvest={canApply}
+        onChange={onChange}
+        onInvested={(confirmation) => {
+          setInterestOpen(false)
+          setInvestmentConfirmation(confirmation)
+        }}
+      />
+      <DevelopmentInvestmentSuccessDrawer
+        confirmation={investmentConfirmation}
+        onClose={() => setInvestmentConfirmation(null)}
+        onInvestAgain={canApply ? () => {
+          setInvestmentConfirmation(null)
+          setInterestOpen(true)
+        } : null}
+      />
     </>
   )
 }

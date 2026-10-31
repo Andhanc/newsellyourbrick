@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import { FiX, FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiChevronLeft, FiShoppingBag, FiArrowUpRight } from 'react-icons/fi'
 import {
   FacebookIcon,
-  GoogleIcon,
   TelegramIcon,
   WhatsAppIcon,
 } from './icons/ContactChannelIcons'
@@ -101,11 +100,12 @@ const LoginModal = ({
   const [isPasswordFocused, setIsPasswordFocused] = useState(false)
   const [isEmailFocused, setIsEmailFocused] = useState(false)
   const telegramWidgetRef = useRef(null)
-  const welcomeVideoRef = useRef(null)
   const [telegramBotUsername, setTelegramBotUsername] = useState(() => import.meta.env?.VITE_TELEGRAM_BOT_USERNAME || '')
   const [telegramConfigLoaded, setTelegramConfigLoaded] = useState(!!import.meta.env?.VITE_TELEGRAM_BOT_USERNAME)
   /** header_wizard: сначала роль → войти/регистрация → форма (в регистрации без повторного выбора роли) */
   const [wizardPhase, setWizardPhase] = useState('form')
+  const [authMethod, setAuthMethod] = useState('providers')
+  const headingRef = useRef(null)
 
   // На Railway VITE_* нет в сборке — загружаем имя бота с сервера при открытии модалки
   const fetchTelegramConfig = () => {
@@ -146,6 +146,9 @@ const LoginModal = ({
       return
     }
 
+    setAuthMethod('providers')
+    setError('')
+    setRegisterBottomError('')
     const forcedMode = sessionStorage.getItem('login_modal_mode')
     if (forcedMode === 'register') {
       setIsLogin(false)
@@ -190,6 +193,7 @@ const LoginModal = ({
   const isRoleStep = isHeaderWizard && wizardPhase === 'role'
   const isWelcomeStep = isHeaderWizard && wizardPhase === 'welcome'
   const showAuthForm = !isHeaderWizard || wizardPhase === 'form'
+  const isEmailStep = authMethod === 'email'
   const socialAuthMode = isWelcomeStep ? 'auto' : isLogin ? 'login' : 'register'
 
   // Сохраняем режим и роль для callback после редиректа из Telegram
@@ -204,7 +208,6 @@ const LoginModal = ({
   useEffect(() => {
     if (!isOpen || !telegramBotUsername || !telegramWidgetRef.current) return
 
-    const welcomeStep = authEntryVariant === 'header_wizard' && wizardPhase === 'welcome'
     const container = telegramWidgetRef.current
     container.innerHTML = ''
 
@@ -212,16 +215,16 @@ const LoginModal = ({
     script.src = 'https://telegram.org/js/telegram-widget.js?22'
     script.setAttribute('data-telegram-login', telegramBotUsername)
     script.setAttribute('data-auth-url', `${window.location.origin}/auth/telegram-callback`)
-    script.setAttribute('data-size', welcomeStep ? 'medium' : 'large')
+    script.setAttribute('data-size', 'large')
     script.setAttribute('data-userpic', 'false')
-    script.setAttribute('data-radius', welcomeStep ? '20' : '8')
+    script.setAttribute('data-radius', '8')
     script.async = true
     container.appendChild(script)
 
     return () => {
       container.innerHTML = ''
     }
-  }, [isOpen, telegramBotUsername, authEntryVariant, wizardPhase])
+  }, [isOpen, telegramBotUsername, authEntryVariant, wizardPhase, authMethod])
 
   useEffect(() => {
     setLoginModalOpen(isOpen)
@@ -229,22 +232,8 @@ const LoginModal = ({
   }, [isOpen])
 
   useEffect(() => {
-    const video = welcomeVideoRef.current
-    if (!isOpen || !isWelcomeStep || !video) return undefined
-
-    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')
-    if (reduceMotion?.matches) {
-      video.pause()
-      return undefined
-    }
-
-    const playPromise = video.play()
-    playPromise?.catch(() => {
-      // The poster remains visible when browser autoplay policy blocks playback.
-    })
-
-    return () => video.pause()
-  }, [isOpen, isWelcomeStep])
+    if (isOpen && showAuthForm) headingRef.current?.focus({ preventScroll: true })
+  }, [isOpen, showAuthForm, authMethod, isLogin])
 
   // Не скрываем LoginModal полностью, чтобы EmailVerificationModal мог рендериться
   // Вместо этого скрываем только содержимое LoginModal
@@ -986,6 +975,8 @@ const LoginModal = ({
   const setAuthMode = (nextIsLogin) => {
     if (nextIsLogin === isLogin) return
     setIsLogin(nextIsLogin)
+    setAuthMethod('providers')
+    setError('')
     setRegisterBottomError('')
     setFormData({
       email: '',
@@ -1005,6 +996,19 @@ const LoginModal = ({
     setError('')
     setRegisterBottomError('')
     setWizardPhase('form')
+    setAuthMethod('providers')
+  }
+
+  const handleAuthBack = () => {
+    if (isEmailStep) {
+      setAuthMethod('providers')
+      setError('')
+      setRegisterBottomError('')
+      setShowPassword(false)
+      setShowConfirmPassword(false)
+    } else {
+      handleBackToWelcomeStep()
+    }
   }
 
   const renderHighlightedBrand = () => (
@@ -1050,7 +1054,8 @@ const LoginModal = ({
               loginModalTintClass,
               isRoleStep ? 'login-modal--role-drawer' : '',
               isWelcomeStep ? 'login-modal--welcome' : '',
-              showAuthForm ? 'login-modal--form-screen' : '',
+              showAuthForm ? 'login-modal--form-screen login-modal--method-flow' : '',
+              showAuthForm && isEmailStep ? 'login-modal--email-step' : '',
             ]
               .filter(Boolean)
               .join(' ')}
@@ -1102,20 +1107,14 @@ const LoginModal = ({
 
         {isWelcomeStep && (
           <div className="login-modal__welcome">
-            <video
-              ref={welcomeVideoRef}
-              className="login-modal__welcome-video"
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
-              poster="/media/auth-summer-villa-poster.jpg"
+            <img
+              className="login-modal__welcome-image"
+              src="/images/sellyourbrick/about/mission-villa.jpg"
+              alt=""
               aria-hidden="true"
-              tabIndex={-1}
-            >
-              <source src="/media/auth-summer-villa.mp4" type="video/mp4" />
-            </video>
+              decoding="async"
+              fetchPriority="high"
+            />
             <div className="login-modal__welcome-scrim" aria-hidden="true" />
             <button
               type="button"
@@ -1129,54 +1128,9 @@ const LoginModal = ({
               <h2 id="login-modal-welcome-title">{renderHighlightedBrand()}</h2>
             </div>
             <div className="login-modal__welcome-actions">
-              <div className="login-modal__welcome-social" role="group" aria-label={t('loginOr')}>
-                <button
-                  type="button"
-                  className="login-modal__welcome-social-btn login-modal__welcome-social-btn--facebook"
-                  onClick={handleFacebookAuth}
-                  disabled={isLoading || (!nativeSocialAuth && !signInLoaded)}
-                  aria-label={t('loginWithFacebook')}
-                >
-                  <FacebookIcon size={22} />
-                </button>
-                <button
-                  type="button"
-                  className="login-modal__welcome-social-btn login-modal__welcome-social-btn--google"
-                  onClick={handleGoogleAuth}
-                  disabled={isLoading || (!nativeSocialAuth && !signInLoaded)}
-                  aria-label={t('loginWithGoogle')}
-                >
-                  <GoogleMark size={22} />
-                </button>
-                <button
-                  type="button"
-                  className="login-modal__welcome-social-btn login-modal__welcome-social-btn--whatsapp"
-                  onClick={handleWhatsAppLogin}
-                  disabled={isLoading}
-                  aria-label={t('loginWithWhatsApp')}
-                >
-                  <WhatsAppIcon size={22} />
-                </button>
-                {telegramBotUsername ? (
-                  <div className="login-modal__welcome-social-btn login-modal__welcome-social-btn--telegram login-modal__welcome-social-telegram">
-                    <TelegramIcon size={22} />
-                    <div
-                      className="login-modal__telegram-widget"
-                      ref={telegramWidgetRef}
-                      aria-label={t('loginWithTelegram')}
-                    />
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    className="login-modal__welcome-social-btn login-modal__welcome-social-btn--telegram"
-                    onClick={handleTelegramClick}
-                    aria-label={t('loginWithTelegram')}
-                    title={telegramConfigLoaded ? t('telegramEnvHint') : t('telegramLoading')}
-                  >
-                    <TelegramIcon size={22} />
-                  </button>
-                )}
+              <div className="login-modal__welcome-copy">
+                <h3>{t('authWelcomeChoiceTitle')}</h3>
+                <p>{t('authWelcomeChoiceDescription')}</p>
               </div>
               {error ? <p className="login-modal__welcome-error">{error}</p> : null}
               <button
@@ -1191,7 +1145,7 @@ const LoginModal = ({
                 className="login-modal__welcome-action login-modal__welcome-action--login"
                 onClick={() => handleWelcomeAction(true)}
               >
-                {t('authWelcomeLogin')}
+                {t('authWelcomeExistingAccount')}
               </button>
             </div>
           </div>
@@ -1275,12 +1229,13 @@ const LoginModal = ({
 
         {showAuthForm && (
           <>
-        {isHeaderWizard && wizardPhase === 'form' && (
+        {(isEmailStep || (isHeaderWizard && wizardPhase === 'form')) && (
           <button
             type="button"
             className="login-modal__change-role login-modal__change-role--mobile"
-            onClick={handleBackToWelcomeStep}
-            aria-label={t('authWelcomeBackAria')}
+            onClick={handleAuthBack}
+            disabled={isLoading}
+            aria-label={isEmailStep ? t('authBackToMethods') : t('authWelcomeBackAria')}
           >
             <FiChevronLeft size={16} aria-hidden />
             {t('authFormBack')}
@@ -1292,7 +1247,7 @@ const LoginModal = ({
         >
           {isHeaderWizard && wizardPhase === 'form' ? (
             <>
-              <h2 className="login-modal__title" id="login-modal-heading">
+              <h2 className="login-modal__title" id="login-modal-heading" ref={headingRef} tabIndex={-1}>
                 {isLogin
                   ? t('authWelcomeBackTitle')
                   : renderTitleWithHighlightedBrand(t('authCreateAccountTitle'))}
@@ -1301,16 +1256,20 @@ const LoginModal = ({
                 {userRole === 'seller' ? t('roleSeller') : t('roleBuyer')}
               </p>
               <p className="login-modal__subtitle">
-                {isLogin ? t('loginSubtitle') : t('registerSubtitle')}
+                {isEmailStep
+                  ? t(isLogin ? 'authEmailLoginSubtitle' : 'authEmailRegisterSubtitle')
+                  : t('authChooseMethodSubtitle')}
               </p>
             </>
           ) : (
             <>
-              <h2 className="login-modal__title" id="login-modal-heading">
+              <h2 className="login-modal__title" id="login-modal-heading" ref={headingRef} tabIndex={-1}>
                 {isLogin ? t('loginTitle') : t('registerTitle')}
               </h2>
               <p className="login-modal__subtitle">
-                {isLogin ? t('loginSubtitle') : t('registerSubtitle')}
+                {isEmailStep
+                  ? t(isLogin ? 'authEmailLoginSubtitle' : 'authEmailRegisterSubtitle')
+                  : t('authChooseMethodSubtitle')}
               </p>
             </>
           )}
@@ -1426,9 +1385,29 @@ const LoginModal = ({
           </div>
         )}
 
-        {!isHeaderWizard && (
+        {!isEmailStep && (
         <>
-        <div className="login-modal__social">
+        <div className="login-modal__social login-modal__methods" role="group" aria-label={t('authChooseMethodSubtitle')}>
+          <button
+            type="button"
+            className="login-modal__social-btn login-modal__social-btn--google"
+            onClick={handleGoogleAuth}
+            disabled={isLoading || (!nativeSocialAuth && !signInLoaded)}
+            aria-label={t('authContinueWithProvider', { provider: 'Google' })}
+            style={{
+              opacity: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 0.6 : 1,
+              cursor: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 'not-allowed' : 'pointer'
+            }}
+          >
+            <GoogleMark size={22} />
+            <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
+              {t('authContinueWithProvider', { provider: 'Google' })}
+            </span>
+            <span className="login-modal__social-btn-label login-modal__social-btn-label--short" aria-hidden="true">
+              Google
+            </span>
+          </button>
+
           <button 
             type="button"
             className="login-modal__social-btn login-modal__social-btn--facebook"
@@ -1437,7 +1416,7 @@ const LoginModal = ({
             aria-label={
               isLoading
                 ? t('socialConnecting')
-                : (isLogin ? t('loginWithFacebook') : t('registerWithFacebook'))
+                : t('authContinueWithProvider', { provider: 'Facebook' })
             }
             style={{ 
               opacity: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 0.6 : 1,
@@ -1450,7 +1429,7 @@ const LoginModal = ({
             ) : (
               <>
                 <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
-                  {isLogin ? t('loginWithFacebook') : t('registerWithFacebook')}
+                  {t('authContinueWithProvider', { provider: 'Facebook' })}
                 </span>
                 <span className="login-modal__social-btn-label login-modal__social-btn-label--short" aria-hidden="true">
                   Facebook
@@ -1461,30 +1440,10 @@ const LoginModal = ({
           
           <button
             type="button"
-            className="login-modal__social-btn login-modal__social-btn--google"
-            onClick={handleGoogleAuth}
-            disabled={isLoading || (!nativeSocialAuth && !signInLoaded)}
-            aria-label={isLogin ? t('loginWithGoogle') : t('registerWithGoogle')}
-            style={{ 
-              opacity: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 0.6 : 1,
-              cursor: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 'not-allowed' : 'pointer'
-            }}
-          >
-            <GoogleIcon size={20} />
-            <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
-              {isLogin ? t('loginWithGoogle') : t('registerWithGoogle')}
-            </span>
-            <span className="login-modal__social-btn-label login-modal__social-btn-label--short" aria-hidden="true">
-              Google
-            </span>
-          </button>
-          
-          <button 
-            type="button"
             className="login-modal__social-btn login-modal__social-btn--whatsapp"
             onClick={handleWhatsAppLogin}
             disabled={isLoading}
-            aria-label={isLogin ? t('loginWithWhatsApp') : t('registerWithWhatsApp')}
+            aria-label={t('authContinueWithProvider', { provider: 'WhatsApp' })}
             style={{ 
               opacity: isLoading ? 0.6 : 1, 
               cursor: isLoading ? 'not-allowed' : 'pointer' 
@@ -1492,7 +1451,7 @@ const LoginModal = ({
           >
             <WhatsAppIcon size={20} />
             <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
-              {isLogin ? t('loginWithWhatsApp') : t('registerWithWhatsApp')}
+              {t('authContinueWithProvider', { provider: 'WhatsApp' })}
             </span>
             <span className="login-modal__social-btn-label login-modal__social-btn-label--short" aria-hidden="true">
               WhatsApp
@@ -1501,8 +1460,9 @@ const LoginModal = ({
 
           {telegramBotUsername ? (
             <div className="login-modal__telegram-row">
+              <TelegramIcon size={22} aria-hidden="true" />
               <span className="login-modal__telegram-caption login-modal__telegram-caption--full">
-                {isLogin ? t('loginWithTelegram') : t('registerWithTelegram')}
+                {t('authContinueWithProvider', { provider: 'Telegram' })}
               </span>
               <span className="login-modal__telegram-caption login-modal__telegram-caption--short" aria-hidden="true">
                 Telegram
@@ -1510,7 +1470,7 @@ const LoginModal = ({
               <div
                 className="login-modal__telegram-widget"
                 ref={telegramWidgetRef}
-                aria-label={isLogin ? t('loginWithTelegram') : t('registerWithTelegram')}
+                aria-label={t('authContinueWithProvider', { provider: 'Telegram' })}
               />
             </div>
           ) : !telegramConfigLoaded ? (
@@ -1523,26 +1483,34 @@ const LoginModal = ({
               className="login-modal__social-btn login-modal__social-btn--telegram"
               onClick={handleTelegramClick}
               title={t('telegramEnvHint')}
-              aria-label={isLogin ? t('loginWithTelegram') : t('registerWithTelegram')}
+              aria-label={t('authContinueWithProvider', { provider: 'Telegram' })}
             >
               <TelegramIcon size={20} />
               <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
-                {isLogin ? t('loginWithTelegram') : t('registerWithTelegram')}
+                {t('authContinueWithProvider', { provider: 'Telegram' })}
               </span>
               <span className="login-modal__social-btn-label login-modal__social-btn-label--short" aria-hidden="true">
                 Telegram
               </span>
             </button>
           )}
-        </div>
-
-        <div className="login-modal__divider">
-          <span>{t('loginOr')}</span>
+          <div className="login-modal__method-separator" aria-hidden="true"><span>{t('loginOr')}</span></div>
+          <button
+            type="button"
+            className="login-modal__social-btn login-modal__social-btn--email"
+            onClick={() => setAuthMethod('email')}
+            disabled={isLoading}
+            data-testid="auth-email-method"
+          >
+            <span>{t('authContinueWithEmail')}</span>
+          </button>
         </div>
         </>
         )}
 
+        {isEmailStep && (
         <form className="login-modal__form" onSubmit={handleSubmit}>
+          <div className="login-modal__email-badge"><FiMail size={16} aria-hidden="true" />{t('authEmailMethodTitle')}</div>
           {!isLogin && (
             <div className="login-modal__field">
               <label htmlFor="name" className="login-modal__label">
@@ -1553,6 +1521,7 @@ const LoginModal = ({
                 type="text"
                 id="name"
                 name="name"
+                autoComplete="name"
                 value={formData.name}
                 onChange={handleInputChange}
                 className="login-modal__input"
@@ -1568,7 +1537,10 @@ const LoginModal = ({
                 {isLogin ? t('emailOrLoginLabel') : t('emailLabelShort')}
             </label>
             <input
-              type="text"
+              type={isLogin ? "text" : "email"}
+              autoComplete={isLogin ? "username" : "email"}
+              autoCapitalize="none"
+              spellCheck={false}
               id="email"
               name="email"
               data-testid="login-email"
@@ -1594,6 +1566,7 @@ const LoginModal = ({
                 type={showPassword ? "text" : "password"}
                 id="password"
                 name="password"
+                autoComplete={isLogin ? "current-password" : "new-password"}
                 data-testid="login-password"
                 value={formData.password}
                 onChange={handleInputChange}
@@ -1610,7 +1583,6 @@ const LoginModal = ({
                 className="login-modal__password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
                 title={showPassword ? t('hidePassword') : t('showPassword')}
-                tabIndex={-1}
               >
                 {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
               </button>
@@ -1628,6 +1600,7 @@ const LoginModal = ({
                   type={showConfirmPassword ? "text" : "password"}
                   id="confirmPassword"
                   name="confirmPassword"
+                  autoComplete="new-password"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                   className="login-modal__input login-modal__input--password"
@@ -1639,7 +1612,6 @@ const LoginModal = ({
                   className="login-modal__password-toggle"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   title={showConfirmPassword ? t('hidePassword') : t('showPassword')}
-                  tabIndex={-1}
                 >
                   {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
                 </button>
@@ -1683,6 +1655,7 @@ const LoginModal = ({
             </div>
           )}
         </form>
+        )}
 
         <div className="login-modal__footer">
           <span className="login-modal__footer-text">
@@ -1690,7 +1663,7 @@ const LoginModal = ({
           </span>
           <button 
             type="button"
-            className="login-modal__footer-link login-modal__footer-link--emphasis"
+            className="login-modal__footer-link login-modal__footer-link--emphasis login-modal__footer-link--platinum"
             onClick={() => setAuthMode(!isLogin)}
           >
             {isLogin ? t('registerButton') : t('loginButton')}

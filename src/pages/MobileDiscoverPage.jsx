@@ -1,4 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useSession, useUser } from '@clerk/clerk-react'
@@ -11,7 +12,6 @@ import { Sparkles } from 'lucide-react'
 import SiteChatDock from '../components/SiteChatDock'
 import { publicAsset } from '../utils/publicAsset'
 import { getMainScrollEl, scrollMainTo } from '../utils/mainScroll'
-import { wheelDeltaYInPixels } from '../utils/wheelDelta'
 import { COMPASS_PATH, CO_INVESTMENT_PATH, TEST_DRIVE_PATH } from '../utils/sectionRoutes'
 import {
   COMPASS_BANNER_SRC,
@@ -35,7 +35,8 @@ const MobileDiscoverTopListings = lazy(() => import('../components/MobileDiscove
 const InvestmentCompassDrawer = lazy(() => import('../components/InvestmentCompassDrawer'))
 const InvestmentCompassPromoModal = lazy(() => import('../components/InvestmentCompassPromoModal'))
 
-const HERO_IMAGE = publicAsset('images/mobile-discover/welcome-summer.png')
+const HERO_VIDEO = publicAsset('media/auth-summer-villa.mp4')
+const HERO_POSTER = publicAsset('media/auth-summer-villa-poster.jpg')
 const WELCOME_HOUSE = publicAsset('images/mobile-discover/welcome-summer.png')
 
 function getLaunchCards(t) {
@@ -109,22 +110,12 @@ function getSaleCards(t) {
   ]
 }
 
-const WHEEL_THRESHOLD = 40
-const TOUCH_THRESHOLD = 56
-const COVER_MS = 140
-const HOLD_MS = 70
-const REVEAL_MS = 480
-
 function prefersReducedMotion() {
   if (typeof window === 'undefined') return false
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
-/**
- * Two locked screens — never scroll halfway between them.
- * Intentional down → white flash → stage.
- * Intentional up → white flash → hero.
- */
+/** Two persistent screens swap only while the white veil fully covers them. */
 export default function MobileDiscoverPage() {
   const { t } = useTranslation()
   const { user, isLoaded: userLoaded } = useUser()
@@ -133,21 +124,18 @@ export default function MobileDiscoverPage() {
   const [shortcutsUnlocked, setShortcutsUnlocked] = useState(() => isSiteUserSignedIn(user, userLoaded))
   const navigate = useNavigate()
   const shellRef = useRef(null)
+  const heroVideoRef = useRef(null)
+  const flashRef = useRef(null)
+  const flashAnimationRef = useRef(null)
+  const activeScreenRef = useRef('hero')
   const stageScrollRef = useRef(null)
   const launchSliderRef = useRef(null)
   const launchScrollLeftRef = useRef(null)
   const lotteryDialogRef = useRef(null)
   const lotteryTriggerRef = useRef(null)
   const catalogSentinelRef = useRef(null)
-  const busyRef = useRef(false)
-  const screenRef = useRef('hero')
-  const touchStartY = useRef(0)
-  const touchStartX = useRef(0)
-  const wheelAcc = useRef(0)
-  const timersRef = useRef([])
 
   const [screen, setScreen] = useState('hero') // hero | stage
-  const [flashPhase, setFlashPhase] = useState('idle') // idle | cover | reveal
   const [stageEntered, setStageEntered] = useState(false)
   const [isStageNavExpanded, setIsStageNavExpanded] = useState(false)
   const [isFooterNear, setIsFooterNear] = useState(false)
@@ -226,18 +214,7 @@ export default function MobileDiscoverPage() {
     window.dispatchEvent(new CustomEvent('openAIChat'))
   }
 
-  screenRef.current = screen
   compassOfferBlockedRef.current = compassDrawerOpen
-
-  const clearTimers = useCallback(() => {
-    timersRef.current.forEach((id) => window.clearTimeout(id))
-    timersRef.current = []
-  }, [])
-
-  const later = useCallback((fn, ms) => {
-    const id = window.setTimeout(fn, ms)
-    timersRef.current.push(id)
-  }, [])
 
   useEffect(() => {
     const root = document.documentElement
@@ -247,72 +224,67 @@ export default function MobileDiscoverPage() {
     if (layout) layout.style.overflowY = 'hidden'
     return () => {
       root.classList.remove('md-page-active', 'md-hero-chrome')
-      clearTimers()
+      flashAnimationRef.current?.cancel()
       if (layout) layout.style.overflowY = ''
     }
-  }, [clearTimers])
+  }, [])
 
-  /* iPhone Safari: сплошной theme-color / фон body рисует непрозрачные плашки.
-   * На герое включаем прозрачное стекло и сдвигаем документ на runway,
-   * чтобы под статус-баром было небо, а под тулбаром — фото. */
+  // Keep Safari chrome transparent without fighting native scrolling.
   useEffect(() => {
     const root = document.documentElement
     const metas = Array.from(document.querySelectorAll('meta[name="theme-color"]'))
-    const STAGE_CHROME = '#ffffff'
     const ios = /iPhone|iPad|iPod/.test(navigator.userAgent)
       || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
     const narrowQuery = window.matchMedia('(max-width: 1023px)')
-    let frame = 0
-    let stuckAt = -1
-
-    const readRunway = () => {
-      const value = Number.parseFloat(getComputedStyle(root).getPropertyValue('--md-safari-runway'))
-      return Number.isFinite(value) && value > 0 ? value : 64
-    }
-
     const paintTheme = (color) => {
       metas.forEach((meta) => meta.setAttribute('content', color))
     }
-
     const apply = () => {
       const immersive = screen === 'hero' && ios && narrowQuery.matches
-      window.cancelAnimationFrame(frame)
-      if (!immersive) {
-        root.classList.remove('md-hero-chrome')
-        paintTheme(STAGE_CHROME)
-        window.scrollTo(0, 0)
-        return
-      }
-      root.classList.add('md-hero-chrome')
-      paintTheme('transparent')
-      frame = window.requestAnimationFrame(() => {
-        window.scrollTo(0, readRunway())
-      })
+      root.classList.toggle('md-hero-chrome', immersive)
+      paintTheme(immersive ? 'transparent' : '#ffffff')
     }
-
-    const pinScroll = () => {
-      if (!root.classList.contains('md-hero-chrome')) return
-      const runway = readRunway()
-      if (Math.abs(window.scrollY - runway) <= 1) {
-        stuckAt = -1
-        return
-      }
-      if (stuckAt === window.scrollY) return
-      stuckAt = window.scrollY
-      window.scrollTo(0, runway)
-    }
-
     apply()
     narrowQuery.addEventListener('change', apply)
-    window.addEventListener('scroll', pinScroll, { passive: true })
-
     return () => {
-      window.cancelAnimationFrame(frame)
       narrowQuery.removeEventListener('change', apply)
-      window.removeEventListener('scroll', pinScroll)
       root.classList.remove('md-hero-chrome')
-      paintTheme(STAGE_CHROME)
-      window.scrollTo(0, 0)
+      paintTheme('#ffffff')
+    }
+  }, [screen])
+
+  useEffect(() => {
+    const video = heroVideoRef.current
+    if (!video) return undefined
+    if (screen !== 'hero') {
+      video.pause()
+      return undefined
+    }
+
+    let heroVisible = true
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const updatePlayback = () => {
+      if (!heroVisible || motionQuery.matches || document.hidden) {
+        video.pause()
+        return
+      }
+      video.play()?.catch(() => {
+        // Keep the poster visible if the browser blocks autoplay.
+      })
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      heroVisible = entry.isIntersecting
+      updatePlayback()
+    }, { root: shellRef.current })
+    observer.observe(video)
+    updatePlayback()
+    motionQuery.addEventListener('change', updatePlayback)
+    document.addEventListener('visibilitychange', updatePlayback)
+    return () => {
+      observer.disconnect()
+      video.pause()
+      motionQuery.removeEventListener('change', updatePlayback)
+      document.removeEventListener('visibilitychange', updatePlayback)
     }
   }, [screen])
 
@@ -332,6 +304,41 @@ export default function MobileDiscoverPage() {
     setCompassOfferOpen(false)
     navigate(COMPASS_PATH)
   }, [navigate])
+
+  // The veil is composited over the page; the video never unmounts or resets.
+  const flashTransition = useCallback(async (move) => {
+    if (!flashRef.current) {
+      move?.()
+      return
+    }
+    if (flashAnimationRef.current) return
+    const veil = flashRef.current
+    const reduceMotion = prefersReducedMotion()
+    let animation
+    try {
+      animation = veil.animate([
+        { opacity: 0, offset: 0 },
+        { opacity: 1, offset: 0.6 },
+        { opacity: 1, offset: 1 },
+      ], {
+        duration: reduceMotion ? 100 : 240, easing: 'ease-out', fill: 'forwards',
+      })
+      flashAnimationRef.current = animation
+      await animation.finished
+      move?.()
+      animation.cancel()
+      animation = veil.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration: reduceMotion ? 140 : 480, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards',
+      })
+      flashAnimationRef.current = animation
+      await animation.finished
+    } catch {
+      // Navigation or unmount can cancel an in-flight flash.
+    } finally {
+      animation?.cancel()
+      flashAnimationRef.current = null
+    }
+  }, [])
 
   useEffect(() => {
     setCompassOfferOpen(false)
@@ -359,115 +366,123 @@ export default function MobileDiscoverPage() {
     return () => window.clearInterval(id)
   }, [shortcutsUnlocked, sessionLoaded, authSessionId])
 
-  const goTo = useCallback(
-    (next) => {
-      if (busyRef.current) return
-      if (screenRef.current === next) return
-      busyRef.current = true
-
-      const finish = () => {
-        busyRef.current = false
-        wheelAcc.current = 0
-      }
-
-      if (prefersReducedMotion()) {
+  const goTo = useCallback((next) => {
+    if (next === activeScreenRef.current || flashAnimationRef.current) return
+    const stage = stageScrollRef.current
+    if (!stage) return
+    flashTransition(() => {
+      // Commit the new screen while the veil is completely white.
+      flushSync(() => {
+        activeScreenRef.current = next
         setScreen(next)
-        setStageEntered(next === 'stage')
-        setFlashPhase('idle')
-        finish()
-        return
-      }
+        setIsStageNavExpanded(false)
+        if (next === 'stage') setStageEntered(true)
+      })
+      stage.scrollTop = 0
+    })
+  }, [flashTransition])
 
-      // 1) Cover everything with white BEFORE swapping screens
-      setFlashPhase('cover')
-
-      later(() => {
-        // 2) Swap under the veil — user never sees a split frame
-        setScreen(next)
-        if (next === 'stage') {
-          setStageEntered(false)
-          if (stageScrollRef.current) stageScrollRef.current.scrollTop = 0
-        }
-
-        later(() => {
-          if (next === 'stage') setStageEntered(true)
-          // 3) Softly lift the veil
-          setFlashPhase('reveal')
-          later(() => {
-            setFlashPhase('idle')
-            finish()
-          }, REVEAL_MS)
-        }, HOLD_MS)
-      }, COVER_MS)
-    },
-    [later],
-  )
-
-  // Wheel: accumulate intent, then jump screens
+  // Start the flash on the first upward movement, before the finger is lifted.
   useEffect(() => {
-    const el = shellRef.current
-    if (!el) return undefined
-
-    const onWheel = (event) => {
-      if (document.documentElement.classList.contains('login-modal-open')) return
-      // The format-stack pager already consumed this wheel — never re-drive
-      // stage scroll by hand, that is what parked drawers half-open.
-      if (event.defaultPrevented) return
-      if (Math.abs(event.deltaX) > Math.abs(event.deltaY) || event.shiftKey) return
-      if (busyRef.current || flashPhase !== 'idle') {
-        event.preventDefault()
+    const shell = shellRef.current
+    const stage = stageScrollRef.current
+    if (!shell || !stage) return undefined
+    let gesture = null
+    let suppressClickUntil = 0
+    let wheelActive = false
+    let wheelStartedAtTop = false
+    let wheelLocked = false
+    let wheelTimer
+    const modalOpen = () => document.documentElement.classList.contains('login-modal-open')
+      || document.documentElement.classList.contains('site-nav-drawer-open')
+    const consume = (event) => {
+      if (event.cancelable) event.preventDefault()
+      event.stopPropagation()
+    }
+    const onStart = (event) => {
+      gesture = event.touches.length === 1 && !modalOpen()
+        ? {
+            x: event.touches[0].clientX,
+            y: event.touches[0].clientY,
+            screen: activeScreenRef.current,
+            atTop: stage.scrollTop <= 1,
+            started: Boolean(flashAnimationRef.current),
+          }
+        : null
+    }
+    const onMove = (event) => {
+      if (!gesture || event.touches.length !== 1 || modalOpen()) return
+      if (gesture.started || flashAnimationRef.current) {
+        consume(event)
         return
       }
-
-      const current = screenRef.current
-      const stageEl = stageScrollRef.current
-      const dy = wheelDeltaYInPixels(event, stageEl?.clientHeight || el.clientHeight)
-
-      // On stage, allow inner scroll until edges
-      if (current === 'stage' && stageEl) {
-        const atTop = stageEl.scrollTop <= 2
-        const canScroll = stageEl.scrollHeight > stageEl.clientHeight + 4
-        const atBottom =
-          !canScroll ||
-          stageEl.scrollTop + stageEl.clientHeight >= stageEl.scrollHeight - 2
-        const goingUp = dy < 0
-        const goingDown = dy > 0
-
-        // Keep native, inertial scrolling. Only horizontal rails need their
-        // vertical wheel routed to the stage, since they can swallow it.
-        if (canScroll && ((goingDown && !atBottom) || (goingUp && !atTop))) {
-          wheelAcc.current = 0
-          if (event.target.closest?.('.md-cards, .invest-showcase__scroller, .home-showcase__scroller')) {
-            stageEl.scrollTop += dy
-            event.preventDefault()
-          }
-          return
-        }
-        if (goingDown && atBottom) {
-          // End of stage — don't jump further, don't block bounce awkwardly
-          wheelAcc.current = 0
-          return
-        }
-        if (goingUp && atTop) {
-          event.preventDefault()
-          wheelAcc.current = Math.min(0, wheelAcc.current) + dy
-          if (Math.abs(wheelAcc.current) >= WHEEL_THRESHOLD) goTo('hero')
-          return
-        }
-      }
-
-      event.preventDefault()
-      if (current === 'hero') {
-        // Upward gestures on the first screen must not build a negative debt
-        // that makes the next downward gesture feel stuck.
-        wheelAcc.current = dy > 0 ? Math.max(0, wheelAcc.current) + dy : 0
-        if (wheelAcc.current >= WHEEL_THRESHOLD) goTo('stage')
-      }
+      const dx = event.touches[0].clientX - gesture.x
+      const dy = gesture.y - event.touches[0].clientY
+      if (Math.abs(dy) <= Math.abs(dx) * 1.15) return
+      const forward = gesture.screen === 'hero' && dy > 0
+      const backward = gesture.screen === 'stage' && gesture.atTop && dy < 0
+      if (!forward && !backward) return
+      // Prevent the browser from beginning a native vertical pan at the boundary.
+      consume(event)
+      if (Math.abs(dy) < 10) return
+      gesture.started = true
+      goTo(forward ? 'stage' : 'hero')
     }
+    const onEnd = () => {
+      if (gesture?.started) suppressClickUntil = Date.now() + 350
+      gesture = null
+    }
+    const onClick = (event) => {
+      if (gesture?.started || Date.now() < suppressClickUntil || flashAnimationRef.current) consume(event)
+    }
+    const onWheel = (event) => {
+      if (event.defaultPrevented || event.shiftKey || modalOpen()) return
+      if (Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return
+      if (!wheelActive) wheelStartedAtTop = stage.scrollTop <= 1
+      wheelActive = true
+      window.clearTimeout(wheelTimer)
+      wheelTimer = window.setTimeout(() => {
+        wheelActive = false
+        wheelLocked = false
+      }, 180)
+      if (wheelLocked || flashAnimationRef.current) {
+        wheelLocked = true
+        consume(event)
+        return
+      }
+      const forward = activeScreenRef.current === 'hero' && event.deltaY > 0
+      const backward = activeScreenRef.current === 'stage'
+        && wheelStartedAtTop && stage.scrollTop <= 1 && event.deltaY < 0
+      if (!forward && !backward) return
+      consume(event)
+      wheelLocked = true
+      goTo(forward ? 'stage' : 'hero')
+    }
+    shell.addEventListener('touchstart', onStart, { passive: true, capture: true })
+    shell.addEventListener('touchmove', onMove, { passive: false, capture: true })
+    shell.addEventListener('touchend', onEnd, { passive: true, capture: true })
+    shell.addEventListener('touchcancel', onEnd, { passive: true, capture: true })
+    shell.addEventListener('wheel', onWheel, { passive: false, capture: true })
+    shell.addEventListener('click', onClick, { capture: true })
+    return () => {
+      window.clearTimeout(wheelTimer)
+      shell.removeEventListener('touchstart', onStart, true)
+      shell.removeEventListener('touchmove', onMove, true)
+      shell.removeEventListener('touchend', onEnd, true)
+      shell.removeEventListener('touchcancel', onEnd, true)
+      shell.removeEventListener('wheel', onWheel, true)
+      shell.removeEventListener('click', onClick, true)
+    }
+  }, [goTo])
 
-    el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
-  }, [flashPhase, goTo])
+  useEffect(() => {
+    const stage = stageScrollRef.current
+    if (!stage) return undefined
+    const updateNav = () => setIsStageNavExpanded(stage.scrollTop > 0)
+    updateNav()
+    stage.addEventListener('scroll', updateNav, { passive: true })
+    return () => stage.removeEventListener('scroll', updateNav)
+  }, [])
 
   useEffect(() => {
     if (screen !== 'stage') {
@@ -497,22 +512,6 @@ export default function MobileDiscoverPage() {
 
   useEffect(() => {
     if (screen !== 'stage') {
-      setIsStageNavExpanded(false)
-      setActiveLaunchCard(0)
-      return undefined
-    }
-
-    const stage = stageScrollRef.current
-    if (!stage) return undefined
-    const updateNav = () => setIsStageNavExpanded(stage.scrollTop > 0)
-    updateNav()
-    stage.addEventListener('scroll', updateNav, { passive: true })
-    return () => stage.removeEventListener('scroll', updateNav)
-  }, [screen])
-
-
-  useEffect(() => {
-    if (screen !== 'stage') {
       setCatalogReady(false)
       return undefined
     }
@@ -539,49 +538,6 @@ export default function MobileDiscoverPage() {
     return () => observer.disconnect()
   }, [screen, stageEntered])
 
-  // Touch swipe
-  useEffect(() => {
-    const el = shellRef.current
-    if (!el) return undefined
-
-    const onStart = (event) => {
-      touchStartY.current = event.touches[0]?.clientY ?? 0
-      touchStartX.current = event.touches[0]?.clientX ?? 0
-    }
-
-    const onEnd = (event) => {
-      if (document.documentElement.classList.contains('login-modal-open')) return
-      if (busyRef.current || flashPhase !== 'idle') return
-      const endY = event.changedTouches[0]?.clientY ?? touchStartY.current
-      const dy = touchStartY.current - endY
-      const dx = touchStartX.current - (event.changedTouches[0]?.clientX ?? touchStartX.current)
-      // Horizontal carousel swipes must not trigger the vertical screen transition.
-      if (Math.abs(dx) > Math.abs(dy)) return
-      const current = screenRef.current
-      const stageEl = stageScrollRef.current
-
-      if (current === 'hero' && dy > TOUCH_THRESHOLD) {
-        goTo('stage')
-        return
-      }
-
-      if (current === 'stage' && dy < -TOUCH_THRESHOLD) {
-        const atTop = !stageEl || stageEl.scrollTop <= 2
-        if (atTop) goTo('hero')
-      }
-    }
-
-    el.addEventListener('touchstart', onStart, { passive: true })
-    el.addEventListener('touchend', onEnd, { passive: true })
-    return () => {
-      el.removeEventListener('touchstart', onStart)
-      el.removeEventListener('touchend', onEnd)
-    }
-  }, [flashPhase, goTo])
-
-  const flashClass =
-    flashPhase === 'cover' ? ' is-cover' : flashPhase === 'reveal' ? ' is-reveal' : ''
-
   return (
     <SiteChatDock
       wrapperClassName="md-discover-ai-floats"
@@ -589,33 +545,37 @@ export default function MobileDiscoverPage() {
     >
     <div
       ref={shellRef}
-      className={`md md--${screen}${flashPhase !== 'idle' ? ' is-flashing' : ''}`}
+      className={`md md--${screen}`}
     >
-      <div className={`md-flash${flashClass}`} aria-hidden="true" />
-
-      {screen === 'hero' && (
-        <section className="md-hero" aria-label={t('discoverPage_welcomeAria')}>
-          <div className="md-hero__glow" aria-hidden="true" />
+        <section className="md-hero" aria-label={t('discoverPage_welcomeAria')} aria-hidden={screen !== 'hero'} inert={screen !== 'hero'}>
+          <div className="md-hero__brand" aria-label="SellYourBrick">
+            <span aria-hidden="true">Sell</span>
+            <span className="md-hero__brand-accent" aria-hidden="true">Your</span>
+            <span aria-hidden="true">Brick</span>
+          </div>
 
           <div className="md-hero__copy">
             <h1 className="md-hero__title">
-              {t('discoverPage_heroTitleLine1')}
-              <br />
-              {t('discoverPage_heroTitleLine2')}
+              <span className="md-hero__title-main">{t('discoverPage_heroTitleLine1')}</span>{' '}
+              <span className="md-hero__title-accent">{t('discoverPage_heroTitleLine2')}</span>
             </h1>
             <p className="md-hero__lead">{t('discoverPage_heroLead')}</p>
           </div>
 
           <div className="md-hero__visual" aria-hidden="true">
-            <img
-              className="md-hero__image"
-              src={HERO_IMAGE}
-              alt=""
-              width={1080}
-              height={1920}
-              decoding="async"
-              fetchPriority="high"
-            />
+            <video
+              ref={heroVideoRef}
+              className="md-hero__video"
+              autoPlay={!prefersReducedMotion()}
+              loop
+              muted
+              playsInline
+              preload="metadata"
+              poster={HERO_POSTER}
+              tabIndex={-1}
+            >
+              <source src={HERO_VIDEO} type="video/mp4" />
+            </video>
             <div className="md-hero__veil" />
           </div>
 
@@ -626,18 +586,18 @@ export default function MobileDiscoverPage() {
             type="button"
             className="md-hero__scroll"
             onClick={() => goTo('stage')}
-            aria-label={t('discoverPage_goToNextScreen')}
+            aria-label={t('startBtn')}
           >
-            <span className="md-hero__scroll-arrow" aria-hidden="true" />
+            <span className="md-hero__start-label">{t('startBtn')}</span>
           </button>
         </section>
-      )}
 
-      {screen === 'stage' && (
         <section
           ref={stageScrollRef}
           className={`md-stage${stageEntered ? ' is-ready' : ''}`}
           aria-label={t('discoverPage_saleFormatsAria')}
+          aria-hidden={screen !== 'stage'}
+          inert={screen !== 'stage'}
         >
           <div className={`md-site-nav${isStageNavExpanded ? ' is-expanded' : ' is-hidden'}`}>
             <Suspense fallback={null}>
@@ -853,8 +813,8 @@ export default function MobileDiscoverPage() {
           </div>
 
         </section>
-      )}
     </div>
+    <div ref={flashRef} className="md-flash" aria-hidden="true" />
     <Suspense fallback={null}>
       {compassOfferOpen ? (
         <InvestmentCompassPromoModal

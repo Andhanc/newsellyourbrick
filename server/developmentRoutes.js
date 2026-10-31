@@ -1,4 +1,5 @@
 import express from 'express'
+import { registerInvestmentRoutes } from './developmentInvestments.js'
 import multer from 'multer'
 import { mkdirSync, unlinkSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -142,9 +143,10 @@ function passportView(user, passport) {
     verifiedCurrency: 'EUR',
   }
 }
-export function registerDevelopmentRoutes(app) {
+export function registerDevelopmentRoutes(app, options = {}) {
   const router = express.Router()
   router.use(express.json({ limit: '256kb' }))
+  registerInvestmentRoutes(router, { wrap, userFor, projectFor, ...options })
   router.get(
     '/projects',
     wrap(async (req, res) => {
@@ -254,7 +256,8 @@ export function registerDevelopmentRoutes(app) {
         const p = await projectFor(req.params.id, user, true, db)
         const count = await db.development_interests.count({ where: { project_id: p.id } })
         const funding = await db.development_funding.count({ where: { project_id: p.id } })
-        if (count || funding) throw fail(409, 'termsLocked')
+        const investments = await db.development_investments.count({ where: { project_id: p.id, status: { in: ['pending', 'paid'] } } })
+        if (count || funding || investments) throw fail(409, 'termsLocked')
         return db.development_projects.update({
           where: { id: p.id },
           data: { ...data, updated_at: new Date() },
@@ -374,9 +377,10 @@ export function registerDevelopmentRoutes(app) {
         const p = await projectFor(req.params.id, user, true, db)
         if (p.stage !== 'fundraising') throw fail(409, 'fundraisingClosed')
         const summary = await summarizeProject(p, db)
-        if (summary.funded > 0) throw fail(409, 'fundraisingClosed')
-        if (amount !== money(p.terms.requiredCapital))
-          throw fail(409, 'fullInvestmentRequired')
+        if (summary.funded >= money(p.terms.requiredCapital)) throw fail(409, 'fundraisingClosed')
+        const pending = await db.development_investments.aggregate({ where: { project_id: p.id, status: 'pending' }, _sum: { amount: true } })
+        if (Math.round((summary.funded + Number(pending._sum.amount || 0) + amount) * 100) > Math.round(Number(p.terms.requiredCapital) * 100))
+          throw fail(409, 'investmentCapacity')
         if (
           await db.development_funding.findUnique({
             where: { project_id_reference: { project_id: p.id, reference } },

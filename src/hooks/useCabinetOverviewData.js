@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
+import { dealApi } from '../features/development/api'
+import useDealSession from '../features/development/useDealSession'
+import { developmentPortfolioHistory } from '../features/development/portfolioHistory'
 import {
   getUserData,
   isAuthenticated,
@@ -176,7 +179,7 @@ function takeHistoryArray(json) {
 /**
  * Секции истории для дропбокса + плоский список для карточки «события».
  */
-function buildHistoryData(winners, reservations, shares, bidsRaw, t) {
+function buildHistoryData(winners, reservations, shares, bidsRaw, t, development = [], locale = 'ru-RU', developmentLabel = 'DEVELOP') {
   const events = []
   const sectionAuction = []
   const sectionReserve = []
@@ -354,6 +357,8 @@ function buildHistoryData(winners, reservations, shares, bidsRaw, t) {
     })
   }
 
+  const developmentItems = developmentPortfolioHistory(development, locale)
+  for (const item of developmentItems) events.push({ sort: item.sort, id: item.id, title: `${developmentLabel} · ${item.title}`, details: `${item.amount} · ${item.purchaseDate}`, initials: 'DV' })
   const sortDesc = (a, b) => b.sort - a.sort
   sectionAuction.sort(sortDesc)
   sectionReserve.sort(sortDesc)
@@ -370,6 +375,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw, t) {
   if (sectionBids.length)
     historySections.push({ key: 'bids', title: t('cabinetHistory_sectionBids'), items: sectionBids })
 
+  if (developmentItems.length) historySections.push({ key: 'development', title: developmentLabel, items: developmentItems })
   events.sort((a, b) => b.sort - a.sort)
   const recentRows = events.slice(0, 3).map(({ id, title, details, initials }) => ({
     id,
@@ -378,7 +384,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw, t) {
     initials,
   }))
 
-  const historyCount = wArr.length + rArr.length + sArr.length + Object.keys(byProp).length
+  const historyCount = wArr.length + rArr.length + sArr.length + Object.keys(byProp).length + developmentItems.length
 
   return { historyCount, recentRows, historySections }
 }
@@ -391,11 +397,13 @@ function buildHistoryData(winners, reservations, shares, bidsRaw, t) {
 export function useCabinetOverviewData({ loadHistory = true } = {}) {
   const { t, i18n } = useTranslation()
   const { user, isLoaded: userLoaded } = useUser()
+  const developmentSession = useDealSession()
   const [numericUserId, setNumericUserId] = useState(() => getStoredNumericUserId())
   const [publicIdDisplay, setPublicIdDisplay] = useState(null)
   const [historyCount, setHistoryCount] = useState(0)
   const [recentHistoryRows, setRecentHistoryRows] = useState([])
   const [historySections, setHistorySections] = useState([])
+  const [developmentHistoryError, setDevelopmentHistoryError] = useState('')
   const [historyLoading, setHistoryLoading] = useState(() => Boolean(loadHistory))
   const [subscriptionPlanLabel, setSubscriptionPlanLabel] = useState('Starter')
   const [cabinetSubscriptionTier, setCabinetSubscriptionTier] = useState('starter')
@@ -519,9 +527,10 @@ export function useCabinetOverviewData({ loadHistory = true } = {}) {
 
     let cancelled = false
     setHistoryLoading(true)
+    setDevelopmentHistoryError('')
     ;(async () => {
       try {
-        const [wJson, rJson, sJson, bJson] = await Promise.all([
+        const [wJson, rJson, sJson, bJson, portfolio] = await Promise.all([
           fetchJsonCached(`${API_BASE_URL}/auction-winners/user/${uid}`, {
             ttlMs: HISTORY_CACHE_TTL_MS,
           }),
@@ -534,6 +543,7 @@ export function useCabinetOverviewData({ loadHistory = true } = {}) {
           fetchJsonCached(`${API_BASE_URL}/bids/user/${uid}`, {
             ttlMs: HISTORY_CACHE_TTL_MS,
           }),
+          dealApi('/portfolio').then((rows) => ({ rows })).catch((error) => ({ rows: [], error: error.message })),
         ])
 
         if (cancelled) return
@@ -542,6 +552,7 @@ export function useCabinetOverviewData({ loadHistory = true } = {}) {
         const reservations = takeHistoryArray(rJson)
         const shares = takeHistoryArray(sJson)
         const bids = takeHistoryArray(bJson)
+        setDevelopmentHistoryError(portfolio.error || '')
 
         const { historyCount: count, recentRows, historySections: sections } = buildHistoryData(
           winners,
@@ -549,6 +560,9 @@ export function useCabinetOverviewData({ loadHistory = true } = {}) {
           shares,
           bids,
           t,
+          portfolio.rows,
+          i18n.language,
+          i18n.t('develop.portfolioCategory'),
         )
         setHistoryCount(count)
         setRecentHistoryRows(recentRows)
@@ -568,7 +582,7 @@ export function useCabinetOverviewData({ loadHistory = true } = {}) {
     return () => {
       cancelled = true
     }
-  }, [numericUserId, userLoaded, historyRevision, loadHistory, t, i18n.language])
+  }, [numericUserId, userLoaded, historyRevision, loadHistory, developmentSession, t, i18n.language])
 
   useEffect(() => {
     const uid = numericUserId ?? getStoredNumericUserId()
@@ -623,6 +637,7 @@ export function useCabinetOverviewData({ loadHistory = true } = {}) {
     recentHistoryRows,
     historySections,
     historyLoading,
+    developmentHistoryError,
     subscriptionPlanLabel,
     cabinetSubscriptionTier,
     cabinetVipActive,

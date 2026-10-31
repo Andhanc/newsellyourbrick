@@ -92,17 +92,15 @@ export default function DevelopmentFundingOverview({
         </dl>
       </section>
       <div className="dev-funding-overview__notes">
-        {canApply && (
-          <button
+        <button
             className="dev-button dev-project-summary__cta"
             type="button"
             aria-haspopup="dialog"
             onClick={onApply}
           >
-            {t('develop.expressInterest')}
+            {t(canApply ? 'develop.investNow' : 'develop.investorsTab')}
             <ArrowUpRight size={18} />
-          </button>
-        )}
+        </button>
       </div>
     </section>
   )

@@ -37,7 +37,8 @@
     "import:housetenerife": "node scripts/import-housetenerife.mjs",
     "maestro:seed": "node scripts/seed-maestro-demo.mjs",
     "maestro:test": "node scripts/run-maestro-suite.mjs",
-    "maestro:test:once": "MAESTRO_RUNS=1 node scripts/run-maestro-suite.mjs"
+    "maestro:test:once": "MAESTRO_RUNS=1 node scripts/run-maestro-suite.mjs",
+    "presentation:property": "node scripts/build-listing-presentations.mjs"
   },
   "dependencies": {
     "@clerk/backend": "^3.16.6",

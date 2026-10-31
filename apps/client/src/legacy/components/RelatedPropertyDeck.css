@@ -1,0 +1,77 @@
+.related-deck { width: 100%; max-width: 440px; margin: 0 auto; }
+.related-deck__stage { --deck-stack-offset: 72px; position: relative; isolation: isolate; padding-top: var(--deck-stack-offset); outline-offset: 5px; border-radius: 28px; touch-action: pan-y pinch-zoom; }
+.related-deck__stage--single { --deck-stack-offset: 0px; }
+.related-deck__stage--many { --deck-stack-offset: 104px; }
+.related-deck__back { position: absolute; display: flex; align-items: flex-start; gap: 10px; height: 150px; padding: 10px; border-radius: 24px 24px 0 0; pointer-events: none; background: #fff; border: 1px solid #d9e5e5; box-shadow: 0 5px 16px rgba(23,33,47,.08); overflow: hidden; }
+.related-deck__back--far { top: 0; left: 30px; right: 30px; transform: rotate(-2deg); }
+.related-deck__back--near { top: 0; left: 14px; right: 14px; transform: rotate(2deg); }
+.related-deck__stage--many .related-deck__back--near { top: 32px; }
+.related-deck__back img { flex: 0 0 46px; width: 46px; height: 46px; object-fit: cover; border-radius: 12px; }
+.related-deck__back-title { padding-top: 5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: #46575c; font-size: 11px; font-weight: 650; line-height: 1.35; }
+.related-deck__swipe-coach { position: absolute; z-index: 5; top: calc(var(--deck-stack-offset) + 44px); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 20px; border-radius: 22px; background: #42c4cc; color: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.16); pointer-events: none; white-space: nowrap; font-size: 11px; font-weight: 600; text-align: center; }
+.related-deck__swipe-gesture { color: #fff; display: flex; align-items: center; justify-content: center; gap: 32px; }
+.related-deck__swipe-gesture > span { display: flex; }
+.related-deck__swipe-gesture > svg { opacity: .65; }
+.related-deck__card { display: flex; flex-direction: column; min-height: 500px; position: relative; width: 100%; overflow: hidden; border-radius: 28px; background: #fff; color: #17212f; border: 1px solid #e5ecec; box-shadow: 0 16px 30px -20px rgba(23,33,47,.24); touch-action: pan-y pinch-zoom; user-select: none; cursor: grab; }
+.related-deck__card:active { cursor: grabbing; }
+.related-deck__photo { flex-shrink: 0; position: relative; height: 195px; background: #d4e4e3; }
+.related-deck__photo img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.related-deck__photo-link { position: absolute; inset: 0; z-index: 1; }
+.related-deck__badge { position: absolute; top: 14px; left: 14px; max-width: calc(100% - 80px); padding: 8px 12px; border-radius: 50px; background: rgba(255,255,255,.94); color: #183c3e; font-size: 11px; font-weight: 700; line-height: 1.2; }
+.related-deck__favorite { position: absolute; z-index: 2; top: 12px; right: 12px; display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid rgba(255,255,255,.6); border-radius: 50%; background: rgba(255,255,255,.94); color: #183c3e; cursor: pointer; }
+.related-deck__favorite.is-active { color: #d14360; }
+.related-deck__favorite.is-active svg { fill: currentColor; }
+.related-deck__body { padding: 20px; display: flex; flex: 1; flex-direction: column; gap: 12px; }
+.related-deck__countdown { display: flex; align-items: center; gap: 10px; align-self: flex-start; max-width: 100%; padding: 10px 14px; border: 1px solid #cceceb; border-radius: 17px; background: #edfaf8; }
+.related-deck__countdown-content { min-width: 0; }
+.related-deck__countdown-label { display: block; font-size: 10px; font-weight: 500; line-height: 1.3; margin-bottom: 4px; }
+.related-deck__countdown .property-timer.compact { margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: inherit; box-shadow: none; min-height: 0; width: auto; }
+.related-deck__countdown .property-timer.compact .timer-compact-time { display: flex; gap: 4px; align-items: baseline; justify-content: flex-start; padding: 0; border: 0; box-shadow: none; animation: none; color: inherit; font-variant-numeric: tabular-nums; }
+.related-deck__countdown .property-timer.compact .time-unit { display: inline-flex; flex-direction: row; gap: 2px; align-items: baseline; }
+.related-deck__countdown .property-timer.compact .time-value { font-size: 17px; font-weight: 750; line-height: 1.2; color: #10383b; }
+.related-deck__countdown .property-timer.compact .time-label { font-size: 9px; color: #28575a; }
+.related-deck__countdown .property-timer.compact .timer-separator { font-size: 12px; color: #28575a; opacity: .6; }
+.related-deck__title { margin: 0; font-size: clamp(20px, 5.2vw, 26px); line-height: 1.16; font-weight: 750; letter-spacing: -.65px; overflow-wrap: anywhere; }
+.related-deck__title a { color: inherit; text-decoration: none; }
+.related-deck__location { display: flex; gap: 5px; align-items: flex-start; margin: 0; font-size: 11px; line-height: 1.5; color: #28575a; }
+.related-deck__location svg { flex: 0 0 auto; margin-top: 1px; }
+.related-deck__specs { display: flex; gap: 8px 16px; flex-wrap: wrap; font-size: 12px; }
+.related-deck__specs > span { display: inline-flex; align-items: center; gap: 5px; }
+.related-deck__footer { display: flex; flex-direction: column; align-items: stretch; gap: 16px; padding-top: 14px; margin-top: auto; border-top: 1px solid rgba(16,56,59,.15); }
+.related-deck__price-label { font-size: 10px; color: #28575a; }
+.related-deck__price { margin: 3px 0 0; font-size: 30px; line-height: 1; font-weight: 750; letter-spacing: -1px; }
+.related-deck__open { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 5px 14px 5px 5px; border-radius: 999px; background: #42c4cc; color: #fff; text-decoration: none; transition: background .2s; }
+.related-deck__open:hover { background: #38bcc5; }
+.related-deck__open-icon { display: grid; place-items: center; flex: 0 0 46px; width: 46px; height: 46px; border-radius: 50%; background: #fff; color: #42c4cc; }
+.related-deck__open-label { flex: 1; font-size: 14px; font-weight: 650; }
+.related-deck__open-chevrons { display: flex; align-items: center; flex-shrink: 0; color: #fff; }
+.related-deck__open-chevrons svg { margin-left: -7px; animation: related-deck-arrow-flow 1.65s ease-in-out infinite; }
+.related-deck__open-chevrons svg:nth-child(2) { animation-delay: .16s; }
+.related-deck__open-chevrons svg:nth-child(3) { animation-delay: .32s; }
+@keyframes related-deck-arrow-flow {
+  0%, 100% { opacity: .3; transform: translateX(-3px); }
+  45%, 60% { opacity: 1; transform: translateX(3px); }
+}
+.related-deck__navigation { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 18px 4px 0; }
+.related-deck__navigation > button { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid #e0e8e8; border-radius: 50%; background: #fff; color: #22494b; cursor: pointer; }
+.related-deck__navigation > button:hover { background: #eff9f8; }
+.related-deck__navigation > button:disabled { opacity: .3; cursor: default; }
+.related-deck__progress { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.related-deck__hint { font-size: 10px; color: #798a8e; }
+.related-deck__counter { font-size: 12px; font-weight: 650; color: #153f42; font-variant-numeric: tabular-nums; }
+.related-deck a:focus-visible, .related-deck button:focus-visible, .related-deck__stage:focus-visible { outline: 2px solid #163c3e; outline-offset: 4px; }
+@media (min-width: 769px) { .related-deck__photo { height: 230px; } .related-deck__body { padding: 24px; } }
+@media (prefers-reduced-motion: reduce) {
+  .related-deck__open { transition: none; }
+  .related-deck__open-chevrons svg { animation: none; opacity: 1; transform: none; }
+}
+@media (max-width: 360px) {
+  .related-deck__body { padding: 16px; }
+  .related-deck__countdown { padding: 10px; gap: 8px; }
+  .related-deck__countdown > svg { width: 16px; flex-shrink: 0; }
+  .related-deck__countdown .property-timer.compact .timer-compact-time { gap: 2px; min-width: 0; }
+  .related-deck__countdown .property-timer.compact .time-value { font-size: 15px; }
+  .related-deck__countdown .property-timer.compact .time-label { font-size: 8px; }
+}
+
+.related-deck__photo-link, .related-deck__title a, .related-deck__open { touch-action: pan-y pinch-zoom; -webkit-user-drag: none; }

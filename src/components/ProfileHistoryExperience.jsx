@@ -13,6 +13,8 @@ import {
   FiTrendingUp,
 } from 'react-icons/fi'
 import { buildProfileHistoryDashboard } from '../utils/profileCabinetPresentation'
+import { CABINET_HISTORY_UPDATED_EVENT } from '../constants/cabinetEvents'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import './ProfileHistoryExperience.css'
 
 const CATEGORY_ICONS = {
@@ -20,6 +22,7 @@ const CATEGORY_ICONS = {
   properties: FiShoppingBag,
   shares: FiLayers,
   debts: FiActivity,
+  development: FiLayers,
 }
 
 const CATEGORY_LABEL_KEYS = {
@@ -27,10 +30,12 @@ const CATEGORY_LABEL_KEYS = {
   properties: 'profileHistory_catProperties',
   shares: 'profileHistory_catShares',
   debts: 'profileHistory_catDebts',
+  development: 'develop.portfolioCategory',
 }
 
-function HistoryListCard({ item, categoryKey, onOpenPurchased, onClose }) {
+function HistoryListCard({ item, categoryKey, onOpenPurchased, onOpenDevelopment, onClose }) {
   const { t } = useTranslation()
+  const canOpenDevelopment = categoryKey === 'development' && Boolean(onOpenDevelopment)
   const canOpenDrawer = Boolean(
     onOpenPurchased &&
       (item.purchaseChannel || categoryKey === 'properties' || categoryKey === 'debts'),
@@ -38,7 +43,8 @@ function HistoryListCard({ item, categoryKey, onOpenPurchased, onClose }) {
   const labelKey = CATEGORY_LABEL_KEYS[categoryKey]
   const meta = labelKey ? t(labelKey) : t('profileHistory_catFallback')
   const open = () => {
-    if (canOpenDrawer) onOpenPurchased(item)
+    if (canOpenDevelopment) onOpenDevelopment(item)
+    else if (canOpenDrawer) onOpenPurchased(item)
   }
 
   const body = (
@@ -62,11 +68,12 @@ function HistoryListCard({ item, categoryKey, onOpenPurchased, onClose }) {
             <span>{item.location}</span>
           </p>
         ) : item.subtitle ? (
-          <p className="profile-history-list-card__desc">{item.subtitle}</p>
+          <p className="profile-history-list-card__desc">{categoryKey === 'development' ? t('develop.portfolioCategory') : item.subtitle}</p>
         ) : null}
+        {item.development && <span className="profile-history-list-card__stage">{t(`develop.stage_${item.development.stage}`)}</span>}
         <div className="profile-history-list-card__stats">
           <span>
-            {categoryKey === 'bids' ? t('profileHistory_metaBid') : t('profileHistory_metaAmount')}
+            {categoryKey === 'development' ? t('develop.totalInvested') : categoryKey === 'bids' ? t('profileHistory_metaBid') : t('profileHistory_metaAmount')}
           </span>
           <strong>{item.amount || '—'}</strong>
           {item.purchaseDate ? (
@@ -88,7 +95,7 @@ function HistoryListCard({ item, categoryKey, onOpenPurchased, onClose }) {
     </>
   )
 
-  if (canOpenDrawer) {
+  if (canOpenDrawer || canOpenDevelopment) {
     return (
       <button type="button" className="profile-history-list-card" onClick={open}>
         {body}
@@ -114,20 +121,26 @@ export default function ProfileHistoryExperience({
   onQueryChange,
   onClose,
   onOpenPurchased,
+  onOpenDevelopment,
+  developmentError = '',
+  initialCategory = 'all',
   locale = 'ru-RU',
   embedded = false,
 }) {
   const { t } = useTranslation()
   const dashboard = useMemo(() => buildProfileHistoryDashboard(sections), [sections])
-  const [activeCategory, setActiveCategory] = useState('all')
+  const [activeCategory, setActiveCategory] = useState(initialCategory)
   const [activeCategoryDot, setActiveCategoryDot] = useState(0)
   const categoriesRailRef = useRef(null)
   const normalizedQuery = String(query || '').trim().toLowerCase()
 
   const categories = useMemo(
     () =>
-      dashboard.categories.map((category) => ({
+      (initialCategory === 'development' && !dashboard.categories.some((category) => category.key === 'development')
+        ? [...dashboard.categories, { key: 'development', items: [], count: 0 }]
+        : dashboard.categories).map((category) => ({
         ...category,
+        ...(category.key === 'development' ? { title: t('develop.portfolioCategory'), chipTitle: t('develop.portfolioCategory') } : {}),
         items: normalizedQuery
           ? category.items.filter((item) =>
               `${item.title || ''} ${item.subtitle || ''} ${item.location || ''}`
@@ -136,7 +149,7 @@ export default function ProfileHistoryExperience({
             )
           : category.items,
       })),
-    [dashboard.categories, normalizedQuery],
+    [dashboard.categories, normalizedQuery, initialCategory, t],
   )
 
   const allItems = useMemo(
@@ -156,7 +169,7 @@ export default function ProfileHistoryExperience({
     return allItems.filter((item) => item.categoryKey === activeCategory)
   }, [activeCategory, allItems])
 
-  const isEmpty = !loading && allItems.length === 0 && !normalizedQuery
+  const isEmpty = !loading && allItems.length === 0 && !normalizedQuery && initialCategory !== 'development'
   const categoryDots = useMemo(
     () => [
       { key: 'all', label: t('profileHistory_all') },
@@ -191,6 +204,18 @@ export default function ProfileHistoryExperience({
     }
   }, [categoryDots.length])
 
+  useEffect(() => {
+    setActiveCategory(initialCategory)
+  }, [initialCategory])
+
+  useEffect(() => {
+    const rail = categoriesRailRef.current
+    const chip = rail?.querySelector(`[data-history-category="${activeCategory}"]`)
+    if (!rail || !chip) return
+    const left = rail.scrollLeft + chip.getBoundingClientRect().left - rail.getBoundingClientRect().left - (rail.clientWidth - chip.offsetWidth) / 2
+    rail.scrollTo({ left: Math.max(0, left), behavior: 'auto' })
+  }, [activeCategory, loading, categories.length])
+
   const scrollToCategoryDot = useCallback((index) => {
     const rail = categoriesRailRef.current
     if (!rail || categoryDots.length < 2) return
@@ -223,6 +248,7 @@ export default function ProfileHistoryExperience({
           <p className="profile-history-panel__lead">{t('profileHistory_lead')}</p>
         </div>
 
+        {developmentError && <div className="profile-history-development-error" role="alert"><p>{t('develop.portfolioLoadError')}</p><button type="button" onClick={() => { if (developmentError === 'loginRequired') requestOpenLoginModal({ wizard: true }); else window.dispatchEvent(new Event(CABINET_HISTORY_UPDATED_EVENT)) }}>{t(developmentError === 'loginRequired' ? 'develop.loginToInvest' : 'develop.retryInvestors')}</button></div>}
         {loading ? (
           <div className="profile-history-experience__loading" aria-busy="true">
             {t('profileHistory_loading')}
@@ -249,6 +275,8 @@ export default function ProfileHistoryExperience({
                     activeCategory === 'all' ? ' profile-history-cat-chip--active' : ''
                   }`}
                   onClick={() => setActiveCategory('all')}
+                  data-history-category="all"
+                  aria-pressed={activeCategory === 'all'}
                   aria-label={t('profileHistory_allAria', { count: allItems.length })}
                 >
                   <span className="profile-history-cat-chip__icon-wrap">
@@ -269,6 +297,8 @@ export default function ProfileHistoryExperience({
                         activeCategory === category.key ? ' profile-history-cat-chip--active' : ''
                       }`}
                       onClick={() => setActiveCategory(category.key)}
+                      data-history-category={category.key}
+                      aria-pressed={activeCategory === category.key}
                       aria-label={`${category.titleKey ? t(category.titleKey) : category.title}, ${category.items.length}`}
                     >
                       <span className="profile-history-cat-chip__icon-wrap">
@@ -327,6 +357,7 @@ export default function ProfileHistoryExperience({
                     item={item}
                     categoryKey={item.categoryKey}
                     onOpenPurchased={onOpenPurchased}
+                    onOpenDevelopment={onOpenDevelopment}
                     onClose={onClose}
                   />
                 ))

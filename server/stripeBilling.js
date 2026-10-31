@@ -1,3 +1,4 @@
+import { syncDevelopmentInvestment } from './developmentInvestments.js';
 import Stripe from 'stripe';
 import crypto from 'crypto';
 import {
@@ -403,7 +404,7 @@ async function convertEurToCurrencyMajor(amountEur, currency) {
   return { rate, amountMajor: roundMoneyMajor((Number(amountEur) || 0) * rate) };
 }
 
-async function convertCurrencyMajor(amount, fromCurrency, toCurrency) {
+export async function convertCurrencyMajor(amount, fromCurrency, toCurrency) {
   const from = String(fromCurrency || 'eur')
     .trim()
     .toLowerCase();
@@ -2001,8 +2002,15 @@ export function createStripeWebhookHandler() {
 
     try {
       switch (event.type) {
+        case 'checkout.session.expired':
+        case 'checkout.session.async_payment_succeeded':
         case 'checkout.session.completed': {
           const session = event.data.object;
+          if (session.metadata?.checkout_purpose === 'development_investment') {
+            await syncDevelopmentInvestment(stripe, session.id);
+            break;
+          }
+          if (event.type !== 'checkout.session.completed') break;
           if (session.mode === 'payment' && session.metadata?.checkout_purpose === 'property_reservation_deposit') {
             const full = await stripe.checkout.sessions.retrieve(session.id);
             await processPropertyReservationPaidSession(stripe, full);

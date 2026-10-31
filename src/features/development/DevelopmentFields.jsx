@@ -21,7 +21,7 @@ export const EMPTY_TERMS = {
   license: '',
   assumptions: '',
 }
-export function useDealFormat(currency = 'EUR') {
+export function useDealFormat(currency = 'EUR', maximumFractionDigits = 0) {
   const { i18n } = useTranslation()
   return (value) =>
     value == null || !Number.isFinite(Number(value))
@@ -29,7 +29,8 @@ export function useDealFormat(currency = 'EUR') {
       : new Intl.NumberFormat(i18n.language, {
           style: 'currency',
           currency,
-          maximumFractionDigits: 0,
+          minimumFractionDigits: 0,
+          maximumFractionDigits,
         }).format(Number(value))
 }
 export function Waterfall({ terms, currency = 'EUR' }) {

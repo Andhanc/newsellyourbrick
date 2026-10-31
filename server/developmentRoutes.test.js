@@ -182,12 +182,12 @@ test(
             reference: 'test',
           })
         ).status,
-        409,
+        200,
       )
       assert.equal(
         (
           await req(`/projects/${p.id}/funding`, seller, 'POST', {
-            amount: 1130000,
+            amount: 630000,
             reference: 'test-receipt',
           })
         ).status,

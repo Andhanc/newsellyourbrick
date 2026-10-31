@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import {
   ArrowLeft,
   Check,
-  ChevronRight,
   Coins,
   CreditCard,
   LoaderCircle,
@@ -98,7 +97,7 @@ const DepositTopUpPicker = ({
                 </small>
               </span>
               <span className="deposit-picker__method-chevron" aria-hidden>
-                {selectedMethod === 'card' ? <Check size={18} strokeWidth={2.5} /> : <ChevronRight size={18} strokeWidth={2.2} />}
+                <Check size={18} strokeWidth={2.5} />
               </span>
             </button>
 
@@ -121,7 +120,7 @@ const DepositTopUpPicker = ({
                 </small>
               </span>
               <span className="deposit-picker__method-chevron" aria-hidden>
-                {selectedMethod === 'crypto' ? <Check size={18} strokeWidth={2.5} /> : <ChevronRight size={18} strokeWidth={2.2} />}
+                <Check size={18} strokeWidth={2.5} />
               </span>
             </button>
           </div>

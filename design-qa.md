@@ -858,3 +858,65 @@ Validation: 180 focused frontend tests across 40 files passed, covering main car
 Post-sync browser verification was unavailable because the browser URL policy rejected access to the current tab. No alternate browser access was attempted. Preservation was checked through source/asset hashes, semantic locale comparison, regression tests and production compilation; previous visual evidence remains in the local QA backup.
 
 final result: synchronization verified; known upstream test and browser-verification limitations documented
+
+## Related property deck — 2026-10-31
+
+Scope: replace the vertical list inside PropertyDetailInternalLinks with a swipeable stack. The supplied task-app image is a composition reference; property photos, the site's Tiffany palette, pricing, favorites and existing property navigation are retained.
+
+Evidence:
+- Source visual truth: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-d5929db8-acde-46f5-9b7b-a3ef2c6e68a9.png`, 1200 × 1800 pixels. Original property block: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-b8b8eda8-ae70-4413-bddc-7cac0497d4fd.png`.
+- Browser-rendered implementation: `artifacts/related-property-deck/mobile-auction.jpg` and `artifacts/related-property-deck/mobile-buy-now.jpg`, 390 × 844 CSS pixels and image pixels, density 1.
+- Comparison: `artifacts/related-property-deck/comparison.jpg`. Reference card region scaled from 700 pixels to 330 pixels wide; implementation card region is shown at native width 330 pixels. Content differences are intentional: this is an adaptation of the stacked-card composition to property listings.
+- Full implementation viewport reviewed, then the focused stack/timer/card region compared side by side. The reference phone chrome and unrelated task-app navigation are outside this change.
+- Preview: `http://localhost:5173/tmp/related-deck-preview/index.html`, using the production RelatedPropertyDeck component with example listings and repository photos. The currently inspected real listing returns an empty geo-catalog response, so populated integration data was unavailable locally.
+
+Primary interactions verified in the in-app browser: drag left advances, drag right goes back, right drag from item 1 wraps to item 3, next button wraps item 3 to item 1, keyboard ArrowRight advances, drag does not navigate, property anchors retain their detail URLs. Countdown changes every second; a non-auction card has no countdown. Shared state helpers cover expired/sold/reserved states. Web/legacy components and all seven locale additions match.
+
+Comparison history:
+1. Timer text inherited small global mobile rules. Increased selector specificity, removed the nested timer border/pulse, and verified readable digits in the 390 px screenshot.
+2. 320 px test exposed minimum-content overflow. Added explicit section width and zero minimum width, reduced small-screen timer spacing, and rechecked the rendered section at exactly 320 px with the full card visible.
+3. Added a minimum card height and a bottom-aligned price footer to keep controls stable between auction and non-auction cards; both screenshots confirm the same card footprint.
+
+Findings: no actionable P0/P1/P2 visual issues remain. Fresh preview-tab console: no errors. Earlier development-tab errors from the temporary harness's initial async boot were corrected and did not reproduce on a clean tab. The real property page separately reports a pre-existing missing Yandex Maps key.
+
+Validation: 53 focused tests passed; final parity tests passed; npm run build passed; git diff --check passed. Wider regression run: 76/79 passed. Existing unrelated failures concern ProfileStrategyStories step expectations, the main-page AI FAB expectation, and PropertyDetailPage recovery-copy expectations. Existing build warnings concern chunk sizes and outdated Browserslist data.
+
+Preserved UX: only related properties in internal links; existing favorites and property-detail URLs; shared auction phase/availability logic; lazy geo-catalog loading; no changes to photo-gallery, access-gate, investor-flow or profile behavior.
+
+final result: passed
+
+## Follow-up: white cards directly on the page background
+
+User correction: make the property card white, remove the outer card around the whole section, and ensure swipes work. Removed the outer block element and its border/background/padding. The section title, stacked white cards and navigation now sit directly on the existing page background. The auction countdown retains a pale Tiffany pill.
+
+Gesture handling now starts from the entire stage through Framer Motion drag controls, including photo and title links; native link/image dragging is prevented. Favorite buttons remain independent. The stage and links allow vertical pan and pinch zoom.
+
+Verified in the real project at `http://localhost:5173/property/apartment-hyde-residences-dubai-hills-estate-5`, viewport 390 × 844 CSS pixels, screenshot density 1. Evidence: `artifacts/related-property-deck/white-card-real-property.jpg` (390 × 844). Full viewport reviewed against the user's latest white-card/background correction, with focused review of card edges, section background and navigation. Photo drag left changes Marriott to Pelagos (1/2 to 2/2); title drag right returns to Marriott (1/2), without navigating. A subsequent normal title click opens the correct Marriott detail page. Browser back returns to Hyde. Horizontal gestures were exercised with the browser's drag input; physical-device touch was not separately exercised.
+
+Validation: 25 focused property-detail/state/parity tests passed, production build passed and git diff --check passed. Existing unrelated map-key error remains outside the section.
+
+final result: passed
+
+## Follow-up: visible property previews and animated swipe guidance
+
+The stack now exposes real next-property thumbnails and titles, rather than empty decorative layers. Two listings expose one following card; three or more expose two following cards. A single listing has no false backing cards or coach. The primary card remains white and the section remains directly on the page background.
+
+On first entry with at least 60% of the stack in view, a Phosphor pointing-hand icon moves left and right twice with direction arrows and the existing localized swipe instruction. The overlay has no pointer interception. It disappears after 4.8 seconds, on any pointer/keyboard interaction in the deck, or when the stack leaves view; it does not reappear during that component visit. Reduced-motion preference gets a static hand. Observer and timeout clean up on unmount.
+
+The property-opening arrow uses #42c4cc, the median color sampled from the supplied swatch `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-18fcf74c-37d3-48b5-981e-13739221cede.png`. Browser computed color confirmed rgb(66, 196, 204).
+
+Real-project visual evidence at 390 × 844 CSS pixels/density 1: `artifacts/related-property-deck/swipe-coach.jpg` captures the hand instruction on first scroll into view; `artifacts/related-property-deck/visible-property-stack.jpg` captures the unobstructed stack after dismissal. Source truth is the user's current request, supplied color swatch and previously approved white card. Full viewport and focused preview rows/coach/button reviewed: next listing title/photo clearly visible, white card and background preserved, coach readable, no actionable P0/P1/P2 findings. Automatic dismissal was observed (coach DOM count returned to 0), and native drag left/right changed the active listing 1/2 → 2/2 → 1/2 without navigating. Physical-device touch was not separately exercised.
+
+Validation: 25 focused property-detail, state and web/legacy parity tests passed; production build passed; git diff --check passed. All existing localized instruction strings are reused, with no additional strings required.
+
+final result: passed
+
+## Follow-up: Tiffany coach and full-width animated CTA
+
+Latest user corrections: the coach background is Tiffany with white text; the bottom action is a full-width “Перейти” pill with three chevrons flowing right. The final leading circle is white with a Tiffany arrow. The label is white and the CTA uses the existing site-wide `btn-tiffany-shine` effect rather than a separate shimmer implementation. Chevron animation stops with reduced-motion preference. Existing `goTo` translations are reused.
+
+Real-project evidence: `artifacts/related-property-deck/tiffany-pill-final.jpg`, 390 × 844 CSS/image pixels, density 1, Hyde Residences page, primary listing active. Reviewed the full viewport and focused CTA against the supplied pill/chevron reference and latest color corrections. Browser computed styles confirmed a white label, white circular background, Tiffany icon (rgb(66,196,204)), and the shared `syb-tiffany-btn-sheen` animation. The coach color rule was changed to white after the earlier Tiffany-coach screenshot. The existing stack, white cards and gesture behavior are retained.
+
+Validation: 25 focused property-detail, state and parity tests passed; npm run build passed; git diff --check passed.
+
+final result: passed

@@ -20,7 +20,7 @@ async function propertyAiRequest(path, { userId, body, signal } = {}) {
   return response
 }
 
-export async function startPropertyAiReport({ userId, propertyId, propertyTable, category, question }) {
+export async function startPropertyAiReport({ userId, propertyId, propertyTable, category, question, language }) {
   const response = await propertyAiRequest('/reports', {
     userId,
     body: {
@@ -28,6 +28,7 @@ export async function startPropertyAiReport({ userId, propertyId, propertyTable,
       property_table: propertyTable,
       category,
       question,
+      language: String(language || 'en').split('-')[0],
     },
   })
   return response.json()

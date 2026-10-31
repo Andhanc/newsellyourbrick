@@ -17,7 +17,6 @@ import {
   FiArrowRight,
   FiCheckCircle,
   FiMail,
-  FiCamera,
   FiChevronDown,
   FiChevronUp,
   FiCheck,
@@ -42,13 +41,10 @@ import {
 } from '../hooks/useCabinetOverviewData'
 import { confirmCheckoutSession } from '../utils/subscriptionCheckout'
 import { BuyerCabinetHeroSkeleton, BuyerCabinetBelowSkeleton } from '../components/BuyerCabinetOverviewSkeleton'
-import PassportRecognitionModal from '../components/PassportRecognitionModal'
-import PassportUploadSourceSheet from '../components/PassportUploadSourceSheet'
 import { ProfileSpotlightOnboarding } from '../components/ProfileSpotlightOnboarding'
 import OwnerCabinetOnboardingDrawer from '../components/OwnerCabinetOnboardingDrawer'
 import { BUYER_CABINET_WELCOME_PRESET } from '../components/buyerCabinetWelcomeImages'
 import PrivateClubWhatsAppCommunityModal from '../components/PrivateClubWhatsAppCommunityModal'
-import { validatePassportImageFile } from '../utils/passportPhotoValidation'
 import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
 import BiometricSecurityDrawer from '../components/BiometricSecurityDrawer'
 import {
@@ -102,6 +98,7 @@ import './TestPage.css'
 
 const BuyerSubscriptionOffers = lazy(() => import('../components/BuyerSubscriptionOffers'))
 const ProfileHistoryExperience = lazy(() => import('../components/ProfileHistoryExperience'))
+const DevelopmentInvestmentDetailDrawer = lazy(() => import('../features/development/DevelopmentInvestmentDetailDrawer'))
 const ProfileBookingsExperience = lazy(() => import('../components/ProfileBookingsExperience'))
 
 preloadProfilePageCtaImages()
@@ -259,31 +256,6 @@ function isProfileFieldFilled(key, mf, profileForm) {
       serverOk = true
   }
   return serverOk || fromForm
-}
-
-/** Поля для сохранения на сервер после OCR + /passport/extract (email не трогаем — верификация). */
-function extractedPassportDataToApiPayload(data) {
-  if (!data || typeof data !== 'object') return {}
-  const body = {}
-  if (data.firstName?.trim()) body.first_name = data.firstName.trim()
-  if (data.lastName?.trim()) body.last_name = data.lastName.trim()
-  if (data.passportSeries?.trim()) body.passport_series = data.passportSeries.trim()
-  if (data.passportNumber?.trim()) {
-    const cleaned = data.passportNumber.replace(/[\s-]/g, '').trim()
-    if (cleaned) body.passport_number = cleaned
-  }
-  if (data.identificationNumber?.trim()) body.identification_number = data.identificationNumber.trim()
-  if (data.address?.trim()) body.address = data.address.trim()
-  return body
-}
-
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result || ''))
-    reader.onerror = () => reject(new Error('Could not read file'))
-    reader.readAsDataURL(file)
-  })
 }
 
 /** Как в Data.jsx: отображение телефона с «+». */
@@ -594,19 +566,6 @@ function normalizedEmailValue(v) {
   return String(v || '').trim().toLowerCase()
 }
 
-function mergeExtractedPassportIntoProfileForm(prev, extracted) {
-  if (!extracted) return prev
-  return {
-    ...prev,
-    first_name: extracted.firstName?.trim() || prev.first_name,
-    last_name: extracted.lastName?.trim() || prev.last_name,
-    passport_series: extracted.passportSeries?.trim() || prev.passport_series,
-    passport_number: extracted.passportNumber?.trim() || prev.passport_number,
-    identification_number: extracted.identificationNumber?.trim() || prev.identification_number,
-    address: extracted.address?.trim() || prev.address,
-  }
-}
-
 function buildDirectionSummaries(t, { vipActive = false } = {}) {
   const items = [
     {
@@ -706,6 +665,8 @@ function TestPage() {
   const { signOut } = useClerk()
   const sellPurchasedPropertyRoleFlow = useRoleSwitchFlow('seller')
   const [historyLoadRequested, setHistoryLoadRequested] = useState(false)
+  const [historyInitialCategory, setHistoryInitialCategory] = useState('all')
+  const [selectedDevelopmentProject, setSelectedDevelopmentProject] = useState(null)
   const {
     numericUserId,
     publicIdDisplay,
@@ -713,6 +674,7 @@ function TestPage() {
     recentHistoryRows,
     historySections,
     historyLoading,
+    developmentHistoryError,
     subscriptionPlanLabel,
     cabinetSubscriptionTier,
     cabinetVipActive,
@@ -779,13 +741,6 @@ function TestPage() {
   const [countrySearchQuery, setCountrySearchQuery] = useState('')
   const [profileSaveAllLoading, setProfileSaveAllLoading] = useState(false)
   const [savePulseDismissed, setSavePulseDismissed] = useState(false)
-  const [isRecognizingPassport, setIsRecognizingPassport] = useState(false)
-  const [passportPhotoHints, setPassportPhotoHints] = useState([])
-  const [isSavingExtractPatch, setIsSavingExtractPatch] = useState(false)
-  const [showPassportRecognitionModal, setShowPassportRecognitionModal] = useState(false)
-  const [showPassportUploadSourceSheet, setShowPassportUploadSourceSheet] = useState(false)
-  const [passportRecognitionMode, setPassportRecognitionMode] = useState('confirm')
-  const [extractedPassportData, setExtractedPassportData] = useState(null)
   const [verificationStatus, setVerificationStatus] = useState(null)
   const [profileCompletionExpanded, setProfileCompletionExpanded] = useState(false)
   const [toastGuideStep, setToastGuideStep] = useState(0)
@@ -820,8 +775,6 @@ function TestPage() {
   const dataHydratedForSheetRef = useRef(false)
   const countryGeoTriedRef = useRef(false)
   const persistFieldRef = useRef(async () => {})
-  const passportInputRef = useRef(null)
-  const passportCameraInputRef = useRef(null)
   const countryFieldRef = useRef(null)
   const serviceTourTimerRef = useRef(null)
   const directionSummariesGridRef = useRef(null)
@@ -1075,9 +1028,6 @@ function TestPage() {
   const openProfileDataCelebration = useCallback(async ({ forceStatus = true } = {}) => {
     const status = forceStatus ? await loadVerificationStatus(true) : verificationStatus
     setProfileCelebrationKind(status?.isReady ? 'moderation' : 'saved')
-    setShowPassportRecognitionModal(false)
-    setPassportRecognitionMode('confirm')
-    setExtractedPassportData(null)
     setDataSheetOpen(false)
     setShowProfileCompleteCelebration(true)
   }, [loadVerificationStatus, verificationStatus])
@@ -1213,12 +1163,14 @@ function TestPage() {
 
   useEffect(() => {
     if (searchParams.get('history') !== '1') return
+    setHistoryInitialCategory(searchParams.get('history_category') === 'development' ? 'development' : 'all')
     setHistorySheetOpen(true)
     setDataSheetOpen(false)
     setSubscriptionSheetOpen(false)
     setBookingsSheetOpen(false)
     const next = new URLSearchParams(searchParams)
     next.delete('history')
+    next.delete('history_category')
     const qs = next.toString()
     navigate({ pathname: '/profile', search: qs ? `?${qs}` : '' }, { replace: true })
   }, [searchParams, navigate])
@@ -1663,145 +1615,6 @@ function TestPage() {
     [phoneCodeByCountryName, profileForm.phone, profileForm.country],
   )
 
-  const handlePassportRecognition = useCallback(
-    async (file) => {
-      const uid = numericUserId ?? getStoredNumericUserId()
-      if (!uid || !dbUserRowRef.current) {
-        showNotification(t('buyerData_waitProfileLoad'), 'error')
-        return
-      }
-
-      setIsRecognizingPassport(true)
-      setPassportPhotoHints([])
-      setExtractedPassportData(null)
-      setPassportRecognitionMode('confirm')
-      try {
-        const photoValidation = await validatePassportImageFile(file)
-        const hintKeys = photoValidation.hintKeys || photoValidation.hints || []
-        const localizedHints = hintKeys.map((key) => t(key, { defaultValue: key }))
-        setPassportPhotoHints(localizedHints)
-        if (photoValidation.shouldBlock) {
-          throw new Error(localizedHints[0] || t('buyerData_passportPhotoQuality'))
-        }
-
-        const dataUrl = await readFileAsDataUrl(file)
-        const response = await fetch(`${API_BASE_URL}/passport/extract`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            imageBase64: dataUrl,
-            mimeType: file.type || 'image/jpeg',
-          }),
-        })
-
-        const result = await response.json().catch(() => null)
-        if (!response.ok || !result?.success || !result?.data) {
-          if (result?.code === 'NOT_PASSPORT') {
-            setPassportRecognitionMode('not-document')
-            setShowPassportRecognitionModal(true)
-            return
-          }
-          if (result?.code === 'EMPTY_FIELDS') {
-            setPassportRecognitionMode('unreadable')
-            setShowPassportRecognitionModal(true)
-            return
-          }
-          throw new Error(result?.error || t('buyerData_passportExtractFailed'))
-        }
-
-        setPassportRecognitionMode('confirm')
-        setExtractedPassportData(result.data)
-        setShowPassportRecognitionModal(true)
-      } catch (error) {
-        console.error('Passport recognition error:', error)
-        showNotification(error.message || t('buyerData_passportRecognizeFailed'), 'error')
-        setExtractedPassportData(null)
-      } finally {
-        setIsRecognizingPassport(false)
-      }
-    },
-    [numericUserId, t],
-  )
-
-  const handlePassportRecognitionConfirm = useCallback(
-    async (extracted) => {
-      const uid = numericUserId ?? getStoredNumericUserId()
-      if (!uid || !dbUserRowRef.current) {
-        showNotification(t('buyerData_waitProfileLoad'), 'error')
-        return
-      }
-
-      const body = extractedPassportDataToApiPayload(extracted)
-      if (Object.keys(body).length === 0) {
-        showNotification(t('buyerData_passportFieldsEmpty'), 'info')
-        setShowPassportRecognitionModal(false)
-        setExtractedPassportData(null)
-        return
-      }
-
-      setProfileForm((prev) => mergeExtractedPassportIntoProfileForm(prev, extracted))
-      setIsSavingExtractPatch(true)
-
-      try {
-        const userRes = await fetch(`${API_BASE_URL}/users/${uid}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        })
-        const json = await userRes.json().catch(() => ({}))
-
-        if (!userRes.ok || !json.success || !json.data) {
-          throw new Error(json.error || t('buyerData_passportSaveFailed'))
-        }
-
-        setDbUserRow(json.data)
-        setProfileForm(buildProfileFormFromRow(json.data, user, email))
-        setProfileFieldSavedOk((prev) => {
-          const next = { ...prev }
-          for (const apiKey of Object.keys(body)) {
-            const fieldKey = apiKey === 'phone_number' ? 'phone' : apiKey
-            if (PROFILE_FIELDS_META.some((f) => f.key === fieldKey)) {
-              next[fieldKey] = true
-            }
-          }
-          return next
-        })
-        invalidateUserByIdCache(API_BASE_URL, uid)
-        invalidateVerificationStatusCache(API_BASE_URL, uid)
-        await openProfileDataCelebration({ forceStatus: true })
-      } catch (e) {
-        showNotification(e.message || t('buyerData_saveError'), 'error')
-        const row = dbUserRowRef.current
-        if (row) setProfileForm(buildProfileFormFromRow(row, user, email))
-      } finally {
-        setIsSavingExtractPatch(false)
-      }
-    },
-    [numericUserId, user, email, openProfileDataCelebration, t],
-  )
-
-  const handlePassportRecognitionReject = useCallback(() => {
-    setShowPassportRecognitionModal(false)
-    setPassportRecognitionMode('confirm')
-    setExtractedPassportData(null)
-    setPassportPhotoHints([])
-  }, [])
-
-  const handlePassportRecognitionRetry = useCallback(() => {
-    setShowPassportRecognitionModal(false)
-    setPassportRecognitionMode('confirm')
-    setExtractedPassportData(null)
-    setPassportPhotoHints([])
-    window.requestAnimationFrame(() => {
-      setShowPassportUploadSourceSheet(true)
-    })
-  }, [])
-
-  const profileFieldsLocked = isRecognizingPassport || isSavingExtractPatch
-  const openPassportUploadSource = useCallback(() => {
-    if (isRecognizingPassport || isSavingExtractPatch) return
-    setShowPassportUploadSourceSheet(true)
-  }, [isRecognizingPassport, isSavingExtractPatch])
   const isProfileFullyCompleted = PROFILE_FIELDS_META.every((f) =>
     isProfileFieldFilledFromFormOnly(f.key, completionFormMerged),
   )
@@ -1882,14 +1695,13 @@ function TestPage() {
   const shouldPulseSaveButton =
     dataSheetOpen &&
     !dbUserLoading &&
-    !profileFieldsLocked &&
     !profileSaveAllLoading &&
     !savePulseDismissed &&
     isProfileFullyCompleted
 
   /** Явное «Сохранить»: проверка всех полей, один PUT на сервер, модалка «Поздравляем». */
   const handleProfilePanelSaveClick = useCallback(async () => {
-    if (profileFieldsLocked || profileSaveAllLoading) return
+    if (profileSaveAllLoading) return
     const form = completionFormMerged
     const missing = PROFILE_FIELDS_META.filter((f) => !isProfileFieldFilledFromFormOnly(f.key, form))
     if (missing.length > 0) {
@@ -1998,7 +1810,6 @@ function TestPage() {
       setProfileSaveAllLoading(false)
     }
   }, [
-    profileFieldsLocked,
     profileSaveAllLoading,
     completionFormMerged,
     t,
@@ -3148,28 +2959,6 @@ function TestPage() {
         </div>
       </div>
 
-      <PassportRecognitionModal
-        isOpen={showPassportRecognitionModal}
-        mode={passportRecognitionMode}
-        onClose={handlePassportRecognitionReject}
-        onReject={handlePassportRecognitionReject}
-        onRetry={handlePassportRecognitionRetry}
-        onConfirm={handlePassportRecognitionConfirm}
-        extractedData={extractedPassportData}
-        isSaving={isSavingExtractPatch}
-      />
-
-      <PassportUploadSourceSheet
-        isOpen={showPassportUploadSourceSheet}
-        onClose={() => setShowPassportUploadSourceSheet(false)}
-        busy={isRecognizingPassport || isSavingExtractPatch}
-        onPickGallery={() => passportInputRef.current?.click()}
-        onPickCamera={() => passportCameraInputRef.current?.click()}
-        onPickFile={handlePassportRecognition}
-      />
-
-
-
       <BuyerSheetShell
         isOpen={legalSheetOpen}
         onClose={() => setLegalSheetOpen(false)}
@@ -3277,31 +3066,40 @@ function TestPage() {
         closeLabel={t('buyerCabinet_collapse')}
         className="profile-cabinet-sheet profile-cabinet-sheet--data"
         footer={
-          dataSheetOpen && dataSheetStep === 'review' ? (
+          dataSheetOpen ? (
             <div className="test-data-panel__step-nav test-data-panel__step-nav--footer">
-              <button
-                type="button"
-                className="test-data-panel__step-back"
-                onClick={() => setDataSheetStep('documents')}
-                aria-label={t('buyerData_sectionPassportAndId')}
-              >
-                <FiArrowLeft size={20} strokeWidth={2.4} aria-hidden />
-              </button>
-              <button
-                type="button"
-                className={`test-data-panel__save${
-                  shouldPulseSaveButton ? ' test-data-panel__save--pulse' : ''
-                }`}
-                onClick={handleProfilePanelSaveClick}
-                disabled={
-                  dbUserLoading ||
-                  !resolvedNumericUserId ||
-                  profileFieldsLocked ||
-                  profileSaveAllLoading
-                }
-              >
-                {profileSaveAllLoading ? t('buyerData_saveInProgress') : t('buyerData_save')}
-              </button>
+              {dataSheetStep !== 'contacts' ? (
+                <button
+                  type="button"
+                  className="test-data-panel__step-back"
+                  onClick={() => setDataSheetStep(dataSheetStep === 'review' ? 'documents' : 'contacts')}
+                  aria-label={t(dataSheetStep === 'review' ? 'buyerData_sectionPassportAndId' : 'buyerData_sectionContacts')}
+                >
+                  <FiArrowLeft size={20} strokeWidth={2.4} aria-hidden />
+                </button>
+              ) : null}
+              {dataSheetStep === 'review' ? (
+                <button
+                  type="button"
+                  className={`test-data-panel__save${
+                    shouldPulseSaveButton ? ' test-data-panel__save--pulse' : ''
+                  }`}
+                  onClick={handleProfilePanelSaveClick}
+                  disabled={dbUserLoading || !resolvedNumericUserId || profileSaveAllLoading}
+                >
+                  {profileSaveAllLoading ? t('buyerData_saveInProgress') : t('buyerData_save')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="test-data-panel__step-next"
+                  onClick={() => setDataSheetStep(dataSheetStep === 'contacts' ? 'documents' : 'review')}
+                  disabled={dbUserLoading}
+                >
+                  {t('buyerCabinet_next')}
+                  <FiArrowRight size={16} aria-hidden />
+                </button>
+              )}
             </div>
           ) : null
         }
@@ -3403,7 +3201,6 @@ function TestPage() {
                                   variant="split"
                                   autoDetectCountry
                                   value={profileForm.phone || ''}
-                                  disabled={profileFieldsLocked}
                                   placeholder={t('buyerData_labelPhone')}
                                   onChange={handleProfileChange('phone')}
                                   onBlur={handleProfileBlur('phone')}
@@ -3423,7 +3220,6 @@ function TestPage() {
                                       setCountryDropdownOpen((prev) => !prev)
                                       setCountrySearchQuery('')
                                     }}
-                                    disabled={profileFieldsLocked}
                                     aria-haspopup="listbox"
                                     aria-expanded={countryDropdownOpen}
                                   >
@@ -3487,7 +3283,6 @@ function TestPage() {
                                   onBlur={handleProfileBlur(key)}
                                   autoComplete={autoComplete}
                                   spellCheck={false}
-                                  disabled={profileFieldsLocked}
                                   placeholder={t(PROFILE_FIELD_I18N[key] || labelKey)}
                                 />
                               ) : (
@@ -3500,7 +3295,6 @@ function TestPage() {
                                   onBlur={handleProfileBlur(key)}
                                   autoComplete={autoComplete}
                                   spellCheck={false}
-                                  disabled={profileFieldsLocked}
                                   placeholder={t(PROFILE_FIELD_I18N[key] || labelKey)}
                                 />
                               )}
@@ -3524,16 +3318,6 @@ function TestPage() {
                           </article>
                         ))}
                       </div>
-                      <div className="test-data-panel__step-nav">
-                        <button
-                          type="button"
-                          className="test-data-panel__step-next"
-                          onClick={() => setDataSheetStep('documents')}
-                        >
-                          {t('buyerCabinet_next')}
-                          <FiArrowRight size={16} aria-hidden />
-                        </button>
-                      </div>
                     </section>
                     ) : null}
 
@@ -3546,76 +3330,6 @@ function TestPage() {
                         {t('buyerData_sectionPassportAndId')}
                       </h4>
                       <div className="test-data-blocks">
-                        <article className="test-data-block test-data-block--scan">
-                          <button
-                            type="button"
-                            className="test-passport-ocr-card"
-                            disabled={profileFieldsLocked || isRecognizingPassport || isSavingExtractPatch}
-                            onClick={openPassportUploadSource}
-                          >
-                            <img
-                              className="test-passport-ocr-card__image"
-                              src="/images/profile/passport-scan-illustration.png"
-                              alt=""
-                              decoding="async"
-                            />
-                            <span className="test-passport-ocr-card__copy">
-                              <strong>
-                                {isRecognizingPassport
-                                  ? t('buyerData_recognizing')
-                                  : isSavingExtractPatch
-                                    ? t('buyerData_saveInProgress')
-                                    : t('buyerData_recognizePassport')}
-                              </strong>
-                              <span>{t('buyerData_passportRecognizeHint')}</span>
-                              <span className="test-passport-ocr-card__cta">
-                                {isRecognizingPassport || isSavingExtractPatch ? (
-                                  <span className="test-spinner" />
-                                ) : (
-                                  <FiCamera size={16} strokeWidth={2.2} aria-hidden />
-                                )}
-                                {t('buyerData_passportScanCta')}
-                              </span>
-                            </span>
-                          </button>
-                          <input
-                            ref={passportInputRef}
-                            type="file"
-                            accept="image/*"
-                            className="test-passport-file-input"
-                            aria-hidden
-                            tabIndex={-1}
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0]
-                              if (!file) return
-                              await handlePassportRecognition(file)
-                              e.target.value = ''
-                            }}
-                          />
-                          <input
-                            ref={passportCameraInputRef}
-                            type="file"
-                            accept="image/*"
-                            capture="environment"
-                            className="test-passport-file-input"
-                            aria-hidden
-                            tabIndex={-1}
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0]
-                              if (!file) return
-                              await handlePassportRecognition(file)
-                              e.target.value = ''
-                            }}
-                          />
-                          {passportPhotoHints.length > 0 && (
-                            <div className="test-passport-hints" role="status" aria-live="polite">
-                              {passportPhotoHints.map((hint, idx) => (
-                                <p key={`${hint}-${idx}`}>{hint}</p>
-                              ))}
-                            </div>
-                          )}
-                        </article>
-
                         <article className="test-data-block">
                           <div
                             className={`test-data-panel__grid test-data-panel__grid--passport${
@@ -3655,7 +3369,6 @@ function TestPage() {
                                 onBlur={handleProfileBlur(key)}
                                 autoComplete={autoComplete}
                                 spellCheck={false}
-                                disabled={profileFieldsLocked}
                                 placeholder={
                                   key === 'identification_number'
                                     ? t(getIdentificationLabelKeyByCountry(profileForm.country))
@@ -3679,24 +3392,6 @@ function TestPage() {
                         ))}
                           </div>
                         </article>
-                      </div>
-                      <div className="test-data-panel__step-nav">
-                        <button
-                          type="button"
-                          className="test-data-panel__step-back"
-                          onClick={() => setDataSheetStep('contacts')}
-                          aria-label={t('buyerData_sectionContacts')}
-                        >
-                          <FiArrowLeft size={20} strokeWidth={2.4} aria-hidden />
-                        </button>
-                        <button
-                          type="button"
-                          className="test-data-panel__step-next"
-                          onClick={() => setDataSheetStep('review')}
-                        >
-                          {t('buyerCabinet_next')}
-                          <FiArrowRight size={16} aria-hidden />
-                        </button>
                       </div>
                     </section>
                     ) : null}
@@ -3777,7 +3472,13 @@ function TestPage() {
           <ProfileHistoryExperience
             embedded
             sections={historySections}
+            initialCategory={historyInitialCategory}
             loading={historyLoading}
+            developmentError={developmentHistoryError}
+            onOpenDevelopment={(item) => {
+              setHistorySheetOpen(false)
+              setSelectedDevelopmentProject(item.development)
+            }}
             query={historySearchQuery}
             onQueryChange={setHistorySearchQuery}
             onClose={() => setHistorySheetOpen(false)}
@@ -3790,6 +3491,13 @@ function TestPage() {
           />
         </Suspense>
       </BuyerSheetShell>
+
+      {selectedDevelopmentProject && <Suspense fallback={null}>
+        <DevelopmentInvestmentDetailDrawer investment={selectedDevelopmentProject} onClose={() => {
+          setSelectedDevelopmentProject(null)
+          setHistorySheetOpen(true)
+        }} />
+      </Suspense>}
 
       <BuyerSheetShell
         isOpen={subscriptionSheetOpen}

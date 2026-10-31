@@ -2,6 +2,7 @@ export const PROPERTY_AI_CATEGORIES = Object.freeze({
   risks: 'What are the main strengths and risks of this property?',
   investment: 'What is the investment potential of this property?',
   details: 'Provide a detailed review of this property.',
+  presentation: 'Create a property presentation with features, benefits, amenities, location, sale conditions and payment steps.',
   custom: '',
 })
 
@@ -46,7 +47,10 @@ export function normalizePropertyAiRequest(input = {}) {
     throw new Error('Custom question must be at least 5 characters')
   }
 
-  return { category, question }
+  const language = ['ru', 'en', 'de', 'es', 'fr', 'pl', 'sv'].includes(input.language) ? input.language : 'en'
+  return category === 'presentation'
+    ? { category, question: `[${language}] ${question}`, language }
+    : { category, question }
 }
 
 function normalizeMetrics(metrics) {
@@ -327,5 +331,12 @@ export function parsePropertyAiModelContent(content, context = {}) {
     if (!match) throw new Error('AI returned a response in an unsupported format')
     parsed = JSON.parse(match[0])
   }
-  return normalizePropertyAiReport(parsed, context)
+  const report = normalizePropertyAiReport(parsed, context)
+  if (context.category === 'presentation') {
+    // The brochure prompt provides localized strengths/checks. Do not append
+    // English analytical-report defaults to the localized chat response.
+    report.strengths = cleanList(parsed.strengths, 6, 260)
+    report.risks = cleanList(parsed.risks, 6, 260)
+  }
+  return report
 }

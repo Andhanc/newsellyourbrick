@@ -485,3 +485,7 @@
     transition: none;
   }
 }
+
+.profile-history-list-card__stage { display: inline-flex; align-self: flex-start; padding: 5px 8px; margin: 5px 0 2px; border-radius: 7px; background: #e6f8f9; color: #087782; font-size: 10px; line-height: 1.4; font-weight: 650; }
+.profile-history-development-error { padding: 14px; margin: 14px 0; border-radius: 14px; background: #fff4ef; color: #9c4536; font-size: 12px; line-height: 1.5; }
+.profile-history-development-error button { min-height: 40px; padding: 10px 14px; border: 0; border-radius: 10px; background: #fff; color: #152f33; font: inherit; font-weight: 650; cursor: pointer; }

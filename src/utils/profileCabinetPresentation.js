@@ -55,8 +55,10 @@ export function buildProfileHistoryDashboard(historySections = []) {
     properties: purchased.filter((item) => !item?.isDebt),
     shares: source.get('shares') || [],
     debts: purchased.filter((item) => Boolean(item?.isDebt)),
+    development: source.get('development') || [],
   }
-  const categories = HISTORY_CATEGORY_DEFS.map((definition) => ({
+  const definitions = itemsByCategory.development.length ? [...HISTORY_CATEGORY_DEFS, { key: 'development', title: 'DEVELOP', chipTitle: 'DEVELOP', eyebrow: 'DEVELOP' }] : HISTORY_CATEGORY_DEFS
+  const categories = definitions.map((definition) => ({
     ...definition,
     items: itemsByCategory[definition.key],
     count: itemsByCategory[definition.key].length,
@@ -80,7 +82,8 @@ export function buildProfileHistoryDashboard(historySections = []) {
       purchases:
         itemsByCategory.properties.length +
         itemsByCategory.shares.length +
-        itemsByCategory.debts.length,
+        itemsByCategory.debts.length +
+        itemsByCategory.development.length,
       investedByCurrency,
     },
   }

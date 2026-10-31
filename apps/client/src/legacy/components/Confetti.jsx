@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import './Confetti.css'
 
-const Confetti = ({ className = '', count = 200, minSize = 10, maxSize = 26, loop = false, spreadOnMount = false }) => {
+const DEFAULT_COLORS = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#f5576c', '#fa709a', '#fee140', '#ff6b6b', '#4ecdc4', '#ffe66d', '#a8e6cf']
+
+const Confetti = ({ className = '', count = 200, minSize = 10, maxSize = 26, loop = false, spreadOnMount = false, colors = DEFAULT_COLORS }) => {
   const [confetti, setConfetti] = useState([])
 
   useEffect(() => {
     // Создаем больше конфетти для более красивого эффекта
-    const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#f5576c', '#fa709a', '#fee140', '#ff6b6b', '#4ecdc4', '#ffe66d', '#a8e6cf']
     const newConfetti = []
 
     for (let i = 0; i < count; i++) {
@@ -24,7 +25,7 @@ const Confetti = ({ className = '', count = 200, minSize = 10, maxSize = 26, loo
     }
 
     setConfetti(newConfetti)
-  }, [count, minSize, maxSize, spreadOnMount])
+  }, [count, minSize, maxSize, spreadOnMount, colors])
 
   return (
     <div className={`confetti-container${className ? ` ${className}` : ''}`} aria-hidden="true">

@@ -7,7 +7,7 @@ const css = readFileSync(new URL('./MobileDiscoverPage.css', import.meta.url), '
 
 test('feature cards retain the four approved destinations after upstream strategy updates', () => {
   const start = jsx.indexOf('function getSaleCards(t)')
-  const end = jsx.indexOf('const WHEEL_THRESHOLD', start)
+  const end = jsx.indexOf('function prefersReducedMotion()', start)
   const cards = new Function('t', 'publicAsset', 'TEST_DRIVE_PATH', `${jsx.slice(start, end)}; return getSaleCards(t)`)(key => key, path => path, '/test-drive')
   assert.deepEqual(cards.map(card => card.id), ['map', 'investor', 'vip', 'test_drive'])
   assert.deepEqual(cards.map(card => card.to), ['/map', '/calculator', '/private-club', '/test-drive'])

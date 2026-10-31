@@ -11,8 +11,9 @@ import {
   userExistsForPropertyAi,
 } from './database/propertyAiReportsPrisma.js'
 import { normalizePropertyAiRequest } from './services/propertyAiReportContract.js'
-import { PROPERTY_AI_PDF_TEMPLATE_VERSION, PROPERTY_AI_REPORT_MODEL, runPropertyAiGeneration } from './services/propertyAiGenerate.js'
+import { PROPERTY_AI_PDF_TEMPLATE_VERSION, PROPERTY_AI_REPORT_MODEL, getPropertyPresentationModel, runPropertyAiGeneration } from './services/propertyAiGenerate.js'
 import { normalizePropertyAiImages } from './services/propertyAiImages.js'
+import { PROPERTY_PRESENTATION_VERSION, propertyPresentationCacheModel } from './services/propertyPresentation.js'
 
 const ALLOWED_PROPERTY_TABLES = ['properties', 'properties_apartments', 'properties_houses']
 
@@ -85,6 +86,9 @@ export function registerPropertyAiRoutes(app) {
       const request = normalizePropertyAiRequest(req.body)
       const property = await loadProperty(propertyId, req.body?.property_table)
       if (!property) return res.status(404).json({ detail: 'Property not found.' })
+      const model = request.category === 'presentation'
+        ? propertyPresentationCacheModel(getPropertyPresentationModel(), property, request.language)
+        : PROPERTY_AI_REPORT_MODEL
 
       const conversation = await ensurePropertyAiConversation({
         userId: req.propertyAiUserId,
@@ -96,7 +100,7 @@ export function registerPropertyAiRoutes(app) {
         conversationId: conversation.id,
         category: request.category,
         question: request.question,
-        model: PROPERTY_AI_REPORT_MODEL,
+        model,
       })
       if (reusable) return res.status(200).json({ success: true, reused: true, data: reusable })
 
@@ -104,7 +108,7 @@ export function registerPropertyAiRoutes(app) {
         conversationId: conversation.id,
         category: request.category,
         question: request.question,
-        model: PROPERTY_AI_REPORT_MODEL,
+        model,
       })
       await appendPropertyAiMessage({
         conversationId: conversation.id,
@@ -120,6 +124,7 @@ export function registerPropertyAiRoutes(app) {
           conversationId: conversation.id,
           category: request.category,
           question: request.question,
+          language: request.language,
           property,
         }).catch((error) => console.error(`[property-ai/report/${report.id}]`, error))
       })
@@ -157,8 +162,9 @@ export function registerPropertyAiRoutes(app) {
 
       const disposition = req.query.download === '1' ? 'attachment' : 'inline'
       res.setHeader('Content-Type', 'application/pdf')
-      res.setHeader('Content-Disposition', `${disposition}; filename="property-ai-report-${report.id}-tiffany-v2.pdf"`)
-      res.setHeader('X-Property-AI-Template', PROPERTY_AI_PDF_TEMPLATE_VERSION)
+      const filename = report.category === 'presentation' ? `SellYourBrick-property-${report.report?.propertyId || report.id}-presentation.pdf` : `property-ai-report-${report.id}-tiffany-v2.pdf`
+      res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`)
+      res.setHeader('X-Property-AI-Template', report.category === 'presentation' ? PROPERTY_PRESENTATION_VERSION : PROPERTY_AI_PDF_TEMPLATE_VERSION)
       res.setHeader('Cache-Control', 'private, no-store, max-age=0')
       res.send(Buffer.from(report.pdfData))
     } catch (error) {

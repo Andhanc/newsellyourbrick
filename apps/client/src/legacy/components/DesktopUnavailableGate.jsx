@@ -5,7 +5,7 @@ import {
   shouldBlockDesktopForPath,
 } from '../utils/softLaunchAccess'
 
-const FeatureUnavailablePage = lazy(() => import('./FeatureUnavailablePage'))
+const DesktopUnavailablePage = lazy(() => import('./DesktopUnavailablePage'))
 
 function useIsDesktopViewport(minWidth = MOBILE_ONLY_MIN_DESKTOP_WIDTH) {
   const [isDesktop, setIsDesktop] = useState(() => {
@@ -35,7 +35,7 @@ export default function DesktopUnavailableGate({ children }) {
   if (isDesktop && shouldBlockDesktopForPath(pathname)) {
     return (
       <Suspense fallback={null}>
-        <FeatureUnavailablePage variant="desktop" />
+        <DesktopUnavailablePage />
       </Suspense>
     )
   }

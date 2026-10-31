@@ -1,0 +1,628 @@
+.auction-bid-drawer:has(.dev-invest) {
+  --invest-tiffany: #63cdd4;
+  --invest-ink: #162f33;
+  color: var(--invest-ink);
+}
+.auction-bid-drawer:has(.dev-invest) .auction-bid-drawer__panel {
+  background: var(--invest-tiffany);
+}
+.auction-bid-drawer:has(.dev-invest) .auction-bid-drawer__close {
+  box-shadow: none;
+  color: var(--invest-ink);
+}
+.dev-invest {
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--site-font-family, 'Montserrat', sans-serif);
+  color: var(--invest-ink);
+}
+.dev-invest *,
+.dev-invest *::before,
+.dev-invest *::after {
+  box-sizing: border-box;
+}
+.dev-invest button,
+.dev-invest input {
+  font: inherit;
+}
+.dev-invest button {
+  cursor: pointer;
+}
+.dev-invest button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.dev-invest :is(button, input, a):focus-visible {
+  outline: 3px solid #006b76;
+  outline-offset: 4px;
+}
+.dev-invest__heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 80px;
+  padding: max(22px, env(safe-area-inset-top)) 20px 18px 74px;
+}
+.dev-invest__heading h2 {
+  margin: 0;
+  font-size: clamp(22px, 6vw, 28px);
+  font-weight: 750;
+  letter-spacing: -0.05em;
+}
+.dev-invest__heading > span {
+  display: none;
+}
+.dev-invest__hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  flex-shrink: 0;
+  margin: 0 16px 20px;
+  padding: 22px 20px 20px;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 8px 30px #22666b0d;
+}
+.dev-invest__hero-copy {
+  position: relative;
+  z-index: 2;
+  width: 58%;
+  min-height: 160px;
+}
+.dev-invest__eyebrow {
+  display: block;
+  max-width: 160px;
+  margin-bottom: 8px;
+  color: #687e80;
+  font-size: 11px;
+  font-weight: 500;
+}
+.dev-invest__hero h3 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.16;
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
+}
+.dev-invest__percent {
+  display: block;
+  margin-top: 20px;
+  font-size: 48px;
+  line-height: 1;
+  font-weight: 650;
+  letter-spacing: -0.065em;
+  font-variant-numeric: tabular-nums;
+}
+.dev-invest__percent > span {
+  font-size: 0.65em;
+  padding-left: 2px;
+}
+.dev-invest__villa {
+  position: absolute;
+  z-index: 1;
+  width: 210px;
+  height: 190px;
+  object-fit: contain;
+  right: -8px;
+  top: 12px;
+  pointer-events: none;
+}
+.dev-invest__progress {
+  position: relative;
+  z-index: 3;
+  height: 13px;
+  overflow: hidden;
+  border-radius: 30px;
+  background: #e8eeee;
+}
+.dev-invest__progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #079aa7;
+  transition: width 450ms ease;
+}
+.dev-invest__totals {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 13px 0 0;
+}
+.dev-invest__totals > div:last-child {
+  text-align: right;
+}
+.dev-invest__totals dt {
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: #687e80;
+}
+.dev-invest__totals dd {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 750;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+.dev-invest__sheet {
+  flex: 1;
+  min-height: 360px;
+  padding: 18px 22px max(24px, env(safe-area-inset-bottom));
+  border-radius: 32px 32px 0 0;
+  background: #fff;
+}
+.dev-invest__tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 5px;
+  border-radius: 17px;
+  background: #f0f4f4;
+  gap: 5px;
+}
+.dev-invest__tabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 43px;
+  border: 0;
+  border-radius: 13px;
+  background: transparent;
+  color: #111;
+  font-size: 13px;
+  font-weight: 650;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.dev-invest__tabs button[aria-selected='true'] {
+  color: #fff;
+  background: #111;
+  box-shadow: 0 2px 4px #11111112;
+}
+.dev-invest__tabs button > span {
+  font-size: 10px;
+  border-radius: 8px;
+  min-width: 18px;
+  padding: 2px 4px;
+  background: #ffffff26;
+}
+.dev-invest__content {
+  padding-top: 25px;
+  animation: dev-invest-fade 0.24s ease both;
+}
+.dev-invest__content form {
+  margin: 0;
+}
+.dev-invest__intro h3 {
+  max-width: 280px;
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 750;
+  line-height: 1.12;
+  letter-spacing: -0.045em;
+}
+.dev-invest__intro p {
+  margin: 0 0 24px;
+  color: #697e80;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.dev-invest__amount-label {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.dev-invest__amount {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 12px 16px;
+  border: 1.5px solid #dfebec;
+  border-radius: 14px;
+  background: #f8fbfb;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.dev-invest__amount:focus-within {
+  border-color: #079aa7;
+  box-shadow: 0 0 0 3px #63cdd426;
+}
+.dev-invest__amount--error {
+  border-color: #bf4134;
+}
+.dev-invest__amount > span {
+  color: #749396;
+  font-size: 22px;
+  font-weight: 450;
+}
+.dev-invest__amount input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--invest-ink);
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  font-size: 26px;
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+}
+.dev-invest__amount input::placeholder {
+  color: #b4c7c9;
+}
+.dev-invest__amount input:focus-visible {
+  outline: none;
+}
+.dev-invest__share {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 13px;
+  font-size: 12px;
+}
+.dev-invest__share strong {
+  padding: 6px 10px;
+  color: #006a73;
+  background: #e7f8f8;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.dev-invest__remaining {
+  margin: 10px 0 20px;
+  font-size: 11px;
+  line-height: 1.55;
+  color: #697e80;
+}
+.dev-invest__wallet {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 14px 0;
+  margin-top: 16px;
+  border: 0;
+  border-top: 1px solid #e3ecec;
+  border-radius: 0;
+  cursor: pointer;
+}
+.dev-invest__wallet:has(input:disabled) {
+  cursor: default;
+}
+.dev-invest__wallet > svg {
+  color: #087c86;
+  flex-shrink: 0;
+}
+.dev-invest__wallet > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.dev-invest__wallet strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 650;
+}
+.dev-invest__wallet small {
+  display: block;
+  margin-top: 5px;
+  color: #687e80;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.dev-invest__wallet input {
+  position: absolute;
+  right: 0;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  cursor: inherit;
+  opacity: 0;
+}
+.dev-invest__wallet:has(input:focus-visible) {
+  outline: 3px solid #006b76;
+  outline-offset: 3px;
+}
+.dev-invest__switch {
+  position: relative;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 26px;
+  border-radius: 999px;
+  background: #dbe4e5;
+  pointer-events: none;
+  transition: background 0.2s ease;
+}
+.dev-invest__switch::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px #162f3326;
+  transition: transform 0.2s ease;
+}
+.is-checked .dev-invest__switch {
+  background: #0099a9;
+}
+.is-checked .dev-invest__switch::after {
+  transform: translateX(18px);
+}
+.dev-invest__wallet input:disabled + .dev-invest__switch {
+  opacity: 0.45;
+}
+.dev-invest__payment {
+  display: grid;
+  gap: 9px;
+  padding: 16px 2px 0;
+  margin: 0;
+  font-size: 12px;
+}
+.dev-invest__payment > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.dev-invest__payment dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #697e80;
+}
+.dev-invest__payment dd {
+  margin: 0;
+  font-weight: 650;
+}
+.dev-invest__button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  margin-top: 22px;
+  padding: 15px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--invest-tiffany);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 750;
+  transition:
+    filter 0.2s,
+    transform 0.2s;
+}
+.dev-invest .dev-invest__button {
+  font-size: 15px;
+  font-weight: 750;
+}
+.dev-invest__button:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+.dev-invest__button:active:not(:disabled) {
+  transform: scale(0.985);
+}
+.dev-invest__payment-note {
+  margin: 13px 0 0;
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.65;
+  color: #697e80;
+}
+.dev-invest__error {
+  padding: 12px 14px;
+  margin: 16px 0;
+  border-radius: 12px;
+  background: #fff2f0;
+  color: #aa3b2f;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.dev-invest__list-head {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 4px 12px;
+  color: #789093;
+  font-size: 10px;
+}
+.dev-invest__list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.dev-invest__list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 17px 2px;
+  border-top: 1px solid #eaf0f0;
+}
+.dev-invest__flag {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: #f1f7f7;
+  font-size: 27px;
+}
+.dev-invest__identity {
+  flex: 1;
+}
+.dev-invest__identity strong {
+  font-size: 13px;
+  font-weight: 700;
+}
+.dev-invest__identity small {
+  display: block;
+  margin-top: 5px;
+  color: #789093;
+  font-size: 11px;
+}
+.dev-invest__ownership {
+  font-size: 23px;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.dev-invest__ownership span {
+  font-size: 14px;
+  color: #789093;
+  margin-left: 2px;
+}
+.dev-invest__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 6px 0 16px;
+}
+.dev-invest__empty img {
+  width: 220px;
+  height: 155px;
+  object-fit: contain;
+}
+.dev-invest__empty h4 {
+  margin: 12px 0 8px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.dev-invest__empty p {
+  max-width: 280px;
+  margin: 0;
+  font-size: 12px;
+  color: #697e80;
+  line-height: 1.6;
+}
+.dev-invest__wallet-link {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  color: #087884;
+  font-size: 12px;
+  text-decoration: none;
+}
+.dev-invest__retry {
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 18px;
+  background: #e7f8f8;
+  color: #006a73;
+}
+.dev-invest__spinner {
+  animation: dev-invest-spin 1s linear infinite;
+}
+@keyframes dev-invest-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes dev-invest-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (min-width: 769px) {
+  .auction-bid-drawer:has(.dev-invest) {
+    inset: 0 0 0 auto;
+    width: 480px;
+  }
+  .auction-bid-drawer:has(.dev-invest) .auction-bid-drawer__panel {
+    border-radius: 30px 0 0 30px;
+    overflow: hidden;
+    box-shadow: -16px 0 80px #163e4229;
+  }
+  .dev-invest__hero {
+    margin-inline: 24px;
+  }
+  .dev-invest__villa {
+    width: 260px;
+    right: -25px;
+  }
+  .dev-invest__sheet {
+    padding-inline: 30px;
+  }
+  .dev-invest__heading {
+    min-height: 86px;
+    padding-left: 78px;
+  }
+}
+@media (max-width: 350px) {
+  .dev-invest__hero {
+    padding-inline: 16px;
+    margin-inline: 12px;
+  }
+  .dev-invest__hero h3 {
+    font-size: 18px;
+  }
+  .dev-invest__villa {
+    right: -48px;
+    width: 195px;
+  }
+  .dev-invest__sheet {
+    padding-inline: 17px;
+  }
+  .dev-invest__totals dd {
+    font-size: 14px;
+  }
+  .dev-invest__heading h2 {
+    font-size: 21px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dev-invest *,
+  .dev-invest *::before {
+    transition: none !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+.dev-invest__submit-area {
+  position: sticky;
+  bottom: -24px;
+  z-index: 5;
+  margin: 12px -22px -24px;
+  padding: 12px 22px max(20px, env(safe-area-inset-bottom));
+  background: #fff;
+  border-top: 1px solid #f0f5f5;
+  box-shadow: 0 -10px 22px #ffffffed;
+}
+.dev-invest__submit-area .dev-invest__button {
+  margin-top: 0;
+}
+@media (min-width: 769px) {
+  .dev-invest__submit-area {
+    margin-inline: -30px;
+    padding-inline: 30px;
+  }
+}
+@media (max-width: 350px) {
+  .dev-invest__submit-area {
+    margin-inline: -17px;
+    padding-inline: 17px;
+  }
+}

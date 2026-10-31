@@ -201,17 +201,14 @@
 .deposit-picker__method-chevron {
   display: grid;
   place-items: center;
-  color: #94a3b8;
-}
-
-.deposit-picker__method--recommended .deposit-picker__method-chevron {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: #e2e8ee;
   color: #94a3b8;
 }
 
 .deposit-picker__method.is-selected .deposit-picker__method-chevron {
-  width: 25px;
-  height: 25px;
-  border-radius: 50%;
   background: var(--dp-tiffany);
   color: #fff;
 }

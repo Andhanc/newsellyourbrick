@@ -1,4 +1,4 @@
-/* Mobile Discover — two locked screens, white-jump between them */
+/* Mobile Discover — persistent screens switched under a white flash */
 
 /* Hide global layout footer; keep the one embedded under news/FAQ.
  * Scope to .app-layout so portaled manager/AI chat (.chat-widget on body) still shows. */
@@ -19,72 +19,10 @@
   background: #ffffff;
 }
 
-/* iPhone Safari Liquid Glass. Сплошной цвет на html/body и fixed-семплер
-   красят статус-бар и нижнюю панель непрозрачными полосами. На герое документ
-   чуть выше экрана и прокручен на runway: стекло компонует само небо и фото. */
-html.md-hero-chrome {
-  --md-safari-top: 64px;
-  --md-safari-bottom: 132px;
-  --md-safari-runway: var(--md-safari-top);
-  height: auto !important;
-  max-height: none !important;
-  overflow-x: hidden !important;
-  overflow-y: scroll !important;
-  overscroll-behavior: none;
-  background-color: var(--md-sky, #4ecdd6) !important;
-}
-
+/* Safari chrome stays transparent without a document scroll runway. */
+html.md-hero-chrome,
 html.md-hero-chrome body {
-  height: auto !important;
-  max-height: none !important;
-  min-height: calc(100dvh + var(--md-safari-runway));
-  overflow: visible !important;
-  background-color: var(--md-sky, #4ecdd6) !important;
-}
-
-html.md-hero-chrome #root,
-html.md-hero-chrome #root > *,
-html.md-hero-chrome .app-root-fill,
-html.md-hero-chrome .app-shell,
-html.md-hero-chrome .app-layout,
-html.md-hero-chrome .app-layout--mobile-discover,
-html.md-hero-chrome .app-layout__content,
-html.md-hero-chrome .md-discover-ai-floats {
-  display: block !important;
-  flex: none !important;
-  height: auto !important;
-  max-height: none !important;
-  min-height: 0 !important;
-  overflow: visible !important;
-  background-color: transparent !important;
-}
-
-html.md-hero-chrome .md {
-  height: 100dvh;
-  min-height: 100dvh;
-  margin-top: var(--md-safari-runway);
-  overflow: visible !important;
-  background: transparent !important;
-  touch-action: none;
-}
-
-html.md-hero-chrome .md-hero {
-  height: calc(100dvh + var(--md-safari-top) + var(--md-safari-bottom));
-  margin-top: calc(-1 * var(--md-safari-top));
-}
-
-html.md-hero-chrome .md-hero__copy {
-  padding-top: calc(clamp(5.25rem, 15vh, 7.5rem) + var(--md-safari-top));
-}
-
-html.md-hero-chrome .md-hero__visual {
-  top: calc(var(--md-safari-top) + 34dvh);
-  bottom: auto;
-  height: calc(66dvh + var(--md-safari-bottom));
-}
-
-html.md-hero-chrome .md-hero__scroll {
-  bottom: calc(1.25rem + var(--md-safe-bottom) + var(--md-safari-bottom));
+  background-color: #142c2d !important;
 }
 
 .md {
@@ -107,9 +45,10 @@ html.md-hero-chrome .md-hero__scroll {
   --site-color-accent-dark: var(--md-sky-deep);
 
   position: relative;
-  height: 100dvh;
+  height: 100svh;
   min-height: 100svh;
   overflow: hidden;
+  overscroll-behavior: none;
   /* Не tiffany: Chrome красит нижнюю панель в фон вкладки */
   background: #ffffff;
   color: var(--md-ink);
@@ -126,19 +65,16 @@ html.md-hero-chrome .md-hero__scroll {
   font-family: inherit;
 }
 
-.md--stage {
-  background: #ffffff;
-  overflow: hidden;
-}
-
-.md.is-flashing {
+/* No scroll position can expose parts of both screens. */
+.md--hero .md-stage,
+.md--stage .md-hero {
+  visibility: hidden;
   pointer-events: none;
 }
 
-/* ——— White jump veil ——— */
-
+/* A single opacity animation restores the flash without recreating media. */
 .md-flash {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 11000;
   pointer-events: none;
@@ -146,106 +82,94 @@ html.md-hero-chrome .md-hero__scroll {
   opacity: 0;
 }
 
-.md-flash.is-cover {
-  animation: md-flash-cover 0.14s ease-out both;
-}
-
-.md-flash.is-reveal {
-  animation: md-flash-reveal 0.48s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
 /* ——— Hero ——— */
 
 .md-hero {
-  position: relative;
+  position: absolute;
+  inset: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--md-sky);
+  touch-action: pan-x pinch-zoom;
+  background: #142c2d;
 }
 
-.md-hero__glow {
+.md-hero__brand {
   position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    120% 55% at 50% -8%,
-    rgba(255, 255, 255, 0.4) 0%,
-    rgba(255, 255, 255, 0.1) 40%,
-    transparent 68%
-  );
+  top: calc(clamp(2.5rem, 7.2svh, 4.5rem) + env(safe-area-inset-top, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: inline-flex;
+  align-items: baseline;
+  color: var(--md-white);
+  font-size: clamp(2.15rem, 11vw, 3rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.075em;
+  white-space: nowrap;
+  text-shadow: 0 3px 26px rgba(1, 10, 12, 0.3);
+}
+
+.md-hero__brand-accent {
+  margin: 0 0.04em;
+  padding: 0.02em 0.14em 0.055em;
+  border-radius: 0.24em;
+  background: linear-gradient(145deg, #7cdee2, #50bec8);
+  box-shadow: 0 8px 26px rgba(1, 10, 12, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.46);
 }
 
 .md-hero__copy {
-  position: relative;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 3;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  flex: 1 1 auto;
-  padding: clamp(5.25rem, 15vh, 7.5rem) clamp(0.95rem, 3.8vw, 1.35rem) 0;
-  color: var(--md-white);
-  container-type: inline-size;
-  container-name: md-hero-copy;
+  padding: 3.25rem 1.5rem calc(6rem + var(--md-safe-bottom));
+  border-radius: 50% 50% 0 0 / 3.5rem 3.5rem 0 0;
+  background: #f4faf9;
+  box-shadow: 0 -12px 48px rgba(5, 35, 38, 0.06);
+  color: #000000;
 }
 
 .md-hero__title {
   margin: 0;
-  display: block;
   width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
+  max-width: 24ch;
   text-align: center;
-  /* Large enough on phone; still fits «платформа недвижимости» on one line */
-  font-size: clamp(1.55rem, 5.8vw + 0.5rem, 2.4rem);
-  font-size: clamp(1.55rem, 7.25cqi, 2.4rem);
-  font-weight: var(--md-heading-weight);
-  line-height: 1.1;
-  letter-spacing: -0.025em;
-  text-shadow: 0 10px 32px rgba(12, 90, 100, 0.18);
-  animation: md-fade-up 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+  font-size: clamp(1.35rem, 6.2vw, 1.65rem);
+  font-weight: 700;
+  line-height: 1.14;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.md-hero__title-main,
+.md-hero__title-accent {
+  display: block;
 }
 
 .md-hero__lead {
-  margin: 1.05rem 0 0;
-  max-width: min(28ch, 100%);
-  font-size: clamp(0.95rem, 3.4vw, 1.1rem);
-  font-weight: 500;
-  line-height: 1.45;
-  color: rgba(255, 255, 255, 0.92);
-  animation: md-fade-up 0.75s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+  margin: 0.9rem 0 0;
+  max-width: min(34ch, 100%);
+  font-size: clamp(0.8rem, 3.4vw, 0.925rem);
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: 0;
+  color: #000000;
   text-wrap: pretty;
 }
 
 .md-hero__visual {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: calc(-1 * (var(--md-safe-bottom) + 96px));
+  inset: 0;
   z-index: 1;
-  height: calc(66% + var(--md-safe-bottom) + 96px);
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(0, 0, 0, 0.06) 10%,
-    rgba(0, 0, 0, 0.28) 24%,
-    rgba(0, 0, 0, 0.65) 42%,
-    #000 58%,
-    #000 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(0, 0, 0, 0.06) 10%,
-    rgba(0, 0, 0, 0.28) 24%,
-    rgba(0, 0, 0, 0.65) 42%,
-    #000 58%,
-    #000 100%
-  );
 }
 
 /* Пустые fixed-кромки: Safari 26 берёт tint с background-color у края.
@@ -266,15 +190,15 @@ html.md-hero-chrome .md-hero__scroll {
   bottom: auto;
 }
 
-.md-hero__image {
+.md-hero__video {
   position: absolute;
   inset: 0;
   width: 100%;
-  height: 120%;
+  height: 100%;
   object-fit: cover;
-  object-position: center 42%;
-  filter: saturate(1.06) hue-rotate(-6deg) brightness(1.03);
-  animation: md-fade-up 1s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+  object-position: center;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .md-hero__veil {
@@ -282,62 +206,89 @@ html.md-hero-chrome .md-hero__scroll {
   inset: 0;
   background: linear-gradient(
     180deg,
-    var(--md-sky) 0%,
-    rgba(78, 205, 214, 0.95) 14%,
-    rgba(78, 205, 214, 0.58) 32%,
-    rgba(78, 205, 214, 0.2) 50%,
-    rgba(78, 205, 214, 0) 66%
+    rgba(1, 14, 17, 0.32) 0%,
+    rgba(1, 14, 17, 0.06) 30%,
+    rgba(1, 14, 17, 0) 65%,
+    rgba(1, 14, 17, 0.12) 100%
   );
   pointer-events: none;
 }
 
 .md-hero__scroll {
   position: absolute;
-  left: 50%;
+  left: 24px;
+  right: 24px;
   bottom: calc(1.25rem + var(--md-safe-bottom));
   z-index: 4;
-  width: 50px;
-  height: 50px;
-  transform: translateX(-50%);
-  border: 0;
-  border-radius: 50%;
-  background: var(--md-white);
-  box-shadow: 0 8px 24px rgba(8, 70, 80, 0.2);
+  width: auto;
+  margin-inline: auto;
+  max-width: 342px;
+  height: 54px;
+  padding: 0 1.5rem;
+  transform: none;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 18px;
+  background: linear-gradient(115deg, #53bdc7, #91e4e7 38%, #63cdd4 68%, #4cbcc7);
+  background-size: 240% 100%;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  box-shadow: 0 8px 22px rgba(46, 164, 177, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.6);
   cursor: pointer;
   display: grid;
   place-items: center;
   pointer-events: auto;
-  animation: md-scroll-bob 2s ease-in-out infinite;
+  animation: md-start-color 6s ease-in-out infinite;
+  transition: box-shadow 0.2s ease;
+}
+
+.md-hero__scroll::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  bottom: -40%;
+  left: 0;
+  width: 55%;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  transform: translateX(-200%) skewX(-18deg);
+  animation: md-start-sheen 5.5s ease-in-out infinite;
+}
+
+.md-hero__scroll:hover {
+  box-shadow: 0 10px 28px rgba(46, 164, 177, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.md .md-hero__scroll:hover,
+.md .md-hero__scroll:active {
+  transform: none;
 }
 
 .md-hero__scroll:focus-visible {
-  outline: 2px solid var(--md-ink);
-  outline-offset: 3px;
+  outline: 2px solid #000000;
+  outline-offset: 4px;
 }
 
-.md-hero__scroll-arrow {
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 8px solid #111827;
-  margin-top: 2px;
+.md-hero__start-label {
+  position: relative;
+  z-index: 1;
 }
 
 /* ——— Stage ——— */
 
 .md-stage {
-  position: relative;
+  position: absolute;
+  inset: 0;
   height: 100%;
-  max-height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
   background: #ffffff;
   padding: 0;
-  overscroll-behavior-y: contain;
-  scroll-snap-type: none;
-  scroll-behavior: auto;
 }
 
 .md-stage.is-ready .md-stage__sheet {
@@ -2952,34 +2903,14 @@ body .md-site-nav.is-compact .new-header.new-header .new-header__container.new-h
   }
 }
 
-@keyframes md-scroll-bob {
-  0%,
-  100% {
-    transform: translateX(-50%) translateY(0);
-  }
-  50% {
-    transform: translateX(-50%) translateY(6px);
-  }
+@keyframes md-start-color {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
-@keyframes md-flash-cover {
-  from {
-    opacity: 0;
-    filter: brightness(1.5);
-  }
-  to {
-    opacity: 1;
-    filter: brightness(1.12);
-  }
-}
-
-@keyframes md-flash-reveal {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
+@keyframes md-start-sheen {
+  0%, 45% { transform: translateX(-200%) skewX(-18deg); }
+  85%, 100% { transform: translateX(350%) skewX(-18deg); }
 }
 
 @keyframes md-card-in {
@@ -3011,12 +2942,10 @@ body .md-site-nav.is-compact .new-header.new-header .new-header__container.new-h
 @media (prefers-reduced-motion: reduce) {
   .md-hero__title,
   .md-hero__lead,
-  .md-hero__image,
   .md-hero__scroll,
+  .md-hero__scroll::before,
   .md-stage.is-ready .md-stage__sheet,
-  .md-stage.is-ready .md-card,
-  .md-flash.is-cover,
-  .md-flash.is-reveal {
+  .md-stage.is-ready .md-card {
     animation: none !important;
   }
 
@@ -3067,7 +2996,7 @@ body .md-site-nav.is-compact .new-header.new-header .new-header__container.new-h
 
   /* ——— Hero ——— */
   .md-hero__copy {
-    padding: clamp(5.5rem, 11vh, 8.5rem) 2rem 0;
+    padding: 3.5rem 2rem 7rem;
     max-width: 52rem;
     margin: 0 auto;
   }
@@ -3083,16 +3012,7 @@ body .md-site-nav.is-compact .new-header.new-header .new-header__container.new-h
     font-size: clamp(1.15rem, 1.5vw, 1.35rem);
   }
 
-  .md-hero__visual {
-    height: 68%;
-  }
-
-  .md-hero__image {
-    object-position: center 38%;
-  }
-
   .md-hero__scroll {
-    width: 56px;
     height: 56px;
     bottom: calc(1.75rem + var(--md-safe-bottom));
   }
@@ -3579,9 +3499,6 @@ body .md-site-nav.is-compact .new-header.new-header .new-header__container.new-h
     padding: 1.75rem 0 1.35rem;
   }
 
-  .md-hero__visual {
-    height: 72%;
-  }
 }
 
 .md-cards-dots {

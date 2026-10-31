@@ -25,6 +25,7 @@ import { applyPropertyImageFallback, normalizePropertyMediaFields } from '../uti
 import './PropertyAiExperience.css'
 
 const SCENARIO_DEFS = [
+  { id: 'presentation', labelKey: 'propertyAi_scenarioPresentation', questionKey: 'propertyAi_scenarioPresentationQuestion', Icon: FiFileText },
   { id: 'risks', labelKey: 'propertyAi_scenarioRisks', questionKey: 'propertyAi_scenarioRisksQuestion', Icon: FiShield },
   { id: 'investment', labelKey: 'propertyAi_scenarioInvestment', questionKey: 'propertyAi_scenarioInvestmentQuestion', Icon: FiTrendingUp },
   { id: 'details', labelKey: 'propertyAi_scenarioDetails', questionKey: 'propertyAi_scenarioDetailsQuestion', Icon: FiFileText },
@@ -83,7 +84,7 @@ export default function PropertyAiExperience({
   deferLauncherCollapse = false,
   openSignal = 0,
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [view, setView] = useState('closed')
   useEffect(() => { if (openSignal > 0) setView('picker') }, [openSignal])
   const [launcherExpanded, setLauncherExpanded] = useState(true)
@@ -137,7 +138,7 @@ export default function PropertyAiExperience({
     pollAbortRef.current?.abort()
     const controller = new AbortController()
     pollAbortRef.current = controller
-    for (let attempt = 0; attempt < 35; attempt += 1) {
+    for (let attempt = 0; attempt < 150; attempt += 1) {
       const next = await getPropertyAiReport({ userId, reportId, signal: controller.signal })
       setJob(next)
       if (next.status === 'completed' || next.status === 'failed') {
@@ -163,6 +164,7 @@ export default function PropertyAiExperience({
     try {
       const result = await startPropertyAiReport({
         userId, propertyId, propertyTable, category, question: nextQuestion,
+        language: i18n.resolvedLanguage || i18n.language,
       })
       setJob(result.data)
       if (!['completed', 'failed'].includes(result.data.status)) {
@@ -179,7 +181,7 @@ export default function PropertyAiExperience({
         setJob((current) => ({ ...current, status: 'failed' }))
       }
     }
-  }, [loadHistory, pollReport, propertyId, propertyTable, requireUser, t])
+  }, [loadHistory, pollReport, propertyId, propertyTable, requireUser, t, i18n])
 
   const selectScenario = (scenario) => {
     if (!requireUser()) return
@@ -220,7 +222,7 @@ export default function PropertyAiExperience({
       if (download) {
         const link = document.createElement('a')
         link.href = url
-        link.download = `property-ai-${propertyId}-${job.id}.pdf`
+        link.download = job.category === 'presentation' ? `SellYourBrick-property-${propertyId}-presentation.pdf` : `property-ai-${propertyId}-${job.id}.pdf`
         link.click()
       } else {
         window.open(url, '_blank', 'noopener,noreferrer')
@@ -487,7 +489,7 @@ export default function PropertyAiExperience({
                 <div>
                   <span>
                     {job.status === 'completed'
-                      ? t('propertyAi_pdfPagesReady')
+                      ? (job?.category === 'presentation' ? t('propertyAi_presentationPagesReady', { count: job.report?.slides?.length || 9 }) : t('propertyAi_pdfPagesReady'))
                       : job.status === 'failed'
                         ? t('propertyAi_pdfNotCreated')
                         : t('propertyAi_pdfBuilding')}
