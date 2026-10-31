@@ -19,6 +19,10 @@ import { showNotification } from '../utils/toastHelper'
 import { askPropertyCompareAssistant } from '../services/aiService'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
+import {
+  COMPARE_BUILDING_TYPE_I18N_KEYS,
+  formatPropertyBuildingType,
+} from '../utils/formatPropertyBuildingType'
 import { hasPropertyListingTimer } from '../utils/auctionReminderBounds'
 import './Compare.css'
 import '../components/PropertyListingGrid.css'
@@ -228,24 +232,12 @@ function yearBuiltNum(p) {
   return Number.isFinite(n) && n >= 1700 && n <= 2200 ? n : null
 }
 
-const BUILDING_TYPE_KEYS = {
-  monolithic: 'comparePage_building_monolithic',
-  brick: 'comparePage_building_brick',
-  panel: 'comparePage_building_panel',
-  block: 'comparePage_building_block',
-  wood: 'comparePage_building_wood',
-  frame: 'comparePage_building_frame',
-  aerated_concrete: 'comparePage_building_aerated_concrete',
-  foam_concrete: 'comparePage_building_foam_concrete',
-  other: 'comparePage_building_other',
-}
-
 function formatBuildingMaterial(p, t) {
   const code = p.building_type || p.buildingType
-  if (!code) return t('comparePage_dash')
-  const s = String(code)
-  const key = BUILDING_TYPE_KEYS[s]
-  return key ? t(key) : s
+  return formatPropertyBuildingType(code, t, {
+    keyMap: COMPARE_BUILDING_TYPE_I18N_KEYS,
+    fallback: t('comparePage_dash'),
+  })
 }
 
 /** Полный снимок для запроса к ИИ */

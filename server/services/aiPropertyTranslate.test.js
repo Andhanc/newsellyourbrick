@@ -9,6 +9,9 @@ import {
   normalizeTranslationPropertyTable,
   isUntranslatedTarget,
   applyPhrasebook,
+  applyEnMarketingPhrasebook,
+  detectSourceLang,
+  targetLangCodesFor,
   SITE_LANG_CODES,
 } from './aiPropertyTranslate.js'
 import {
@@ -74,6 +77,26 @@ test('applies core and extra translation fields onto a listing', () => {
   assert.equal(prop.renovation, 'Renovated')
 })
 
+test('heals english title copies when serving french locale', () => {
+  const prop = {
+    id: 9,
+    title: 'Luxury Villa for Sale in Tenerife',
+    description: 'Exclusive Luxury Villa near the beach',
+  }
+  applyPropertyTranslationRow(
+    prop,
+    {
+      title: 'Luxury Villa for Sale in Tenerife',
+      description: 'Exclusive Luxury Villa near the beach',
+      location: 'Costa Adeje',
+    },
+    'fr',
+  )
+  assert.match(prop.title, /villa de luxe/i)
+  assert.notEqual(prop.title, 'Luxury Villa for Sale in Tenerife')
+  assert.equal(prop.location, 'Costa Adeje')
+})
+
 test('parseExtraJson tolerates invalid payloads', () => {
   assert.deepEqual(parseExtraJson(null), {})
   assert.deepEqual(parseExtraJson('{'), {})
@@ -103,6 +126,31 @@ test('detects untranslated cyrillic copies in target languages', () => {
     false,
   )
   assert.equal(isUntranslatedTarget(source, source, 'ru'), false)
+})
+
+test('detects english source and rejects identical latin copies in fr', () => {
+  const source = {
+    title: 'Luxury Villa for Sale in Tenerife',
+    description: 'Exclusive property near the golf course',
+  }
+  assert.equal(detectSourceLang(source), 'en')
+  assert.deepEqual(targetLangCodesFor('en').sort(), ['de', 'es', 'fr', 'pl', 'ru', 'sv'].sort())
+  assert.equal(
+    isUntranslatedTarget(source, { title: source.title, description: source.description }, 'fr', 'en'),
+    true,
+  )
+  assert.equal(
+    isUntranslatedTarget(
+      source,
+      { title: 'Villa de luxe à vendre à Tenerife', description: 'Bien exclusif près du golf' },
+      'fr',
+      'en',
+    ),
+    false,
+  )
+  const frTitle = applyEnMarketingPhrasebook(source.title, 'fr')
+  assert.match(frTitle, /villa de luxe/i)
+  assert.notEqual(frTitle, source.title)
 })
 
 test('site languages include polish', () => {

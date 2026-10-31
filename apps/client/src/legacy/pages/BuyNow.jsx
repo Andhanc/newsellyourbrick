@@ -52,7 +52,8 @@ function isConfiguredBuyNowListing(property) {
 }
 
 export default function BuyNow() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const listLang = String(i18n.resolvedLanguage || i18n.language || 'ru').split(/[-_]/)[0]
   const navigate = useNavigate()
   const location = useLocation()
   const isMobile = useIsMobile()
@@ -87,7 +88,7 @@ export default function BuyNow() {
     return () => {
       cancelled = true
     }
-  }, [reloadKey])
+  }, [reloadKey, listLang])
 
   const buyNowListings = useMemo(
     () => properties.filter(isConfiguredBuyNowListing),

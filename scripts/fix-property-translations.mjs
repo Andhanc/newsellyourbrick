@@ -13,8 +13,11 @@ import {
   persistPropertyTranslations,
   extractListingTexts,
   applyPhrasebook,
-  TARGET_LANG_CODES,
+  applyEnMarketingPhrasebook,
+  detectSourceLang,
+  targetLangCodesFor,
   SITE_LANG_CODES,
+  isUntranslatedTarget,
 } from '../server/services/aiPropertyTranslate.js';
 
 const ids = process.argv.slice(2).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
@@ -63,15 +66,19 @@ async function listTargets() {
 /** Если AI/MyMemory недоступны — сразу phrasebook + persist. */
 async function forcePhrasebookPersist(property) {
   const texts = extractListingTexts(property);
-  const translations = { ru: { ...texts } };
-  for (const code of TARGET_LANG_CODES) {
+  const sourceLang = detectSourceLang(texts);
+  const translations = { [sourceLang]: { ...texts } };
+  for (const code of targetLangCodesFor(sourceLang)) {
     const translated = {};
     for (const [key, value] of Object.entries(texts)) {
-      translated[key] = applyPhrasebook(value, code);
+      let next = applyPhrasebook(value, code);
+      if (sourceLang === 'en' || !/[а-яё]/i.test(String(value || ''))) {
+        next = applyEnMarketingPhrasebook(next, code);
+      }
+      translated[key] = next;
     }
     translations[code] = translated;
   }
-  // ru already set; also ensure SITE_LANG_CODES covered
   for (const code of SITE_LANG_CODES) {
     if (!translations[code]) translations[code] = { ...texts };
   }
@@ -81,6 +88,27 @@ async function forcePhrasebookPersist(property) {
     translations,
   });
   return translations;
+}
+
+/** True if stored target rows are still copies of the source title. */
+async function hasStaleTranslations(property) {
+  const texts = extractListingTexts(property);
+  const sourceLang = detectSourceLang(texts);
+  const rows = await prisma.property_translations.findMany({
+    where: {
+      property_id: Number(property.id),
+      property_table: { in: [property.source_table, property.source_table === 'properties_apartments' ? 'apartments' : 'houses'] },
+    },
+    select: { lang_code: true, title: true, description: true },
+  });
+  if (!rows.length) return true;
+  const byLang = Object.fromEntries(rows.map((r) => [r.lang_code, r]));
+  for (const code of targetLangCodesFor(sourceLang)) {
+    const row = byLang[code];
+    if (!row) return true;
+    if (isUntranslatedTarget(texts, row, code, sourceLang)) return true;
+  }
+  return false;
 }
 
 async function dualWriteExistingAliases() {
@@ -136,8 +164,13 @@ async function main() {
   const targets = await listTargets();
   console.log(`targets: ${targets.map((t) => `${t.source_table}:${t.id}`).join(', ') || '(none)'}`);
 
+  const forceAll = process.env.TRANSLATE_FORCE === '1' || ids.length > 0;
   for (const property of targets) {
     try {
+      if (!forceAll && !(await hasStaleTranslations(property))) {
+        console.log(`skip fresh ${property.id}`);
+        continue;
+      }
       if (mode === 'phrasebook') {
         await forcePhrasebookPersist(property);
         console.log(`phrasebook ok ${property.id}`);
