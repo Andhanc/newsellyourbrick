@@ -13,6 +13,9 @@
     "dev:clean": "npm run clean:vite && npm run dev:force",
     "prebuild": "node scripts/create-env.js",
     "build": "node node_modules/vite/bin/vite.js build",
+    "test": "node scripts/run-tests.mjs",
+    "test:i18n": "node --test scripts/check-i18n.test.mjs",
+    "check:i18n": "node scripts/check-i18n.mjs",
     "verify:images": "node scripts/verify-public-images.mjs",
     "optimize:oap-images": "node scripts/optimize-oap-sidebar-images.mjs",
     "preview": "node node_modules/vite/bin/vite.js preview",
@@ -114,6 +117,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@babel/parser": "7.28.5",
     "@tailwindcss/postcss": "^4.2.1",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
