@@ -23,7 +23,10 @@ import {
   Wallet,
   ArrowRight,
   Home,
+  Globe2,
+  ChevronDown,
 } from 'lucide-react'
+import { UI_LANGUAGES } from '../constants/uiLanguages'
 import { OPR_IMAGES } from './ownerProfileTestImages'
 import { getOwnerProfileTabs, isOwnerProfileTabId } from './ownerProfileTestTabs'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
@@ -35,7 +38,7 @@ import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
 import { useOwnerTestUserPhoto } from '../hooks/useOwnerTestUserPhoto'
 import { getOwnerProfileFieldLabel, getOwnerSubscriptionPlanLabel, getOwnerTestIntlLocale, getNextOwnerSubscriptionPlanId, resolveProfileSubscriptionPlanId } from '../utils/ownerTestI18n'
-import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
+import { OWNER_TEST_STANDALONE_HREF_MAP, buildOwnerTestPath } from '../utils/ownerTestNav'
 import {
   CLERK_DB_USER_SYNCED,
   fetchOwnerProperties,
@@ -48,10 +51,10 @@ import {
 } from '../utils/ownerAnalyticsExcelExport'
 import OwnerProfileCompletionBanner from '../components/OwnerProfileCompletionBanner'
 import { useOwnerWelcomeUi } from '../components/OwnerCabinetWelcomeHost'
-import AuctionCategoryCtaCards, {
-  preloadProfilePageCtaImages,
-} from '../components/AuctionCategoryCtaCards'
+import SellerAddPropertyBanner from '../components/SellerAddPropertyBanner'
+import LanguageDrawer from '../components/LanguageDrawer'
 import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
+import BuyerCelebrationModal from '../components/BuyerCelebrationModal'
 import { RoleSwitchButton, RoleSwitchModals } from '../components/RoleSwitchBottomCta'
 import { useHasBothLinkedRoles } from '../hooks/useHasBothLinkedRoles'
 import { useRoleSwitchFlow } from '../hooks/useRoleSwitchFlow'
@@ -97,7 +100,6 @@ const EMPTY_OWNER_SALES = {
   test_drive: [],
 }
 
-preloadProfilePageCtaImages()
 
 function formatDateSafe(value, locale, notSpecifiedLabel) {
   if (!value) return notSpecifiedLabel
@@ -315,9 +317,22 @@ export default function OwnerProfileTestPage() {
   })
   const [menuOpen, setMenuOpen] = useState(false)
   const [appPreferences, setAppPreferences] = useState({
-    language: 'ru',
     currency: 'eur',
   })
+  const activeLanguageCode = (i18n.resolvedLanguage || i18n.language || 'en').split('-')[0]
+  const currentLanguage = UI_LANGUAGES.find((language) => language.code === activeLanguageCode) || UI_LANGUAGES[0]
+  const [languageChanging, setLanguageChanging] = useState(false)
+  const [languageDrawerOpen, setLanguageDrawerOpen] = useState(false)
+  const handleLanguageChange = useCallback(async (event) => {
+    setLanguageChanging(true)
+    try {
+      await i18n.changeLanguage(event.target.value)
+    } catch {
+      showNotification(t('genericError'), 'error')
+    } finally {
+      setLanguageChanging(false)
+    }
+  }, [i18n, t])
   const [statsPeriod, setStatsPeriod] = useState('30d')
   const [ownerProperties, setOwnerProperties] = useState([])
   const [ownerTestDriveRows, setOwnerTestDriveRows] = useState([])
@@ -328,6 +343,7 @@ export default function OwnerProfileTestPage() {
   const [saveReleased, setSaveReleased] = useState(false)
   const [foldersDotIndex, setFoldersDotIndex] = useState(0)
   const [mobileSheetId, setMobileSheetId] = useState(null)
+  const [registrationCelebrationOpen, setRegistrationCelebrationOpen] = useState(false)
   const [isMobileLayout, setIsMobileLayout] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(max-width: 900px)').matches,
   )
@@ -342,10 +358,6 @@ export default function OwnerProfileTestPage() {
     sync()
     mq.addEventListener('change', sync)
     return () => mq.removeEventListener('change', sync)
-  }, [])
-
-  useEffect(() => {
-    preloadProfilePageCtaImages()
   }, [])
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
@@ -558,9 +570,20 @@ export default function OwnerProfileTestPage() {
     [selectProfileTab]
   )
 
+  const handleAddProperty = useCallback(() => {
+    if (welcomeUi.gateLocked) {
+      welcomeUi.warnGateLocked?.()
+      focusProfileField('firstName')
+      return
+    }
+    if (isEmbedded && goTo) goTo(OWNER_VIEWS.ADD_PROPERTY)
+    else window.location.assign(buildOwnerTestPath(OWNER_VIEWS.ADD_PROPERTY))
+  }, [welcomeUi, isEmbedded, goTo, focusProfileField])
+
   const handleSaveProfile = useCallback(
     async (event) => {
       event.preventDefault()
+      if (saving) return
       if (
         profile?.identificationNumber?.trim() &&
         isSpainCountry(profile?.country) &&
@@ -572,12 +595,13 @@ export default function OwnerProfileTestPage() {
       }
       const result = await saveProfile()
       if (result.success) {
-        showNotification(t('ownerTest_profileSaved'))
+        setMobileSheetId(null)
+        setRegistrationCelebrationOpen(true)
       } else {
         showNotification(result.error || t('ownerTest_profileSaveError'))
       }
     },
-    [profile?.country, profile?.identificationNumber, focusProfileField, saveProfile, t]
+    [profile?.country, profile?.identificationNumber, focusProfileField, saveProfile, saving, t]
   )
 
   useEffect(() => {
@@ -1156,6 +1180,9 @@ export default function OwnerProfileTestPage() {
 
               {(!isMobileLayout || !mobileSheetId) ? (
               <>
+              <div className="opr-profile-add-property">
+                <SellerAddPropertyBanner variant="profile" onClick={handleAddProperty} />
+              </div>
               <section
                 className="opr-profile-directions-list profile-cabinet__list"
                 aria-label={t('buyerCabinet_directionsListAria')}
@@ -1167,6 +1194,24 @@ export default function OwnerProfileTestPage() {
                   </div>
                 </div>
                 <ul className="profile-cabinet__rows">
+                  <li>
+                    <button
+                      type="button"
+                      className="profile-cabinet-row profile-cabinet-row--language"
+                      onClick={() => setLanguageDrawerOpen(true)}
+                      aria-haspopup="dialog"
+                      aria-expanded={languageDrawerOpen}
+                    >
+                      <span className="profile-cabinet-row__icon" aria-hidden="true">
+                        <Globe2 size={20} />
+                      </span>
+                      <span className="profile-cabinet-row__copy">
+                        <strong>{t('selectLanguage')}</strong>
+                        <span lang={currentLanguage.code}>{currentLanguage.name}</span>
+                      </span>
+                      <ChevronDown className="profile-cabinet-row__chev" size={18} aria-hidden="true" />
+                    </button>
+                  </li>
                   <li>
                     <button
                       type="button"
@@ -1265,11 +1310,6 @@ export default function OwnerProfileTestPage() {
                 </ul>
               </section>
 
-              {isMobileLayout ? (
-                <div className="opr-profile-directions-cta opr-profile-directions-cta--mobile">
-                  <AuctionCategoryCtaCards variant="profilePage" />
-                </div>
-              ) : null}
               </>
             ) : null}
             </div>
@@ -1641,13 +1681,13 @@ export default function OwnerProfileTestPage() {
                       <span className="opr-field__label">{t('ownerSettingsChangeLanguage')}</span>
                       <select
                         className="opr-field__input opr-field__select"
-                        value={appPreferences.language}
-                        onChange={(e) =>
-                          setAppPreferences((prev) => ({ ...prev, language: e.target.value }))
-                        }
+                        value={currentLanguage.code}
+                        onChange={handleLanguageChange}
+                        disabled={languageChanging}
                       >
-                        <option value="ru">{t('ownerSettingsLanguageRu')}</option>
-                        <option value="en">{t('ownerSettingsLanguageEn')}</option>
+                        {UI_LANGUAGES.map((language) => (
+                          <option key={language.code} value={language.code} lang={language.code}>{language.name}</option>
+                        ))}
                       </select>
                     </label>
                     <label className="opr-field">
@@ -2005,13 +2045,13 @@ export default function OwnerProfileTestPage() {
                       <span className="opr-field__label">{t('ownerSettingsChangeLanguage')}</span>
                       <select
                         className="opr-field__input opr-field__select"
-                        value={appPreferences.language}
-                        onChange={(e) =>
-                          setAppPreferences((prev) => ({ ...prev, language: e.target.value }))
-                        }
+                        value={currentLanguage.code}
+                        onChange={handleLanguageChange}
+                        disabled={languageChanging}
                       >
-                        <option value="ru">{t('ownerSettingsLanguageRu')}</option>
-                        <option value="en">{t('ownerSettingsLanguageEn')}</option>
+                        {UI_LANGUAGES.map((language) => (
+                          <option key={language.code} value={language.code} lang={language.code}>{language.name}</option>
+                        ))}
                       </select>
                     </label>
                     <label className="opr-field">
@@ -2041,12 +2081,20 @@ export default function OwnerProfileTestPage() {
             ) : null}
 
             <RoleSwitchModals flow={buyerRoleFlow} />
+            <LanguageDrawer
+              isOpen={languageDrawerOpen}
+              onClose={() => setLanguageDrawerOpen(false)}
+              titleId="owner-profile-language-drawer-title"
+            />
+            <BuyerCelebrationModal
+              open={registrationCelebrationOpen}
+              titleId="owner-registration-celebration-title"
+              title={t('ownerTest_registrationCompleteTitle')}
+              text={t('ownerTest_registrationCompleteBody')}
+              ctaLabel={t('ownerTest_registrationCompleteCta')}
+              onCta={() => setRegistrationCelebrationOpen(false)}
+            />
 
-            {!isMobileLayout ? (
-              <div className="opr-profile-directions-cta opr-profile-directions-cta--desktop">
-                <AuctionCategoryCtaCards variant="profilePage" />
-              </div>
-            ) : null}
           </div>
         </div>
       </div>

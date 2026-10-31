@@ -431,6 +431,10 @@
     margin-top: 4px;
   }
 
+  .ost-pricing-mob .pricing-interaction {
+    margin-inline: auto;
+  }
+
   @media (max-width: 360px) {
     .ost-pricing-hero__brand {
       font-size: 0.95rem;

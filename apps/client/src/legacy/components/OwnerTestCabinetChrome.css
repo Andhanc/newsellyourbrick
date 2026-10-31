@@ -691,11 +691,11 @@
   }
 
   .otc.otc--testdrive {
-    --otc-shell-bg: #3bc0cb;
+    --otc-shell-bg: #ffffff;
     --otc-shell-bg-image: none;
     --otc-topbar-ink: #ffffff;
     position: relative;
-    background-color: #3bc0cb !important;
+    background-color: #ffffff !important;
     background-image: none !important;
     overflow: visible !important;
   }

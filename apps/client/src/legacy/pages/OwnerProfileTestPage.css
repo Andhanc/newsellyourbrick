@@ -510,21 +510,22 @@
 .opr-field__input,
 .opr-field__textarea {
   width: 100%;
-  padding: 12px 14px;
-  border: 1px solid var(--opr-border);
-  border-radius: 10px;
-  background: #fff;
+  padding: 16px 18px;
+  border: 0;
+  border-radius: 18px;
+  background: #f2f4f6;
   color: var(--opr-text);
   font: inherit;
-  font-size: 14px;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background 0.15s, box-shadow 0.15s;
 }
 
 .opr-field__input:focus,
 .opr-field__textarea:focus {
   outline: none;
-  border-color: var(--opr-tiffany);
-  box-shadow: 0 0 0 3px var(--opr-tiffany-muted);
+  background: #eefbfc;
+  box-shadow: 0 0 0 3px rgba(78, 205, 214, 0.28);
 }
 
 .opr-field__textarea {
@@ -1793,46 +1794,15 @@
   box-shadow: 0 18px 48px rgba(15, 23, 42, 0.07);
 }
 
-.opr-profile-directions-cta {
+.opr-profile-add-property {
   width: 100%;
-  max-width: 100%;
   min-width: 0;
-  margin-top: 12px;
+  margin-bottom: 20px;
 }
 
-/* Mobile CTA lives inside .opr-mobile-cabinet; desktop keeps bottom placement. */
-.opr-profile-directions-cta--mobile {
-  display: none;
-}
-
-.opr-profile-directions-cta--desktop {
-  display: block;
-}
-
-@media (min-width: 901px) {
-  .opr-profile-directions-cta .auction-cta-cards--profile .auction-cta-cards__title-desktop {
-    display: block;
-  }
-
-  .opr-profile-directions-cta .auction-cta-cards--profile .auction-cta-cards__title-mobile {
-    display: none;
-  }
-
-  .opr-profile-directions-cta .auction-cta-cards--profile .auction-cta-cards__title {
-    text-align: left;
-    font-size: 1.35rem;
-    margin-bottom: 16px;
-  }
-
-  .opr-profile-directions-cta .auction-cta-cards--profile .auction-cta-cards__grid,
-  .opr-profile-directions-cta .auction-cta-cards--profile .auction-cta-cards__grid--trio {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
-  }
-
-  .opr-profile-directions-cta .auction-cta-cards--profile .auction-cta-cards__card {
-    min-height: 168px;
-  }
+.profile-cabinet-row--language:focus-visible {
+  outline: 2px solid #007d8a;
+  outline-offset: 3px;
 }
 
 .opr-body .opr-form-section__head {

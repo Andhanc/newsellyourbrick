@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Confetti from 'react-confetti'
 import { FiCheckCircle } from 'react-icons/fi'
@@ -26,6 +26,20 @@ export default function BuyerCelebrationModal({
     height: typeof window !== 'undefined' ? window.innerHeight : 0,
   }))
   const [confettiRecycle, setConfettiRecycle] = useState(true)
+  const ctaRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return undefined
+    const previouslyFocused = document.activeElement
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const frame = window.requestAnimationFrame(() => ctaRef.current?.focus())
+    return () => {
+      window.cancelAnimationFrame(frame)
+      document.body.style.overflow = previousOverflow
+      if (previouslyFocused?.isConnected) previouslyFocused.focus?.()
+    }
+  }, [open])
 
   useEffect(() => {
     if (!open) return undefined
@@ -86,6 +100,12 @@ export default function BuyerCelebrationModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
+          onKeyDown={(event) => {
+            if (event.key === 'Tab') {
+              event.preventDefault()
+              ctaRef.current?.focus()
+            }
+          }}
         >
           <div className="buyer-celebration-modal__icon" aria-hidden>
             <FiCheckCircle size={36} strokeWidth={2.2} />
@@ -94,7 +114,7 @@ export default function BuyerCelebrationModal({
             {title}
           </h2>
           <p className="buyer-celebration-modal__text">{text}</p>
-          <button type="button" className="buyer-celebration-modal__btn" onClick={onCta}>
+          <button ref={ctaRef} type="button" className="buyer-celebration-modal__btn" onClick={onCta}>
             {ctaLabel}
           </button>
         </div>

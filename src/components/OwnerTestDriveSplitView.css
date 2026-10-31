@@ -660,6 +660,7 @@
   .otd-split--mobile {
     display: flex;
     flex-direction: column;
+    align-items: stretch;
     gap: 0;
     min-height: 0;
   }

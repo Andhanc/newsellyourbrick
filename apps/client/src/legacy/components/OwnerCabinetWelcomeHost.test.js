@@ -37,7 +37,7 @@ test('owner profile page attaches folder and form targets for welcome spotlight'
   assert.match(profileSource, /welcomeUi\.warnGateLocked/)
 })
 
-test('owner profile cabinet mirrors buyer folders and three directions', () => {
+test('owner profile cabinet keeps folders and replaces strategy cards with the add-property banner', () => {
   assert.match(profileSource, /profile-folder-card/)
   assert.match(profileSource, /buyerCabinet_sectionsLabel/)
   assert.match(profileSource, /buyerCabinet_directionsTitle/)
@@ -49,10 +49,10 @@ test('owner profile cabinet mirrors buyer folders and three directions', () => {
   assert.match(profileSource, /owner-profile\/hero-statistics\.png/)
   assert.match(profileSource, /owner-profile\/hero-settings\.png/)
   assert.match(profileSource, /mobileSheetId/)
-  assert.match(profileSource, /preloadProfilePageCtaImages/)
-  assert.match(profileSource, /opr-profile-directions-cta--mobile/)
-  assert.match(profileSource, /opr-profile-directions-cta--desktop/)
-  assert.equal((profileSource.match(/AuctionCategoryCtaCards variant="profilePage"/g) || []).length, 2)
+  assert.match(profileSource, /opr-profile-add-property/)
+  assert.equal((profileSource.match(/SellerAddPropertyBanner variant="profile" onClick={handleAddProperty}/g) || []).length, 1)
+  assert.doesNotMatch(profileSource, /AuctionCategoryCtaCards|preloadProfilePageCtaImages/)
+  assert.match(profileSource, /goTo\(OWNER_VIEWS\.ADD_PROPERTY\)/)
   assert.equal((profileSource.match(/iconSrc:/g) || []).length, 3)
 })
 

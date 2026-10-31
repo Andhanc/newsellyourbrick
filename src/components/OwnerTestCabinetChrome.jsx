@@ -186,29 +186,31 @@ export default function OwnerTestCabinetChrome({ children }) {
           view === OWNER_VIEWS.PROFILE ? ' otc--profile' : ''
         }`}
       >
-      <header className="otc-mob-topbar otc-mobile-only" aria-label={t('ownerTest_ariaMobileHeader')}>
-        <div className="otc-mob-topbar__slot otc-mob-topbar__slot--left">
-          <button
-            type="button"
-            className="otc-mob-topbar__menu"
-            aria-label={t('ownerTest_ariaOpenMenu')}
-            aria-expanded={menuOpen}
-            onClick={() => window.dispatchEvent(new CustomEvent('owner-test:open-menu'))}
-          >
-            <Menu size={22} strokeWidth={2.2} aria-hidden />
-          </button>
-        </div>
-        <p className="otc-mob-topbar__title">{t('ownerTest_brandName')}</p>
-        <div className="otc-mob-topbar__slot otc-mob-topbar__slot--right">
-          <OwnerSupportButton className="otc-mob-topbar__bell" iconSize={22} />
-          <OwnerNotificationsButton
-            className="otc-mob-topbar__bell"
-            badgeClassName="otc-icon-btn__badge"
-            iconSize={22}
-          />
-          <OwnerTestProfileMenu className="otpm--topbar-compact" />
-        </div>
-      </header>
+      {view !== OWNER_VIEWS.PROPERTY_ANALYTICS && (
+        <header className="otc-mob-topbar otc-mobile-only" aria-label={t('ownerTest_ariaMobileHeader')}>
+          <div className="otc-mob-topbar__slot otc-mob-topbar__slot--left">
+            <button
+              type="button"
+              className="otc-mob-topbar__menu"
+              aria-label={t('ownerTest_ariaOpenMenu')}
+              aria-expanded={menuOpen}
+              onClick={() => window.dispatchEvent(new CustomEvent('owner-test:open-menu'))}
+            >
+              <Menu size={22} strokeWidth={2.2} aria-hidden />
+            </button>
+          </div>
+          <p className="otc-mob-topbar__title">{t('ownerTest_brandName')}</p>
+          <div className="otc-mob-topbar__slot otc-mob-topbar__slot--right">
+            <OwnerSupportButton className="otc-mob-topbar__bell" iconSize={22} />
+            <OwnerNotificationsButton
+              className="otc-mob-topbar__bell"
+              badgeClassName="otc-icon-btn__badge"
+              iconSize={22}
+            />
+            <OwnerTestProfileMenu className="otpm--topbar-compact" />
+          </div>
+        </header>
+      )}
 
       <div
         className="otc-drawer-backdrop otc-mobile-only"
