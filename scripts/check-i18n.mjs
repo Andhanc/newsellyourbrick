@@ -193,7 +193,7 @@ function sourceFiles(directory) {
   })
 }
 
-function readNativeCatalog(source) {
+export function readNativeCatalog(source) {
   let result
   walk(parse(source, { sourceType: 'module', plugins: ['typescript'] }), node => {
     if (node.type !== 'VariableDeclarator' || name(node.id) !== 'STRINGS') return

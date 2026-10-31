@@ -22,6 +22,8 @@ jobs:
     name: Translations
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      base: ${{ steps.comparison.outputs.base }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -35,6 +37,7 @@ jobs:
       - name: Test translation guard
         run: npm run test:i18n
       - name: Resolve comparison base
+        id: comparison
         env:
           PR_BASE: ${{ github.event.pull_request.base.sha }}
           PUSH_BASE: ${{ github.event.before }}
@@ -52,10 +55,36 @@ jobs:
             BASE=$(git merge-base "origin/$DEFAULT_BRANCH" HEAD)
           fi
           echo "I18N_BASE=$BASE" >> "$GITHUB_ENV"
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
       - name: Validate all languages and new UI strings
         run: npm run check:i18n -- --base "$I18N_BASE"
       - name: Check patch whitespace
         run: git diff --check "$I18N_BASE" HEAD
+
+  translation-quality:
+    name: Translation quality
+    needs: translations
+    # Fork code never runs with the paid API key. Quality gate remains blocked
+    # until the change is reviewed on a branch within this repository.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Review changed translations with GPT
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          I18N_REVIEW_MODEL: ${{ vars.I18N_REVIEW_MODEL || 'openai/gpt-5.4-mini' }}
+          I18N_BASE: ${{ needs.translations.outputs.base }}
+        run: npm run review:i18n -- --base "$I18N_BASE"
 
   tests:
     name: Tests
@@ -90,16 +119,18 @@ jobs:
   quality-gate:
     name: Quality gate
     if: always()
-    needs: [translations, tests, build]
+    needs: [translations, translation-quality, tests, build]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Require every check to pass
         env:
           TRANSLATIONS: ${{ needs.translations.result }}
+          TRANSLATION_QUALITY: ${{ needs.translation-quality.result }}
           TESTS: ${{ needs.tests.result }}
           BUILD: ${{ needs.build.result }}
         run: |
           test "$TRANSLATIONS" = success
+          test "$TRANSLATION_QUALITY" = success
           test "$TESTS" = success
           test "$BUILD" = success
