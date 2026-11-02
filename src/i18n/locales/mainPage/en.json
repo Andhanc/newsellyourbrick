@@ -1845,13 +1845,13 @@
   "hidePassword": "Hide password",
   "forgotPassword": "Forgot password?",
   "forgotPassword_title": "Password recovery",
-  "forgotPassword_subtitle": "Enter your email — we'll send a 4-digit code to reset your password.",
+  "forgotPassword_subtitle": "Enter your email — we'll send a letter with a code and instructions for creating a new password.",
   "forgotPassword_subtitleCabinet": "We'll send a code to reset the password for {{cabinet}} only.",
   "forgotPassword_sendCode": "Send code",
   "forgotPassword_sending": "Sending…",
   "forgotPassword_sendError": "Could not send the code",
   "forgotPassword_codeTitle": "Enter the code",
-  "forgotPassword_codeSubtitle": "We sent a 4-digit code to {{email}}",
+  "forgotPassword_codeSubtitle": "We sent a letter with a code and reset steps to {{email}}",
   "forgotPassword_codeLength": "Enter all 4 digits",
   "forgotPassword_wrongCode": "Invalid code",
   "forgotPassword_verifying": "Verifying code…",
@@ -10792,5 +10792,10 @@
   "authBackToMethods": "Back to sign-in methods",
   "authWelcomeExistingAccount": "I already have an account",
   "authWelcomeChoiceTitle": "Choose how to continue",
-  "authWelcomeChoiceDescription": "Sign in to your account or create a new one"
+  "authWelcomeChoiceDescription": "Sign in to your account or create a new one",
+  "forgotPassword_inboxHint": "Open the email: it has the code and step-by-step instructions for setting a new password.",
+  "forgotPassword_accountNotFound": "No account found with this email",
+  "forgotPassword_passwordSameAsOther": "This password must differ from the other cabinet on this email",
+  "forgotPassword_passwordSameAsCurrent": "The new password must be different from the current one",
+  "forgotPassword_passwordsMatch": "Passwords match"
 }

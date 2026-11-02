@@ -5971,7 +5971,7 @@
   "footerQrApp": "Escanear QR",
   "forgotPassword_codeDigit": "Dígito {{n}}",
   "forgotPassword_codeLength": "Introduzca los 4 dígitos",
-  "forgotPassword_codeSubtitle": "Hemos enviado un código de 4 dígitos a {{email}}",
+  "forgotPassword_codeSubtitle": "Enviamos un mensaje con el código y los pasos de restablecimiento a {{email}}",
   "forgotPassword_codeTitle": "Introducir el código",
   "forgotPassword_continue": "Continuar",
   "forgotPassword_devCode": "Código de desarrollo: {{code}}",
@@ -5990,7 +5990,7 @@
   "forgotPassword_sendError": "No se pudo enviar el código",
   "forgotPassword_sending": "Enviando…",
   "forgotPassword_sessionExpired": "Sesión caducada: solicite un nuevo código",
-  "forgotPassword_subtitle": "Introduzca su correo: le enviaremos un código de 4 dígitos para restablecer la contraseña.",
+  "forgotPassword_subtitle": "Introduzca su correo: enviaremos un mensaje con el código e instrucciones para crear una contraseña nueva.",
   "forgotPassword_success": "Contraseña actualizada. Ya puede iniciar sesión con la nueva contraseña.",
   "forgotPassword_title": "Recuperación de contraseña",
   "forgotPassword_verifying": "Verificando el código…",
@@ -10792,5 +10792,10 @@
   "authBackToMethods": "Volver a los métodos de acceso",
   "authWelcomeExistingAccount": "Ya tengo una cuenta",
   "authWelcomeChoiceTitle": "Elige cómo continuar",
-  "authWelcomeChoiceDescription": "Inicia sesión en tu cuenta o crea una nueva"
+  "authWelcomeChoiceDescription": "Inicia sesión en tu cuenta o crea una nueva",
+  "forgotPassword_inboxHint": "Abra el correo: incluye el código y los pasos para crear una contraseña nueva.",
+  "forgotPassword_accountNotFound": "No hay una cuenta con este correo",
+  "forgotPassword_passwordSameAsOther": "La contraseña debe ser distinta de la del otro espacio de este correo",
+  "forgotPassword_passwordSameAsCurrent": "La nueva contraseña debe ser distinta de la actual",
+  "forgotPassword_passwordsMatch": "Las contraseñas coinciden"
 }

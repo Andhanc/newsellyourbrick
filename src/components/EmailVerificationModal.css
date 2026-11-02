@@ -341,12 +341,22 @@
   cursor: not-allowed;
 }
 
-/* Адаптивность для мобильных устройств */
-@media (max-width: 480px) {
+/* Мобильная версия: дравьер на всю ширину, прижат к нижнему краю */
+@media (max-width: 768px) {
+  .email-verification-overlay {
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+  }
+
   .email-verification-modal {
-    max-width: 100%;
-    border-radius: 16px 16px 0 0;
-    margin-top: auto;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    border-radius: 20px 20px 0 0;
+    max-height: 100dvh;
+    overflow: auto;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .email-verification-modal__header {

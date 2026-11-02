@@ -2479,17 +2479,21 @@ export const loginWithEmailOrUsername = async (emailOrUsername, password) => {
 /**
  * Запросить код восстановления пароля (4 цифры)
  */
-export async function sendForgotPasswordCode(email) {
+export async function sendForgotPasswordCode(email, locale = 'en') {
   try {
     const emailLower = email.toLowerCase().trim()
     const response = await fetch(`${API_BASE_URL}/auth/email/forgot-password/send-code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: emailLower }),
+      body: JSON.stringify({ email: emailLower, locale }),
     })
     const data = await response.json().catch(() => ({}))
     if (!response.ok) {
-      return { success: false, error: data.error || 'Could not send the code' }
+      return {
+        success: false,
+        error: data.error || 'Could not send the code',
+        code: data.code,
+      }
     }
     return {
       success: true,
@@ -2516,7 +2520,7 @@ export async function verifyForgotPasswordCode(email, code) {
     })
     const data = await response.json().catch(() => ({}))
     if (!response.ok) {
-      return { success: false, error: data.error || 'Invalid code' }
+      return { success: false, error: data.error || 'Invalid code', code: data.code }
     }
     return {
       success: true,
@@ -2548,6 +2552,7 @@ export async function resetPasswordWithToken(email, resetToken, password, role =
   if (!response.ok) {
     const err = new Error(data.error || 'Could not save password')
     err.status = data.status
+    err.code = data.code
     err.passwordValidation = data.passwordValidation
     throw err
   }

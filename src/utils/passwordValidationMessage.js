@@ -10,6 +10,9 @@ const LEGACY_LABEL_TO_KEY = {
   'заглавную букву': 'upper',
   'спецсимвол': 'special',
   цифру: 'digit',
+  'an uppercase letter': 'upper',
+  'a special character': 'special',
+  'a digit': 'digit',
 }
 
 export function normalizePasswordReqToken(token) {

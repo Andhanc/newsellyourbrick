@@ -272,8 +272,23 @@ export function formatCatalogCountries(index, lang = 'ru') {
   return lang === 'en' ? 'no countries yet' : lang === 'es' ? 'aún no hay países' : 'пока нет стран'
 }
 
+export function uniquePlaceLabels(labels = []) {
+  const seen = new Set()
+  const out = []
+  for (const label of labels) {
+    const visible = String(label || '').normalize('NFKC').replace(/\p{Cf}/gu, '').trim()
+    const key = normalizeLocationText(visible)
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    out.push(visible)
+  }
+  return out
+}
+
 export function formatCatalogCities(index, countryKey, lang = 'ru') {
-  const labels = citiesForCountry(index, countryKey).map((city) => localizePlaceLabel(city.label, lang))
+  const labels = uniquePlaceLabels(
+    citiesForCountry(index, countryKey).map((city) => localizePlaceLabel(city.label, lang)),
+  )
   if (labels.length) return labels.join(', ')
   return lang === 'en' ? 'no cities yet' : lang === 'es' ? 'aún no hay ciudades' : 'пока нет городов'
 }

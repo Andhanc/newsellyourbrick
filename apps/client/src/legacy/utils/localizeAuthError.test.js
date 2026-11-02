@@ -16,6 +16,28 @@ const DICT = {
 
 const t = (key) => DICT[key] || key
 
+test('maps forgot-password API codes', () => {
+  const dict = {
+    ...DICT,
+    forgotPassword_accountNotFound: 'No account found with this email',
+    forgotPassword_passwordSameAsOther: 'Use a different cabinet password',
+    forgotPassword_passwordSameAsCurrent: 'Choose a password that is not the current one',
+    forgotPassword_sessionExpired: 'Session expired — request a new code',
+    forgotPassword_wrongCode: 'Invalid code',
+  }
+  const tr = (key) => dict[key] || key
+  assert.equal(localizeAuthError({ code: 'forgot_account_not_found', error: 'x' }, tr), dict.forgotPassword_accountNotFound)
+  assert.equal(
+    localizeAuthError('Password must differ from the other cabinet password for this email. Enter a different password.', tr),
+    dict.forgotPassword_passwordSameAsOther,
+  )
+  assert.equal(localizeAuthError({ code: 'forgot_code_invalid' }, tr), dict.forgotPassword_wrongCode)
+  assert.equal(
+    localizeAuthError({ code: 'forgot_password_same_as_current', error: 'New password must be different from the current password.' }, tr),
+    dict.forgotPassword_passwordSameAsCurrent,
+  )
+})
+
 test('maps short codes', () => {
   assert.equal(localizeAuthError('invalid_code', t), DICT.invalidCode)
   assert.equal(localizeAuthError('code_expired', t), DICT.authError_codeExpired)

@@ -5,11 +5,26 @@ import {
   detectCatalogCity,
   detectCatalogCountry,
   detectCatalogLocation,
+  formatCatalogCities,
   formatCatalogCountries,
   indexCatalogLocations,
   localizePlaceLabel,
   parseLocationParts,
 } from './catalogLocations.js'
+
+test('city list does not repeat the same visible name', () => {
+  const index = {
+    cities: [
+      { key: 'puerto-a', label: 'Puerto de Santiago', countryKey: 'spain' },
+      { key: 'puerto-b', label: 'Puerto de Santiago', countryKey: 'spain' },
+      { key: 'gigantes', label: 'Los Gigantes', countryKey: 'spain' },
+    ],
+  }
+  assert.equal(
+    formatCatalogCities(index, 'spain', 'ru'),
+    'Puerto de Santiago, Los Gigantes',
+  )
+})
 
 test('parses country and city from a live site address', () => {
   const parsed = parseLocationParts({

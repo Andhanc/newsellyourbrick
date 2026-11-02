@@ -44,7 +44,7 @@ export const CORE_RULES = Object.freeze([
   {
     id: 8,
     title: 'Сценарий по ключевым словам',
-    summary: 'Поиск / платформа / ВНЖ / доли / аукцион / эскалация. Приветствие без темы недвижимости — мягко введи в воронку, объекты не слать.',
+    summary: 'Сначала пойми вопрос. Ищет объект — веди подбор. Спрашивает про раздел сайта — объясни его и дай ссылку, анкету подбора не начинай.',
   },
   {
     id: 9,
@@ -127,7 +127,7 @@ export function formatCoreRulesForPrompt(lang = 'ru') {
 5. *Soft manager offer* — only after they agree, pick a listing, or complain.
 6. *±26% band* — shortlist around the stated budget.
 7. *Remember context* — never re-ask known budget/location/type/goal.
-8. *Stay in scenario* — search / platform / visa / shares / escalation. Greetings without property keywords → warm intro, no listings.
+8. *Answer the actual question* — property search uses the catalog funnel; a question about a site section gets an explanation and a link, without the search questionnaire.
 9. *Escalate complexity* — complaints and specialist topics → human manager.
 
 **CATALOG FUNNEL:**
@@ -144,7 +144,7 @@ Never mix investment vehicles with personal-use listings. Never show listings be
 5. *Gestor* — solo tras el sí, un objeto elegido o una queja.
 6. *Banda ±26%* — selección en torno al presupuesto.
 7. *Memoria* — no repitas datos ya conocidos.
-8. *Escenario* — búsqueda / plataforma / visado / shares / escalado.
+8. *Responde a la pregunta real* — la búsqueda de inmueble usa el embudo; una pregunta sobre una sección del sitio se explica con enlace, sin cuestionario.
 9. *Escalar lo complejo* — quejas → manager humano.
 
 **EMBUDO:**

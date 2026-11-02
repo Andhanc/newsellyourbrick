@@ -2,7 +2,7 @@
  * Оркестрация умного помощника: воронка + база знаний + каталог + LLM.
  */
 
-import { getAssistantAiProvider, isAssistantAiConfigured } from '../aiChatConfig.js'
+import { getAssistantAiProvider, getKeylessAiProvider, isAssistantAiConfigured } from '../aiChatConfig.js'
 import { postChatCompletions } from '../services/aiChatCompletion.js'
 import { DEFAULT_CONFIG, formatDialogPathForPrompt, getBotConfig } from './botConfig.js'
 import { formatCoreRulesForPrompt } from './botCoreRules.js'
@@ -23,11 +23,11 @@ import {
   slimProperty,
 } from './propertyMatcher.js'
 import { formatAttachmentsForPrompt } from './fileAttachments.js'
+import { guideReplyText, matchSiteGuide, matchSiteGuides } from './siteGuide.js'
 import { selectSpainLegalKnowledge } from './spainLegalKnowledge.js'
 import { getSpainLegalLiveContext } from './spainLegalLiveSources.js'
 import {
   buildCabinetSnapshotReply,
-  buildComparisonReadinessReply,
   formatUserContextForPrompt,
   isComparisonQuestion,
   sanitizeAssistantUserContext,
@@ -194,8 +194,37 @@ const NAV_HINTS = [
 function navigationFromMessage(text = '') {
   const lower = String(text || '').toLowerCase()
   if (!lower.trim()) return []
-  const matched = NAV_HINTS.filter((item) => item.aliases.some((alias) => lower.includes(alias)))
-  return matched.slice(0, 4).map(({ path, label }) => ({ path, label }))
+  const matched = NAV_HINTS.filter((item) => item.aliases.some((alias) => lower.includes(alias))).map(
+    ({ path, label }) => ({ path, label }),
+  )
+  for (const section of matchSiteGuides(text)) {
+    if (!matched.some((item) => item.path === section.path)) {
+      matched.push({ path: section.path, label: section.label })
+    }
+  }
+  return matched.slice(0, 5)
+}
+
+function textMentionsNav(text, item) {
+  const hint = NAV_HINTS.find((row) => row.path === item.path)
+  const source = String(text || '')
+  const mentioned = hint
+    ? hint.aliases.some((alias) => {
+        if (alias.length >= 4) return source.toLowerCase().includes(alias)
+        const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        return new RegExp(`(?:^|[^\\p{L}\\p{N}])${escaped}(?:$|[^\\p{L}\\p{N}])`, 'iu').test(source)
+      })
+    : false
+  if (mentioned) return true
+  return matchSiteGuides(source).some((section) => section.path === item.path)
+}
+
+/** Кнопки только по текущему вопросу и по тому, что сказано в этом ответе. */
+function groundNavigation(userText, replyText, navigation) {
+  const items = sanitizeNavigation(navigation)
+  const keep = items.filter((item) => textMentionsNav(userText, item) || textMentionsNav(replyText, item))
+  if (keep.length) return keep.slice(0, 6)
+  return sanitizeNavigation(navigationFromMessage(userText)).slice(0, 5)
 }
 
 /** Если в ответе упомянуты стратегии/разделы — добавим кнопки, которые модель могла пропустить. */
@@ -493,6 +522,22 @@ function deterministicCopy(dialog, gate, match, lang) {
   if (gate.scenario === SCENARIOS.SHARES) return pack.shares
   if (gate.scenario === SCENARIOS.SPAIN_LEGAL) return deterministicSpainLegalCopy(gate.lastUserText, lang)
   if (gate.scenario === SCENARIOS.VISA_DOCS) return pack.visa
+  if (gate.scenario === SCENARIOS.SUPPORT_OTHER) {
+    const support = {
+      ru: 'Опишите, что именно не сработало: страница, действие и текст на экране. Подскажу нужный раздел или соединю с менеджером. Анкету подбора из-за этого не начинаю.',
+      en: 'Tell me what failed: the page, what you tapped, and the message on screen. I will point you to the right section or connect a manager. I will not start a property search because of this.',
+      es: 'Describa qué falló: la página, la acción y el texto en pantalla. Le indico la sección o le conecto con un gestor. No empiezo la búsqueda de inmuebles por esto.',
+      de: 'Beschreiben Sie, was nicht funktioniert hat: Seite, Aktion und der Text auf dem Bildschirm. Ich zeige den passenden Bereich oder verbinde Sie mit einem Manager.',
+      fr: 'Décrivez ce qui a échoué : la page, l’action et le message à l’écran. Je vous indique la section ou je vous mets en relation avec un conseiller.',
+      pl: 'Opisz, co nie zadziałało: strona, działanie i tekst na ekranie. Wskażę właściwy dział albo połączę z doradcą.',
+      sv: 'Beskriv vad som inte fungerade: sidan, vad du tryckte på och texten på skärmen. Jag visar rätt avsnitt eller kopplar dig till en rådgivare.',
+    }
+    return support[lang] || support.en
+  }
+  if (gate.scenario === SCENARIOS.PLATFORM_HELP || gate.guideTurn) {
+    const guided = guideReplyText(matchSiteGuide(gate.lastUserText), lang)
+    if (guided) return guided
+  }
   if (gate.scenario === SCENARIOS.PLATFORM_HELP) return pack.platform
   if (gate.scenario === SCENARIOS.PROPERTY_ABOUT) {
     if (match?.needsName || !match?.items?.length) {
@@ -522,8 +567,9 @@ function deterministicCopy(dialog, gate, match, lang) {
 function buildDeterministicReply(dialog, gate, match, lang, preferences, lastUser = '') {
   const navigation = sanitizeNavigation(navigationForScenario(gate, dialog, lastUser))
   const isAbout = gate.scenario === SCENARIOS.PROPERTY_ABOUT
+  const isGuide = Boolean(gate.guideTurn) || Boolean(matchSiteGuide(lastUser || gate.lastUserText))
   const mayRecommend =
-    dialog.stage === 'SHOW_LISTINGS' || (isAbout && match?.ids?.length > 0)
+    !isGuide && (dialog.stage === 'SHOW_LISTINGS' || (isAbout && match?.ids?.length > 0))
   const aboutNav =
     isAbout && match?.ids?.length
       ? match.ids.slice(0, 3).map((id) => ({
@@ -535,12 +581,12 @@ function buildDeterministicReply(dialog, gate, match, lang, preferences, lastUse
   return {
     text: deterministicCopy(dialog, gate, match, lang),
     buttons: null,
-    needsMoreInfo: isAbout ? !match?.ids?.length : dialog.stage !== 'SHOW_LISTINGS',
+    needsMoreInfo: isGuide ? false : isAbout ? !match?.ids?.length : dialog.stage !== 'SHOW_LISTINGS',
     recommendations: mayRecommend && match.ids.length ? match.ids : null,
     navigation: mergedNav.length ? mergedNav : null,
     yieldEstimate: null,
     preferences: dialogToPreferences(dialog, preferences),
-    stage: dialog.stage,
+    stage: isGuide ? 'GUIDE' : dialog.stage,
     scenario: gate.scenario,
     assistantMode: gate.assistantMode || null,
   }
@@ -583,11 +629,19 @@ function buildContextualActions({ history, lastUser, gate, match, dialog }) {
   return actions.slice(0, 3)
 }
 
-function buildLanguageSuggestion(selectedLanguage, detectedLanguage) {
+function buildLanguageSuggestion(selectedLanguage, detectedLanguage, history = []) {
   const selected = normalizeSelectedLanguage(selectedLanguage)
   const detected = normalizeSelectedLanguage(detectedLanguage, '')
   if (!detected || detected === selected) return null
+  const userTurns = (history || []).filter((message) => message?.sender === 'user').length
+  if (userTurns > 1) return null
   return { currentLanguage: selected, suggestedLanguage: detected }
+}
+
+function isAiAuthError(error) {
+  return /user not found|invalid api key|incorrect api key|unauthorized|status 401|status 403/i.test(
+    String(error?.message || error),
+  )
 }
 
 function legalSourcesForResponse(legalKnowledge, liveLegalData = []) {
@@ -687,8 +741,9 @@ ${locationsBlock}`
 Сначала дай прямой содержательный ответ именно на вопрос пользователя.
 Не запускай анкету подбора и не спрашивай цель, бюджет или город, если пользователь сам не попросил подобрать объект.
 Объясняй логику и практический следующий шаг, но не показывай скрытую цепочку рассуждений.
-Факты о функциях, кнопках, тарифах и маршрутах SellYourBrick бери только из базы знаний (особенно navigation_guide, access_rules, site_map) и карты разделов ниже.
-На вопрос о сервисе или навигации обязательно дай: что делает раздел, как туда попасть, нужен ли вход/Pro/VIP/депозит, точные шаги и 1–3 релевантные кнопки navigation с path из списка.
+Факты о функциях, кнопках, тарифах и маршрутах SellYourBrick бери только из базы знаний (особенно navigation_guide, access_rules, site_map) и карты разделов ниже. Сформулируй ответ заново под этот запрос, не копируй абзац из базы дословно и не отвечай общим слоганом, если спросили про различия или конкретный раздел.
+Если в вопросе несколько частей, ответь на каждую. Для нескольких стратегий объясни каждую названную. Для «где кошелёк и как пополнить» расскажи и про экран кошелька, и про пополнение.
+На вопрос о сервисе или навигации обязательно дай: что делает раздел, как туда попасть, нужен ли вход/Pro/VIP/депозит, точные шаги и кнопки navigation только по разделам этого сообщения.
 Если пользователь спрашивает «где / как открыть / куда зайти» — веди его к конкретному path, а не только описывай концепцию.
 Не перечисляй посторонние разделы «на всякий случай». Если в базе нет точной детали, честно скажи, что её нужно проверить на соответствующем экране или у менеджера.
 Для общих вопросов о недвижимости можешь использовать профессиональные знания, но не выдумывай текущие цены, законы, доходность или гарантии. Юридические и инвестиционные выводы помечай как ориентир.
@@ -824,7 +879,7 @@ export function buildAssistantContext({
     query: lastUser,
     scenario: gate.scenario,
     language: lang,
-    maxSections: 7,
+    maxSections: 8,
   })
   const legalKnowledge = gate.scenario === SCENARIOS.SPAIN_LEGAL
     ? selectSpainLegalKnowledge(lastUser, 8)
@@ -862,21 +917,11 @@ export async function buildAssistantReply(input = {}) {
     ctx.lastUser,
   )
   fallback.actions = buildContextualActions(ctx)
-  fallback.languageSuggestion = buildLanguageSuggestion(ctx.siteLanguage, ctx.inputLanguage)
+  fallback.languageSuggestion = buildLanguageSuggestion(ctx.siteLanguage, ctx.inputLanguage, ctx.history)
   fallback.sources = legalSourcesForResponse(ctx.legalKnowledge)
 
-  if (isComparisonQuestion(ctx.lastUser)) {
-    const readiness = buildComparisonReadinessReply(ctx.userContext, ctx.lang)
-    if (readiness) {
-      return {
-        ...fallback,
-        ...readiness,
-        languageSuggestion: fallback.languageSuggestion,
-      }
-    }
-  }
-
-  // Сравнение с 2+ избранными оставляем модели; кабинетный снимок — для баланса/броней/«моих» фактов.
+  // «Где сравнение» объясняет модель по базе знаний. Пустое избранное — деталь контекста, не весь ответ.
+  // Кабинетный снимок — только для баланса, броней и «моих» фактов.
   if (!isComparisonQuestion(ctx.lastUser)) {
     const cabinetReply = buildCabinetSnapshotReply(ctx.userContext, ctx.lastUser, ctx.lang)
     if (cabinetReply) {
@@ -949,17 +994,25 @@ export async function buildAssistantReply(input = {}) {
   try {
     const postChat = input.postChat || postChatCompletions
     const provider = getAssistantAiProvider()
-    const assistantModel = provider.defaultModel
-    const data = await postChat(
+    const requestModel = async (activeProvider) => postChat(
       {
-        model: assistantModel,
+        model: activeProvider.defaultModel,
         messages,
         reasoning_effort: 'medium',
         response_format: { type: 'json_object' },
         max_tokens: 1200,
       },
-      { timeoutMs: 45000, provider },
+      { timeoutMs: activeProvider.id === 'pollinations' ? 60000 : 45000, provider: activeProvider },
     )
+    let data
+    try {
+      data = await requestModel(provider)
+    } catch (error) {
+      const keyless = getKeylessAiProvider()
+      if (provider.id === keyless.id || !isAiAuthError(error)) throw error
+      console.warn('[assistant] primary model rejected the key, retrying with the keyless model')
+      data = await requestModel(keyless)
+    }
     const raw = data?.choices?.[0]?.message?.content || ''
     const parsed = parseAssistantJson(raw)
     if (!parsed?.text) return fallback
@@ -982,15 +1035,26 @@ export async function buildAssistantReply(input = {}) {
     const needsCatalogGuard =
       ctx.gate.scenario === SCENARIOS.PROPERTY_SEARCH &&
       ['NEED_COUNTRY', 'NEED_CITY', 'NEED_PROPERTY_TYPE', 'NEED_BUDGET'].includes(ctx.dialog.stage)
+    const repeatsSearchScript =
+      ctx.gate.guideTurn &&
+      /investment or a home for yourself|инвестиции или недвижимость для себя|invertir o comprar para usted|для себя\?|для инвестиций подберу/i.test(
+        modelText,
+      )
     const replyText =
-      lockFunnelStage || (needsCatalogGuard && !funnelReplyStaysInCatalog(modelText, ctx.dialog))
+      repeatsSearchScript ||
+      lockFunnelStage ||
+      (needsCatalogGuard && !funnelReplyStaysInCatalog(modelText, ctx.dialog))
         ? fallback.text
         : modelText
     const navigation = suppressNavigation
       ? []
-      : enrichNavigationWithMentionedSections(
+      : groundNavigation(
+          ctx.lastUser,
           replyText,
-          baseNavigation.length ? baseNavigation : fallback.navigation,
+          enrichNavigationWithMentionedSections(
+            replyText,
+            baseNavigation.length ? baseNavigation : fallback.navigation,
+          ),
         )
 
     const prefsOut = {
@@ -1001,15 +1065,17 @@ export async function buildAssistantReply(input = {}) {
     return {
       text: replyText,
       buttons: null,
-      needsMoreInfo: parsed.needsMoreInfo !== false,
-      recommendations: validateRecommendations(parsed.recommendations, ctx.match, ctx.dialog, ctx.gate),
+      needsMoreInfo: ctx.gate.guideTurn ? parsed.needsMoreInfo === true : parsed.needsMoreInfo !== false,
+      recommendations: ctx.gate.guideTurn
+        ? null
+        : validateRecommendations(parsed.recommendations, ctx.match, ctx.dialog, ctx.gate),
       navigation: navigation.length ? navigation : fallback.navigation,
       actions: buildContextualActions(ctx),
-      languageSuggestion: buildLanguageSuggestion(ctx.siteLanguage, ctx.inputLanguage),
+      languageSuggestion: buildLanguageSuggestion(ctx.siteLanguage, ctx.inputLanguage, ctx.history),
       sources: legalSourcesForResponse(ctx.legalKnowledge, liveLegalData),
       yieldEstimate: null,
       preferences: prefsOut,
-      stage: ctx.dialog.stage,
+      stage: ctx.gate.guideTurn ? 'GUIDE' : ctx.dialog.stage,
       scenario: ctx.gate.scenario,
       assistantMode: ctx.assistantMode || null,
     }
