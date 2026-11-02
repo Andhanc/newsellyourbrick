@@ -1036,7 +1036,7 @@ const LoginModal = ({
   return createPortal(
     <>
       {/* Скрываем LoginModal когда открыт EmailVerificationModal */}
-      {!showEmailVerificationModal && !showBuyerSellerLinkConfirm && (
+      {!showEmailVerificationModal && !showBuyerSellerLinkConfirm && !showForgotPasswordModal && (
         <div
           className={[
             'login-modal-overlay',

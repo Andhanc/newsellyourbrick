@@ -5955,7 +5955,7 @@
   "footerQrApp": "Scanner le QR",
   "forgotPassword_codeDigit": "Chiffre {{n}}",
   "forgotPassword_codeLength": "Saisissez les 4 chiffres",
-  "forgotPassword_codeSubtitle": "Nous avons envoyé un code à 4 chiffres à {{email}}",
+  "forgotPassword_codeSubtitle": "Nous avons envoyé un message avec le code et les étapes de réinitialisation à {{email}}",
   "forgotPassword_codeTitle": "Saisir le code",
   "forgotPassword_continue": "Continuer",
   "forgotPassword_devCode": "Code de développement : {{code}}",
@@ -5974,7 +5974,7 @@
   "forgotPassword_sendError": "Impossible d’envoyer le code",
   "forgotPassword_sending": "Envoi…",
   "forgotPassword_sessionExpired": "Session expirée — demandez un nouveau code",
-  "forgotPassword_subtitle": "Saisissez votre e-mail — nous enverrons un code à 4 chiffres pour réinitialiser le mot de passe.",
+  "forgotPassword_subtitle": "Saisissez votre e-mail — nous enverrons un message avec le code et les instructions pour créer un nouveau mot de passe.",
   "forgotPassword_success": "Mot de passe mis à jour. Vous pouvez maintenant vous connecter avec le nouveau mot de passe.",
   "forgotPassword_title": "Récupération du mot de passe",
   "forgotPassword_verifying": "Vérification du code…",
@@ -10776,5 +10776,10 @@
   "authBackToMethods": "Revenir aux modes de connexion",
   "authWelcomeExistingAccount": "J’ai déjà un compte",
   "authWelcomeChoiceTitle": "Choisissez comment continuer",
-  "authWelcomeChoiceDescription": "Connectez-vous à votre compte ou créez-en un"
+  "authWelcomeChoiceDescription": "Connectez-vous à votre compte ou créez-en un",
+  "forgotPassword_inboxHint": "Ouvrez le message : il contient le code et les étapes pour choisir un nouveau mot de passe.",
+  "forgotPassword_accountNotFound": "Aucun compte avec cet e-mail",
+  "forgotPassword_passwordSameAsOther": "Le mot de passe doit être différent de celui de l’autre espace",
+  "forgotPassword_passwordSameAsCurrent": "Le nouveau mot de passe doit être différent de l’actuel",
+  "forgotPassword_passwordsMatch": "Les mots de passe correspondent"
 }

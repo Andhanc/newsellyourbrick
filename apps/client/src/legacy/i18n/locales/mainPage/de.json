@@ -5956,7 +5956,7 @@
   "footerQrApp": "QR scannen",
   "forgotPassword_codeDigit": "Ziffer {{n}}",
   "forgotPassword_codeLength": "Geben Sie alle 4 Ziffern ein",
-  "forgotPassword_codeSubtitle": "Wir haben einen 4-stelligen Code an {{email}} gesendet",
+  "forgotPassword_codeSubtitle": "Wir haben eine Nachricht mit Code und Schritten zum Zurücksetzen an {{email}} gesendet",
   "forgotPassword_codeTitle": "Code eingeben",
   "forgotPassword_continue": "Weiter",
   "forgotPassword_devCode": "Dev-Code: {{code}}",
@@ -5975,7 +5975,7 @@
   "forgotPassword_sendError": "Code konnte nicht gesendet werden",
   "forgotPassword_sending": "Senden…",
   "forgotPassword_sessionExpired": "Sitzung abgelaufen — fordern Sie einen neuen Code an",
-  "forgotPassword_subtitle": "Geben Sie Ihre E-Mail ein — wir senden einen 4-stelligen Code zum Zurücksetzen des Passworts.",
+  "forgotPassword_subtitle": "Geben Sie Ihre E-Mail ein — wir senden eine Nachricht mit Code und Anleitung für ein neues Passwort.",
   "forgotPassword_success": "Passwort aktualisiert. Sie können sich jetzt mit dem neuen Passwort anmelden.",
   "forgotPassword_title": "Passwortwiederherstellung",
   "forgotPassword_verifying": "Code wird geprüft…",
@@ -10776,5 +10776,10 @@
   "authBackToMethods": "Zurück zur Methodenauswahl",
   "authWelcomeExistingAccount": "Ich habe bereits ein Konto",
   "authWelcomeChoiceTitle": "Wie möchtest du fortfahren?",
-  "authWelcomeChoiceDescription": "Melde dich an oder erstelle ein neues Konto"
+  "authWelcomeChoiceDescription": "Melde dich an oder erstelle ein neues Konto",
+  "forgotPassword_inboxHint": "Öffnen Sie die E-Mail: dort stehen der Code und die Schritte für ein neues Passwort.",
+  "forgotPassword_accountNotFound": "Kein Konto mit dieser E-Mail gefunden",
+  "forgotPassword_passwordSameAsOther": "Das Passwort muss sich vom Passwort des anderen Bereichs unterscheiden",
+  "forgotPassword_passwordSameAsCurrent": "Das neue Passwort muss sich vom aktuellen unterscheiden",
+  "forgotPassword_passwordsMatch": "Passwörter stimmen überein"
 }

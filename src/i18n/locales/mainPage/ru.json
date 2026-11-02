@@ -1843,13 +1843,13 @@
   "hidePassword": "Скрыть пароль",
   "forgotPassword": "Забыли пароль?",
   "forgotPassword_title": "Восстановление пароля",
-  "forgotPassword_subtitle": "Введите email — мы отправим 4-значный код для сброса пароля.",
+  "forgotPassword_subtitle": "Введите email — мы отправим письмо с кодом и инструкцией, как придумать новый пароль.",
   "forgotPassword_subtitleCabinet": "Отправим код для сброса пароля только для кабинета «{{cabinet}}».",
   "forgotPassword_sendCode": "Отправить код",
   "forgotPassword_sending": "Отправка…",
   "forgotPassword_sendError": "Не удалось отправить код",
   "forgotPassword_codeTitle": "Введите код",
-  "forgotPassword_codeSubtitle": "Мы отправили 4-значный код на {{email}}",
+  "forgotPassword_codeSubtitle": "Письмо с кодом и шагами сброса отправлено на {{email}}",
   "forgotPassword_codeLength": "Введите 4 цифры кода",
   "forgotPassword_wrongCode": "Неверный код",
   "forgotPassword_verifying": "Проверяем код…",
@@ -10776,5 +10776,10 @@
   "authBackToMethods": "К выбору способа",
   "authWelcomeExistingAccount": "Уже есть аккаунт",
   "authWelcomeChoiceTitle": "Выберите, как продолжить",
-  "authWelcomeChoiceDescription": "Войдите в свой аккаунт или создайте новый"
+  "authWelcomeChoiceDescription": "Войдите в свой аккаунт или создайте новый",
+  "forgotPassword_inboxHint": "Откройте письмо: там код и пошаговая инструкция, как задать новый пароль.",
+  "forgotPassword_accountNotFound": "Аккаунт с таким email не найден",
+  "forgotPassword_passwordSameAsOther": "Пароль должен отличаться от пароля другого кабинета на этом email",
+  "forgotPassword_passwordSameAsCurrent": "Новый пароль должен отличаться от текущего",
+  "forgotPassword_passwordsMatch": "Пароли совпадают"
 }

@@ -9,7 +9,7 @@ export const SITE_ASSISTANT_NAV = [
   { path: '/map', labelKey: 'siteNavMapObjects', aliases: ['карта', 'карту', 'карты', 'map', 'на карте'] },
   { path: '/co-investment', labelKey: 'shares', aliases: ['доли', 'shares', 'share', 'соинвест', 'фракцион'] },
   { path: '/shares', labelKey: 'shares', aliases: ['/shares'] },
-  { path: '/calculator', labelKey: 'calculator', aliases: ['калькулятор', 'инвестор', 'доходност', 'roi', 'yield', 'панель инвестора', 'умный инвестор'] },
+  { path: '/calculator', labelKey: 'calculator', aliases: ['калькулятор', 'инвестор', 'доходност', 'roi', 'yield', 'панель инвестора', 'умный инвестор', 'умная панель', 'умную панель', 'умной панели', 'smart panel', 'smart investor'] },
   { path: '/compare', labelKey: 'footerCompareObjects', aliases: ['сравн', 'compare'] },
   { path: '/test-drive', labelKey: 'testDrive', aliases: ['тест-драйв', 'test-drive', 'testdrive'] },
   { path: '/favorites', labelKey: 'favorites', aliases: ['избранн', 'favourites', 'favorites'] },
@@ -564,6 +564,10 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
           ? `При бюджете около ${Math.round(budget).toLocaleString('ru-RU')} € для инвестиций чаще смотрят квартиры/апарты под аренду или доли из текущего каталога; виллы — если важнее капитал и lifestyle. Форматы сделки: аукцион (цена), buy now (скорость), shares (меньший вход). Могу подобрать лоты или открыть Умную панель инвестора для точного сценария.`
           : 'Для инвестиций обычно смотрят квартиры/апарты под аренду или доли для меньшего входа; виллы — под капитал и lifestyle. Форматы на платформе: аукцион, buy now и shares. Уточните бюджет и локацию из каталога — подберу объекты; цифры по доходу лучше считать в Умной панели инвестора.',
       nav: 'Могу сразу открыть нужный раздел — выберите кнопку ниже.',
+      smartPanel:
+        'Умная панель инвестора считает цену, ремонт, аренду, ипотеку, денежный поток и ROI. Можно взять объект из избранного или ввести цифры самим. Нужен вход. Кнопка ниже открывает панель.',
+      subscriptions:
+        'На странице подписок — тарифы Starter, Pro и VIP. Pro открывает документы и аналитику, VIP — Private Club. Актуальные цены только на этой странице. Кнопка ниже открывает подписки.',
       listingOk:
         'Подобрал варианты из текущего каталога. Откройте карточку или уточните бюджет, город и тип жилья — подберу точнее.',
       listingEmpty:
@@ -615,6 +619,10 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
           ? `With a budget around €${Math.round(budget).toLocaleString('en-US')}, investors often look at apartments for rent or shares from the current catalog; villas if capital and lifestyle matter more. Deal formats: auction (price), buy now (speed), shares (smaller entry). I can match lots or open the smart investor panel for a full scenario.`
           : 'For investing, people often choose apartments for rent or shares for a smaller entry; villas for capital and lifestyle. Platform formats: auction, buy now, and shares. Share budget and a catalog location — I will match listings; use the smart investor panel for yield numbers.',
       nav: 'I can open the right section — pick a button below.',
+      smartPanel:
+        'The smart investor panel models price, renovation, rent, mortgage, cash flow and ROI. Start from a saved property or enter the numbers yourself. Sign-in is required. The button below opens the panel.',
+      subscriptions:
+        'The subscriptions page lists Starter, Pro and VIP. Pro opens documents and analytics, VIP opens Private Club. Current prices are only on that page. The button below opens subscriptions.',
       listingOk: 'Here are options from the current catalog. Open a card or refine budget, city, and property type.',
       listingEmpty: 'The catalog is empty right now. Open auctions on the site for live lots.',
       listingAsk: (places) =>
@@ -664,6 +672,10 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
           ? `Con un presupuesto de unos ${Math.round(budget).toLocaleString('es-ES')} €, para invertir suelen mirarse pisos/apartamentos para alquiler o participaciones del catálogo actual; villas si importan más el capital y el lifestyle. Formatos: subasta (precio), comprar ahora (rapidez), shares (entrada menor). Puedo buscar lotes o abrir el panel inteligente del inversor.`
           : 'Para invertir suelen elegirse pisos para alquiler o shares con entrada menor; villas para capital y lifestyle. Formatos: subasta, comprar ahora y shares. Indica presupuesto y una ubicación del catálogo: te propongo inmuebles; los números de rentabilidad mejor en el panel inteligente del inversor.',
       nav: 'Puedo abrir la sección que necesitas: elige un botón abajo.',
+      smartPanel:
+        'El panel inteligente del inversor calcula precio, reforma, alquiler, hipoteca, flujo de caja y ROI. Puede partir de un favorito o introducir las cifras. Hay que iniciar sesión. El botón abre el panel.',
+      subscriptions:
+        'En suscripciones están los planes Starter, Pro y VIP. Pro abre documentos y analítica, VIP abre Private Club. Los precios actuales solo están en esa página. El botón abre las suscripciones.',
       listingOk:
         'Aquí tienes opciones del catálogo actual. Abre una ficha o concreta presupuesto, ciudad y tipo de vivienda.',
       listingEmpty: 'El catálogo está vacío ahora. Abre las subastas del sitio para ver lotes activos.',
@@ -753,7 +765,11 @@ export function buildOfflineAssistantReply(userMessage, preferences = {}, proper
     buttons = [t.btnSpain, t.btnManager]
   } else if (yieldEstimate) {
     replyText = t.yield(yieldEstimate)
-  } else if (navigation.length && /(где|открой|открыть|перейди|перейти|покажи|навигац|раздел|страниц|калькулятор|карта|доли|open|show|go\s+to|abre|abrir|muéstrame|muestrame|mapa|calculadora)/i.test(lower)) {
+  } else if (navigation.some((item) => item.path === '/calculator') && /панел|калькул|smart\s+panel|investor\s+panel|calculator|calculadora/i.test(lower)) {
+    replyText = t.smartPanel
+  } else if (navigation.some((item) => item.path === '/subscriptions') && /подписк|тариф|subscription/i.test(lower)) {
+    replyText = t.subscriptions
+  } else if (navigation.length && /(где|открой|открыть|перейди|перейти|покажи|навигац|раздел|страниц|калькулятор|карта|доли|open|show|go\s+to|abre|abrir|muéstrame|muestrame|mapa|calculadora|панел|подписк|subscription)/i.test(lower)) {
     replyText = t.nav
   } else if (listingIntent) {
     if (recommendations?.length) {

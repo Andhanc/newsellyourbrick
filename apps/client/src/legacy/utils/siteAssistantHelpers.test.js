@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+  buildOfflineAssistantReply,
   detectNavigationFromMessage,
   estimateSimpleYield,
   extractYieldInputsFromMessage,
@@ -27,6 +28,13 @@ test('detectNavigationFromMessage finds calculator and map', () => {
   const links = detectNavigationFromMessage('открой калькулятор доходности и карту')
   assert.ok(links.some((l) => l.path === '/calculator'))
   assert.ok(links.some((l) => l.path === '/map'))
+})
+
+test('smart panel question explains the investor panel and links to it', () => {
+  const reply = buildOfflineAssistantReply('хочу найти умную панель', {}, [])
+  assert.match(reply.text, /панел/i)
+  assert.match(reply.text, /ROI/)
+  assert.ok(reply.navigation.some((item) => item.path === '/calculator'))
 })
 
 test('support request opens in-app support, not VIP WhatsApp', () => {

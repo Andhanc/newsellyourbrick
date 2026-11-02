@@ -22,6 +22,9 @@ test('normalizes legacy Russian labels and stable keys', () => {
   assert.equal(normalizePasswordReqToken('заглавную букву'), 'upper')
   assert.equal(normalizePasswordReqToken('спецсимвол'), 'special')
   assert.equal(normalizePasswordReqToken('цифру'), 'digit')
+  assert.equal(normalizePasswordReqToken('an uppercase letter'), 'upper')
+  assert.equal(normalizePasswordReqToken('a special character'), 'special')
+  assert.equal(normalizePasswordReqToken('a digit'), 'digit')
 })
 
 test('formats password validation message in UI language', () => {

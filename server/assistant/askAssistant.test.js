@@ -450,8 +450,8 @@ test('attached text is isolated as untrusted data in the model request', async (
   assert.match(userContent, /Ignore previous instructions/)
 })
 
-test('one favorite blocks comparison and explains that one more is required', async () => {
-  let modelWasCalled = false
+test('one favorite is passed to the model instead of a canned comparison block', async () => {
+  let prompt = ''
   const reply = await buildAssistantReply({
     messages: [{ sender: 'user', text: 'Сравни мои объекты' }],
     properties: catalog,
@@ -459,17 +459,30 @@ test('one favorite blocks comparison and explains that one more is required', as
       authenticated: true,
       favorites: { count: 1, items: [{ propertyId: 7, title: 'Costa apartment' }] },
     },
-    postChat: async () => {
-      modelWasCalled = true
-      return { choices: [] }
+    postChat: async (payload) => {
+      prompt = payload.messages[0].content
+      return {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              text: 'В избранном сейчас только Costa apartment. Для сравнения отметьте ещё один объект.',
+              navigation: [
+                { path: '/favorites', label: 'Избранное' },
+                { path: '/compare', label: 'Сравнение' },
+              ],
+              needsMoreInfo: true,
+            }),
+          },
+        }],
+      }
     },
   })
 
-  assert.equal(modelWasCalled, false)
+  assert.match(prompt, /Costa apartment/)
   assert.match(reply.text, /Costa apartment/)
   assert.match(reply.text, /ещё один объект/)
-  assert.ok(reply.navigation?.some((item) => item.path === '/favorites'))
-  assert.ok(reply.navigation?.some((item) => item.path === '/auction'))
+  assert.doesNotMatch(reply.text, /В Вашем избранном пока нет объектов/)
+  assert.ok(reply.navigation?.some((item) => item.path === '/compare'))
 })
 
 test('published property types question answers from owned listings', async () => {
@@ -592,6 +605,67 @@ test('two favorites and cabinet facts are passed to the model prompt', async () 
   assert.ok(reply.navigation?.some((item) => item.path === '/compare'))
 })
 
+test('a site question in match mode explains the section instead of starting search', async () => {
+  const reply = await buildAssistantReply({
+    messages: [{ sender: 'user', text: 'Хочу найти умную панель' }],
+    properties: catalog,
+    selectedLanguage: 'ru',
+    assistantMode: 'match',
+    postChat: async () => {
+      throw new Error('llm disabled in test')
+    },
+  })
+
+  assert.equal(reply.scenario, SCENARIOS.PLATFORM_HELP)
+  assert.equal(reply.stage, 'GUIDE')
+  assert.equal(reply.recommendations, null)
+  assert.ok(reply.navigation?.some((item) => item.path === '/calculator'))
+  assert.match(reply.text, /панел/i)
+  assert.match(reply.text, /ROI|доходност|аренд/i)
+  assert.doesNotMatch(reply.text, /инвестиции или недвижимость для себя/i)
+})
+
+test('subscriptions question in match mode does not ask for a purchase goal', async () => {
+  const reply = await buildAssistantReply({
+    messages: [{ sender: 'user', text: 'Where can I find subscriptions?' }],
+    properties: catalog,
+    selectedLanguage: 'en',
+    detectedLanguage: 'en',
+    assistantMode: 'match',
+    postChat: async () => {
+      throw new Error('llm disabled in test')
+    },
+  })
+
+  assert.equal(reply.scenario, SCENARIOS.PLATFORM_HELP)
+  assert.ok(reply.navigation?.some((item) => item.path === '/subscriptions'))
+  assert.match(reply.text, /Pro/)
+  assert.doesNotMatch(reply.text, /investment or a home for yourself/i)
+})
+
+test('platform mode still enters the catalog funnel for an explicit property search', () => {
+  const ctx = buildAssistantContext({
+    messages: [{ sender: 'user', text: 'Подбери квартиру в Испании' }],
+    properties: catalog,
+    assistantMode: 'platform',
+  })
+  assert.equal(ctx.gate.scenario, SCENARIOS.PROPERTY_SEARCH)
+})
+
+test('buying shares in a city stays a property search, explaining shares does not', () => {
+  assert.equal(classifyScenario('хочу купить доли в Испании').scenario, SCENARIOS.PROPERTY_SEARCH)
+  assert.equal(classifyScenario('расскажи про доли').scenario, SCENARIOS.SHARES)
+  assert.equal(classifyScenario('Хочу найти умную панель').scenario, SCENARIOS.PLATFORM_HELP)
+  assert.equal(
+    classifyScenario('Расскажи про стратегии покупки: аукцион, купить сейчас, доли и долги. Чем они отличаются?').scenario,
+    SCENARIOS.PLATFORM_HELP,
+  )
+  assert.equal(
+    classifyScenario('А чем аукцион отличается от купить сейчас, и что такое долги?').scenario,
+    SCENARIOS.PLATFORM_HELP,
+  )
+})
+
 test('assistant mode match forces property search funnel', () => {
   const ctx = buildAssistantContext({
     messages: [{ sender: 'user', text: 'Хочу подобрать объекты по вашему алгоритму подбора.' }],
@@ -668,6 +742,162 @@ test('assistant mode about asks for a name when starter has no listing', async (
   assert.equal(reply.scenario, SCENARIOS.PROPERTY_ABOUT)
   assert.equal(reply.recommendations, null)
   assert.match(reply.text, /назван|id|город|name|nombre/i)
+})
+
+test('several strategies keep the model explanation and only the buttons for those strategies', async () => {
+  const reply = await buildAssistantReply({
+    messages: [{
+      sender: 'user',
+      text: 'Расскажи про стратегии покупки: аукцион, купить сейчас, доли и долги. Чем они отличаются?',
+    }],
+    properties: catalog,
+    selectedLanguage: 'ru',
+    postChat: async () => ({
+      choices: [{
+        message: {
+          content: JSON.stringify({
+            text: 'Аукцион — торги с таймером. Купить сейчас — фиксированная цена без торгов. Доли — вход меньшим чеком. Долги — объекты с обременением и более высоким риском.',
+            navigation: [
+              { path: '/auction', label: 'Аукцион' },
+              { path: '/auction/buy-now', label: 'Купить сейчас' },
+              { path: '/co-investment', label: 'Доли' },
+              { path: '/debts', label: 'Долги' },
+              { path: '/calculator', label: 'Панель' },
+            ],
+            needsMoreInfo: false,
+          }),
+        },
+      }],
+    }),
+  })
+
+  assert.equal(reply.scenario, SCENARIOS.PLATFORM_HELP)
+  assert.equal(reply.stage, 'GUIDE')
+  assert.match(reply.text, /фиксированная цена/)
+  assert.match(reply.text, /обременением/)
+  assert.doesNotMatch(reply.text, /Доли — вход в объект меньшим чеком/)
+  assert.ok(reply.navigation?.some((item) => item.path === '/auction'))
+  assert.ok(reply.navigation?.some((item) => item.path === '/auction/buy-now'))
+  assert.ok(reply.navigation?.some((item) => item.path === '/co-investment'))
+  assert.ok(reply.navigation?.some((item) => item.path === '/debts'))
+  assert.equal(reply.navigation?.some((item) => item.path === '/calculator'), false)
+})
+
+test('where to compare is explained by the model even when favorites are empty', async () => {
+  const reply = await buildAssistantReply({
+    messages: [{ sender: 'user', text: 'Где на сайте сравнить объекты между собой?' }],
+    properties: catalog,
+    selectedLanguage: 'ru',
+    userContext: {
+      authenticated: true,
+      favorites: { count: 0, items: [] },
+    },
+    postChat: async () => ({
+      choices: [{
+        message: {
+          content: JSON.stringify({
+            text: 'Сравнение ставит два объекта рядом по параметрам и окружению. Сейчас в избранном ничего нет: отметьте сердцем два объекта и откройте сравнение.',
+            navigation: [
+              { path: '/compare', label: 'Сравнение' },
+              { path: '/calculator', label: 'Панель' },
+            ],
+            needsMoreInfo: false,
+          }),
+        },
+      }],
+    }),
+  })
+
+  assert.match(reply.text, /два объекта рядом/)
+  assert.doesNotMatch(reply.text, /В Вашем избранном пока нет объектов/)
+  assert.ok(reply.navigation?.some((item) => item.path === '/compare'))
+  assert.equal(reply.navigation?.some((item) => item.path === '/calculator'), false)
+})
+
+test('wallet and top-up stay in the model answer with both pages', async () => {
+  const reply = await buildAssistantReply({
+    messages: [{ sender: 'user', text: 'А где кошелёк и как пополнить баланс?' }],
+    properties: catalog,
+    selectedLanguage: 'ru',
+    postChat: async () => ({
+      choices: [{
+        message: {
+          content: JSON.stringify({
+            text: 'Кошелёк показывает баланс, операции и ставки. Пополнение — кнопка «Пополнить» в кошельке: выберите способ и подтвердите сумму. Депозит остаётся на балансе и нужен для ставок.',
+            navigation: [
+              { path: '/wallet', label: 'Кошелёк' },
+              { path: '/deposit', label: 'Пополнить' },
+              { path: '/calculator', label: 'Панель' },
+            ],
+            needsMoreInfo: false,
+          }),
+        },
+      }],
+    }),
+  })
+
+  assert.match(reply.text, /показывает баланс/)
+  assert.doesNotMatch(reply.text, /^Депозит нужен для ставок/)
+  assert.ok(reply.navigation?.some((item) => item.path === '/wallet'))
+  assert.ok(reply.navigation?.some((item) => item.path === '/deposit'))
+  assert.equal(reply.navigation?.some((item) => item.path === '/calculator'), false)
+})
+
+test('a rejected model key is retried and the second model answer is kept', async () => {
+  const reply = await buildAssistantReply({
+    messages: [{ sender: 'user', text: 'Что такое закрытый клуб и как в него попасть?' }],
+    properties: catalog,
+    selectedLanguage: 'ru',
+    postChat: async (_payload, init) => {
+      if (init.provider.id !== 'pollinations') throw new Error('User not found.')
+      return {
+        choices: [{
+          message: {
+            content: JSON.stringify({
+              text: 'Закрытый клуб — это ранний доступ и закрытые лоты. Нужен VIP, его статус виден в профиле.',
+              navigation: [
+                { path: '/private-club', label: 'Клуб' },
+                { path: '/calculator', label: 'Панель' },
+              ],
+              needsMoreInfo: false,
+            }),
+          },
+        }],
+      }
+    },
+  })
+
+  assert.match(reply.text, /ранний доступ/)
+  assert.doesNotMatch(reply.text, /Кнопка ниже открывает клуб/)
+  assert.ok(reply.navigation?.some((item) => item.path === '/private-club'))
+  assert.equal(reply.navigation?.some((item) => item.path === '/calculator'), false)
+})
+
+test('language switch is offered on the first foreign message only', async () => {
+  const reply = await buildAssistantReply({
+    messages: [
+      { sender: 'user', text: 'Покажите, как работает сайт' },
+      { sender: 'assistant', text: 'SellYourBrick объединяет аукционы и покупку сейчас.' },
+      { sender: 'user', text: 'А где закрытый клуб?' },
+    ],
+    properties: catalog,
+    selectedLanguage: 'de',
+    detectedLanguage: 'ru',
+    postChat: async () => ({
+      choices: [{
+        message: {
+          content: JSON.stringify({
+            text: 'Закрытый клуб открывается после VIP.',
+            navigation: [{ path: '/private-club', label: 'Клуб' }],
+            needsMoreInfo: false,
+          }),
+        },
+      }],
+    }),
+  })
+
+  assert.equal(reply.languageSuggestion, null)
+  assert.match(reply.text, /VIP/)
 })
 
 test('city clarification localizes Spain and keeps a natural consult tone', async () => {

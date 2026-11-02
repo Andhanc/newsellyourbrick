@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { FiX, FiMail, FiLock, FiEye, FiEyeOff, FiArrowLeft, FiHome, FiTrendingUp } from 'react-icons/fi'
+import { FiX, FiEye, FiEyeOff, FiArrowLeft, FiArrowUpRight, FiHome, FiTrendingUp, FiCheck } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
 import {
   sendForgotPasswordCode,
@@ -9,6 +9,8 @@ import {
   validateEmail,
 } from '../services/authService'
 import { formatPasswordValidationMessage } from '../utils/passwordValidationMessage'
+import { localizeAuthError } from '../utils/localizeAuthError'
+import { publicAsset } from '../utils/publicAsset'
 import './ForgotPasswordModal.css'
 
 const CODE_LENGTH = 4
@@ -23,7 +25,7 @@ export default function ForgotPasswordModal({
   /** Поверх role-switch drawer и других высоких слоёв */
   elevated = false,
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [step, setStep] = useState('email')
   const [email, setEmail] = useState(initialEmail || '')
   const [code, setCode] = useState(Array(CODE_LENGTH).fill(''))
@@ -61,7 +63,48 @@ export default function ForgotPasswordModal({
     setEmail(initialEmail || '')
   }, [isOpen, initialEmail, initialRole, resetState])
 
+  useEffect(() => {
+    if (!isOpen) return undefined
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
+  }, [isOpen])
+
   const cabinetRoleForReset = selectedRole ?? initialRole
+
+  const describeAuthError = (payload, fallbackKey) =>
+    localizeAuthError(
+      {
+        code: payload?.code || payload?.status,
+        error: payload?.error || payload?.message,
+      },
+      t,
+    ) || t(fallbackKey)
+
+  const passwordRules = [
+    {
+      id: 'upper',
+      ok: /[A-ZА-Я]/.test(password),
+      label: t('roleSwitch_passwordRequirementUpper'),
+    },
+    {
+      id: 'digit',
+      ok: /[0-9]/.test(password),
+      label: t('roleSwitch_passwordRequirementDigit'),
+    },
+    {
+      id: 'special',
+      ok: /[!@#$%^&*()_+\-=[\]{}|;:,.<>?]/.test(password),
+      label: t('roleSwitch_passwordRequirementSpecial'),
+    },
+    {
+      id: 'match',
+      ok: password.length > 0 && password === confirmPassword,
+      label: t('forgotPassword_passwordsMatch'),
+    },
+  ]
 
   useEffect(() => {
     if (countdown <= 0) return undefined
@@ -79,9 +122,9 @@ export default function ForgotPasswordModal({
         setError(validation.error || t('enterValidEmail'))
         return
       }
-      const result = await sendForgotPasswordCode(email)
+      const result = await sendForgotPasswordCode(email, 'en')
       if (!result.success) {
-        setError(result.error || t('forgotPassword_sendError'))
+        setError(describeAuthError(result, 'forgotPassword_sendError'))
         return
       }
       if (result.devCode) {
@@ -126,7 +169,7 @@ export default function ForgotPasswordModal({
     try {
       const result = await verifyForgotPasswordCode(email, codeString)
       if (!result.success) {
-        setError(result.error || t('forgotPassword_wrongCode'))
+        setError(describeAuthError(result, 'forgotPassword_wrongCode'))
         return
       }
       proceedAfterCodeVerified(result)
@@ -208,12 +251,10 @@ export default function ForgotPasswordModal({
       onSuccess?.()
       onClose()
     } catch (err) {
-      if (err.status === 'password_same_as_other') {
-        setError(err.message)
-      } else if (err.passwordValidation) {
+      if (err.passwordValidation) {
         setError(formatPasswordValidationMessage(err.passwordValidation, t))
       } else {
-        setError(err.message || t('forgotPassword_saveError'))
+        setError(describeAuthError(err, 'forgotPassword_saveError'))
       }
     } finally {
       setIsLoading(false)
@@ -235,41 +276,49 @@ export default function ForgotPasswordModal({
         aria-modal="true"
         aria-labelledby="forgot-password-title"
       >
-        <button
-          type="button"
-          className="forgot-password-modal__close"
-          onClick={onClose}
-          aria-label={t('closeModalAria')}
-        >
-          <FiX size={22} />
-        </button>
-
-        {step !== 'email' ? (
+        <div className="forgot-password-modal__head">
+          {step !== 'email' ? (
+            <button
+              type="button"
+              className="forgot-password-modal__back"
+              onClick={() => {
+                setError('')
+                if (step === 'password' && availableRoles.length > 1 && !initialRole) setStep('role')
+                else if (step === 'role' || step === 'password') setStep('code')
+                else setStep('email')
+              }}
+              aria-label={t('roleSwitch_back')}
+            >
+              <FiArrowLeft size={20} aria-hidden />
+            </button>
+          ) : (
+            <span className="forgot-password-modal__head-spacer" aria-hidden />
+          )}
+          <h2 id="forgot-password-title" className="forgot-password-modal__title">
+            {step === 'email' && t('forgotPassword_title')}
+            {step === 'code' && t('forgotPassword_codeTitle')}
+            {step === 'role' && t('forgotPassword_roleTitle')}
+            {step === 'password' && t('forgotPassword_newPasswordTitle')}
+          </h2>
           <button
             type="button"
-            className="forgot-password-modal__back"
-            onClick={() => {
-              setError('')
-              if (step === 'password' && availableRoles.length > 1 && !initialRole) setStep('role')
-              else if (step === 'role' || step === 'password') setStep('code')
-              else setStep('email')
-            }}
+            className="forgot-password-modal__close"
+            onClick={onClose}
+            aria-label={t('closeModalAria')}
           >
-            <FiArrowLeft size={16} aria-hidden /> {t('roleSwitch_back')}
+            <FiX size={22} />
           </button>
-        ) : null}
-
-        <div className="forgot-password-modal__icon" aria-hidden>
-          <FiMail size={28} />
         </div>
 
-        <h2 id="forgot-password-title" className="forgot-password-modal__title">
-          {step === 'email' && t('forgotPassword_title')}
-          {step === 'code' && t('forgotPassword_codeTitle')}
-          {step === 'role' && t('forgotPassword_roleTitle')}
-          {step === 'password' && t('forgotPassword_newPasswordTitle')}
-        </h2>
+        <div className="forgot-password-modal__art">
+          <img
+            className="forgot-password-modal__art-image"
+            src={publicAsset('test-drive/art-key.png')}
+            alt=""
+          />
+        </div>
 
+        <div className="forgot-password-modal__body">
         <p className="forgot-password-modal__subtitle">
           {step === 'email' && (
             cabinetRoleForReset
@@ -297,31 +346,36 @@ export default function ForgotPasswordModal({
 
         {step === 'email' && (
           <form className="forgot-password-modal__form" onSubmit={handleSendCode}>
-            <label className="forgot-password-modal__label" htmlFor="forgot-email">
-              {t('email')}
-            </label>
-            <input
-              id="forgot-email"
-              type="email"
-              className="forgot-password-modal__input"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value)
-                setError('')
-              }}
-              placeholder="email@example.com"
-              autoComplete="email"
-              required
-            />
+            <div className="forgot-password-modal__field">
+              <label className="forgot-password-modal__label" htmlFor="forgot-email">
+                {t('emailLabelShort')}
+              </label>
+              <input
+                id="forgot-email"
+                type="email"
+                className={`forgot-password-modal__input${error ? ' forgot-password-modal__input--error' : ''}`}
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setError('')
+                }}
+                placeholder={t('emailPlaceholderShort')}
+                autoComplete="email"
+                required
+                aria-invalid={error ? 'true' : undefined}
+              />
+            </div>
             {error ? <p className="forgot-password-modal__error" role="alert">{error}</p> : null}
             <button type="submit" className="forgot-password-modal__submit" disabled={isLoading}>
-              {isLoading ? t('forgotPassword_sending') : t('forgotPassword_sendCode')}
+              <span>{isLoading ? t('forgotPassword_sending') : t('forgotPassword_sendCode')}</span>
+              {!isLoading && <FiArrowUpRight size={21} aria-hidden />}
             </button>
           </form>
         )}
 
         {step === 'code' && (
           <div className="forgot-password-modal__form">
+            <p className="forgot-password-modal__inbox">{t('forgotPassword_inboxHint')}</p>
             {devCode ? (
               <p className="forgot-password-modal__dev-code" role="status">
                 {t('forgotPassword_devCode', { code: devCode })}
@@ -392,76 +446,93 @@ export default function ForgotPasswordModal({
             </div>
             {error ? <p className="forgot-password-modal__error" role="alert">{error}</p> : null}
             <button type="button" className="forgot-password-modal__submit" onClick={handleRoleContinue}>
-              {t('forgotPassword_continue')}
+              <span>{t('forgotPassword_continue')}</span>
+              <FiArrowUpRight size={21} aria-hidden />
             </button>
           </div>
         )}
 
         {step === 'password' && (
           <form className="forgot-password-modal__form" onSubmit={handleResetPassword}>
-            <label className="forgot-password-modal__label" htmlFor="forgot-new-password">
-              {t('forgotPassword_newPasswordLabel')}
-            </label>
-            <div className="forgot-password-modal__password-wrap">
-              <FiLock size={16} className="forgot-password-modal__password-icon" aria-hidden />
-              <input
-                id="forgot-new-password"
-                type={showPassword ? 'text' : 'password'}
-                className="forgot-password-modal__input forgot-password-modal__input--password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value)
-                  setError('')
-                }}
-                autoComplete="new-password"
-                required
-              />
-              <button
-                type="button"
-                className="forgot-password-modal__password-toggle"
-                onClick={() => setShowPassword((v) => !v)}
-                tabIndex={-1}
-                aria-label={showPassword ? t('hidePassword') : t('showPassword')}
-              >
-                {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-              </button>
+            <div className="forgot-password-modal__field">
+              <label className="forgot-password-modal__label" htmlFor="forgot-new-password">
+                {t('forgotPassword_newPasswordLabel')}
+              </label>
+              <div className="forgot-password-modal__password-wrap">
+                <input
+                  id="forgot-new-password"
+                  type={showPassword ? 'text' : 'password'}
+                  className="forgot-password-modal__input forgot-password-modal__input--password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    setError('')
+                  }}
+                  placeholder={t('passwordPlaceholder')}
+                  autoComplete="new-password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="forgot-password-modal__password-toggle"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? t('hidePassword') : t('showPassword')}
+                >
+                  {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                </button>
+              </div>
             </div>
 
-            <label className="forgot-password-modal__label" htmlFor="forgot-confirm-password">
-              {t('confirmPasswordLabel')}
-            </label>
-            <div className="forgot-password-modal__password-wrap">
-              <FiLock size={16} className="forgot-password-modal__password-icon" aria-hidden />
-              <input
-                id="forgot-confirm-password"
-                type={showConfirmPassword ? 'text' : 'password'}
-                className="forgot-password-modal__input forgot-password-modal__input--password"
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value)
-                  setError('')
-                }}
-                autoComplete="new-password"
-                required
-              />
-              <button
-                type="button"
-                className="forgot-password-modal__password-toggle"
-                onClick={() => setShowConfirmPassword((v) => !v)}
-                tabIndex={-1}
-                aria-label={showConfirmPassword ? t('hidePassword') : t('showPassword')}
-              >
-                {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-              </button>
+            <div className="forgot-password-modal__field">
+              <label className="forgot-password-modal__label" htmlFor="forgot-confirm-password">
+                {t('confirmPasswordLabel')}
+              </label>
+              <div className="forgot-password-modal__password-wrap">
+                <input
+                  id="forgot-confirm-password"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  className="forgot-password-modal__input forgot-password-modal__input--password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value)
+                    setError('')
+                  }}
+                  placeholder={t('confirmPasswordPlaceholder')}
+                  autoComplete="new-password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="forgot-password-modal__password-toggle"
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  aria-label={showConfirmPassword ? t('hidePassword') : t('showPassword')}
+                >
+                  {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                </button>
+              </div>
             </div>
 
-            <p className="forgot-password-modal__hint">{t('roleSwitch_passwordHint')}</p>
+            <ul className="forgot-password-modal__rules" aria-label={t('roleSwitch_passwordRequirementsTitle')}>
+              {passwordRules.map((rule) => (
+                <li
+                  key={rule.id}
+                  className={`forgot-password-modal__rule${rule.ok ? ' forgot-password-modal__rule--ok' : ''}`}
+                >
+                  <span className="forgot-password-modal__rule-mark" aria-hidden>
+                    {rule.ok ? <FiCheck size={14} /> : null}
+                  </span>
+                  {rule.label}
+                </li>
+              ))}
+            </ul>
             {error ? <p className="forgot-password-modal__error" role="alert">{error}</p> : null}
             <button type="submit" className="forgot-password-modal__submit" disabled={isLoading}>
-              {isLoading ? t('forgotPassword_saving') : t('forgotPassword_savePassword')}
+              <span>{isLoading ? t('forgotPassword_saving') : t('forgotPassword_savePassword')}</span>
+              {!isLoading && <FiArrowUpRight size={21} aria-hidden />}
             </button>
           </form>
         )}
+        </div>
       </div>
     </div>
   )

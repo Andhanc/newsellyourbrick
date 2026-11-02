@@ -51,6 +51,8 @@ import {
 } from './stripeBilling.js';
 import { resolvePublicFrontendBase } from './publicFrontendUrl.js';
 import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './emailJsCrmSend.js';
+import { deliverPasswordResetEmail } from './passwordResetEmail.js';
+import { hashPassword } from './passwordHash.js';
 import { sendVerificationApprovedExternalNotifications } from './verificationApprovedNotify.js';
 import { sendVerificationRejectedExternalNotifications } from './verificationRejectedNotify.js';
 import {
@@ -252,38 +254,35 @@ function validatePassword(password) {
   const errors = [];
   const missing = [];
   const present = [];
+  const rules = [
+    { token: 'upper', label: 'an uppercase letter', test: /[A-ZА-Я]/ },
+    {
+      token: 'special',
+      label: 'a special character',
+      test: /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/,
+    },
+    { token: 'digit', label: 'a digit', test: /[0-9]/ },
+  ];
 
-  // Проверка наличия заглавной буквы
-  if (!/[A-ZА-Я]/.test(password)) {
-    errors.push('Password must contain at least one uppercase letter');
-    missing.push('an uppercase letter');
-  } else {
-    present.push('an uppercase letter');
+  for (const rule of rules) {
+    if (!rule.test.test(String(password ?? ''))) {
+      errors.push(rule.label);
+      missing.push(rule.token);
+    } else {
+      present.push(rule.token);
+    }
   }
 
-  // Проверка наличия спецсимволов
-  if (!/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password)) {
-    errors.push('Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)');
-    missing.push('a special character');
-  } else {
-    present.push('a special character');
-  }
-
-  // Проверка наличия цифры
-  if (!/[0-9]/.test(password)) {
-    errors.push('Password must contain at least one digit');
-    missing.push('a digit');
-  } else {
-    present.push('a digit');
-  }
+  const missingLabels = rules.filter((rule) => missing.includes(rule.token)).map((rule) => rule.label);
+  const presentLabels = rules.filter((rule) => present.includes(rule.token)).map((rule) => rule.label);
 
   return {
     valid: errors.length === 0,
     errors,
     missing,
     present,
-    message: errors.length > 0 
-      ? `Password does not meet the requirements. Add: ${missing.join(', ')}. ${present.length > 0 ? `Already present: ${present.join(', ')}.` : ''}`
+    message: errors.length > 0
+      ? `Password does not meet the requirements. Add: ${missingLabels.join(', ')}. ${presentLabels.length > 0 ? `Already present: ${presentLabels.join(', ')}.` : ''}`
       : 'Password meets all requirements'
   };
 }
@@ -2882,10 +2881,7 @@ app.post('/api/users', async (req, res) => {
     
     // Если пароль передан, хешируем его перед сохранением
     if (userData.password && userData.password.trim() !== '') {
-      userData.password = crypto
-        .createHash('sha256')
-        .update(userData.password)
-        .digest('hex');
+      userData.password = hashPassword(userData.password);
     }
     
     const result = await userQueries.create(userData);
@@ -3142,10 +3138,7 @@ app.put('/api/users/:id', async (req, res) => {
       }
       
       // Хешируем пароль тем же способом, что и при регистрации
-      updateData.password = crypto
-        .createHash('sha256')
-        .update(updateData.password)
-        .digest('hex');
+      updateData.password = hashPassword(updateData.password);
       console.log('🔐 Пароль обновлен (захеширован)');
     } else {
       // Если пароль пустой, не обновляем его (удаляем из данных)
@@ -5874,7 +5867,7 @@ app.post('/api/auth/email/check-seller-registration', async (req, res) => {
     }
     const { password } = req.body;
     if (password && typeof password === 'string' && buyer.password) {
-      const hashedTry = crypto.createHash('sha256').update(password).digest('hex');
+      const hashedTry = hashPassword(password);
       if (hashedTry === buyer.password) {
         return res.status(400).json({
           success: false,
@@ -6016,7 +6009,7 @@ app.post('/api/auth/linked-roles/set-password', async (req, res) => {
       });
     }
 
-    const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+    const hashedPassword = hashPassword(password);
     await userQueries.update(userId, { password: hashedPassword });
     const updated = await userQueries.getById(userId);
 
@@ -6125,7 +6118,7 @@ app.post('/api/auth/linked-roles/create', async (req, res) => {
       });
     }
 
-    const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+    const hashedPassword = hashPassword(password);
 
     for (const u of rows) {
       if (u.password && u.password === hashedPassword) {
@@ -6269,10 +6262,7 @@ app.post('/api/auth/email/register', async (req, res) => {
     
     // Хешируем пароль (используем SHA-256 для безопасности)
     // В production рекомендуется использовать bcrypt, но для простоты используем crypto
-    const hashedPassword = crypto
-      .createHash('sha256')
-      .update(password)
-      .digest('hex');
+    const hashedPassword = hashPassword(password);
 
     if (linkBuyer && linkBuyer.password && linkBuyer.password === hashedPassword) {
       return res.status(400).json({
@@ -6395,7 +6385,7 @@ app.post('/api/auth/email/login', async (req, res) => {
       }
     }
 
-    const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+    const hashedPassword = hashPassword(password);
 
     /** Несколько аккаунтов с одним email (покупатель + продавец) — подбираем по паролю */
     let user = null;
@@ -6484,37 +6474,11 @@ function generatePasswordResetCode() {
   return String(Math.floor(1000 + Math.random() * 9000));
 }
 
-function getEmailJsServerConfig() {
-  return {
-    serviceId: process.env.REACT_APP_EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID || process.env.EMAILJS_SERVICE_ID || '',
-    templateId: process.env.REACT_APP_EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID || process.env.EMAILJS_TEMPLATE_ID || '',
-    publicKey: process.env.REACT_APP_EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY || process.env.EMAILJS_PUBLIC_KEY || '',
-  };
-}
-
-async function sendPasswordResetEmail(email, code) {
-  const emailJsConfig = getEmailJsServerConfig();
-  if (!emailJsConfig.serviceId || !emailJsConfig.templateId || !emailJsConfig.publicKey) {
-    console.warn('⚠️ EmailJS не настроен — код восстановления пароля:', code);
-    return { sent: false, devCode: code };
-  }
-  const emailData = {
-    service_id: emailJsConfig.serviceId,
-    template_id: emailJsConfig.templateId,
-    user_id: emailJsConfig.publicKey,
-    template_params: {
-      to_email: email,
-      email,
-      verification_code: code,
-      code,
-      passcode: code,
-      subject: 'Password recovery — Sellyourbrick',
-    },
-  };
-  await axios.post('https://api.emailjs.com/api/v1.0/email/send', emailData, {
-    headers: { 'Content-Type': 'application/json' },
-  });
-  return { sent: true };
+function normalizePasswordResetRole(role) {
+  const value = String(role || '').toLowerCase();
+  if (value === 'seller' || value === 'owner') return 'seller';
+  if (value === 'buyer' || value === 'client') return 'buyer';
+  return null;
 }
 
 function cabinetRolesForUsers(users) {
@@ -6739,13 +6703,14 @@ app.post('/api/auth/email/forgot-password/send-code', async (req, res) => {
   try {
     const emailRaw = req.body.email;
     if (!emailRaw || typeof emailRaw !== 'string') {
-      return res.status(400).json({ success: false, error: 'Enter email' });
+      return res.status(400).json({ success: false, code: 'forgot_email_required', error: 'Enter email' });
     }
     const emailLower = emailRaw.toLowerCase().trim();
     const users = await userQueries.getAllByEmail(emailLower);
     if (!users.length) {
       return res.status(404).json({
         success: false,
+        code: 'forgot_account_not_found',
         error: 'No account found with this email',
       });
     }
@@ -6760,18 +6725,25 @@ app.post('/api/auth/email/forgot-password/send-code', async (req, res) => {
       roles,
     });
 
+    const siteUrl = resolvePublicFrontendBase(process.env, req);
     try {
-      const mailResult = await sendPasswordResetEmail(emailLower, code);
+      const mailResult = await deliverPasswordResetEmail({
+        toEmail: emailLower,
+        code,
+        locale: 'en',
+        siteUrl,
+      });
       res.json({
         success: true,
-        message: 'Code sent to email',
+        message: 'Reset instructions sent to email',
         roles,
         hasMultipleRoles: roles.length > 1,
-        ...(mailResult.devCode && process.env.NODE_ENV !== 'production' ? { devCode: mailResult.devCode } : {}),
+        channel: mailResult.channel,
       });
     } catch (mailErr) {
       console.error('❌ forgot-password send email:', mailErr.message);
       if (process.env.NODE_ENV !== 'production') {
+        console.warn('⚠️ Письмо восстановления не отправлено, код для разработки:', code);
         return res.json({
           success: true,
           message: 'Email was not sent (dev). Use the code from the response.',
@@ -6780,8 +6752,10 @@ app.post('/api/auth/email/forgot-password/send-code', async (req, res) => {
           devCode: code,
         });
       }
+      passwordResetSessions.delete(emailLower);
       return res.status(500).json({
         success: false,
+        code: 'forgot_email_send_failed',
         error: 'Could not send the email. Try again later.',
       });
     }
@@ -6799,19 +6773,23 @@ app.post('/api/auth/email/forgot-password/verify-code', async (req, res) => {
     const emailLower = String(req.body.email || '').toLowerCase().trim();
     const code = String(req.body.code || '').trim();
     if (!emailLower || !code) {
-      return res.status(400).json({ success: false, error: 'Enter email and code' });
+      return res.status(400).json({ success: false, code: 'forgot_code_required', error: 'Enter email and code' });
     }
     if (!/^\d{4}$/.test(code)) {
-      return res.status(400).json({ success: false, error: 'Code must contain 4 digits' });
+      return res.status(400).json({ success: false, code: 'forgot_code_format', error: 'Code must contain 4 digits' });
     }
 
     const session = passwordResetSessions.get(emailLower);
     if (!session || Date.now() > session.expiresAt) {
       passwordResetSessions.delete(emailLower);
-      return res.status(400).json({ success: false, error: 'Code not found or expired. Request a new one.' });
+      return res.status(400).json({
+        success: false,
+        code: 'forgot_code_expired',
+        error: 'Code not found or expired. Request a new one.',
+      });
     }
     if (session.code !== code) {
-      return res.status(400).json({ success: false, error: 'Invalid code' });
+      return res.status(400).json({ success: false, code: 'forgot_code_invalid', error: 'Invalid code' });
     }
 
     const resetToken = crypto.randomBytes(24).toString('hex');
@@ -6838,11 +6816,12 @@ app.post('/api/auth/email/forgot-password/reset', async (req, res) => {
     const emailLower = String(req.body.email || '').toLowerCase().trim();
     const resetToken = String(req.body.resetToken || '').trim();
     const password = req.body.password;
-    const role = req.body.role ? String(req.body.role).toLowerCase() : null;
+    const role = normalizePasswordResetRole(req.body.role);
 
     if (!emailLower || !resetToken || !password) {
       return res.status(400).json({
         success: false,
+        code: 'forgot_password_required',
         error: 'Enter email, token, and the new password',
       });
     }
@@ -6857,6 +6836,7 @@ app.post('/api/auth/email/forgot-password/reset', async (req, res) => {
     ) {
       return res.status(401).json({
         success: false,
+        code: 'forgot_session_expired',
         error: 'Recovery session expired. Request a new code.',
       });
     }
@@ -6875,31 +6855,49 @@ app.post('/api/auth/email/forgot-password/reset', async (req, res) => {
 
     const users = await userQueries.getAllByEmail(emailLower);
     if (!users.length) {
-      return res.status(404).json({ success: false, error: 'Account not found' });
+      return res.status(404).json({
+        success: false,
+        code: 'forgot_account_not_found',
+        error: 'Account not found',
+      });
     }
 
     let targets = users;
     if (role === 'buyer' || role === 'seller') {
       targets = usersForCabinetRole(users, role);
       if (!targets.length) {
-        return res.status(400).json({ success: false, error: 'Cabinet not found for this email' });
+        return res.status(400).json({
+          success: false,
+          code: 'forgot_cabinet_not_found',
+          error: 'Cabinet not found for this email',
+        });
       }
     } else if (session.roles.length > 1) {
       return res.status(400).json({
         success: false,
+        code: 'forgot_needs_role',
         status: 'needs_role',
         error: 'Choose the cabinet whose password you are changing',
         roles: session.roles,
       });
     }
 
-    const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+    const hashedPassword = hashPassword(password);
+
+    if (targets.some((u) => u.password && u.password === hashedPassword)) {
+      return res.status(400).json({
+        success: false,
+        code: 'forgot_password_same_as_current',
+        error: 'New password must be different from the current password.',
+      });
+    }
 
     for (const u of targets) {
       const others = users.filter((x) => x.id !== u.id && x.password);
       if (others.some((x) => x.password === hashedPassword)) {
         return res.status(400).json({
           success: false,
+          code: 'forgot_password_same_as_other',
           status: 'password_same_as_other',
           error:
             'Password must differ from the other cabinet password for this email. Enter a different password.',

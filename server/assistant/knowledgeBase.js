@@ -111,7 +111,7 @@ function getScenarioPriorities(scenario, query) {
   if (/тест.?драйв|test.?drive/i.test(text)) add('test_drive', 32)
   if (/долг|distress|обремен/i.test(text)) add('debts', 30)
   if (/development|девелоп|совместн\w*\s+развит|проект\w*\s+развит/i.test(text)) add('development', 32)
-  if (/калькулятор|доходн|панель\s+инвест|roi|yield/i.test(text)) add('investor_tools', 30)
+  if (/калькулятор|доходн|панель\s+инвест|умн\p{L}*\s+панел|smart\s+panel|roi|yield/iu.test(text)) add('investor_tools', 30)
   if (/внж|виза|golden|residenc/i.test(text)) add('visa_residency', 32)
   if (/документ|паспорт|\bnie\b|dld/i.test(text)) add('purchase_documents', 28)
   if (/ипотек|mortgage|hipoteca/i.test(text)) add('mortgage', 30)

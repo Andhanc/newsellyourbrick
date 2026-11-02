@@ -14,6 +14,7 @@ import {
   localizePlaceLabel,
   normalizeLocationText,
   parseLocationParts,
+  uniquePlaceLabels,
 } from './catalogLocations.js'
 import { isDebtListing, isShareListing } from './propertyMatcher.js'
 
@@ -395,12 +396,14 @@ export function analyzeConversation(history, lang = 'ru', preferences = {}, opti
   const cityPref = countryPref.hasCountry
     ? resolveCity(userMsgs, preferences, locationIndex, countryPref.countryKey)
     : { hasCity: false, cityKey: null, cityLabel: '' }
-  const availableCountries = locationIndex.countries.map((country) =>
-    localizePlaceLabel(country.label, lang),
+  const availableCountries = uniquePlaceLabels(
+    locationIndex.countries.map((country) => localizePlaceLabel(country.label, lang)),
   )
   const availableCities = countryPref.hasCountry
-    ? citiesForCountry(locationIndex, countryPref.countryKey).map((city) =>
-        localizePlaceLabel(city.label, lang),
+    ? uniquePlaceLabels(
+        citiesForCountry(locationIndex, countryPref.countryKey).map((city) =>
+          localizePlaceLabel(city.label, lang),
+        ),
       )
     : []
   const locationCatalog = cityPref.hasCity

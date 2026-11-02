@@ -5955,7 +5955,7 @@
   "footerQrApp": "Skanna QR",
   "forgotPassword_codeDigit": "Siffra {{n}}",
   "forgotPassword_codeLength": "Ange alla 4 siffror",
-  "forgotPassword_codeSubtitle": "Vi skickade en fyrsiffrig kod till {{email}}",
+  "forgotPassword_codeSubtitle": "Vi skickade ett meddelande med kod och återställningssteg till {{email}}",
   "forgotPassword_codeTitle": "Ange koden",
   "forgotPassword_continue": "Fortsätt",
   "forgotPassword_devCode": "Dev-kod: {{code}}",
@@ -5974,7 +5974,7 @@
   "forgotPassword_sendError": "Kunde inte skicka koden",
   "forgotPassword_sending": "Skickar…",
   "forgotPassword_sessionExpired": "Sessionen har gått ut — begär en ny kod",
-  "forgotPassword_subtitle": "Ange din e-post — vi skickar en fyrsiffrig kod för att återställa lösenordet.",
+  "forgotPassword_subtitle": "Ange e-post — vi skickar ett meddelande med koden och instruktioner för ett nytt lösenord.",
   "forgotPassword_success": "Lösenordet har uppdaterats. Du kan nu logga in med ditt nya lösenord.",
   "forgotPassword_title": "Återställning av lösenord",
   "forgotPassword_verifying": "Verifierar koden…",
@@ -10776,5 +10776,10 @@
   "authBackToMethods": "Tillbaka till inloggningsmetoder",
   "authWelcomeExistingAccount": "Jag har redan ett konto",
   "authWelcomeChoiceTitle": "Välj hur du vill fortsätta",
-  "authWelcomeChoiceDescription": "Logga in på ditt konto eller skapa ett nytt"
+  "authWelcomeChoiceDescription": "Logga in på ditt konto eller skapa ett nytt",
+  "forgotPassword_inboxHint": "Öppna mejlet: där finns koden och stegen för att välja ett nytt lösenord.",
+  "forgotPassword_accountNotFound": "Inget konto med den här e-postadressen",
+  "forgotPassword_passwordSameAsOther": "Lösenordet måste skilja sig från det andra kontots lösenord",
+  "forgotPassword_passwordSameAsCurrent": "Det nya lösenordet måste skilja sig från det nuvarande",
+  "forgotPassword_passwordsMatch": "Lösenorden matchar"
 }

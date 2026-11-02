@@ -24,6 +24,19 @@ const CODE_TO_KEY = {
   server_connection: 'authError_serverConnection',
   ALREADY_REGISTERED: 'authError_alreadyRegistered',
   NEED_REGISTER: 'authError_needRegister',
+  forgot_email_required: 'enterValidEmail',
+  forgot_account_not_found: 'forgotPassword_accountNotFound',
+  forgot_email_send_failed: 'forgotPassword_sendError',
+  forgot_code_required: 'forgotPassword_codeLength',
+  forgot_code_format: 'forgotPassword_codeLength',
+  forgot_code_expired: 'forgotPassword_sessionExpired',
+  forgot_code_invalid: 'forgotPassword_wrongCode',
+  forgot_session_expired: 'forgotPassword_sessionExpired',
+  forgot_password_required: 'forgotPassword_saveError',
+  forgot_cabinet_not_found: 'forgotPassword_pickRole',
+  forgot_needs_role: 'forgotPassword_pickRole',
+  forgot_password_same_as_other: 'forgotPassword_passwordSameAsOther',
+  forgot_password_same_as_current: 'forgotPassword_passwordSameAsCurrent',
 }
 
 /**
@@ -101,6 +114,19 @@ const MESSAGE_TO_KEY = {
   'An error occurred while signing in': 'loginGenericError',
   'Code verification failed': 'authError_codeVerifyFailed',
   'Could not save password': 'forgotPassword_saveError',
+  'No account found with this email': 'forgotPassword_accountNotFound',
+  'Account not found': 'forgotPassword_accountNotFound',
+  'Could not send the email. Try again later.': 'forgotPassword_sendError',
+  'Code not found or expired. Request a new one.': 'forgotPassword_sessionExpired',
+  'Code must contain 4 digits': 'forgotPassword_codeLength',
+  'Enter email and code': 'forgotPassword_codeLength',
+  'Recovery session expired. Request a new code.': 'forgotPassword_sessionExpired',
+  'Cabinet not found for this email': 'forgotPassword_pickRole',
+  'Choose the cabinet whose password you are changing': 'forgotPassword_pickRole',
+  'Password must differ from the other cabinet password for this email. Enter a different password.':
+    'forgotPassword_passwordSameAsOther',
+  'New password must be different from the current password.':
+    'forgotPassword_passwordSameAsCurrent',
   'Password updated': 'authError_passwordUpdated',
   'Something went wrong. Please try again.': 'genericError',
 

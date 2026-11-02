@@ -106,6 +106,11 @@ export function getAssistantAiProvider() {
   return materializeProvider(PROVIDERS.openrouter, 'openai/gpt-5.6-terra')
 }
 
+/** Запасной провайдер без ключа, если основной ключ отклонён. */
+export function getKeylessAiProvider() {
+  return materializeProvider(PROVIDERS.pollinations)
+}
+
 export function isAssistantAiConfigured() {
   return Boolean(getAssistantAiProvider().apiKey)
 }
