@@ -9,6 +9,7 @@ import {
   resolveClerkSyncCabinetRole,
 } from '../utils/resolveCabinetUserByEmail'
 import { hasActiveCabinetSession, readStoredUserRole } from '../utils/cabinetRoutes'
+import { readRoleSwitchTransition } from '../utils/roleSwitchTransition'
 
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
@@ -24,6 +25,7 @@ const ClerkAuthSync = () => {
   const hasSyncedRef = useRef(false)
 
   useEffect(() => {
+    if (readRoleSwitchTransition()) return
     // Ждем полной загрузки данных
     if (!userLoaded || !authLoaded) {
       return
@@ -239,6 +241,7 @@ const ClerkAuthSync = () => {
                 id: dbUserId.toString(),
                 role: intendedCabinetRole,
               }
+            if (readRoleSwitchTransition()) return { dbUserId: null }
             saveUserData(sessionUser, 'clerk')
             localStorage.setItem('userId', String(dbUserId))
             console.log('✅ ClerkAuthSync: Данные синхронизированы с БД, ID:', dbUserId)

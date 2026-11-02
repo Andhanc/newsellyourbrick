@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { registerAuthSessionRoutes } from './authSessionRoutes.js';
 import express from 'express';
 import compression from 'compression';
 import cors from 'cors';
@@ -6465,6 +6466,8 @@ app.post('/api/auth/email/login', async (req, res) => {
     });
   }
 });
+
+registerAuthSessionRoutes(app, { authenticateMobileRequest, getUserById: userQueries.getById });
 
 app.post('/api/auth/mobile/logout', async (req, res) => {
   try {

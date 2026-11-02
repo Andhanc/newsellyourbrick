@@ -1,0 +1,39 @@
+.role-switch-preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 30px;
+  background: #f8fcfc;
+  color: #15363d;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  isolation: isolate;
+}
+.role-switch-preloader__glow {
+  position: absolute;
+  z-index: -1;
+  width: min(620px, 140vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, #bdece7 0%, #e2f5f3 40%, transparent 70%);
+  opacity: .8;
+}
+.role-switch-preloader__content { display: flex; flex-direction: column; align-items: center; width: min(340px, 100%); text-align: center; }
+.role-switch-preloader__emblem { position: relative; display: grid; place-items: center; width: 116px; height: 116px; margin-bottom: 32px; }
+.role-switch-preloader__emblem img { width: 72px; height: 72px; border-radius: 23px; box-shadow: 0 12px 28px #195c6220; }
+.role-switch-preloader__orbit { position: absolute; inset: 0; border: 1px solid #63cdd433; border-top: 2px solid #319da7; border-right: 2px solid #63cdd4; border-radius: 50%; animation: role-switch-loader-orbit 1.8s linear infinite; }
+.role-switch-preloader__brand { font-size: clamp(28px, 7vw, 36px); font-weight: 800; letter-spacing: -.055em; }
+.role-switch-preloader__brand .site-brand__wordmark { display: inline; font-family: inherit; font-size: inherit; font-weight: inherit; letter-spacing: inherit; white-space: nowrap; }
+.role-switch-preloader__brand .site-brand__wordmark-accent { color: #fff; background: #278a94; padding: 2px 8px; border-radius: 12px; box-shadow: none; }
+.role-switch-preloader__message { margin: 16px 0 26px; max-width: 28ch; color: #607c80; font-size: 13px; font-weight: 500; line-height: 1.6; }
+.role-switch-preloader__track { width: 120px; height: 3px; overflow: hidden; border-radius: 3px; background: #d7ebe9; }
+.role-switch-preloader__track span { display: block; width: 45%; height: 100%; border-radius: inherit; background: #399fa6; animation: role-switch-loader-progress 1.5s ease-in-out infinite; }
+@keyframes role-switch-loader-orbit { to { transform: rotate(360deg); } }
+@keyframes role-switch-loader-progress { from { transform: translateX(-110%); } to { transform: translateX(330%); } }
+@media (prefers-reduced-motion: reduce) {
+  .role-switch-preloader__orbit, .role-switch-preloader__track span { animation: none; }
+  .role-switch-preloader__track span { width: 100%; }
+}

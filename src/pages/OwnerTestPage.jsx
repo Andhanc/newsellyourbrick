@@ -6,6 +6,7 @@ import OwnerTestCabinetPageFallback from '../components/OwnerTestCabinetPageFall
 import { OWNER_VIEWS, VIEW_PAGE_ACTIVE } from '../utils/ownerTestNav'
 import { lazyWithRetry } from '../utils/lazyWithRetry'
 import SellerPurchasedPropertyArrivalDrawer from '../components/SellerPurchasedPropertyArrivalDrawer'
+import RoleSwitchArrival, { useRoleSwitchArrival } from '../components/RoleSwitchArrival'
 
 const MainOwnerTestPage = lazyWithRetry(() => import('./MainOwnerTestPage'))
 const OwnerPropertiesTestPage = lazyWithRetry(() => import('./OwnerPropertiesTestPage'))
@@ -48,6 +49,7 @@ function OwnerTestViewRouter() {
 
 function OwnerTestPageContent() {
   const { view } = useOwnerTestNav()
+  const roleArrivalActive = useRoleSwitchArrival()
   const viewTree = (
     <Suspense fallback={<OwnerTestCabinetPageFallback />}>
       <OwnerTestViewRouter />
@@ -58,7 +60,7 @@ function OwnerTestPageContent() {
     return (
       <OwnerCabinetWelcomeHost>
         {viewTree}
-        <SellerPurchasedPropertyArrivalDrawer />
+        {!roleArrivalActive && <SellerPurchasedPropertyArrivalDrawer />}
       </OwnerCabinetWelcomeHost>
     )
   }
@@ -68,7 +70,7 @@ function OwnerTestPageContent() {
       <OwnerTestCabinetChrome>
         {viewTree}
       </OwnerTestCabinetChrome>
-      <SellerPurchasedPropertyArrivalDrawer />
+      {!roleArrivalActive && <SellerPurchasedPropertyArrivalDrawer />}
     </OwnerCabinetWelcomeHost>
   )
 }
@@ -76,7 +78,9 @@ function OwnerTestPageContent() {
 export default function OwnerTestPage() {
   return (
     <OwnerTestNavigationProvider>
-      <OwnerTestPageContent />
+      <RoleSwitchArrival role="seller">
+        <OwnerTestPageContent />
+      </RoleSwitchArrival>
     </OwnerTestNavigationProvider>
   )
 }

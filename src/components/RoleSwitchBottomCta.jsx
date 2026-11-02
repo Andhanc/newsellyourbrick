@@ -19,6 +19,8 @@ import { useHasBothLinkedRoles } from '../hooks/useHasBothLinkedRoles'
 import { publicAsset } from '../utils/publicAsset'
 import RoleSwitchDrawerShell from './RoleSwitchDrawerShell'
 import ForgotPasswordModal from './ForgotPasswordModal'
+import RoleSwitchPreloader from './RoleSwitchPreloader'
+import { readRoleSwitchTransition } from '../utils/roleSwitchTransition'
 import './RoleSwitch.css'
 
 const PITCH_IMAGES = {
@@ -26,13 +28,8 @@ const PITCH_IMAGES = {
 }
 
 function RoleSwitchSwitchingOverlay({ show, message }) {
-  if (!show) return null
-  return (
-    <div className="role-switch-switching-overlay" role="status" aria-live="polite" aria-busy="true">
-      <div className="role-switch-switching-overlay__spinner" aria-hidden />
-      <p className="role-switch-switching-overlay__text">{message}</p>
-    </div>
-  )
+  if (!show || readRoleSwitchTransition()) return null
+  return <RoleSwitchPreloader message={message} />
 }
 
 function RoleSwitchProgress({ current, total, label }) {
@@ -474,7 +471,7 @@ export function RoleSwitchModals({ flow }) {
         <>
           {switchingOverlay}
           <RoleSwitchDrawerShell
-            isOpen={!switching}
+            isOpen
             onClose={resetAndClose}
             onBack={goBackToCabinet}
             backLabel={t('roleSwitch_back')}
@@ -506,7 +503,7 @@ export function RoleSwitchModals({ flow }) {
       <>
         {switchingOverlay}
         <RoleSwitchDrawerShell
-          isOpen={!switching && !showForgotPassword}
+          isOpen={!showForgotPassword}
           onClose={resetAndClose}
           onBack={goBackToCabinet}
           backLabel={t('roleSwitch_back')}
@@ -530,6 +527,7 @@ export function RoleSwitchModals({ flow }) {
                     className="role-switch-field__password-input"
                     type={showSwitchPassword ? 'text' : 'password'}
                     autoComplete="current-password"
+                    disabled={loading}
                     value={switchPassword}
                     onChange={(e) => setSwitchPassword(e.target.value)}
                     placeholder={t('roleSwitch_passwordPlaceholder')}

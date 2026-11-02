@@ -9,6 +9,7 @@ import YandexMetrikaHits from './components/YandexMetrikaHits'
 import SessionRecording from './components/SessionRecording'
 import UserCabinetSseBridge from './components/UserCabinetSseBridge'
 import BiometricLockGate from './components/BiometricLockGate'
+import RoleSwitchTransitionHost from './components/RoleSwitchTransitionHost'
 import DepositVerificationGate from './components/DepositVerificationGate'
 import BuyerProfileOnboardingRouteGate from './components/BuyerProfileOnboardingRouteGate'
 import {
@@ -623,6 +624,7 @@ function App() {
   return (
     <div className="app-root-fill">
     <Router>
+      <RoleSwitchTransitionHost />
       <PageSeoProvider>
       <SitePageSeo />
       <SiteNotificationsProvider>

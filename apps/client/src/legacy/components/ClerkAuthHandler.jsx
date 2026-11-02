@@ -13,6 +13,7 @@ import AuthAlertModal from './AuthAlertModal'
 import { getCabinetHomePath, hasActiveCabinetSession, readStoredUserRole } from '../utils/cabinetRoutes'
 import { completePendingSellAfterSellerLogin } from '../utils/navigateToSellPurchasedProperty'
 import { invalidateUserByIdCache } from '../utils/usersApi'
+import { readRoleSwitchTransition } from '../utils/roleSwitchTransition'
 import {
   fetchCabinetUserByEmail,
   hasAnyCabinetUserByEmail,
@@ -58,6 +59,7 @@ const ClerkAuthHandler = () => {
   }, [location.pathname])
 
   useEffect(() => {
+    if (readRoleSwitchTransition()) return
     // Ждем загрузки данных
     if (!authLoaded || !userLoaded) {
       console.log('ClerkAuthHandler: Waiting for data to load...', { authLoaded, userLoaded })
@@ -383,6 +385,7 @@ const ClerkAuthHandler = () => {
           // Используем ID из БД для обновления localStorage (effectiveCabinetRole здесь недоступен — он объявлен ниже по коду)
           if (dbUserId) {
             await saveClerkProfilePhoto(dbUserId)
+            if (readRoleSwitchTransition()) return { interrupted: true }
             const sessionUser =
               mapDbUserToSessionUser(foundUser, clerkUserData) || {
                 ...clerkUserData,
@@ -415,8 +418,10 @@ const ClerkAuthHandler = () => {
       }
 
       ;(async () => {
-        const { dbUserId, shouldOpenRegister, roleFromDatabase, duplicateRegisterOAuth } =
+        const { dbUserId, shouldOpenRegister, roleFromDatabase, duplicateRegisterOAuth, interrupted } =
           await syncToDatabase()
+
+        if (interrupted || readRoleSwitchTransition()) return
 
         const effectiveCabinetRole = roleFromDatabase || clerkUserData.role
 

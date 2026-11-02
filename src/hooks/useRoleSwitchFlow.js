@@ -1,9 +1,11 @@
-import { useCallback, useState } from 'react'
-import { useClerk, useUser, useSignIn } from '@clerk/clerk-react'
+import { useCallback, useRef, useState } from 'react'
+import { useUser, useSignIn } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
-import { getUserData, loginWithEmail, saveUserData, validatePassword } from '../services/authService'
+import {
+  getUserData, getMobileAuthToken, loginWithEmail, rememberMobileAuthToken, saveUserData, validatePassword,
+} from '../services/authService'
 import { fetchUserById, invalidateUserByIdCache } from '../utils/usersApi'
-import { getCabinetHomePath, isSellerCabinetRole, readStoredUserRole } from '../utils/cabinetRoutes'
+import { isSellerCabinetRole, readStoredUserRole } from '../utils/cabinetRoutes'
 import { createLinkedRole, fetchLinkedRoles, setLinkedRolePassword } from '../utils/roleSwitchApi'
 import {
   promotePendingPurchasedPropertyToSellerArrival,
@@ -11,6 +13,13 @@ import {
 } from '../utils/purchasedPropertyListingPrefill'
 import { showNotification } from '../utils/toastHelper'
 import { formatPasswordValidationMessage } from '../utils/passwordValidationMessage'
+import { clearRoleSwitchArrival, readRoleSwitchArrival, storeRoleSwitchArrival } from '../utils/roleSwitchArrival'
+
+import {
+  beginRoleSwitchTransition, captureCabinetSession, clearCabinetSessionFields,
+  clearRoleSwitchTransition, commitRoleSwitchTransition, readRoleSwitchTransition,
+  restoreCabinetSession, roleSwitchSessionMatches, ROLE_SWITCH_TIMEOUT_MS,
+} from '../utils/roleSwitchTransition'
 
 const PROFILE_API_BASE = import.meta.env?.VITE_API_BASE_URL || '/api'
 
@@ -56,8 +65,8 @@ async function loadProfilePreview() {
  */
 export function useRoleSwitchFlow(targetRole) {
   const { t } = useTranslation()
-  const { user: clerkUser, isLoaded: clerkLoaded } = useUser()
-  const { signOut } = useClerk()
+  const { isLoaded: clerkLoaded } = useUser()
+  const switchingRef = useRef(false)
   const { signIn, isLoaded: signInLoaded } = useSignIn()
 
   const [phase, setPhase] = useState(null)
@@ -90,75 +99,96 @@ export function useRoleSwitchFlow(targetRole) {
 
   const switchToRole = useCallback(
     async (role, password) => {
-      const email = getUserData()?.email || linkedStatus?.email
+      if (switchingRef.current || readRoleSwitchTransition()) return false
+      const sourceUser = getUserData()
+      const email = sourceUser?.email || linkedStatus?.email
       if (!email) {
         setError(t('roleSwitch_emailNotFoundInProfile'))
         return false
       }
 
+      switchingRef.current = true
       setLoading(true)
       setSwitching(true)
       setError('')
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), ROLE_SWITCH_TIMEOUT_MS)
+      let transition = null
+      let snapshot = null
+      let sessionWritten = false
       let redirecting = false
       try {
-        sessionStorage.setItem('clerk_logout_in_progress', 'true')
-        sessionStorage.setItem('role_switch_in_progress', '1')
-        try {
-          if (clerkUser && signOut) {
-            await signOut()
-          }
-        } catch (e) {
-          console.warn('role switch Clerk signOut:', e)
-        }
-
-        const result = await loginWithEmail(email, password, role)
+        transition = beginRoleSwitchTransition({ role, sourceUserId: sourceUser.id, label: t('roleSwitch_switchingProfile') })
+        clearRoleSwitchArrival()
+        // Keep both the current cabinet and Clerk identity intact until the new session is verified.
+        // Clerk signOut() navigates to afterSignOutUrl and must never be used for a role switch.
+        const result = await loginWithEmail(email, password, role, { persist: false, signal: controller.signal })
+        if (controller.signal.aborted) throw new Error('roleSwitch_switchTimeout')
         if (!result.success) {
-          sessionStorage.removeItem('role_switch_in_progress')
           setError(result.error || t('roleSwitch_wrongPassword'))
           return false
         }
-
-        const newRole = result.user?.role || role
-        const wantedSeller = role === 'seller'
-        const gotSeller =
-          newRole === 'seller' || newRole === 'owner'
-        if (wantedSeller !== gotSeller) {
-          sessionStorage.removeItem('role_switch_in_progress')
-          setError(t('roleSwitch_wrongPasswordForCabinet'))
-          return false
+        if (!roleSwitchSessionMatches(result.user, role, email) || !result.authToken) {
+          throw new Error('roleSwitch_wrongPasswordForCabinet')
         }
 
+        const response = await fetch(`${PROFILE_API_BASE}/auth/mobile/session`, {
+          headers: { Authorization: `Bearer ${result.authToken}` },
+          signal: controller.signal,
+          cache: 'no-store',
+        })
+        const confirmed = await response.json()
+        if (!response.ok || !confirmed.success || !roleSwitchSessionMatches(confirmed.user, role, email) ||
+          String(confirmed.user.id) !== String(result.user.id)) {
+          throw new Error('roleSwitch_sessionVerificationFailed')
+        }
+        if (controller.signal.aborted) throw new Error('roleSwitch_switchTimeout')
+        const currentUser = getUserData()
+        if (String(currentUser?.id) !== String(sourceUser.id) || currentUser.role !== sourceUser.role ||
+          currentUser.email !== sourceUser.email) throw new Error('roleSwitch_sessionChanged')
+
+        snapshot = captureCabinetSession()
+        sessionWritten = true
+        clearCabinetSessionFields()
+        saveUserData(result.user, 'email', { notify: false })
+        rememberMobileAuthToken(result.authToken)
+        if (String(getUserData()?.id) !== String(result.user.id) ||
+          !roleSwitchSessionMatches(getUserData(), role, email) || getMobileAuthToken() !== result.authToken) {
+          throw new Error('roleSwitch_sessionSaveFailed')
+        }
+        storeRoleSwitchArrival({ role, userId: result.user.id })
+        if (!readRoleSwitchArrival({ role, userId: result.user.id })) throw new Error('roleSwitch_sessionSaveFailed')
+        commitRoleSwitchTransition(transition.id, result.user.id)
+
+        for (const key of ['clerk_oauth_redirect_started', 'clerk_oauth_flow_mode', 'clerk_oauth_user_role']) {
+          sessionStorage.removeItem(key)
+        }
+        invalidateUserByIdCache(PROFILE_API_BASE, result.user.id)
         const pendingSell = readPendingSellPurchasedProperty()
-        if (pendingSell?.id && gotSeller) {
-          promotePendingPurchasedPropertyToSellerArrival({ sellerUserId: result.user?.id })
+        if (pendingSell?.id && role === 'seller') {
+          promotePendingPurchasedPropertyToSellerArrival({ sellerUserId: result.user.id })
         }
-
-        const targetPath = getCabinetHomePath(newRole)
-
-        if (result.user?.id) {
-          try {
-            invalidateUserByIdCache(PROFILE_API_BASE, result.user.id)
-          } catch {
-            /* ignore cache errors */
-          }
-        }
-
+        // A document navigation isolates every account-specific context and in-flight request.
+        window.location.replace(transition.path)
         redirecting = true
-        window.location.assign(targetPath)
         return true
       } catch (e) {
-        sessionStorage.removeItem('role_switch_in_progress')
-        setError(e.message || t('roleSwitch_switchError'))
+        if (sessionWritten && snapshot) restoreCabinetSession(snapshot)
+        clearRoleSwitchArrival()
+        const key = controller.signal.aborted ? 'roleSwitch_switchTimeout' : e.message
+        setError(t(key?.startsWith('roleSwitch_') ? key : 'roleSwitch_switchError'))
         return false
       } finally {
-        sessionStorage.removeItem('clerk_logout_in_progress')
+        clearTimeout(timeout)
         if (!redirecting) {
+          if (transition) clearRoleSwitchTransition(transition.id)
+          switchingRef.current = false
           setSwitching(false)
           setLoading(false)
         }
       }
     },
-    [clerkUser, signOut, linkedStatus, t],
+    [linkedStatus, t],
   )
 
   const openFlow = useCallback(async () => {

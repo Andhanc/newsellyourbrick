@@ -51,6 +51,7 @@ import {
 } from '../utils/ownerAnalyticsExcelExport'
 import OwnerProfileCompletionBanner from '../components/OwnerProfileCompletionBanner'
 import { useOwnerWelcomeUi } from '../components/OwnerCabinetWelcomeHost'
+import { useRoleSwitchDestinationReady } from '../components/RoleSwitchArrival'
 import SellerAddPropertyBanner from '../components/SellerAddPropertyBanner'
 import LanguageDrawer from '../components/LanguageDrawer'
 import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
@@ -287,6 +288,7 @@ export default function OwnerProfileTestPage() {
   const intlLocale = useMemo(() => getOwnerTestIntlLocale(i18n.language), [i18n.language])
   const { profile, loading, saving, fullName, roleLabel, updateProfile, saveProfile } =
     useOwnerTestProfile()
+  useRoleSwitchDestinationReady(!loading && Boolean(profile))
   const { hasBoth: hasBothLinkedRoles } = useHasBothLinkedRoles()
   const buyerRoleFlow = useRoleSwitchFlow('buyer')
   const { isEmbedded, goTo, tab: embeddedTab, highlight } = useOwnerTestEmbeddedNav()

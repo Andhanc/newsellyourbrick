@@ -44,6 +44,7 @@ import { BuyerCabinetHeroSkeleton, BuyerCabinetBelowSkeleton } from '../componen
 import { ProfileSpotlightOnboarding } from '../components/ProfileSpotlightOnboarding'
 import OwnerCabinetOnboardingDrawer from '../components/OwnerCabinetOnboardingDrawer'
 import { BUYER_CABINET_WELCOME_PRESET } from '../components/buyerCabinetWelcomeImages'
+import { useRoleSwitchArrival, useRoleSwitchDestinationReady } from '../components/RoleSwitchArrival'
 import PrivateClubWhatsAppCommunityModal from '../components/PrivateClubWhatsAppCommunityModal'
 import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
 import BiometricSecurityDrawer from '../components/BiometricSecurityDrawer'
@@ -657,6 +658,7 @@ function buildQuickLinks(t) {
 }
 
 function TestPage() {
+  const roleArrivalActive = useRoleSwitchArrival()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { t, i18n } = useTranslation()
@@ -1875,6 +1877,7 @@ function TestPage() {
   /** Не требуем Clerk `user`: при регистрации по email сессия часто только локальная (isLoggedIn в userData). */
   const buyerWelcomeEligible =
     profileGateActive &&
+    !roleArrivalActive &&
     !showBuyerCabinetSkeleton &&
     !dataSheetOpen &&
     !showProfileCompleteCelebration &&
@@ -1882,6 +1885,7 @@ function TestPage() {
     !showVipManagerSpotlight
 
   const buyerWelcomeCompleted = hasCompletedBuyerCabinetWelcome(resolvedNumericUserId)
+  useRoleSwitchDestinationReady(!showBuyerCabinetSkeleton && Boolean(resolvedNumericUserId) && verificationStatusHydrated)
 
   const showTileDataOnboarding =
     buyerWelcomeEligible &&

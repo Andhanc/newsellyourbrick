@@ -8,6 +8,7 @@ import { getUiIntlLocale } from '../utils/uiIntlLocale'
 import { getEmailJsConfig, isDevelopment, loadRuntimeConfig } from '../utils/env'
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import { clearCompassOfferSession } from '../utils/investmentCompass'
+import { readRoleSwitchTransition } from '../utils/roleSwitchTransition'
 
 // Используем dev tunnel для API
 const API_BASE_URL = getApiBaseUrlSync()
@@ -199,7 +200,7 @@ export const CLERK_DB_USER_SYNCED = 'app:clerk-db-user-synced'
 /**
  * Сохраняет информацию о пользователе в localStorage
  */
-export const saveUserData = (userData, loginMethod = 'email') => {
+export const saveUserData = (userData, loginMethod = 'email', { notify = true } = {}) => {
   localStorage.setItem('isLoggedIn', 'true')
   localStorage.setItem('loginMethod', loginMethod)
 
@@ -240,7 +241,7 @@ export const saveUserData = (userData, loginMethod = 'email') => {
     const idStr = String(stored.id).trim()
     const prevUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('userId') : null
     localStorage.setItem('userId', idStr)
-    if (typeof window !== 'undefined' && prevUserId !== idStr) {
+    if (notify && typeof window !== 'undefined' && prevUserId !== idStr) {
       try {
         window.dispatchEvent(
           new CustomEvent(CLERK_DB_USER_SYNCED, { detail: { userId: parseInt(idStr, 10) } })
@@ -1549,6 +1550,7 @@ export const isAuthenticated = () => {
  */
 export const validateSession = async () => {
   const userData = getUserData()
+  if (readRoleSwitchTransition()) return { valid: true, user: userData }
   
   // Если пользователь не авторизован локально, ничего не делаем
   if (!userData.isLoggedIn || !userData.id) {
@@ -1606,6 +1608,10 @@ export const validateSession = async () => {
       }
     })
     
+    // A response for the old account must never clear a newly selected cabinet.
+    if (readRoleSwitchTransition() || String(getUserData()?.id) !== String(userData.id)) {
+      return { valid: true, user: getUserData(), superseded: true }
+    }
     // Если пользователь не найден в БД (404) — сессия устарела, очищаем её
     if (response.status === 404) {
       console.warn('⚠️ Локальная сессия устарела: пользователь с ID', dbUserId, 'не найден в БД. Очищаем данные.')
@@ -2316,7 +2322,7 @@ export const verifyEmailForProfileUpdate = async (userId, email, code) => {
 /**
  * Вход пользователя с email и паролем
  */
-export const loginWithEmail = async (email, password, role = null) => {
+export const loginWithEmail = async (email, password, role = null, { persist = true, signal } = {}) => {
   try {
     const emailLower = email.toLowerCase().trim()
     
@@ -2332,6 +2338,7 @@ export const loginWithEmail = async (email, password, role = null) => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/email/login`, {
         method: 'POST',
+        signal,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -2363,12 +2370,13 @@ export const loginWithEmail = async (email, password, role = null) => {
       }
       
       const data = await response.json()
-      console.log('✅ Вход успешен:', data)
+      console.log('✅ Вход успешен:', { id: data.user?.id, role: data.user?.role })
       console.log('🔍 Роль пользователя из ответа сервера:', data.user?.role)
       
       if (data.success && data.user) {
         // Проверяем, заблокирован ли пользователь
         if (data.user.is_blocked === true || data.user.is_blocked === 1) {
+          if (!persist) return { success: false, error: 'User is blocked', is_blocked: true }
           // Сохраняем данные пользователя с флагом блокировки для показа модального окна
           localStorage.setItem('isLoggedIn', 'true');
           localStorage.setItem('loginMethod', 'email');
@@ -2399,8 +2407,10 @@ export const loginWithEmail = async (email, password, role = null) => {
         }
         
         console.log('💾 Сохраняем данные пользователя с ролью:', userDataWithRole.role)
-        saveUserData(userDataWithRole, 'email')
-        rememberMobileAuthToken(data.authToken)
+        if (persist) {
+          saveUserData(userDataWithRole, 'email')
+          rememberMobileAuthToken(data.authToken)
+        }
         
         return {
           success: true,

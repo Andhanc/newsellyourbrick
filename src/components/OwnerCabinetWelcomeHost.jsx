@@ -16,6 +16,7 @@ import { getOwnerProfileCompletion } from '../utils/ownerTestProfile'
 import { OWNER_VIEWS } from '../utils/ownerTestNav'
 import { getStoredNumericUserId } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
+import { useRoleSwitchArrival } from './RoleSwitchArrival'
 
 /** Пока заполнение профиля ниже порога — показываем welcome + spotlight + гейт. */
 export const OWNER_WELCOME_MIN_COMPLETE_PCT = 78
@@ -51,6 +52,7 @@ function isElementVisible(el) {
  */
 export default function OwnerCabinetWelcomeHost({ children = null }) {
   const { t } = useTranslation()
+  const roleArrivalActive = useRoleSwitchArrival()
   const { view, goTo } = useOwnerTestNav()
   const { profile, loading: profileLoading } = useOwnerTestProfile()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -86,12 +88,13 @@ export default function OwnerCabinetWelcomeHost({ children = null }) {
   const needsProfileOnboarding =
     !profileLoading && Boolean(profile) && completion.pct < OWNER_WELCOME_MIN_COMPLETE_PCT
 
-  const welcomeEligible = Boolean(userId) && needsProfileOnboarding && !welcomeCompleted
+  const welcomeEligible = Boolean(userId) && needsProfileOnboarding && !welcomeCompleted && !roleArrivalActive
 
   const gateLocked =
     Boolean(userId) &&
     welcomeCompleted &&
     needsProfileOnboarding &&
+    !roleArrivalActive &&
     !welcomeOpen
 
   const warnGateLocked = useCallback(() => {
