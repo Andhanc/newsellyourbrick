@@ -5037,6 +5037,9 @@
   "ownerTest_moderationNoticeClose": "Stäng",
   "ownerTest_moderationNoticeOk": "Uppfattat",
   "oauthBridge_finishing": "Slutför inloggning…",
+  "cabinetEntry_kicker": "SellYourBrick",
+  "cabinetEntry_title": "Välkommen",
+  "cabinetEntry_subtitle": "Öppnar din profil",
   "ownerTest_purchasedDraftAria": "Ofärdigt objekt",
   "ownerTest_purchasedDraftTitle": "Du har ett ofullständigt objekt",
   "ownerTest_purchasedDraftContinue": "Fortsätt med ”{{title}}”",
@@ -6477,6 +6480,7 @@
   "depositPicker_methodsAriaLabel": "Påfyllningsmetoder",
   "verificationRejectedGateVerificationSubtitleWithReason": "Orsak: {{reason}}. Ladda upp passfoto, selfie och selfie med pass igen.",
   "buyerCabinet_vipManagerSpotlightHint": "Här är din manager — hen svarar dig i WhatsApp",
+  "buyerCabinet_strategySpotlightHint": "Vidare till budgivningen, eller välj din strategi",
   "privateClubLanding_alreadyMemberCta": "Du är redan i VIP-klubben",
   "ownerCabinet_welcomeFinish": "Fyll i profilen",
   "ownerWelcome_onboardingNext": "Nästa",
@@ -10797,5 +10801,12 @@
   "forgotPassword_accountNotFound": "Inget konto med den här e-postadressen",
   "forgotPassword_passwordSameAsOther": "Lösenordet måste skilja sig från det andra kontots lösenord",
   "forgotPassword_passwordSameAsCurrent": "Det nya lösenordet måste skilja sig från det nuvarande",
-  "forgotPassword_passwordsMatch": "Lösenorden matchar"
+  "forgotPassword_passwordsMatch": "Lösenorden matchar",
+  "compareNeedsLikes_titleZero": "Två likes för att jämföra",
+  "compareNeedsLikes_titleOne": "En like till",
+  "compareNeedsLikes_lead": "Jämförelsen öppnas när minst två objekt är gillade. Gilla ett till så kan du ställa dem bredvid varandra.",
+  "compareNeedsLikes_metaCount": "2 objekt",
+  "compareNeedsLikes_metaHint": "för att jämföra",
+  "compareNeedsLikes_cta": "Gilla ett till objekt",
+  "compareNeedsLikes_close": "Stäng"
 }

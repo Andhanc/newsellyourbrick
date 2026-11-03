@@ -5,6 +5,15 @@ import { readFile } from 'node:fs/promises'
 const page = await readFile(new URL('./Compare.jsx', import.meta.url), 'utf8')
 const results = await readFile(new URL('../components/compare/CompareInvestorResults.jsx', import.meta.url), 'utf8')
 
+test('fewer than two likes asks for another like before the general search catalog', () => {
+  assert.match(page, /CompareNeedsLikesModal/)
+  assert.match(page, /favoriteAuctions\.length < 2/)
+  assert.match(page, /isOpen=\{needsMoreLikes\}/)
+  assert.match(page, /onFindMore=\{\(\) => navigate\(SEARCH_CATALOG_PATH, \{ replace: true \}\)\}/)
+  assert.doesNotMatch(page, /if \(!needsMoreLikes\) return\s*navigate\(SEARCH_CATALOG_PATH/)
+  assert.doesNotMatch(page, /navigate\('\/auction'\)/)
+})
+
 test('AI comparison starts automatically for a selected pair and remains refreshable', () => {
   assert.match(page, /const requestAiAnalysis = useCallback/)
   assert.match(page, /onRunAi=\{requestAiAnalysis\}/)

@@ -60,6 +60,10 @@ test('mobile documents and location use one combined access gate', () => {
   assert.match(restrictedBlock, /requiresVip: processedDocuments\.length > 0/)
   assert.match(classicSource, /requiresDeposit && aboutDepositContentLocked[\s\S]*?'deposit'/)
   assert.match(classicSource, /requiresVip && docsLocked[\s\S]*?'subscription'/)
+  assert.match(
+    classicSource,
+    /\(onBack \|\| showDocuments\) && !isShareListing && processedDocuments\.length > 0/,
+  )
 })
 
 test('mobile auction puts the timer first and moves badges below the address', () => {

@@ -29,7 +29,6 @@ const EXACT_ALLOWED = new Set([
   '/shares',
   '/debts',
   '/development',
-  '/buyer-passport',
   '/test-drive',
   '/about',
   '/app',

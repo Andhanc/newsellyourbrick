@@ -5037,6 +5037,9 @@
   "ownerTest_moderationNoticeClose": "Cerrar",
   "ownerTest_moderationNoticeOk": "Entendido",
   "oauthBridge_finishing": "Finalizando el inicio de sesión…",
+  "cabinetEntry_kicker": "SellYourBrick",
+  "cabinetEntry_title": "Bienvenido",
+  "cabinetEntry_subtitle": "Abriendo su perfil",
   "ownerTest_purchasedDraftAria": "Inmueble incompleto",
   "ownerTest_purchasedDraftTitle": "Tiene un inmueble incompleto",
   "ownerTest_purchasedDraftContinue": "Continúe con «{{title}}»",
@@ -6477,6 +6480,7 @@
   "depositPicker_methodsAriaLabel": "Métodos de recarga",
   "verificationRejectedGateVerificationSubtitleWithReason": "Motivo: {{reason}}. Suba foto del pasaporte, selfie y selfie con pasaporte otra vez.",
   "buyerCabinet_vipManagerSpotlightHint": "Este es tu gestor: te responderá por WhatsApp",
+  "buyerCabinet_strategySpotlightHint": "Pasemos a las pujas o elige tu estrategia",
   "privateClubLanding_alreadyMemberCta": "Ya estás en el club VIP",
   "ownerCabinet_welcomeFinish": "Completar perfil",
   "ownerWelcome_onboardingNext": "Siguiente",
@@ -10797,5 +10801,12 @@
   "forgotPassword_accountNotFound": "No hay una cuenta con este correo",
   "forgotPassword_passwordSameAsOther": "La contraseña debe ser distinta de la del otro espacio de este correo",
   "forgotPassword_passwordSameAsCurrent": "La nueva contraseña debe ser distinta de la actual",
-  "forgotPassword_passwordsMatch": "Las contraseñas coinciden"
+  "forgotPassword_passwordsMatch": "Las contraseñas coinciden",
+  "compareNeedsLikes_titleZero": "Dos me gusta para comparar",
+  "compareNeedsLikes_titleOne": "Un me gusta más",
+  "compareNeedsLikes_lead": "La comparación se abre con al menos dos inmuebles en me gusta. Marca uno más y podrás verlos juntos.",
+  "compareNeedsLikes_metaCount": "2 inmuebles",
+  "compareNeedsLikes_metaHint": "para comparar",
+  "compareNeedsLikes_cta": "Dar me gusta a otro",
+  "compareNeedsLikes_close": "Cerrar"
 }

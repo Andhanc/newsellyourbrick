@@ -25,6 +25,7 @@ import { isBuyNowPurchaseCompleted } from '../utils/auctionReminderBounds'
 import { getPropertyListingKind } from '../utils/propertyListingKind'
 import { isShareBuyNowEnabled, isShareListing } from '../utils/shareBuyNow'
 import { publicAsset } from '../utils/publicAsset'
+import { propertyMatchesTextSearch } from '../utils/propertyTextSearch'
 import '../components/ui/AuctionMobileLayout.css'
 import '../styles/discoverAuctionCards.css'
 import '../styles/hrShowcaseDebtsCards.css'
@@ -103,11 +104,7 @@ export default function BuyNow() {
         typeFilter === 'all' ||
         propertyType === typeFilter ||
         (typeFilter === 'apartment' && propertyType === 'apartments')
-      const searchMatches =
-        !needle ||
-        `${property.title || property.name || ''} ${property.location || ''}`
-          .toLocaleLowerCase()
-          .includes(needle)
+      const searchMatches = !needle || propertyMatchesTextSearch(property, query)
       return typeMatches && searchMatches
     })
   }, [buyNowListings, query, typeFilter])

@@ -5,6 +5,7 @@ import { verifyTelegramAuth } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import AuthAlertModal from '../components/AuthAlertModal'
 import { getCabinetHomePath } from '../utils/cabinetRoutes'
+import { markCabinetEntry } from '../utils/cabinetEntryPreloader'
 
 /**
  * Страница, на которую Telegram редиректит после успешного нажатия "Log in with Telegram".
@@ -73,6 +74,7 @@ export default function TelegramAuthCallback() {
             localStorage.setItem('isOwnerLoggedIn', 'true')
             localStorage.setItem('userRole', result.user.role)
           }
+          markCabinetEntry(sessionStorage, { defer: true })
           navigate(redirectPath, { replace: true })
           window.location.href = redirectPath
         } else {

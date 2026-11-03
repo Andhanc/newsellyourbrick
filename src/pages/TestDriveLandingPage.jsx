@@ -24,6 +24,7 @@ import { getPropertyCardImage } from '../utils/propertyImage'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
 import { auctionListingDedupeKey, getPropertyTestDrivePath } from '../utils/propertyDetailUrl'
 import { publicAsset } from '../utils/publicAsset'
+import { propertyMatchesTextSearch } from '../utils/propertyTextSearch'
 import {
   isWithinSelectedTestDrivePrice,
   mapRealTestDriveListing,
@@ -87,10 +88,6 @@ const STORY_CARDS = [
   { icon: FiUmbrella, titleKey: 'testDriveLanding_story2Title', textKey: 'testDriveLanding_story2Text' },
   { icon: FiShield, titleKey: 'testDriveLanding_story3Title', textKey: 'testDriveLanding_story3Text' },
 ]
-
-function normalizeText(value) {
-  return String(value || '').trim().toLowerCase()
-}
 
 function mapApiPropertyToListing(property, index) {
   const image = getPropertyCardImage(property, TEST_DRIVE_CARD_IMAGE_FALLBACK)
@@ -167,15 +164,13 @@ const TestDriveLandingPage = () => {
   const hasActiveFilters = activeFilterCount > 0
 
   const filteredListings = useMemo(() => {
-    const q = normalizeText(query)
     const filtered = listings.filter((item) => {
-      const haystack = normalizeText(`${item.title} ${item.location} ${item.type}`)
       const typeOk = matchesSelectedTestDriveType(item.type, selectedTypes)
       const directionOk = matchesSelectedTestDriveCity(item.city, selectedDirections)
       const durationOk = matchesSelectedTestDriveDurations(item, selectedDurations)
       const amenityOk = matchesSelectedTestDriveAmenities(item, selectedAmenities)
       const priceOk = isWithinSelectedTestDrivePrice(item.price, price)
-      return (!q || haystack.includes(q)) && typeOk && directionOk && durationOk && amenityOk && priceOk
+      return propertyMatchesTextSearch(item, query) && typeOk && directionOk && durationOk && amenityOk && priceOk
     })
 
     return sortTestDriveListings(filtered, sort)

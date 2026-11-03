@@ -2,6 +2,7 @@ import { getMapPriceBounds } from './mapPageFilters'
 import { hasBuyNowOption } from './hasBuyNowOption'
 import { getEffectiveAuctionEndTime } from './auctionReminderBounds'
 import { buildLocationOptionsFromProperties, parsePropertyLocation } from './propertySearchLocation'
+import { propertyMatchesTextSearch } from './propertyTextSearch'
 
 export {
   getDebtRiskTone,
@@ -279,11 +280,7 @@ function matchesYield(property, yieldRange) {
 
 function matchesSearch(property, searchQuery) {
   if (!searchQuery) return true
-  const query = searchQuery.toLowerCase()
-  return (
-    (property.title || property.name || '').toLowerCase().includes(query) ||
-    (property.location || '').toLowerCase().includes(query)
-  )
+  return propertyMatchesTextSearch(property, searchQuery)
 }
 
 export function applyDebtsPageFilters(properties = [], filters = EMPTY_DEBTS_FILTERS, searchQuery = '') {

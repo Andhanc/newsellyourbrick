@@ -1,0 +1,143 @@
+.cabinet-entry {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483600;
+  display: flex;
+  align-items: flex-end;
+  padding: 18vh 28px 64px;
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.cabinet-entry.is-leaving {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 420ms ease;
+}
+
+.cabinet-entry__photo,
+.cabinet-entry__veil {
+  position: absolute;
+  inset: 0;
+}
+
+.cabinet-entry__photo {
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.18), rgba(15, 23, 42, 0.18)),
+    url('/images/sellyourbrick/about/about-hero-villa.jpg') center 42% / cover no-repeat;
+}
+
+.cabinet-entry__veil {
+  background: linear-gradient(
+    180deg,
+    rgba(15, 23, 42, 0.18) 0%,
+    rgba(15, 23, 42, 0.28) 38%,
+    rgba(15, 23, 42, 0.78) 100%
+  );
+}
+
+.cabinet-entry__brand {
+  position: absolute;
+  top: 26%;
+  left: 50%;
+  z-index: 2;
+  display: inline-flex;
+  align-items: baseline;
+  transform: translate(-50%, -50%);
+  color: #ffffff;
+  font-family: Montserrat, system-ui, sans-serif;
+  font-size: clamp(2.35rem, 12.5vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.075em;
+  white-space: nowrap;
+  text-shadow: 0 3px 26px rgba(1, 10, 12, 0.35);
+}
+
+.cabinet-entry__brand-accent {
+  margin: 0 0.04em;
+  padding: 0.02em 0.14em 0.055em;
+  border-radius: 0.24em;
+  background: linear-gradient(145deg, #7cdee2, #50bec8);
+  box-shadow: 0 8px 26px rgba(1, 10, 12, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.46);
+  text-shadow: none;
+}
+
+.cabinet-entry__copy {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 36rem);
+}
+
+.cabinet-entry__kicker,
+.cabinet-entry__subtitle {
+  margin: 0;
+  font-family: Montserrat, system-ui, sans-serif;
+}
+
+.cabinet-entry__kicker {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.cabinet-entry__title {
+  margin: 14px 0 0;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(2.5rem, 7vw, 3.5rem);
+  font-style: italic;
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: 0.02em;
+}
+
+.cabinet-entry__subtitle {
+  margin-top: 14px;
+  max-width: 28rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.cabinet-entry__rule {
+  width: 112px;
+  height: 2px;
+  margin-top: 26px;
+  background: rgba(255, 255, 255, 0.28);
+  overflow: hidden;
+}
+
+.cabinet-entry__rule-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: #0099a9;
+  animation: cabinet-entry-rule 2.5s linear forwards;
+}
+
+@keyframes cabinet-entry-rule {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@media (min-width: 768px) {
+  .cabinet-entry {
+    padding: 0 8vw 14vh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cabinet-entry,
+  .cabinet-entry.is-leaving,
+  .cabinet-entry__rule-fill {
+    animation: none;
+    transition: none;
+  }
+
+  .cabinet-entry__rule-fill {
+    width: 100%;
+  }
+}

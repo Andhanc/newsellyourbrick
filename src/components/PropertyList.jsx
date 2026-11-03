@@ -32,6 +32,7 @@ import {
 } from '../utils/auctionReminderBounds'
 import { sortListingsByAuctionTimer } from '../utils/sortListingsByAuctionTimer'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { propertyMatchesTextSearch } from '../utils/propertyTextSearch'
 import { resolveAuctionCurrentBidValue } from '../services/auctionListCache'
 import { getPropertyDetailPath, auctionListingDedupeKey, PROPERTY_DETAIL_AUCTION_TAB_BIDS, buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
 import { isPrivateClubAuctionLot } from '../utils/isPrivateClubAuctionLot'
@@ -311,11 +312,7 @@ const PropertyList = ({
     
     // Фильтрация по поисковому запросу
     if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      return (
-        (property.title || property.name || '').toLowerCase().includes(query) ||
-        (property.location || '').toLowerCase().includes(query)
-      )
+      return propertyMatchesTextSearch(property, searchQuery)
     }
     
     return true

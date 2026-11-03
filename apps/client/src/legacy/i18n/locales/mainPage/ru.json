@@ -5623,6 +5623,9 @@
   "ownerTest_moderationNoticeClose": "Закрыть",
   "ownerTest_moderationNoticeOk": "Понятно",
   "oauthBridge_finishing": "Завершение входа…",
+  "cabinetEntry_kicker": "SellYourBrick",
+  "cabinetEntry_title": "Добро пожаловать",
+  "cabinetEntry_subtitle": "Открываем ваш профиль",
   "ownerTest_purchasedDraftAria": "Незавершённый объект",
   "ownerTest_purchasedDraftTitle": "У вас есть незаполненный объект",
   "ownerTest_purchasedDraftContinue": "Продолжите оформление «{{title}}»",
@@ -6592,6 +6595,7 @@
   "depositPicker_methodsAriaLabel": "Способы пополнения",
   "verificationRejectedGateVerificationSubtitleWithReason": "Причина: {{reason}}. Загрузите фото паспорта, селфи и селфи с паспортом заново.",
   "buyerCabinet_vipManagerSpotlightHint": "Вот ваш менеджер — он ответит вам в WhatsApp",
+  "buyerCabinet_strategySpotlightHint": "Перейдём к торгам или выберите свою стратегию",
   "privateClubLanding_alreadyMemberCta": "Вы уже в VIP клубе",
   "toastTitleSuccess": "Готово",
   "toastTitleError": "Нужно исправить",
@@ -10797,5 +10801,12 @@
   "forgotPassword_accountNotFound": "Аккаунт с таким email не найден",
   "forgotPassword_passwordSameAsOther": "Пароль должен отличаться от пароля другого кабинета на этом email",
   "forgotPassword_passwordSameAsCurrent": "Новый пароль должен отличаться от текущего",
-  "forgotPassword_passwordsMatch": "Пароли совпадают"
+  "forgotPassword_passwordsMatch": "Пароли совпадают",
+  "compareNeedsLikes_titleZero": "Нужны два лайка",
+  "compareNeedsLikes_titleOne": "Ещё один лайк",
+  "compareNeedsLikes_lead": "Сравнение открывается, когда в понравившихся хотя бы два объекта. Лайкните ещё один — и их можно поставить рядом.",
+  "compareNeedsLikes_metaCount": "2 объекта",
+  "compareNeedsLikes_metaHint": "чтобы сравнить",
+  "compareNeedsLikes_cta": "Лайкнуть ещё",
+  "compareNeedsLikes_close": "Закрыть"
 }

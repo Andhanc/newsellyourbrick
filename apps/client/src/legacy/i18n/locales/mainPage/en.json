@@ -5607,6 +5607,9 @@
   "ownerTest_moderationNoticeClose": "Close",
   "ownerTest_moderationNoticeOk": "Got it",
   "oauthBridge_finishing": "Finishing sign-in…",
+  "cabinetEntry_kicker": "SellYourBrick",
+  "cabinetEntry_title": "Welcome",
+  "cabinetEntry_subtitle": "Opening your profile",
   "ownerTest_purchasedDraftAria": "Unfinished listing",
   "ownerTest_purchasedDraftTitle": "You have an incomplete listing",
   "ownerTest_purchasedDraftContinue": "Continue setting up “{{title}}”",
@@ -6595,6 +6598,7 @@
   "depositPicker_methodsAriaLabel": "Top-up methods",
   "verificationRejectedGateVerificationSubtitleWithReason": "Reason: {{reason}}. Upload passport photo, selfie, and selfie with passport again.",
   "buyerCabinet_vipManagerSpotlightHint": "This is your manager — they will reply on WhatsApp",
+  "buyerCabinet_strategySpotlightHint": "Let's move on to bidding, or choose your strategy",
   "privateClubLanding_alreadyMemberCta": "You are already in the VIP club",
   "toastTitleSuccess": "Done",
   "toastTitleError": "Needs attention",
@@ -10797,5 +10801,12 @@
   "forgotPassword_accountNotFound": "No account found with this email",
   "forgotPassword_passwordSameAsOther": "This password must differ from the other cabinet on this email",
   "forgotPassword_passwordSameAsCurrent": "The new password must be different from the current one",
-  "forgotPassword_passwordsMatch": "Passwords match"
+  "forgotPassword_passwordsMatch": "Passwords match",
+  "compareNeedsLikes_titleZero": "Two likes to compare",
+  "compareNeedsLikes_titleOne": "One more like",
+  "compareNeedsLikes_lead": "Comparison opens once at least two properties are liked. Like one more, and you can put them side by side.",
+  "compareNeedsLikes_metaCount": "2 properties",
+  "compareNeedsLikes_metaHint": "to compare",
+  "compareNeedsLikes_cta": "Like another property",
+  "compareNeedsLikes_close": "Close"
 }

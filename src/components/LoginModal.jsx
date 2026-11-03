@@ -17,6 +17,7 @@ import { showNotification } from '../utils/toastHelper'
 import { shouldDefaultLoginModalToLogin } from '../utils/visitorAuthDefault'
 import { setLoginModalOpen } from '../utils/loginModalDocumentFlag'
 import { getCabinetHomePath } from '../utils/cabinetRoutes'
+import { markCabinetEntry, openCabinetAfterAuth } from '../utils/cabinetEntryPreloader'
 import { isSoftLaunchFeatureBlocked } from '../utils/softLaunchAccess'
 import './LoginModal.css'
 
@@ -84,6 +85,7 @@ const LoginModal = ({
     return sessionStorage.getItem('login_modal_user_role') || 'buyer' // 'buyer' | 'seller'
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [connectingProvider, setConnectingProvider] = useState(null)
   const [error, setError] = useState('')
   /** Ошибка «пароль продавца = пароль покупателя» — текст под кнопкой регистрации, не сверху формы */
   const [registerBottomError, setRegisterBottomError] = useState('')
@@ -264,7 +266,7 @@ const LoginModal = ({
 
   /** После создания записи в БД из сессии Clerk — кабинет по выбранной роли */
   const navigateToCabinetAfterClerkDbSync = () => {
-    navigate(getCabinetHomePath(userRole === 'owner' ? 'owner' : userRole))
+    openCabinetAfterAuth(navigate, getCabinetHomePath(userRole === 'owner' ? 'owner' : userRole))
   }
 
   const handleInputChange = (e) => {
@@ -299,7 +301,7 @@ const LoginModal = ({
           }
           saveUserData(result.user, 'email')
           setIsLoading(false)
-          navigate(getCabinetHomePath(result.user.role || userRole))
+          openCabinetAfterAuth(navigate, getCabinetHomePath(result.user.role || userRole))
         } catch (nativeAuthError) {
           setError(nativeAuthError?.message ? localizeAuthError(nativeAuthError.message, t) : t('loginGenericError'))
           setIsLoading(false)
@@ -347,7 +349,7 @@ const LoginModal = ({
         localStorage.setItem('isOwnerLoggedIn', 'true')
         setIsLoading(false)
         onClose()
-        navigate(getCabinetHomePath('owner'))
+        openCabinetAfterAuth(navigate, getCabinetHomePath('owner'))
         return
       }
       
@@ -358,7 +360,7 @@ const LoginModal = ({
         localStorage.setItem('isLoggedIn', 'true')
         setIsLoading(false)
         onClose()
-        navigate('/profile')
+        openCabinetAfterAuth(navigate, '/profile')
         return
       }
 
@@ -412,7 +414,7 @@ const LoginModal = ({
             console.log('✅ Вход успешен, редирект на:', redirectPath, 'для роли:', userRole);
             
             // Обновляем страницу для применения изменений
-            window.location.href = redirectPath;
+            openCabinetAfterAuth(navigate, redirectPath, { hard: true });
           }
         } else {
           // Проверяем, заблокирован ли пользователь
@@ -549,7 +551,7 @@ const LoginModal = ({
           }
           saveUserData(result.user, 'email')
           setIsLoading(false)
-          navigate(getCabinetHomePath(result.user.role || userRole))
+          openCabinetAfterAuth(navigate, getCabinetHomePath(result.user.role || userRole))
         } catch (nativeAuthError) {
           setError(nativeAuthError?.message ? localizeAuthError(nativeAuthError.message, t) : t('registerGenericError'))
           setIsLoading(false)
@@ -586,9 +588,14 @@ const LoginModal = ({
     }
   }
 
+  useEffect(() => {
+    if (!isLoading) setConnectingProvider(null)
+  }, [isLoading])
+
   const handleGoogleAuth = async () => {
     if (nativeSocialAuth) {
       try {
+        setConnectingProvider('google')
         setIsLoading(true)
         setError('')
         const result = await nativeSocialAuth({
@@ -602,7 +609,7 @@ const LoginModal = ({
           return
         }
         saveUserData(result.user, 'clerk')
-        navigate(getCabinetHomePath(result.user.role || userRole))
+        openCabinetAfterAuth(navigate, getCabinetHomePath(result.user.role || userRole))
       } catch (nativeAuthError) {
         setError(nativeAuthError?.message ? localizeAuthError(nativeAuthError.message, t) : t('googleSignInFailed'))
       } finally {
@@ -615,6 +622,7 @@ const LoginModal = ({
       return
     }
     try {
+      setConnectingProvider('google')
       setIsLoading(true)
       setError('')
 
@@ -689,6 +697,7 @@ const LoginModal = ({
       sessionStorage.setItem('clerk_oauth_redirect_started', 'true')
       sessionStorage.setItem('clerk_oauth_user_role', clerkRole)
       sessionStorage.setItem('clerk_oauth_flow_mode', socialAuthMode)
+      markCabinetEntry(sessionStorage, { defer: true })
 
       if (signInLoaded && signIn) {
         const { getClerkOAuthReturnUrl } = await import('../utils/clerkOAuth')
@@ -711,6 +720,7 @@ const LoginModal = ({
   const handleFacebookAuth = async () => {
     if (nativeSocialAuth) {
       try {
+        setConnectingProvider('facebook')
         setIsLoading(true)
         setError('')
         const result = await nativeSocialAuth({
@@ -724,7 +734,7 @@ const LoginModal = ({
           return
         }
         saveUserData(result.user, 'clerk')
-        navigate(getCabinetHomePath(result.user.role || userRole))
+        openCabinetAfterAuth(navigate, getCabinetHomePath(result.user.role || userRole))
       } catch (nativeAuthError) {
         setError(nativeAuthError?.message ? localizeAuthError(nativeAuthError.message, t) : t('facebookSignInFailed'))
       } finally {
@@ -737,6 +747,7 @@ const LoginModal = ({
       return
     }
     try {
+      setConnectingProvider('facebook')
       setIsLoading(true)
       setError('')
 
@@ -809,6 +820,7 @@ const LoginModal = ({
       sessionStorage.setItem('clerk_oauth_redirect_started', 'true')
       sessionStorage.setItem('clerk_oauth_user_role', clerkRole)
       sessionStorage.setItem('clerk_oauth_flow_mode', socialAuthMode)
+      markCabinetEntry(sessionStorage, { defer: true })
 
       console.log('LoginModal: Facebook OAuth via signIn', { signInLoaded, socialAuthMode, userRole: clerkRole })
 
@@ -874,9 +886,9 @@ const LoginModal = ({
       if (userRole === 'seller') {
         localStorage.setItem('isOwnerLoggedIn', 'true')
         localStorage.setItem('userRole', 'seller')
-        navigate(getCabinetHomePath('seller'))
+        openCabinetAfterAuth(navigate, getCabinetHomePath('seller'))
       } else {
-        navigate('/profile')
+        openCabinetAfterAuth(navigate, '/profile')
       }
     }
   }
@@ -955,9 +967,9 @@ const LoginModal = ({
     if (userRole === 'seller' || userRole === 'owner') {
       localStorage.setItem('isOwnerLoggedIn', 'true')
       localStorage.setItem('userRole', 'seller')
-      navigate(getCabinetHomePath('seller'))
+      openCabinetAfterAuth(navigate, getCabinetHomePath('seller'))
     } else {
-      navigate('/profile')
+      openCabinetAfterAuth(navigate, '/profile')
     }
     setSellerRegistrationBuyerId(null)
   }
@@ -968,7 +980,7 @@ const LoginModal = ({
     onClose()
     showNotification(t('authToast_documentsSubmitted'))
     // Полное обновление страницы, чтобы интерфейс отобразил авторизованного покупателя
-    window.location.href = '/profile'
+    openCabinetAfterAuth(navigate, '/profile', { hard: true })
   }
 
   /** Переключение «войти» / «зарегистрироваться» с очисткой формы */
@@ -1390,42 +1402,62 @@ const LoginModal = ({
         <div className="login-modal__social login-modal__methods" role="group" aria-label={t('authChooseMethodSubtitle')}>
           <button
             type="button"
-            className="login-modal__social-btn login-modal__social-btn--google"
+            className={`login-modal__social-btn login-modal__social-btn--google${
+              connectingProvider === 'google' ? ' login-modal__social-btn--connecting' : ''
+            }`}
             onClick={handleGoogleAuth}
             disabled={isLoading || (!nativeSocialAuth && !signInLoaded)}
-            aria-label={t('authContinueWithProvider', { provider: 'Google' })}
+            aria-busy={connectingProvider === 'google' || undefined}
+            aria-label={
+              connectingProvider === 'google'
+                ? t('socialConnecting')
+                : t('authContinueWithProvider', { provider: 'Google' })
+            }
             style={{
-              opacity: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 0.6 : 1,
-              cursor: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 'not-allowed' : 'pointer'
+              opacity: connectingProvider === 'google' ? 1 : ((isLoading || (!nativeSocialAuth && !signInLoaded)) ? 0.6 : 1),
+              cursor: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 'wait' : 'pointer'
             }}
           >
             <GoogleMark size={22} />
-            <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
-              {t('authContinueWithProvider', { provider: 'Google' })}
-            </span>
-            <span className="login-modal__social-btn-label login-modal__social-btn-label--short" aria-hidden="true">
-              Google
-            </span>
+            {connectingProvider === 'google' ? (
+              <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
+                {t('socialConnecting')}
+              </span>
+            ) : (
+              <>
+                <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
+                  {t('authContinueWithProvider', { provider: 'Google' })}
+                </span>
+                <span className="login-modal__social-btn-label login-modal__social-btn-label--short" aria-hidden="true">
+                  Google
+                </span>
+              </>
+            )}
           </button>
 
-          <button 
+          <button
             type="button"
-            className="login-modal__social-btn login-modal__social-btn--facebook"
+            className={`login-modal__social-btn login-modal__social-btn--facebook${
+              connectingProvider === 'facebook' ? ' login-modal__social-btn--connecting' : ''
+            }`}
             onClick={handleFacebookAuth}
             disabled={isLoading || (!nativeSocialAuth && !signInLoaded)}
+            aria-busy={connectingProvider === 'facebook' || undefined}
             aria-label={
-              isLoading
+              connectingProvider === 'facebook'
                 ? t('socialConnecting')
                 : t('authContinueWithProvider', { provider: 'Facebook' })
             }
-            style={{ 
-              opacity: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 0.6 : 1,
-              cursor: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 'not-allowed' : 'pointer'
+            style={{
+              opacity: connectingProvider === 'facebook' ? 1 : ((isLoading || (!nativeSocialAuth && !signInLoaded)) ? 0.6 : 1),
+              cursor: (isLoading || (!nativeSocialAuth && !signInLoaded)) ? 'wait' : 'pointer'
             }}
           >
             <FacebookIcon size={20} />
-            {isLoading ? (
-              <span aria-hidden="true">{t('socialConnecting')}</span>
+            {connectingProvider === 'facebook' ? (
+              <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
+                {t('socialConnecting')}
+              </span>
             ) : (
               <>
                 <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
@@ -1744,7 +1776,7 @@ const LoginModal = ({
             onClose={() => {
               setShowVerificationDocumentsModal(false)
               onClose()
-              navigate('/profile')
+              openCabinetAfterAuth(navigate, '/profile')
             }}
             userId={newUserId}
             onComplete={handleVerificationDocumentsComplete}

@@ -42,6 +42,8 @@ import {
   summarizeComparisonRows,
 } from '../utils/compareDecision'
 import { createCompareAiRequestGuard } from '../utils/compareAiRequestGuard'
+import { SEARCH_CATALOG_PATH } from '../utils/searchCatalogNavigation'
+import CompareNeedsLikesModal from '../components/CompareNeedsLikesModal'
 
 const COMPARE_PICK_SKELETON_COUNT = 4
 const COMPARE_HERO_DOSSIERS = '/images/compare/compare-hero-dossiers-v2.webp'
@@ -687,6 +689,12 @@ const Compare = () => {
   const { favoritesLoading } = usePropertyFavorites()
   const { favoriteAuctions, catalogLoading } = useFavoriteAuctionItems()
   const listLoading = catalogLoading || favoritesLoading
+  const needsMoreLikes = !listLoading && favoriteAuctions.length < 2
+
+  const closeNeedsLikes = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) navigate(-1)
+    else navigate('/favorites', { replace: true })
+  }
   const compareUserId = getStoredNumericUserId()
   const snapshotRef = useRef(undefined)
   if (snapshotRef.current === undefined) {
@@ -1152,7 +1160,7 @@ const Compare = () => {
             onClose={() => setPickerOpen(false)}
             onBack={() => navigate('/favorites')}
             onToggleSelect={toggleSelect}
-            loading={listLoading}
+            loading={listLoading || needsMoreLikes}
           />
         ) : <div className="compare-hero__panel">
           <div className="compare-hero__copy">
@@ -1190,7 +1198,7 @@ const Compare = () => {
           </Link>
         </div>}
 
-        {listLoading ? (
+        {listLoading || needsMoreLikes ? (
           <section className="compare-pick-section" aria-busy="true">
             <div className="compare-pick-toolbar">
               <h2 className="compare-pick-heading">{t('comparePage_fromFavorites')}</h2>
@@ -1203,29 +1211,6 @@ const Compare = () => {
                 <ComparePickCardSkeleton key={`compare-pick-skel-${i}`} />
               ))}
             </ul>
-          </section>
-        ) : favoriteAuctions.length === 0 ? (
-          <section className="compare-empty" aria-labelledby="compare-empty-title">
-            <div className="compare-empty__visual" aria-hidden>
-              <img
-                src="/images/compare/house-magnifier.png"
-                alt=""
-                className="compare-empty__image"
-                loading="lazy"
-              />
-            </div>
-            <div className="compare-empty__copy">
-              <h2 id="compare-empty-title" className="compare-empty-title">
-                {t('comparePage_emptyTitle')}
-              </h2>
-              <p className="compare-empty-text">
-                {t('comparePage_emptyText')}
-              </p>
-              <button type="button" className="compare-empty-button" onClick={() => navigate('/auction')}>
-                {t('comparePage_goToAuctions')}
-                <FiArrowRight size={16} aria-hidden />
-              </button>
-            </div>
           </section>
         ) : (
           <>
@@ -1599,6 +1584,12 @@ const Compare = () => {
         )}
       </div>
 
+      <CompareNeedsLikesModal
+        isOpen={needsMoreLikes}
+        likedCount={favoriteAuctions.length}
+        onClose={closeNeedsLikes}
+        onFindMore={() => navigate(SEARCH_CATALOG_PATH, { replace: true })}
+      />
     </div>
   )
 }

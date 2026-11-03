@@ -32,7 +32,6 @@ const MobileDiscoverPage = lazy(() => import('../legacy/pages/MobileDiscoverPage
 const Home = lazy(() => import('../legacy/pages/Home'))
 const Shares = lazy(() => import('../legacy/pages/Shares'))
 const DevelopmentPages = lazy(() => import('../legacy/features/development/DevelopmentPages'))
-const BuyerPassport = lazy(() => import('../legacy/features/development/BuyerPassport'))
 const DealRoom = lazy(() => import('../legacy/features/development/DealRoom'))
 const Debts = lazy(() => import('../legacy/pages/Debts'))
 const TestDriveLandingPage = lazy(() => import('../legacy/pages/TestDriveLandingPage'))
@@ -129,7 +128,6 @@ function PublicRoutes({ initialPath, onNavigate }: Pick<PublicPageProps, 'initia
                   <Route path="/development" element={<DevelopmentPages />} />
                   <Route path="/development/mine" element={<DevelopmentPages mine />} />
                   <Route path="/development/:slug" element={<DevelopmentPages />} />
-                  <Route path="/buyer-passport" element={<BuyerPassport />} />
                   <Route path="/deal-room/:table/:id" element={<DealRoom />} />
                   <Route path="/" element={<MobileDiscoverPage hideFooter />} />
                   <Route path="/auction" element={<Home />} />

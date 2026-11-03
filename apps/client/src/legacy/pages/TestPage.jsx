@@ -31,7 +31,7 @@ import { getStoredNumericUserId, getUserData, logout } from '../services/authSer
 import { fetchUserById, invalidateUserByIdCache } from '../utils/usersApi'
 import { showNotification } from '../utils/toastHelper'
 import Confetti from 'react-confetti'
-import { scrollMainTo } from '../utils/mainScroll'
+import { scrollMainElementIntoView, scrollMainTo } from '../utils/mainScroll'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import {
@@ -124,6 +124,8 @@ const TOAST_GUIDE_FIELD_NAV_DONE_PREFIX = 'syb.profile.dataToastGuide.fieldNavDo
 
 const PROFILE_COMPLETE_CELEBRATION_SHOWN_PREFIX = 'syb.profile.newProfileCompleteCelebrationShown:'
 const SERVICE_TOUR_ACK_PREFIX = 'syb.profile.serviceTourAck:'
+/** После поздравления за заполнение — один раз подсветить стратегии, пока пользователь не выберет карточку. */
+const STRATEGY_SPOTLIGHT_PENDING_PREFIX = 'syb.profile.strategySpotlightPending:'
 
 function readToastGuideFieldNavDone(userId) {
   if (userId == null || userId === '') return false
@@ -140,6 +142,31 @@ function readServiceTourAck(userId) {
     return localStorage.getItem(`${SERVICE_TOUR_ACK_PREFIX}${userId}`) === '1'
   } catch {
     return false
+  }
+}
+
+function readStrategySpotlightPending(userId) {
+  if (userId == null || userId === '') return false
+  try {
+    return localStorage.getItem(`${STRATEGY_SPOTLIGHT_PENDING_PREFIX}${userId}`) === '1'
+  } catch {
+    return false
+  }
+}
+
+const STRATEGY_SPOTLIGHT_HOLE_GROUPS = [
+  { selector: '.auction-cta-cards__card' },
+  { selector: '.profile-strategy-card' },
+]
+
+function writeStrategySpotlightPending(userId, pending) {
+  if (userId == null || userId === '') return
+  try {
+    const key = `${STRATEGY_SPOTLIGHT_PENDING_PREFIX}${userId}`
+    if (pending) localStorage.setItem(key, '1')
+    else localStorage.removeItem(key)
+  } catch {
+    /* ignore */
   }
 }
 
@@ -767,7 +794,9 @@ function TestPage() {
   const dbUserRowRef = useRef(dbUserRow)
   const dataTileRef = useRef(null)
   const managerRowRef = useRef(null)
+  const strategiesBlockRef = useRef(null)
   const [showVipManagerSpotlight, setShowVipManagerSpotlight] = useState(false)
+  const [showStrategySpotlight, setShowStrategySpotlight] = useState(false)
   const [whatsappCommunityOpen, setWhatsappCommunityOpen] = useState(false)
   const foldersRailRef = useRef(null)
   const [foldersDotIndex, setFoldersDotIndex] = useState(0)
@@ -2072,11 +2101,17 @@ function TestPage() {
       } catch {
         /* ignore */
       }
+      writeStrategySpotlightPending(id, true)
     }
     setShowProfileCompleteCelebration(false)
     setProfileCelebrationKind('saved')
     setDataSheetOpen(false)
-    scrollMainTo(0, 0, 'smooth')
+    setShowStrategySpotlight(true)
+  }, [resolvedNumericUserId])
+
+  const dismissStrategySpotlight = useCallback(() => {
+    writeStrategySpotlightPending(resolvedNumericUserId, false)
+    setShowStrategySpotlight(false)
   }, [resolvedNumericUserId])
 
   const handleServiceQuickLinksTourDismiss = useCallback(() => {
@@ -2239,7 +2274,7 @@ function TestPage() {
 
   /** При подсветке «Данные» — к началу страницы и к первой карточке в ленте. */
   useEffect(() => {
-    if (!showTileDataOnboarding) return
+    if (!showTileDataOnboarding || showStrategySpotlight) return
     scrollMainTo(0, 0, 'instant')
     const t = window.setTimeout(() => {
       const rail = foldersRailRef.current
@@ -2248,7 +2283,7 @@ function TestPage() {
       setFoldersDotIndex(0)
     }, 40)
     return () => window.clearTimeout(t)
-  }, [showTileDataOnboarding])
+  }, [showTileDataOnboarding, showStrategySpotlight])
 
   /** Подсветка персонального менеджера после VIP — прокрутить к блоку. */
   useEffect(() => {
@@ -2264,6 +2299,35 @@ function TestPage() {
     }, 80)
     return () => window.clearTimeout(t)
   }, [showVipManagerSpotlight, cabinetVipActive])
+
+  /** После поздравления — опустить к стратегиям и оставить место под подпись сверху. */
+  useEffect(() => {
+    if (!resolvedNumericUserId || showBuyerCabinetSkeleton) return undefined
+    if (!readStrategySpotlightPending(String(resolvedNumericUserId))) return undefined
+    setShowStrategySpotlight(true)
+    return undefined
+  }, [resolvedNumericUserId, showBuyerCabinetSkeleton])
+
+  useEffect(() => {
+    if (!showStrategySpotlight || showTileDataOnboarding) return undefined
+    let attempts = 0
+    const timers = []
+    const scrollToStrategies = (behavior) => {
+      const el =
+        strategiesBlockRef.current ||
+        document.querySelector('.profile-cabinet__directions-cta')
+      if (!el) return
+      const top = el.getBoundingClientRect().top
+      if (attempts > 0 && top <= 250 && top >= 120) return
+      attempts += 1
+      scrollMainElementIntoView(el, { offset: 188, behavior })
+    }
+    timers.push(window.setTimeout(() => scrollToStrategies('smooth'), 80))
+    ;[320, 700, 1400].forEach((delay) => {
+      timers.push(window.setTimeout(() => scrollToStrategies('auto'), delay))
+    })
+    return () => timers.forEach((timer) => window.clearTimeout(timer))
+  }, [showStrategySpotlight, showTileDataOnboarding])
 
   const toastGuideStrictActive =
     profileGateActive &&
@@ -2724,7 +2788,11 @@ function TestPage() {
               </aside>
               </div>
 
-              <div className="profile-cabinet__directions-cta">
+              <div
+                className="profile-cabinet__directions-cta"
+                ref={strategiesBlockRef}
+                onClickCapture={showStrategySpotlight ? dismissStrategySpotlight : undefined}
+              >
                 <AuctionCategoryCtaCards variant="profilePage" />
                 <ProfileStrategyStories language={i18n.language} />
               </div>
@@ -3753,9 +3821,23 @@ function TestPage() {
       />
 
       <ProfileSpotlightOnboarding
-        active={showTileDataOnboarding && !showVipManagerSpotlight}
+        active={showTileDataOnboarding && !showVipManagerSpotlight && !showStrategySpotlight}
         targetRef={dataTileRef}
         message={t('buyerData_spotlightFillHint')}
+      />
+
+      <ProfileSpotlightOnboarding
+        active={
+          showStrategySpotlight &&
+          !showTileDataOnboarding &&
+          !showProfileCompleteCelebration &&
+          !buyerWelcomeOpen &&
+          !showVipManagerSpotlight
+        }
+        targetRef={strategiesBlockRef}
+        holeGroups={STRATEGY_SPOTLIGHT_HOLE_GROUPS}
+        message={t('buyerCabinet_strategySpotlightHint')}
+        bubbleMaxWidth={300}
       />
 
       <BiometricSecurityDrawer

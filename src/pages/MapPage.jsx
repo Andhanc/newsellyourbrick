@@ -28,6 +28,7 @@ import { fetchNominatimFirst } from '../utils/oapLocationGeocode'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
+import { propertyMatchesTextSearch } from '../utils/propertyTextSearch'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { getMainScrollEl, scrollMainTo } from '../utils/mainScroll'
@@ -700,11 +701,7 @@ const MapPage = () => {
     let list = applyMapPageFilters(activeListings, mapFilters, { isFavorite })
 
     if (searchNormalized) {
-      list = list.filter((p) => {
-        const title = String(p.title || '').toLowerCase()
-        const location = String(p.location || '').toLowerCase()
-        return title.includes(searchNormalized) || location.includes(searchNormalized)
-      })
+      list = list.filter((property) => propertyMatchesTextSearch(property, searchQuery))
     }
 
     return list

@@ -8,7 +8,7 @@ import sharp from 'sharp';
 import { initDatabase, closeDatabase, schemaCache } from './database/database.js';
 import { userQueries, documentQueries, notificationQueries, testDriveBookingQueries, administratorQueries, debtReasonQueries, debtDocumentQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, liveChatQueries, apartmentQueries, houseQueries, propertyQueries, favoriteQueries, crmQueries, auctionReminderQueries, passesApprovedFilters, passesAuctionFilters, stripeSubscriptionQueries } from './database/database.js';
 import { getPrisma } from './database/prismaClient.js';
-import { mergePropertyTranslations, mergeReservationFields } from './propertyListBatch.js';
+import { attachPropertySearchCorpus, mergePropertyTranslations, mergeReservationFields } from './propertyListBatch.js';
 import { fileURLToPath } from 'url';
 import { dirname, join, resolve, sep } from 'path';
 import multer from 'multer';
@@ -29,7 +29,9 @@ import { getMarketData, getMortgageRates, getRentalYieldByRegion } from './servi
 import {
   parseExtraJson,
   SITE_LANG_CODES,
+  normalizeTranslationPropertyTable,
   translateAndPersistProperty,
+  translationPropertyTableAliases,
 } from './services/aiPropertyTranslate.js';
 import { buildDatabaseSnapshot } from './services/storageSnapshot.js';
 import { loadAdminSidebarBadgePayload } from './adminSidebarBadgeCounts.js';
@@ -10887,6 +10889,11 @@ app.get('/api/properties/approved', async (req, res) => {
         console.warn('GET /api/properties/approved - подстановка переводов:', e.message);
       }
     }
+    try {
+      await attachPropertySearchCorpus(formattedProperties);
+    } catch (e) {
+      console.warn('GET /api/properties/approved - тексты поиска:', e.message);
+    }
 
     res.setHeader('Cache-Control', 'public, max-age=20, stale-while-revalidate=120');
     res.json({
@@ -10950,6 +10957,11 @@ app.get('/api/properties/debts', async (req, res) => {
       } catch (e) {
         console.warn('GET /api/properties/debts - подстановка переводов:', e.message);
       }
+    }
+    try {
+      await attachPropertySearchCorpus(formattedProperties);
+    } catch (e) {
+      console.warn('GET /api/properties/debts - тексты поиска:', e.message);
     }
 
     res.setHeader('Cache-Control', 'public, max-age=20, stale-while-revalidate=120');
@@ -11380,6 +11392,11 @@ app.get('/api/properties/auctions', async (req, res) => {
         console.warn('GET /api/properties/auctions - подстановка переводов:', e.message);
       }
     }
+    try {
+      await attachPropertySearchCorpus(formattedProperties);
+    } catch (e) {
+      console.warn('GET /api/properties/auctions - тексты поиска:', e.message);
+    }
 
     res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=120');
     res.json({
@@ -11528,6 +11545,11 @@ app.get('/api/properties/test-timers', async (req, res) => {
       } catch (e) {
         console.warn('GET /api/properties/test-timers - подстановка переводов:', e.message);
       }
+    }
+    try {
+      await attachPropertySearchCorpus(formattedProperties);
+    } catch (e) {
+      console.warn('GET /api/properties/test-timers - тексты поиска:', e.message);
     }
 
     res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=120');
@@ -11734,6 +11756,12 @@ app.get('/api/properties/test-drive', async (req, res) => {
       return formatted;
     });
 
+    try {
+      await attachPropertySearchCorpus(formattedProperties);
+    } catch (e) {
+      console.warn('GET /api/properties/test-drive - тексты поиска:', e.message);
+    }
+
     res.setHeader('Cache-Control', 'public, max-age=20, stale-while-revalidate=120');
     res.json({ success: true, data: formattedProperties });
   } catch (error) {
@@ -11776,6 +11804,11 @@ app.get('/api/properties/shares', async (req, res) => {
       } catch (e) {
         console.warn('GET /api/properties/shares - подстановка перевода:', e.message);
       }
+    }
+    try {
+      await attachPropertySearchCorpus(list);
+    } catch (e) {
+      console.warn('GET /api/properties/shares - тексты поиска:', e.message);
     }
     res.json({ success: true, data: list });
   } catch (err) {
@@ -11820,10 +11853,16 @@ app.get('/api/properties/:id/translations', async (req, res) => {
     if (!property) {
       return res.status(404).json({ success: false, error: 'Listing not found' });
     }
-    const table = propertyTable || property.source_table || 'properties_apartments';
+    const requestedTable = propertyTable || property.source_table || 'properties_apartments';
+    const canonical = normalizeTranslationPropertyTable(requestedTable, property.property_type);
+    const tables = [...new Set([
+      ...translationPropertyTableAliases(canonical),
+      String(requestedTable),
+    ])];
     const rows = await getPrisma().property_translations.findMany({
-      where: { property_id: Number(id), property_table: String(table) },
+      where: { property_id: Number(id), property_table: { in: tables } },
       select: {
+        property_table: true,
         lang_code: true,
         title: true,
         description: true,
@@ -11836,7 +11875,10 @@ app.get('/api/properties/:id/translations', async (req, res) => {
     });
     const byLang = {};
     rows.forEach((r) => {
+      const prev = byLang[r.lang_code];
+      if (prev && prev.property_table === canonical && r.property_table !== canonical) return;
       byLang[r.lang_code] = {
+        property_table: r.property_table,
         title: r.title,
         description: r.description,
         additional_amenities: r.additional_amenities,
@@ -11844,6 +11886,9 @@ app.get('/api/properties/:id/translations', async (req, res) => {
         ...parseExtraJson(r.extra_json),
         created_at: r.created_at,
       };
+    });
+    Object.values(byLang).forEach((row) => {
+      delete row.property_table;
     });
     return res.json({ success: true, data: byLang });
   } catch (err) {
@@ -13698,6 +13743,11 @@ app.get('/api/properties/:id', async (req, res) => {
         console.warn('GET /api/properties/:id - подстановка перевода:', e.message);
       }
     }
+    try {
+      await attachPropertySearchCorpus([formatted]);
+    } catch (e) {
+      console.warn('GET /api/properties/:id - тексты поиска:', e.message);
+    }
 
     // Документы по долгу (необходимые документы при продаже долга)
     if (formatted.is_debt === 1 || formatted.sale_type === 'debt' || formatted.has_debt === 1) {
@@ -14032,6 +14082,12 @@ app.get('/api/properties/user/:userId', async (req, res) => {
       };
       return parseTs(b?.created_at) - parseTs(a?.created_at);
     });
+
+    try {
+      await attachPropertySearchCorpus(formattedProperties);
+    } catch (e) {
+      console.warn('GET /api/properties/user - тексты поиска:', e.message);
+    }
 
     res.json({ success: true, data: formattedProperties });
   } catch (error) {

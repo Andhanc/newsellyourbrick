@@ -163,7 +163,7 @@ export default function BuyerSubscriptionOffers({ currentPlanVisual = 'starter',
       {selectedPlan && selectedDetails ? (
         <SubscriptionScreen
           open
-          appName="New Era"
+          appName="SYB"
           planType={selectedPlan.name}
           features={selectedDetails.features}
           pricingOptions={[

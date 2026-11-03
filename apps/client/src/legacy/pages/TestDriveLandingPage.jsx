@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import {
   FiChevronDown,
   FiCheckCircle,
-  FiHeart,
   FiHome,
   FiSearch,
   FiShield,
@@ -17,6 +16,7 @@ import SharesMobileFiltersDrawer from '../components/SharesMobileFiltersDrawer'
 import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
 import ListingPagePagination from '../components/ListingPagePagination'
 import BuyerEmptyState from '../components/buyer-mobile/BuyerEmptyState'
+import SectionInfoDrawer from '../components/SectionInfoDrawer'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
@@ -24,6 +24,7 @@ import { getPropertyCardImage } from '../utils/propertyImage'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
 import { auctionListingDedupeKey, getPropertyTestDrivePath } from '../utils/propertyDetailUrl'
 import { publicAsset } from '../utils/publicAsset'
+import { propertyMatchesTextSearch } from '../utils/propertyTextSearch'
 import {
   isWithinSelectedTestDrivePrice,
   mapRealTestDriveListing,
@@ -87,10 +88,6 @@ const STORY_CARDS = [
   { icon: FiUmbrella, titleKey: 'testDriveLanding_story2Title', textKey: 'testDriveLanding_story2Text' },
   { icon: FiShield, titleKey: 'testDriveLanding_story3Title', textKey: 'testDriveLanding_story3Text' },
 ]
-
-function normalizeText(value) {
-  return String(value || '').trim().toLowerCase()
-}
 
 function mapApiPropertyToListing(property, index) {
   const image = getPropertyCardImage(property, TEST_DRIVE_CARD_IMAGE_FALLBACK)
@@ -167,15 +164,13 @@ const TestDriveLandingPage = () => {
   const hasActiveFilters = activeFilterCount > 0
 
   const filteredListings = useMemo(() => {
-    const q = normalizeText(query)
     const filtered = listings.filter((item) => {
-      const haystack = normalizeText(`${item.title} ${item.location} ${item.type}`)
       const typeOk = matchesSelectedTestDriveType(item.type, selectedTypes)
       const directionOk = matchesSelectedTestDriveCity(item.city, selectedDirections)
       const durationOk = matchesSelectedTestDriveDurations(item, selectedDurations)
       const amenityOk = matchesSelectedTestDriveAmenities(item, selectedAmenities)
       const priceOk = isWithinSelectedTestDrivePrice(item.price, price)
-      return (!q || haystack.includes(q)) && typeOk && directionOk && durationOk && amenityOk && priceOk
+      return propertyMatchesTextSearch(item, query) && typeOk && directionOk && durationOk && amenityOk && priceOk
     })
 
     return sortTestDriveListings(filtered, sort)
@@ -259,13 +254,19 @@ const TestDriveLandingPage = () => {
           </div>
           <div className="test-drive-hero__content">
             <div className="test-drive-hero__copy test-drive-hero__copy--desktop">
-              <h1>{t('testDriveLanding_heroTitle')}</h1>
+              <div className="section-info-heading-row">
+                <h1>{t('testDrive')}</h1>
+                <SectionInfoDrawer section="testDrive" placement="heading" />
+              </div>
               <p className="test-drive-hero__subtitle">{t('testDriveLanding_heroSubtitle')}</p>
               <p className="test-drive-hero__lead">{t('testDriveLanding_heroLead')}</p>
             </div>
 
             <div className="test-drive-hero__copy test-drive-hero__copy--mobile">
-              <h1>{t('testDriveLanding_heroMobileTitle')}</h1>
+              <div className="section-info-heading-row">
+                <h1>{t('testDrive')}</h1>
+                <SectionInfoDrawer section="testDrive" placement="heading" />
+              </div>
               <p className="test-drive-hero__eyebrow">{t('testDriveLanding_heroMobileEyebrow')}</p>
             </div>
 
@@ -309,6 +310,14 @@ const TestDriveLandingPage = () => {
               </div>
             </div>
           </div>
+          <button
+            type="button"
+            className="test-drive-hero__scroll-button"
+            aria-label={t('testDriveLanding_scrollToCatalog')}
+            onClick={scrollToCatalog}
+          >
+            <FiChevronDown size={24} strokeWidth={2.7} aria-hidden />
+          </button>
         </section>
 
         <div className="test-drive-landing__container">
@@ -492,7 +501,7 @@ const TestDriveLandingPage = () => {
                       <article className="test-drive-card" key={listing.id}>
                         <button
                           type="button"
-                          className={`test-drive-card__favorite${favoriteActive ? ' is-active' : ''}`}
+                          className={`property-favorite${favoriteActive ? ' active' : ''}`}
                           onClick={() => toggleListingFavorite(listing)}
                           aria-label={
                             favoriteActive
@@ -501,7 +510,14 @@ const TestDriveLandingPage = () => {
                           }
                           aria-pressed={favoriteActive}
                         >
-                          <FiHeart size={22} aria-hidden />
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+                            <path
+                              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              fill={favoriteActive ? 'currentColor' : 'none'}
+                            />
+                          </svg>
                         </button>
                         <button
                           type="button"

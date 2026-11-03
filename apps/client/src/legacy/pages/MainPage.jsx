@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { publicAsset } from '../utils/publicAsset'
+import { propertyMatchesTextSearch } from '../utils/propertyTextSearch'
 import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import './MainPage.css'
 import {
@@ -1106,11 +1107,7 @@ function MainPage() {
   // Filter by search query
   const filterBySearch = (properties) => {
     if (!searchQuery) return properties
-    const query = searchQuery.toLowerCase()
-    return properties.filter(property => 
-      (property.name && property.name.toLowerCase().includes(query)) ||
-      (property.location && property.location.toLowerCase().includes(query))
-    )
+    return properties.filter((property) => propertyMatchesTextSearch(property, searchQuery))
   }
 
   // Pages available for search

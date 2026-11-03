@@ -10,6 +10,7 @@ import {
 } from 'react-icons/fi'
 import { Sparkles } from 'lucide-react'
 import SiteChatDock from '../components/SiteChatDock'
+import { cancelDiscoverHeroReturn, hasSeenDiscoverHero, initialDiscoverScreen, markDiscoverHeroSeen, scheduleDiscoverHeroReturn } from '../utils/discoverHeroVisit'
 import { publicAsset } from '../utils/publicAsset'
 import { getMainScrollEl, scrollMainTo } from '../utils/mainScroll'
 import { COMPASS_PATH, CO_INVESTMENT_PATH, TEST_DRIVE_PATH } from '../utils/sectionRoutes'
@@ -127,7 +128,7 @@ export default function MobileDiscoverPage() {
   const heroVideoRef = useRef(null)
   const flashRef = useRef(null)
   const flashAnimationRef = useRef(null)
-  const activeScreenRef = useRef('hero')
+  const activeScreenRef = useRef(initialDiscoverScreen())
   const stageScrollRef = useRef(null)
   const launchSliderRef = useRef(null)
   const launchScrollLeftRef = useRef(null)
@@ -135,8 +136,8 @@ export default function MobileDiscoverPage() {
   const lotteryTriggerRef = useRef(null)
   const catalogSentinelRef = useRef(null)
 
-  const [screen, setScreen] = useState('hero') // hero | stage
-  const [stageEntered, setStageEntered] = useState(false)
+  const [screen, setScreen] = useState(activeScreenRef.current) // hero | stage
+  const [stageEntered, setStageEntered] = useState(() => activeScreenRef.current === 'stage')
   const [isStageNavExpanded, setIsStageNavExpanded] = useState(false)
   const [isFooterNear, setIsFooterNear] = useState(false)
   const [catalogReady, setCatalogReady] = useState(false)
@@ -215,6 +216,15 @@ export default function MobileDiscoverPage() {
   }
 
   compassOfferBlockedRef.current = compassDrawerOpen
+
+  useEffect(() => {
+    if (screen !== 'hero') {
+      markDiscoverHeroSeen()
+      return undefined
+    }
+    cancelDiscoverHeroReturn()
+    return () => scheduleDiscoverHeroReturn()
+  }, [screen])
 
   useEffect(() => {
     const root = document.documentElement
@@ -368,8 +378,10 @@ export default function MobileDiscoverPage() {
 
   const goTo = useCallback((next) => {
     if (next === activeScreenRef.current || flashAnimationRef.current) return
+    if (next === 'hero' && hasSeenDiscoverHero()) return
     const stage = stageScrollRef.current
     if (!stage) return
+    if (next === 'stage') markDiscoverHeroSeen()
     flashTransition(() => {
       // Commit the new screen while the veil is completely white.
       flushSync(() => {

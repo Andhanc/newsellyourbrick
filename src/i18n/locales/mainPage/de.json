@@ -5038,6 +5038,9 @@
   "ownerTest_moderationNoticeClose": "Schließen",
   "ownerTest_moderationNoticeOk": "Verstanden",
   "oauthBridge_finishing": "Anmeldung wird abgeschlossen…",
+  "cabinetEntry_kicker": "SellYourBrick",
+  "cabinetEntry_title": "Willkommen",
+  "cabinetEntry_subtitle": "Ihr Profil wird geöffnet",
   "ownerTest_purchasedDraftAria": "Unvollständiges Objekt",
   "ownerTest_purchasedDraftTitle": "Sie haben ein unvollständiges Objekt",
   "ownerTest_purchasedDraftContinue": "„{{title}}“ weiter bearbeiten",
@@ -6478,6 +6481,7 @@
   "depositPicker_methodsAriaLabel": "Auflademethoden",
   "verificationRejectedGateVerificationSubtitleWithReason": "Grund: {{reason}}. Laden Sie Passfoto, Selfie und Selfie mit Pass erneut hoch.",
   "buyerCabinet_vipManagerSpotlightHint": "Das ist Ihr Manager — er antwortet Ihnen in WhatsApp",
+  "buyerCabinet_strategySpotlightHint": "Weiter zu den Geboten — oder wählen Sie Ihre Strategie",
   "privateClubLanding_alreadyMemberCta": "Sie sind bereits im VIP-Club",
   "ownerCabinet_welcomeFinish": "Profil ausfüllen",
   "ownerWelcome_onboardingNext": "Weiter",
@@ -10797,5 +10801,12 @@
   "forgotPassword_accountNotFound": "Kein Konto mit dieser E-Mail gefunden",
   "forgotPassword_passwordSameAsOther": "Das Passwort muss sich vom Passwort des anderen Bereichs unterscheiden",
   "forgotPassword_passwordSameAsCurrent": "Das neue Passwort muss sich vom aktuellen unterscheiden",
-  "forgotPassword_passwordsMatch": "Passwörter stimmen überein"
+  "forgotPassword_passwordsMatch": "Passwörter stimmen überein",
+  "compareNeedsLikes_titleZero": "Zwei Likes zum Vergleichen",
+  "compareNeedsLikes_titleOne": "Noch ein Like",
+  "compareNeedsLikes_lead": "Der Vergleich öffnet sich, sobald mindestens zwei Objekte geliked sind. Like noch eines, dann liegen sie nebeneinander.",
+  "compareNeedsLikes_metaCount": "2 Objekte",
+  "compareNeedsLikes_metaHint": "zum Vergleichen",
+  "compareNeedsLikes_cta": "Weiteres Objekt liken",
+  "compareNeedsLikes_close": "Schließen"
 }

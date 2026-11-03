@@ -24,6 +24,8 @@ import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
 import ListingPagePagination from '../components/ListingPagePagination'
 import BuyerSheetShell from '../components/buyer-mobile/BuyerSheetShell'
 import { paginateBuyerCatalogue } from '../utils/buyerCataloguePagination'
+import { SEARCH_CATALOG_PATH } from '../utils/searchCatalogNavigation'
+import CompareNeedsLikesModal from '../components/CompareNeedsLikesModal'
 
 const FAVORITES_CARD_SKELETON_COUNT = 4
 const EMPTY_ILLUSTRATION = '/images/favorites-empty-reference-style.png'
@@ -97,6 +99,7 @@ const Favorites = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [guideOpen, setGuideOpen] = useState(false)
+  const [needsLikesOpen, setNeedsLikesOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== 'undefined' && window.innerWidth <= 768,
@@ -105,6 +108,12 @@ const Favorites = () => {
   const { favoriteAuctions, catalogLoading } = useFavoriteAuctionItems()
 
   const listLoading = catalogLoading || favoritesLoading
+  const needsMoreLikes = !listLoading && favoriteAuctions.length < 2
+  const openCompare = (event) => {
+    if (!needsMoreLikes) return
+    event.preventDefault()
+    setNeedsLikesOpen(true)
+  }
   const formatPrice = useMemo(
     () => (price, currency = 'USD') =>
       formatPropertyPrice(price ?? 0, currency, { compact: true }),
@@ -290,7 +299,7 @@ const Favorites = () => {
               {t('favoritesPage_compareText')}
             </p>
           </div>
-          <Link to="/compare" className="favorites-compare__button">
+          <Link to="/compare" className="favorites-compare__button" onClick={openCompare}>
             {t('favoritesPage_goToCompare')}
             <ArrowRight size={17} aria-hidden />
           </Link>
@@ -404,6 +413,13 @@ const Favorites = () => {
           </Link>
         </aside>
       ) : null}
+
+      <CompareNeedsLikesModal
+        isOpen={needsLikesOpen}
+        likedCount={favoriteAuctions.length}
+        onClose={() => setNeedsLikesOpen(false)}
+        onFindMore={() => navigate(SEARCH_CATALOG_PATH)}
+      />
     </div>
   )
 }

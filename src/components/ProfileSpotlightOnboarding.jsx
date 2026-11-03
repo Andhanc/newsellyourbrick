@@ -54,9 +54,94 @@ function roundedRectPath(x, y, w, h, r) {
   ].join(' ')
 }
 
-function spotlightDimPath(vw, vh, hole) {
+function unionHole(holes) {
+  const top = Math.min(...holes.map((hole) => hole.top))
+  const left = Math.min(...holes.map((hole) => hole.left))
+  const right = Math.max(...holes.map((hole) => hole.left + hole.width))
+  const bottom = Math.max(...holes.map((hole) => hole.top + hole.height))
+  const width = Math.max(0, right - left)
+  const height = Math.max(0, bottom - top)
+  const rx = Math.min(
+    Math.max(...holes.map((hole) => hole.rx)),
+    width / 2 - 0.25,
+    height / 2 - 0.25,
+  )
+  return { top, left, width, height, rx }
+}
+
+function isLaidOut(el) {
+  if (!el) return false
+  const rect = el.getBoundingClientRect()
+  return rect.width > 1 && rect.height > 1
+}
+
+function isPaintedBackground(el) {
+  try {
+    const bg = getComputedStyle(el).backgroundColor
+    return Boolean(bg) && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)'
+  } catch {
+    return false
+  }
+}
+
+/** Плотный прямоугольник по тексту, без пустых полей растянутой строки. */
+function measureTight(el, pad = 0, radius) {
+  if (!el) return null
+  const rects = []
+  try {
+    const range = document.createRange()
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+    while (walker.nextNode()) {
+      if (!String(walker.currentNode.textContent || '').trim()) continue
+      range.selectNodeContents(walker.currentNode)
+      rects.push(...Array.from(range.getClientRects()))
+    }
+  } catch {
+    rects.length = 0
+  }
+  el.querySelectorAll('*').forEach((child) => {
+    if (!isPaintedBackground(child)) return
+    const rect = child.getBoundingClientRect()
+    if (rect.width > 1 && rect.height > 1) rects.push(rect)
+  })
+  const visible = rects.filter((rect) => rect.width > 1 && rect.height > 1)
+  if (!visible.length) return measureTarget(el, pad)
+  const top = Math.min(...visible.map((rect) => rect.top))
+  const left = Math.min(...visible.map((rect) => rect.left))
+  const right = Math.max(...visible.map((rect) => rect.right))
+  const bottom = Math.max(...visible.map((rect) => rect.bottom))
+  const width = right - left + pad * 2
+  const height = bottom - top + pad * 2
+  return {
+    top: top - pad,
+    left: left - pad,
+    width,
+    height,
+    rx: Math.min(
+      radius != null ? radius : Math.max(parseBorderRadiusPx(el), 16),
+      width / 2 - 0.25,
+      height / 2 - 0.25,
+    ),
+  }
+}
+
+function measureHoleGroup(root, group) {
+  if (!root || !group?.selector) return []
+  const nodes = Array.from(root.querySelectorAll(group.selector)).filter(isLaidOut)
+  if (!nodes.length) return []
+  const pad = group.pad ?? 0
+  const measured = nodes
+    .map((el) => (group.tight ? measureTight(el, pad, group.rx) : measureTarget(el, pad)))
+    .filter(Boolean)
+  if (!measured.length) return []
+  return group.union ? [unionHole(measured)] : measured
+}
+
+function spotlightDimPath(vw, vh, holes) {
   const outer = `M 0 0 H ${vw} V ${vh} H 0 Z`
-  const inner = roundedRectPath(hole.left, hole.top, hole.width, hole.height, hole.rx)
+  const inner = holes
+    .map((hole) => roundedRectPath(hole.left, hole.top, hole.width, hole.height, hole.rx))
+    .join(' ')
   return `${outer} ${inner}`
 }
 
@@ -70,6 +155,11 @@ export function ProfileSpotlightOnboarding({
   message,
   /** Внешний отступ «окна» вокруг цели; 0 — ровно по краям элемента. */
   pad = DEFAULT_PAD,
+  /**
+   * Отдельные прорези внутри targetRef.
+   * { selector, union?, tight?, pad? } — union склеивает совпадения в одно окно.
+   */
+  holeGroups = null,
   bubbleShiftX = 0,
   bubbleShiftY = 0,
   headRotateDeg = 0,
@@ -77,8 +167,8 @@ export function ProfileSpotlightOnboarding({
   bubbleMaxWidth = 216,
 }) {
   const reduceMotion = useReducedMotion()
-  const [box, setBox] = useState(null)
-  const lastBoxRef = useRef(null)
+  const [measure, setMeasure] = useState(null)
+  const lastMeasureRef = useRef(null)
   const [viewport, setViewport] = useState(() =>
     typeof window !== 'undefined' ? { w: window.innerWidth, h: window.innerHeight } : { w: 0, h: 0 },
   )
@@ -90,38 +180,70 @@ export function ProfileSpotlightOnboarding({
     const w = window.innerWidth
     const h = window.innerHeight
     setViewport({ w, h })
-    const next = measureTarget(targetRefStable?.current, pad)
-    if (next) {
-      lastBoxRef.current = next
-      setBox(next)
+    const root = targetRefStable?.current
+    let holes = []
+    if (holeGroups?.length && root) {
+      holes = holeGroups.flatMap((group) => measureHoleGroup(root, group))
+    } else {
+      const one = measureTarget(root, pad)
+      if (one) holes = [one]
     }
-  }, [active, targetRefStable, pad])
+    if (!holes.length) return
+    const union = holes.length === 1 ? holes[0] : unionHole(holes)
+    let box = union
+    if (holeGroups?.length && root) {
+      const section = measureTarget(root, 0)
+      if (section && section.top < union.top - 8) {
+        box = {
+          ...union,
+          top: section.top,
+          height: union.top + union.height - section.top,
+        }
+      }
+    }
+    const next = {
+      box,
+      holes,
+      multi: Boolean(holeGroups?.length && holes.length > 1),
+    }
+    lastMeasureRef.current = next
+    setMeasure(next)
+  }, [active, targetRefStable, pad, holeGroups])
 
   useLayoutEffect(() => {
     if (!active) {
-      setBox(null)
-      lastBoxRef.current = null
+      setMeasure(null)
+      lastMeasureRef.current = null
       return
     }
-    setBox(null)
-    lastBoxRef.current = null
+    setMeasure(null)
+    lastMeasureRef.current = null
     update()
   }, [active, targetRefStable, update])
 
   useLayoutEffect(() => {
     if (!active) return
-    const el = targetRefStable?.current
-    const ro = el ? new ResizeObserver(() => update()) : null
-    if (el && ro) ro.observe(el)
+    const root = targetRefStable?.current
+    const observed = []
+    if (root) observed.push(root)
+    if (root && holeGroups?.length) {
+      holeGroups.forEach((group) => {
+        root.querySelectorAll(group.selector).forEach((el) => observed.push(el))
+      })
+    }
+    const ro = observed.length ? new ResizeObserver(() => update()) : null
+    observed.forEach((el) => ro.observe(el))
+    const scrollRoot = document.querySelector('.app-layout')
     window.addEventListener('resize', update)
     window.addEventListener('scroll', update, true)
+    scrollRoot?.addEventListener('scroll', update, { passive: true })
     return () => {
-      if (ro && el) ro.unobserve(el)
       ro?.disconnect()
       window.removeEventListener('resize', update)
       window.removeEventListener('scroll', update, true)
+      scrollRoot?.removeEventListener('scroll', update)
     }
-  }, [active, targetRefStable, update])
+  }, [active, targetRefStable, holeGroups, update])
 
   /** Ref на кнопку/карточку может появиться позже (layout, motion) — несколько попыток измерения. */
   useEffect(() => {
@@ -132,28 +254,27 @@ export function ProfileSpotlightOnboarding({
       if (cancelled) return
       update()
       frames += 1
-      if (frames < 24 && !lastBoxRef.current) {
+      if (frames < 24 && !lastMeasureRef.current) {
         requestAnimationFrame(tick)
       }
     }
     requestAnimationFrame(tick)
-    const t = window.setTimeout(() => {
+    const timers = [50, 280, 700, 1500].map((delay) => window.setTimeout(() => {
       if (!cancelled) update()
-    }, 50)
-    const t2 = window.setTimeout(() => {
-      if (!cancelled) update()
-    }, 280)
+    }, delay))
     return () => {
       cancelled = true
-      window.clearTimeout(t)
-      window.clearTimeout(t2)
+      timers.forEach((timer) => window.clearTimeout(timer))
     }
   }, [active, update])
 
   if (typeof document === 'undefined') return null
 
   const { w: vw, h: vh } = viewport
-  const r = box || lastBoxRef.current
+  const stored = measure || lastMeasureRef.current
+  const r = stored?.box || null
+  const holes = stored?.holes || []
+  const multi = Boolean(stored?.multi && holes.length > 1)
 
   const bubbleW = Math.min(bubbleMaxWidth, Math.max(180, vw - 40))
   /** Примерная высота компактного баббла (padding + 1–2 строки текста). */
@@ -230,7 +351,7 @@ export function ProfileSpotlightOnboarding({
     headPath = `M ${wingL.x} ${wingL.y} L ${tip.x} ${tip.y} M ${wingR.x} ${wingR.y} L ${tip.x} ${tip.y}`
   }
 
-  const dimPath = r && vw > 0 ? spotlightDimPath(vw, vh, r) : ''
+  const dimPath = holes.length && vw > 0 ? spotlightDimPath(vw, vh, holes) : ''
   const hasHoleLayer = Boolean(r && vw > 0 && dimPath)
   const showFallbackDim = Boolean(active && vw > 0 && vh > 0 && !hasHoleLayer)
 
@@ -277,45 +398,49 @@ export function ProfileSpotlightOnboarding({
           ) : null}
           {r && vw > 0 && dimPath ? (
             <>
-              {/* Прозрачные полосы надёжно перехватывают клики; SVG ниже только для вида со скруглением. */}
-              <div
-                className="profile-spotlight__hit-slab"
-                style={{ left: 0, top: 0, width: vw, height: Math.max(0, r.top) }}
-                aria-hidden
-              />
-              <div
-                className="profile-spotlight__hit-slab"
-                style={{
-                  left: 0,
-                  top: r.top,
-                  width: Math.max(0, r.left),
-                  height: r.height,
-                }}
-                aria-hidden
-              />
-              <div
-                className="profile-spotlight__hit-slab"
-                style={{
-                  left: r.left + r.width,
-                  top: r.top,
-                  width: Math.max(0, vw - r.left - r.width),
-                  height: r.height,
-                }}
-                aria-hidden
-              />
-              <div
-                className="profile-spotlight__hit-slab"
-                style={{
-                  left: 0,
-                  top: r.top + r.height,
-                  width: vw,
-                  height: Math.max(0, vh - r.top - r.height),
-                }}
-                aria-hidden
-              />
+              {/* Одна прорезь: полосы ловят клики вокруг неё. Несколько прорезей: клики ловит сама заливка SVG. */}
+              {multi ? null : (
+                <>
+                  <div
+                    className="profile-spotlight__hit-slab"
+                    style={{ left: 0, top: 0, width: vw, height: Math.max(0, r.top) }}
+                    aria-hidden
+                  />
+                  <div
+                    className="profile-spotlight__hit-slab"
+                    style={{
+                      left: 0,
+                      top: r.top,
+                      width: Math.max(0, r.left),
+                      height: r.height,
+                    }}
+                    aria-hidden
+                  />
+                  <div
+                    className="profile-spotlight__hit-slab"
+                    style={{
+                      left: r.left + r.width,
+                      top: r.top,
+                      width: Math.max(0, vw - r.left - r.width),
+                      height: r.height,
+                    }}
+                    aria-hidden
+                  />
+                  <div
+                    className="profile-spotlight__hit-slab"
+                    style={{
+                      left: 0,
+                      top: r.top + r.height,
+                      width: vw,
+                      height: Math.max(0, vh - r.top - r.height),
+                    }}
+                    aria-hidden
+                  />
+                </>
+              )}
 
               <svg
-                className="profile-spotlight__dim-svg"
+                className={`profile-spotlight__dim-svg${multi ? ' profile-spotlight__dim-svg--multi' : ''}`}
                 width={vw}
                 height={vh}
                 viewBox={`0 0 ${vw} ${vh}`}
@@ -328,7 +453,7 @@ export function ProfileSpotlightOnboarding({
                   fillRule="evenodd"
                   d={dimPath}
                   className="profile-spotlight__dim-path"
-                  pointerEvents="none"
+                  pointerEvents={multi ? 'fill' : 'none'}
                 />
               </svg>
 

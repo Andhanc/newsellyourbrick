@@ -29,7 +29,129 @@
         min-height: 100%;
         min-height: 100dvh;
       }
+      html.cabinet-entry-boot,
+      html.cabinet-entry-boot body {
+        background: #0f172a;
+      }
+      html.cabinet-entry-boot #root {
+        visibility: hidden;
+      }
+      #cabinet-entry-boot {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483600;
+        display: flex;
+        align-items: flex-end;
+        padding: 18vh 28px 64px;
+        background: #0f172a;
+        color: #fff;
+      }
+      #cabinet-entry-boot.is-leaving {
+        opacity: 0;
+        transition: opacity 420ms ease;
+      }
+      #cabinet-entry-boot .cabinet-entry__photo,
+      #cabinet-entry-boot .cabinet-entry__veil {
+        position: absolute;
+        inset: 0;
+      }
+      #cabinet-entry-boot .cabinet-entry__veil {
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.18) 0%, rgba(15, 23, 42, 0.28) 38%, rgba(15, 23, 42, 0.78) 100%);
+      }
+      #cabinet-entry-boot .cabinet-entry__brand {
+        position: absolute;
+        top: 26%;
+        left: 50%;
+        z-index: 2;
+        display: inline-flex;
+        align-items: baseline;
+        transform: translate(-50%, -50%);
+        color: #fff;
+        font-family: Montserrat, system-ui, sans-serif;
+        font-size: clamp(2.35rem, 12.5vw, 3.5rem);
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -0.075em;
+        white-space: nowrap;
+        text-shadow: 0 3px 26px rgba(1, 10, 12, 0.35);
+      }
+      #cabinet-entry-boot .cabinet-entry__brand-accent {
+        margin: 0 0.04em;
+        padding: 0.02em 0.14em 0.055em;
+        border-radius: 0.24em;
+        background: linear-gradient(145deg, #7cdee2, #50bec8);
+        box-shadow: 0 8px 26px rgba(1, 10, 12, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.46);
+        text-shadow: none;
+      }
+      #cabinet-entry-boot .cabinet-entry__copy {
+        position: relative;
+        z-index: 1;
+        width: min(100%, 36rem);
+      }
+      #cabinet-entry-boot .cabinet-entry__kicker,
+      #cabinet-entry-boot .cabinet-entry__subtitle {
+        margin: 0;
+        font-family: Montserrat, system-ui, sans-serif;
+      }
+      #cabinet-entry-boot .cabinet-entry__kicker {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        line-height: 1.2;
+        text-transform: uppercase;
+      }
+      #cabinet-entry-boot .cabinet-entry__title {
+        margin: 14px 0 0;
+        font-family: "Playfair Display", Georgia, serif;
+        font-size: clamp(2.5rem, 7vw, 3.5rem);
+        font-style: italic;
+        font-weight: 700;
+        line-height: 1.08;
+      }
+      #cabinet-entry-boot .cabinet-entry__subtitle {
+        margin-top: 14px;
+        font-size: 1rem;
+        line-height: 1.7;
+        color: rgba(255, 255, 255, 0.88);
+      }
+      #cabinet-entry-boot .cabinet-entry__rule {
+        width: 112px;
+        height: 2px;
+        margin-top: 26px;
+        background: rgba(255, 255, 255, 0.28);
+        overflow: hidden;
+      }
+      #cabinet-entry-boot .cabinet-entry__rule-fill {
+        display: block;
+        width: 0;
+        height: 100%;
+        background: #0099a9;
+        animation: cabinet-entry-rule 2.5s linear forwards;
+      }
+      @keyframes cabinet-entry-rule {
+        to { width: 100%; }
+      }
     </style>
+    <script>
+      (function () {
+        try {
+          if (sessionStorage.getItem('syb_cabinet_entry_pending') !== '1') return
+          var path = location.pathname
+          var show = path === '/oauth-bridge' || path === '/profile' || path.indexOf('/profile/') === 0 || path === '/owner-test' || path.indexOf('/owner-test/') === 0
+          if (!show) {
+            sessionStorage.removeItem('syb_cabinet_entry_pending')
+            sessionStorage.removeItem('syb_cabinet_entry_started_at')
+            return
+          }
+          document.documentElement.classList.add('cabinet-entry-boot')
+          var preload = document.createElement('link')
+          preload.rel = 'preload'
+          preload.as = 'image'
+          preload.href = '/images/sellyourbrick/about/about-hero-villa.jpg'
+          document.head.appendChild(preload)
+        } catch (e) {}
+      })()
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="alternate icon" href="/favicon.svg" />
@@ -109,6 +231,42 @@
     </noscript>
   </head>
   <body>
+    <script>
+      (function () {
+        try {
+          if (!document.documentElement.classList.contains('cabinet-entry-boot')) return
+          if (!sessionStorage.getItem('syb_cabinet_entry_started_at')) {
+            sessionStorage.setItem('syb_cabinet_entry_started_at', String(Date.now()))
+          }
+          var lang = String(localStorage.getItem('i18nextLng') || 'ru').slice(0, 2)
+          var copy = {
+            ru: ['Добро пожаловать', 'Открываем ваш профиль'],
+            en: ['Welcome', 'Opening your profile'],
+            de: ['Willkommen', 'Ihr Profil wird geöffnet'],
+            es: ['Bienvenido', 'Abriendo su perfil'],
+            fr: ['Bienvenue', 'Ouverture de votre profil'],
+            pl: ['Witamy', 'Otwieramy Twój profil'],
+            sv: ['Välkommen', 'Öppnar din profil']
+          }[lang] || ['Welcome', 'Opening your profile']
+          var el = document.createElement('div')
+          el.id = 'cabinet-entry-boot'
+          el.className = 'cabinet-entry'
+          el.setAttribute('role', 'status')
+          el.innerHTML = '<div class="cabinet-entry__photo" aria-hidden="true"></div><div class="cabinet-entry__veil" aria-hidden="true"></div><div class="cabinet-entry__brand" aria-hidden="true"><span>Sell</span><span class="cabinet-entry__brand-accent">Your</span><span>Brick</span></div><div class="cabinet-entry__copy"><p class="cabinet-entry__kicker">SellYourBrick</p><p class="cabinet-entry__title"></p><p class="cabinet-entry__subtitle"></p><div class="cabinet-entry__rule" aria-hidden="true"><span class="cabinet-entry__rule-fill"></span></div></div>'
+          el.querySelector('.cabinet-entry__title').textContent = copy[0]
+          el.querySelector('.cabinet-entry__subtitle').textContent = copy[1]
+          var photo = el.querySelector('.cabinet-entry__photo')
+          photo.style.backgroundImage = 'linear-gradient(180deg, rgba(15, 23, 42, 0.18), rgba(15, 23, 42, 0.18)), url("/images/sellyourbrick/about/about-hero-villa.jpg")'
+          photo.style.backgroundPosition = 'center 42%'
+          photo.style.backgroundSize = 'cover'
+          photo.style.backgroundRepeat = 'no-repeat'
+          var started = Number(sessionStorage.getItem('syb_cabinet_entry_started_at') || Date.now())
+          var fill = el.querySelector('.cabinet-entry__rule-fill')
+          if (fill) fill.style.animationDelay = '-' + Math.max(0, Date.now() - started) + 'ms'
+          document.body.appendChild(el)
+        } catch (e) {}
+      })()
+    </script>
     <div id="root"></div>
     <script src="%BASE_URL%role-switch-boot.js"></script>
     <script type="module" src="/src/main.jsx"></script>

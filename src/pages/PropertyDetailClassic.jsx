@@ -7940,8 +7940,8 @@ function PropertyDetailClassic({
 
             </div>
 
-            {/* Документы - отдельный блок под property-detail-sidebar__content (только в кабинете продавца) */}
-            {(onBack || showDocuments) && processedDocuments.length > 0 && (
+            {/* Документы под сайдбаром — кабинет продавца. На долях их уже закрывает общий мобильный gate. */}
+            {(onBack || showDocuments) && !isShareListing && processedDocuments.length > 0 && (
               <SubscriptionLock locked={docsLocked} requiredPlan="VIP">
               <div className="property-detail-sidebar__documents">
                 <h3 className="property-detail-sidebar__documents-title">{t('propertyDetailDocumentsTitle')}</h3>

@@ -106,6 +106,64 @@ export function applyPropertyTranslationRow(prop, tr, lang) {
   return prop;
 }
 
+function pushSearchText(texts, value) {
+  const text = String(value || '').trim()
+  if (text) texts.push(text)
+}
+
+/**
+ * Все сохранённые переводы объявления, не заменяя адрес и текст карточки.
+ * Поиск тогда находит описание на любом языке сайта.
+ */
+export async function attachPropertySearchCorpus(props) {
+  if (!props?.length) return
+  const prisma = getPrisma()
+
+  for (const part of chunk(props, 80)) {
+    const or = []
+    for (const prop of part) {
+      const id = Number(prop?.id)
+      if (!Number.isFinite(id)) continue
+      const canonical = translationPropertyTable(prop.source_table, prop.property_type)
+      for (const property_table of translationPropertyTableAliases(canonical)) {
+        or.push({ property_id: id, property_table })
+      }
+    }
+    if (!or.length) continue
+
+    const rows = await prisma.property_translations.findMany({
+      where: { OR: or },
+      select: {
+        property_id: true,
+        title: true,
+        description: true,
+        additional_amenities: true,
+        location: true,
+        extra_json: true,
+      },
+    })
+    const byId = new Map()
+    for (const row of rows) {
+      const id = Number(row.property_id)
+      if (!byId.has(id)) byId.set(id, [])
+      byId.get(id).push(row)
+    }
+
+    for (const prop of part) {
+      const texts = []
+      for (const row of byId.get(Number(prop.id)) || []) {
+        pushSearchText(texts, row.title)
+        pushSearchText(texts, row.description)
+        pushSearchText(texts, row.additional_amenities)
+        pushSearchText(texts, row.location)
+        const extra = parseExtraJson(row.extra_json)
+        for (const key of EXTRA_TRANSLATION_FIELDS) pushSearchText(texts, extra[key])
+      }
+      if (texts.length) prop.search_corpus = texts
+    }
+  }
+}
+
 /**
  * Подставляет переводы title/description/... для элементов списка одним-двумя запросами.
  * @param {Array<{ id: unknown, source_table?: string|null, title?: unknown, name?: unknown }>} props

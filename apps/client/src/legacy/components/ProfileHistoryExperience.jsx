@@ -13,6 +13,7 @@ import {
   FiTrendingUp,
 } from 'react-icons/fi'
 import { buildProfileHistoryDashboard } from '../utils/profileCabinetPresentation'
+import { propertyMatchesTextSearch } from '../utils/propertyTextSearch'
 import { CABINET_HISTORY_UPDATED_EVENT } from '../constants/cabinetEvents'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import './ProfileHistoryExperience.css'
@@ -143,9 +144,7 @@ export default function ProfileHistoryExperience({
         ...(category.key === 'development' ? { title: t('develop.portfolioCategory'), chipTitle: t('develop.portfolioCategory') } : {}),
         items: normalizedQuery
           ? category.items.filter((item) =>
-              `${item.title || ''} ${item.subtitle || ''} ${item.location || ''}`
-                .toLowerCase()
-                .includes(normalizedQuery),
+              propertyMatchesTextSearch(item, normalizedQuery, item.subtitle),
             )
           : category.items,
       })),

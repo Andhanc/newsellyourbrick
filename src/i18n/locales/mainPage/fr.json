@@ -5037,6 +5037,9 @@
   "ownerTest_moderationNoticeClose": "Fermer",
   "ownerTest_moderationNoticeOk": "Compris",
   "oauthBridge_finishing": "Finalisation de la connexion…",
+  "cabinetEntry_kicker": "SellYourBrick",
+  "cabinetEntry_title": "Bienvenue",
+  "cabinetEntry_subtitle": "Ouverture de votre profil",
   "ownerTest_purchasedDraftAria": "Bien incomplet",
   "ownerTest_purchasedDraftTitle": "Vous avez un bien incomplet",
   "ownerTest_purchasedDraftContinue": "Continuez « {{title}} »",
@@ -6477,6 +6480,7 @@
   "depositPicker_methodsAriaLabel": "Modes de recharge",
   "verificationRejectedGateVerificationSubtitleWithReason": "Motif : {{reason}}. Téléversez photo du passeport, selfie et selfie avec passeport à nouveau.",
   "buyerCabinet_vipManagerSpotlightHint": "Voici votre manager — il vous répondra sur WhatsApp",
+  "buyerCabinet_strategySpotlightHint": "Passons aux enchères, ou choisissez votre stratégie",
   "privateClubLanding_alreadyMemberCta": "Vous êtes déjà dans le club VIP",
   "ownerCabinet_welcomeFinish": "Compléter le profil",
   "ownerWelcome_onboardingNext": "Suivant",
@@ -10797,5 +10801,12 @@
   "forgotPassword_accountNotFound": "Aucun compte avec cet e-mail",
   "forgotPassword_passwordSameAsOther": "Le mot de passe doit être différent de celui de l’autre espace",
   "forgotPassword_passwordSameAsCurrent": "Le nouveau mot de passe doit être différent de l’actuel",
-  "forgotPassword_passwordsMatch": "Les mots de passe correspondent"
+  "forgotPassword_passwordsMatch": "Les mots de passe correspondent",
+  "compareNeedsLikes_titleZero": "Deux likes pour comparer",
+  "compareNeedsLikes_titleOne": "Encore un like",
+  "compareNeedsLikes_lead": "La comparaison s’ouvre dès que deux biens sont likés. Likez-en un de plus pour les mettre côte à côte.",
+  "compareNeedsLikes_metaCount": "2 biens",
+  "compareNeedsLikes_metaHint": "pour comparer",
+  "compareNeedsLikes_cta": "Liker un autre bien",
+  "compareNeedsLikes_close": "Fermer"
 }

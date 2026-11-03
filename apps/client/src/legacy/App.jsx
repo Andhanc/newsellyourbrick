@@ -29,6 +29,7 @@ import './styles/buyer-mobile-tokens.css'
 import './styles/tiffany-shine-button.css'
 import './styles/functionalDrawerChrome.css'
 import { GlassFilterDefs } from './components/ui/GlassFilterDefs'
+import CabinetEntryPreloader from './components/CabinetEntryPreloader'
 import { LayoutScrollRefContext } from './context/LayoutScrollContext'
 import { ensureMainScrollReady, scrollMainTo } from './utils/mainScroll'
 import { lazyWithRetry } from './utils/lazyWithRetry'
@@ -52,7 +53,6 @@ import DepositRedirect from './components/DepositRedirect'
 import CabinetDataRedirect from './components/CabinetDataRedirect'
 import { LegacySharesDetailRedirect, LegacySharesIndexRedirect } from './components/LegacySharesRedirect'
 import DevelopmentPages from './features/development/DevelopmentPages'
-import BuyerPassport from './features/development/BuyerPassport'
 import DealRoom from './features/development/DealRoom'
 import { CO_INVESTMENT_PATH } from './utils/sectionRoutes'
 const NotFoundPage = lazyWithRetry(() => import('./components/NotFoundPage'))
@@ -654,6 +654,7 @@ function App() {
       <AdminSessionCleaner />
       <ClerkAuthSync />
       <ClerkAuthHandlerGate />
+      <CabinetEntryPreloader />
       <GlassFilterDefs />
       <LayoutScrollRefContext.Provider value={appLayoutRef}>
       <SiteFooterNearObserver />
@@ -672,7 +673,6 @@ function App() {
               <Route path="/development" element={<DevelopmentPages />} />
               <Route path="/development/mine" element={<DevelopmentPages mine />} />
               <Route path="/development/:slug" element={<DevelopmentPages />} />
-              <Route path="/buyer-passport" element={<BuyerPassport />} />
               <Route path="/deal-room/:table/:id" element={<DealRoom />} />
               <Route path="/" element={<LazyPage><MobileDiscoverPage /></LazyPage>} />
               <Route path="/mobile-showcase" element={<LazyPage><MobileShowcasePage /></LazyPage>} />

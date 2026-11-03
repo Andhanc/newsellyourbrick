@@ -11,6 +11,7 @@ import {
 } from '../services/authService'
 import AuthAlertModal from './AuthAlertModal'
 import { getCabinetHomePath, hasActiveCabinetSession, readStoredUserRole } from '../utils/cabinetRoutes'
+import { openCabinetAfterAuth } from '../utils/cabinetEntryPreloader'
 import { completePendingSellAfterSellerLogin } from '../utils/navigateToSellPurchasedProperty'
 import { invalidateUserByIdCache } from '../utils/usersApi'
 import { readRoleSwitchTransition } from '../utils/roleSwitchTransition'
@@ -531,7 +532,7 @@ const ClerkAuthHandler = () => {
           // Навигация на правильную страницу в зависимости от роли
           if (window.location.pathname !== redirectPath) {
             console.log('ClerkAuthHandler: OAuth return — navigating to', redirectPath, 'for role:', savedUserRole)
-            navigate(redirectPath, { replace: true })
+            openCabinetAfterAuth(navigate, redirectPath, { replace: true })
           } else {
             console.log('ClerkAuthHandler: Already on correct page after OAuth, data should update automatically')
           }

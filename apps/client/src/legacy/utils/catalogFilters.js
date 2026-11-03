@@ -1,5 +1,6 @@
 import { CATALOG_FILTER_CURRENCY_CODES, normalizeCurrencyCode } from './currency'
 import { hasCatalogPriceFilter, parseCatalogPriceValue } from './catalogPriceFilter'
+import { propertyMatchesTextSearch } from './propertyTextSearch'
 
 export const CATALOG_FILTERS_STORAGE_KEY = 'propertySearchFilters'
 
@@ -220,20 +221,7 @@ export function getCatalogFilterBounds(properties = []) {
 }
 
 export function filterPropertiesBySearchQuery(properties = [], query = '') {
-  const q = String(query || '').trim().toLowerCase()
+  const q = String(query || '').trim()
   if (!q) return properties
-  return properties.filter((property) => {
-    const haystack = [
-      property.title,
-      property.name,
-      property.location,
-      property.address,
-      property.city,
-      property.country,
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase()
-    return haystack.includes(q)
-  })
+  return properties.filter((property) => propertyMatchesTextSearch(property, q))
 }

@@ -8,7 +8,7 @@ import { getActiveAiProvider } from '../aiChatConfig.js';
 
 const MYMEMORY_URL = 'https://api.mymemory.translated.net/get';
 const REQUEST_DELAY_MS = 200;
-const REQUEST_TIMEOUT_MS = 15000;
+const REQUEST_TIMEOUT_MS = 8000;
 const AI_TIMEOUT_MS = 45000;
 const MAX_CHARS_PER_REQUEST = 400;
 
@@ -791,38 +791,89 @@ function countUntranslatedTargets(texts, translations, sourceLang = 'ru') {
   return bad;
 }
 
-function parseJsonFromModel(raw) {
-  const text = String(raw || '').trim();
-  if (!text) return null;
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  const candidate = fenced ? fenced[1].trim() : text;
+function readModelText(raw) {
+  if (Array.isArray(raw)) {
+    return raw.map((part) => part?.text || part?.content || '').join('');
+  }
+  if (raw && typeof raw === 'object') {
+    return String(raw.text || raw.content || '');
+  }
+  return String(raw || '');
+}
+
+function tryParseJson(text) {
   try {
-    return JSON.parse(candidate);
+    return JSON.parse(text);
   } catch {
-    const start = candidate.indexOf('{');
-    const end = candidate.lastIndexOf('}');
-    if (start >= 0 && end > start) {
-      try {
-        return JSON.parse(candidate.slice(start, end + 1));
-      } catch {
-        return null;
-      }
-    }
     return null;
   }
 }
 
-function normalizeAiTranslations(parsed, texts, sourceLang) {
-  if (!parsed || typeof parsed !== 'object') return null;
+/** Достаёт JSON из ответа модели: массив частей, markdown, обрезанный хвост. */
+export function parseJsonFromModel(raw) {
+  let text = readModelText(raw).trim();
+  if (!text) return null;
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced) text = fenced[1].trim();
+
+  const direct = tryParseJson(text);
+  if (direct && typeof direct === 'object') return direct;
+
+  const start = text.indexOf('{');
+  if (start < 0) return null;
+  const slice = text.slice(start);
+  let end = slice.lastIndexOf('}');
+  while (end > 0) {
+    const fragment = slice.slice(0, end + 1).replace(/,\s*([}\]])/g, '$1');
+    const closed = closeJsonObject(fragment);
+    const parsed = closed ? tryParseJson(closed) : null;
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+    end = slice.lastIndexOf('}', end - 1);
+  }
+  return null;
+}
+
+function closeJsonObject(fragment) {
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (const ch of fragment) {
+    if (inString) {
+      if (escape) escape = false;
+      else if (ch === '\\') escape = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === '{' || ch === '[') depth += 1;
+    else if (ch === '}' || ch === ']') depth -= 1;
+  }
+  if (inString || depth < 0) return null;
+  return depth === 0 ? fragment : fragment + '}'.repeat(depth);
+}
+
+function readModelContent(message) {
+  if (!message) return '';
+  const content = readModelText(message.content).trim();
+  if (content) return content;
+  return readModelText(message.reasoning).trim();
+}
+
+export function normalizeAiTranslations(parsed, texts, sourceLang) {
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+  const payload = parsed.translations && typeof parsed.translations === 'object'
+    ? parsed.translations
+    : parsed;
   const result = emptyResultFromSource(texts);
   result[sourceLang] = { ...texts };
   const targets = targetLangCodesFor(sourceLang);
+  const sourceKeys = Object.keys(texts);
 
   for (const code of targets) {
-    const row = parsed[code];
+    const row = payload[code];
     if (!row || typeof row !== 'object') continue;
     const merged = { ...texts };
-    for (const key of ALL_TRANSLATION_FIELDS) {
+    for (const key of sourceKeys) {
       const val = trimText(row[key]);
       if (val) merged[key] = val;
     }
@@ -836,11 +887,12 @@ async function translateWithAi(texts, sourceLang) {
   if (provider.needsKey && !provider.apiKey) return null;
 
   const targets = targetLangCodesFor(sourceLang);
+  const fieldKeys = Object.keys(texts);
   const fieldSchema = {
     type: 'object',
     additionalProperties: false,
-    required: ALL_TRANSLATION_FIELDS,
-    properties: Object.fromEntries(ALL_TRANSLATION_FIELDS.map((key) => [key, { type: 'string' }])),
+    required: fieldKeys,
+    properties: Object.fromEntries(fieldKeys.map((key) => [key, { type: 'string' }])),
   };
   const schema = {
     name: 'property_translations',
@@ -854,9 +906,10 @@ async function translateWithAi(texts, sourceLang) {
   };
 
   const system = `You translate real-estate listing copy for SellYourBrick.
-Return JSON only. Translate every provided field into each target language.
+Return one JSON object and nothing else. Top-level keys are the target language codes.
+Each language object contains only the provided field names.
 Keep numbers, currency, measurements, emails, URLs, and machine codes unchanged.
-Preserve meaning, tone, and paragraph breaks. Do not add marketing text.`;
+Do not invent fields that were not provided. Do not add marketing text.`;
 
   const user = JSON.stringify({
     source_language: sourceLang,
@@ -898,30 +951,43 @@ Preserve meaning, tone, and paragraph breaks. Do not add marketing text.`;
   if (!response.ok) {
     throw new Error(data?.error?.message || data?.error || `AI translate ${response.status}`);
   }
-  const content = data?.choices?.[0]?.message?.content;
+  const content = readModelContent(data?.choices?.[0]?.message);
   const parsed = parseJsonFromModel(content);
   const normalized = normalizeAiTranslations(parsed, texts, sourceLang);
   if (!normalized) throw new Error('AI translate returned unreadable JSON');
   return normalized;
 }
 
-async function translateWithMyMemoryAll(texts, sourceLang) {
+async function mapPool(items, limit, fn) {
+  const out = new Array(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      out[index] = await fn(items[index], index);
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
+async function translateWithMyMemoryAll(texts, sourceLang, deadlineMs = 20000) {
   const result = emptyResultFromSource(texts);
+  result[sourceLang] = { ...texts };
   const keys = Object.keys(texts);
-  for (const code of SITE_LANG_CODES) {
-    if (code === sourceLang) {
-      result[code] = { ...texts };
-      continue;
-    }
-    const translated = {};
+  const deadline = Date.now() + deadlineMs;
+  const jobs = [];
+  for (const code of targetLangCodesFor(sourceLang)) {
     for (const key of keys) {
-      translated[key] = texts[key]
-        ? await translateWithMyMemory(texts[key], sourceLang, code)
-        : '';
+      if (!texts[key]) continue;
+      jobs.push({ code, key, text: texts[key] });
     }
-    result[code] = translated;
-    await delay(REQUEST_DELAY_MS);
   }
+  await mapPool(jobs, 4, async (job) => {
+    if (Date.now() > deadline) return;
+    result[job.code][job.key] = await translateWithMyMemory(job.text, sourceLang, job.code);
+  });
   return result;
 }
 
@@ -998,39 +1064,54 @@ export async function translatePropertyToAllLanguages(property) {
   return merged;
 }
 
+function cleanStoredText(value) {
+  return String(value || '').replace(/\u0000/g, '');
+}
+
 export async function persistPropertyTranslations(prisma, { propertyId, propertyTable, translations }) {
   const pid = Number(propertyId);
   const table = normalizeTranslationPropertyTable(propertyTable);
   const aliases = translationPropertyTableAliases(table);
-  await prisma.property_translations.deleteMany({
-    where: { property_id: pid, property_table: { in: aliases } },
-  });
+  const createdAt = new Date().toISOString();
+  const rows = [];
 
   for (const [langCode, translated] of Object.entries(translations || {})) {
     const split = splitTranslationForStore(translated);
     // Пишем и в каноническую таблицу, и в legacy-алиас (apartments/houses),
     // чтобы старые списки с source_table=apartments тоже находили перевод.
     for (const property_table of aliases) {
-      const row = {
+      rows.push({
         property_id: pid,
         property_table,
         lang_code: String(langCode),
-        title: split.title || '',
-        description: split.description || '',
-        additional_amenities: split.additional_amenities || '',
-        location: split.location || '',
+        title: cleanStoredText(split.title),
+        description: cleanStoredText(split.description),
+        additional_amenities: cleanStoredText(split.additional_amenities),
+        location: cleanStoredText(split.location),
         extra_json: Object.keys(split.extra).length ? JSON.stringify(split.extra) : null,
-        created_at: new Date().toISOString(),
-      };
-      try {
-        await prisma.property_translations.create({ data: row });
-      } catch (err) {
-        if (!/extra_json/i.test(String(err?.message || ''))) throw err;
-        const { extra_json: _ignored, ...withoutExtra } = row;
-        await prisma.property_translations.create({ data: withoutExtra });
-      }
+        created_at: createdAt,
+      });
     }
   }
+
+  const writeRow = async (tx, row) => {
+    try {
+      await tx.property_translations.create({ data: row });
+    } catch (err) {
+      if (!/extra_json|location/i.test(String(err?.message || ''))) throw err;
+      const { extra_json: _extra, location: _location, ...core } = row;
+      await tx.property_translations.create({ data: core });
+    }
+  };
+
+  await prisma.$transaction(async (tx) => {
+    await tx.property_translations.deleteMany({
+      where: { property_id: pid, property_table: { in: aliases } },
+    });
+    for (const row of rows) {
+      await writeRow(tx, row);
+    }
+  });
 }
 
 export function resolveTranslationTable(property) {
@@ -1039,7 +1120,17 @@ export function resolveTranslationTable(property) {
 
 export async function translateAndPersistProperty(prisma, property) {
   const table = resolveTranslationTable(property);
-  const translations = await translatePropertyToAllLanguages(property);
+  const texts = extractListingTexts(property);
+  let translations;
+  try {
+    translations = await translatePropertyToAllLanguages(property);
+  } catch (err) {
+    console.error('[translate] falling back to phrasebook:', err?.message || err);
+    translations = translateTextsWithPhrasebook(texts, detectSourceLang(texts));
+  }
+  if (!translations || !Object.keys(translations).length) {
+    throw new Error('No translations produced');
+  }
   await persistPropertyTranslations(prisma, {
     propertyId: Number(property.id),
     propertyTable: table,

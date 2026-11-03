@@ -17,6 +17,7 @@ import { readHeroSearchPrefilter } from '../utils/heroSearchFilters'
 import { publicAsset } from '../utils/publicAsset'
 import { fetchDedupe } from '../utils/fetchDedupe'
 import { scrollMainElementIntoView } from '../utils/mainScroll'
+import { propertyMatchesTextSearch } from '../utils/propertyTextSearch'
 import {
   SHARES_MARKETPLACE_PAGE_SIZE,
   normalizeMarketplaceShare,
@@ -37,25 +38,6 @@ const STATUS_LABEL_KEYS = {
   open: 'sharesPage_statusOpen',
   almost_full: 'sharesPage_statusAlmostFull',
   completed: 'sharesPage_statusCompleted',
-}
-
-const LOCALE_BY_LANG = {
-  ru: 'ru-RU',
-  en: 'en-US',
-  de: 'de-DE',
-  es: 'es-ES',
-  fr: 'fr-FR',
-  sv: 'sv-SE',
-  pl: 'pl-PL',
-}
-
-function toIntlLocale(lang) {
-  const code = String(lang || 'ru').split('-')[0]
-  return LOCALE_BY_LANG[code] || 'en-US'
-}
-
-function normalizeText(value, locale = 'en-US') {
-  return String(value || '').trim().toLocaleLowerCase(locale)
 }
 
 function finiteValues(list, key) {
@@ -86,7 +68,6 @@ function getShareFavoriteCategory(share) {
 
 export default function Shares() {
   const { t, i18n } = useTranslation()
-  const intlLocale = toIntlLocale(i18n.language)
   const navigate = useNavigate()
   const location = useLocation()
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
@@ -172,14 +153,10 @@ export default function Shares() {
   const priceCeiling = priceValues.length ? Math.ceil(Math.max(...priceValues) / 100) * 100 : null
 
   const filteredShares = useMemo(() => {
-    const search = normalizeText(query, intlLocale)
     const filtered = shares.filter((share) => {
       const typeText = share.typeLabelKey ? t(share.typeLabelKey) : share.type
       const statusText = share.statusLabelKey ? t(share.statusLabelKey) : share.statusLabel
-      const haystack = normalizeText(
-        `${share.title} ${share.location} ${typeText} ${statusText}`,
-        intlLocale,
-      )
+      const searchMatches = propertyMatchesTextSearch(share, query, `${typeText} ${statusText}`)
       const yieldMatches =
         yieldMax == null || (Number.isFinite(share.annualYield) && share.annualYield <= yieldMax)
       const priceMatches =
@@ -187,7 +164,7 @@ export default function Shares() {
         (Number.isFinite(share.pricePerShare) && share.pricePerShare <= sharePriceMax)
 
       return (
-        (!search || haystack.includes(search)) &&
+        searchMatches &&
         (selectedTypes.length === 0 || selectedTypes.includes(share.type)) &&
         (selectedLocations.length === 0 || selectedLocations.includes(share.city)) &&
         (selectedStatuses.length === 0 || selectedStatuses.includes(share.statusKey)) &&
@@ -197,7 +174,6 @@ export default function Shares() {
     })
     return sortMarketplaceShares(filtered, sort)
   }, [
-    intlLocale,
     query,
     selectedLocations,
     selectedStatuses,

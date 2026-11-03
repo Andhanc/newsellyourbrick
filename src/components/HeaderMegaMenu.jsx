@@ -16,7 +16,6 @@ import {
   Handshake,
   Heart,
   History,
-  IdCard,
   Home,
   Info,
   Landmark,
@@ -69,7 +68,6 @@ const LINK_ICONS = {
   debtsTitle: Landmark,
   headerMegaBuyNow: Zap,
   'develop.title': Building2,
-  'develop.passport': IdCard,
   'develop.myProjects': FolderKanban,
   testDrive: Car,
   aiAssistant: Bot,
@@ -112,7 +110,6 @@ const SERVICES_COLUMN = {
   titleKey: 'headerMegaServices',
   icon: Sparkles,
   links: [
-    { labelKey: 'develop.passport', path: '/buyer-passport', requiresAuth: true },
     { labelKey: 'testDrive', path: TEST_DRIVE_PATH },
     { labelKey: 'aiAssistant', path: null, action: 'ai' },
     { labelKey: 'calculator', path: '/calculator', requiresAuth: true },

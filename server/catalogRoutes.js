@@ -8,7 +8,7 @@ import {
 } from '../src/utils/propertySearchLocation.js';
 import { apartmentQueries, houseQueries } from './database/database.js';
 import { passesApprovedFilters } from './database/module2PropertyPrisma.js';
-import { mergePropertyTranslations } from './propertyListBatch.js';
+import { attachPropertySearchCorpus, mergePropertyTranslations } from './propertyListBatch.js';
 import { SITE_LANG_CODES } from './services/aiPropertyTranslate.js';
 
 const CATALOG_BATCH_SIZE = 2000;
@@ -247,6 +247,11 @@ export function registerCatalogRoutes(app) {
         } catch (e) {
           console.warn('GET /api/catalog - подстановка перевода:', e.message);
         }
+      }
+      try {
+        await attachPropertySearchCorpus(properties);
+      } catch (e) {
+        console.warn('GET /api/catalog - тексты поиска:', e.message);
       }
 
       const cityLabel = getCanonicalRegionLabel(citySlug, citySlug);

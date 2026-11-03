@@ -12,6 +12,7 @@ import {
   readPendingSellPurchasedProperty,
 } from '../utils/purchasedPropertyListingPrefill'
 import { showNotification } from '../utils/toastHelper'
+import { markCabinetEntry } from '../utils/cabinetEntryPreloader'
 import { formatPasswordValidationMessage } from '../utils/passwordValidationMessage'
 import { clearRoleSwitchArrival, readRoleSwitchArrival, storeRoleSwitchArrival } from '../utils/roleSwitchArrival'
 
@@ -415,6 +416,7 @@ export function useRoleSwitchFlow(targetRole) {
       sessionStorage.setItem('clerk_oauth_redirect_started', 'true')
       sessionStorage.setItem('clerk_oauth_user_role', 'buyer')
       sessionStorage.setItem('clerk_oauth_flow_mode', 'login')
+      markCabinetEntry(sessionStorage, { defer: true })
 
       const { getClerkOAuthReturnUrl } = await import('../utils/clerkOAuth')
       await signIn.authenticateWithRedirect({

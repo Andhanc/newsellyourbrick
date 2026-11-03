@@ -98,6 +98,15 @@ test('completed comparison pair and AI/system results persist across navigation'
   assert.match(page, /comparePage_pickOtherPair/)
 })
 
+test('fewer than two likes asks for another like before the general search catalog', () => {
+  assert.match(page, /CompareNeedsLikesModal/)
+  assert.match(page, /favoriteAuctions\.length < 2/)
+  assert.match(page, /isOpen=\{needsMoreLikes\}/)
+  assert.match(page, /onFindMore=\{\(\) => navigate\(SEARCH_CATALOG_PATH, \{ replace: true \}\)\}/)
+  assert.doesNotMatch(page, /if \(!needsMoreLikes\) return\s*navigate\(SEARCH_CATALOG_PATH/)
+  assert.doesNotMatch(page, /navigate\('\/auction'\)/)
+})
+
 test('after the first pick the list keeps only the same sale type, treating auction and buy now as one', () => {
   assert.match(page, /filterComparePickerItems\(favoriteAuctions, selectedKeys, groupFilter\)/)
   assert.match(page, /items=\{pickerItems\}/)

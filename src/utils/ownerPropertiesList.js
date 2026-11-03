@@ -7,6 +7,7 @@ import {
   setOwnerPropertiesLiveCache,
 } from '../pages/ownerPropertiesTestData'
 import { getUiIntlLocale } from './uiIntlLocale'
+import { propertyMatchesTextSearch } from './propertyTextSearch'
 
 const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || '/api'
 
@@ -359,10 +360,7 @@ export function filterOwnerProperties(
     }
     if (typeSet && !typeSet.has(row.listingType)) return false
     if (!q) return true
-    const haystack = [row.title, row.location, row.displayId, String(row.id)]
-      .join(' ')
-      .toLowerCase()
-    return haystack.includes(q)
+    return propertyMatchesTextSearch(row, q, `${row.displayId || ''} ${row.id || ''}`)
   })
 
   const byViews = (row) => {

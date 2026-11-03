@@ -31,7 +31,9 @@ export default function DepositVerificationGate({ blockedUser = false }) {
   const [gateActive, setGateActive] = useState(false)
   const [userId, setUserId] = useState(null)
   const [hydrated, setHydrated] = useState(false)
+  const [keepVerificationMounted, setKeepVerificationMounted] = useState(false)
   const redirectingRef = useRef(false)
+  const finishingVerificationRef = useRef(false)
 
   const refreshGate = useCallback(
     async ({ force = false } = {}) => {
@@ -105,6 +107,15 @@ export default function DepositVerificationGate({ blockedUser = false }) {
   }, [refreshGate])
 
   useEffect(() => {
+    if (!userId) {
+      setKeepVerificationMounted(false)
+      return
+    }
+    if (finishingVerificationRef.current) return
+    if (gateActive) setKeepVerificationMounted(true)
+  }, [gateActive, userId])
+
+  useEffect(() => {
     const onRefresh = () => void refreshGate({ force: true })
     const onFlag = (event) => {
       const uid = readDepositVerificationUserId()
@@ -143,7 +154,7 @@ export default function DepositVerificationGate({ blockedUser = false }) {
     return () => window.clearTimeout(timer)
   }, [gateActive, hydrated, location.pathname, navigate])
 
-  if (!gateActive || !userId) return null
+  if (!userId || (!gateActive && !keepVerificationMounted)) return null
 
   return (
     <Suspense fallback={null}>
@@ -157,10 +168,16 @@ export default function DepositVerificationGate({ blockedUser = false }) {
         title={t('walletPage_verificationTitle')}
         subtitle={t('walletPage_verificationSubtitle')}
         onComplete={async () => {
-          const apiBase = getApiBaseUrlSync()
-          invalidateVerificationStatusCache(apiBase, userId)
-          window.dispatchEvent(new Event('verification-status-update'))
-          await refreshGate({ force: true })
+          finishingVerificationRef.current = true
+          setKeepVerificationMounted(false)
+          try {
+            const apiBase = getApiBaseUrlSync()
+            invalidateVerificationStatusCache(apiBase, userId)
+            window.dispatchEvent(new Event('verification-status-update'))
+            await refreshGate({ force: true })
+          } finally {
+            finishingVerificationRef.current = false
+          }
           return true
         }}
       />

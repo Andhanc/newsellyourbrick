@@ -26,6 +26,10 @@
   pointer-events: none;
 }
 
+.profile-spotlight__dim-svg--multi .profile-spotlight__dim-path {
+  pointer-events: fill;
+}
+
 .profile-spotlight__bubble {
   position: fixed;
   z-index: 2;

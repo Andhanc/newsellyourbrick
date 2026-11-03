@@ -5,6 +5,8 @@ import {
   extractListingTexts,
   splitTranslationForStore,
   parseExtraJson,
+  parseJsonFromModel,
+  normalizeAiTranslations,
   ALL_TRANSLATION_FIELDS,
   normalizeTranslationPropertyTable,
   isUntranslatedTarget,
@@ -151,6 +153,33 @@ test('detects english source and rejects identical latin copies in fr', () => {
   const frTitle = applyEnMarketingPhrasebook(source.title, 'fr')
   assert.match(frTitle, /villa de luxe/i)
   assert.notEqual(frTitle, source.title)
+})
+
+test('reads model JSON from fenced text, arrays, and a truncated tail', () => {
+  assert.equal(parseJsonFromModel('```json\n{"en":{"title":"Sea"}}\n```').en.title, 'Sea')
+  assert.equal(
+    parseJsonFromModel([{ type: 'text', text: '{"de":{"title":"Wohnung"}}' }]).de.title,
+    'Wohnung',
+  )
+  const truncated = '{"en":{"title":"Sea apartment","description":"Bright"},"de":{"title":"Wohn'
+  assert.equal(parseJsonFromModel(truncated).en.title, 'Sea apartment')
+  assert.equal(parseJsonFromModel(truncated).de, undefined)
+})
+
+test('ignores fields the model invented for a listing', () => {
+  const texts = { title: 'Квартира у моря', description: 'Светлая квартира' }
+  const normalized = normalizeAiTranslations({
+    en: {
+      title: 'Apartment by the sea',
+      description: 'Bright apartment',
+      address: 'Fake street 1',
+      city: 'Musterstadt',
+    },
+  }, texts, 'ru')
+  assert.equal(normalized.en.title, 'Apartment by the sea')
+  assert.equal(normalized.en.address, undefined)
+  assert.equal(normalized.en.city, undefined)
+  assert.equal(normalized.ru.title, texts.title)
 })
 
 test('site languages include polish', () => {

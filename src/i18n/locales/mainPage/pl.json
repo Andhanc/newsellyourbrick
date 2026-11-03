@@ -5910,6 +5910,9 @@
   "ownerTest_moderationNoticeClose": "Close",
   "ownerTest_moderationNoticeOk": "Got it",
   "oauthBridge_finishing": "Finishing sign-in…",
+  "cabinetEntry_kicker": "SellYourBrick",
+  "cabinetEntry_title": "Witamy",
+  "cabinetEntry_subtitle": "Otwieramy Twój profil",
   "ownerTest_purchasedDraftAria": "Unfinished listing",
   "ownerTest_purchasedDraftTitle": "You have an incomplete listing",
   "ownerTest_purchasedDraftContinue": "Continue setting up “{{title}}”",
@@ -6478,6 +6481,7 @@
   "depositPicker_methodsAriaLabel": "Metody doładowania",
   "verificationRejectedGateVerificationSubtitleWithReason": "Powód: {{reason}}. Prześlij zdjęcie paszportu, selfie i selfie z paszportem ponownie.",
   "buyerCabinet_vipManagerSpotlightHint": "To Twój menedżer — odpowie na WhatsAppie",
+  "buyerCabinet_strategySpotlightHint": "Przejdźmy do licytacji albo wybierz swoją strategię",
   "privateClubLanding_alreadyMemberCta": "Jesteś już w klubie VIP",
   "ownerCabinet_welcomeFinish": "Uzupełnij profil",
   "ownerWelcome_onboardingNext": "Dalej",
@@ -10797,5 +10801,12 @@
   "forgotPassword_accountNotFound": "Nie znaleziono konta z tym adresem e-mail",
   "forgotPassword_passwordSameAsOther": "Hasło musi różnić się od hasła drugiego konta na tym e-mailu",
   "forgotPassword_passwordSameAsCurrent": "Nowe hasło musi różnić się od obecnego",
-  "forgotPassword_passwordsMatch": "Hasła są zgodne"
+  "forgotPassword_passwordsMatch": "Hasła są zgodne",
+  "compareNeedsLikes_titleZero": "Dwa polubienia do porównania",
+  "compareNeedsLikes_titleOne": "Jeszcze jedno polubienie",
+  "compareNeedsLikes_lead": "Porównanie otwiera się, gdy polubione są co najmniej dwa obiekty. Polub jeszcze jeden, żeby zestawić je obok siebie.",
+  "compareNeedsLikes_metaCount": "2 obiekty",
+  "compareNeedsLikes_metaHint": "do porównania",
+  "compareNeedsLikes_cta": "Polub kolejny obiekt",
+  "compareNeedsLikes_close": "Zamknij"
 }
