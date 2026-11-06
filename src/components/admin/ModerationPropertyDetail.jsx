@@ -7,6 +7,7 @@ import { BiArea } from 'react-icons/bi';
 import LocationMap from '../LocationMap';
 import './ModerationPropertyDetail.css';
 import { getApiBaseUrlSync } from '../../utils/apiConfig';
+import { isPropertyPresentation } from '../../utils/propertyPresentation';
 import { showNotification } from '../../utils/toastHelper';
 import {
   collectAmenityKeys,
@@ -1293,7 +1294,9 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
               }
               
               return additionalDocs.map((doc, index) => {
-                const documentName = typeof doc === 'string' ? doc : (doc.name || t('admin_documentN', { n: index + 1 }));
+                const isPresentation = isPropertyPresentation(doc);
+                const fileName = typeof doc === 'string' ? doc : (doc.name || t('admin_documentN', { n: index + 1 }));
+                const documentName = isPresentation ? t('propertyPresentationTitle') : fileName;
                 const documentUrl = typeof doc === 'object' && doc.url ? doc.url : null;
                 const documentType = typeof doc === 'object' && doc.type 
                   ? doc.type 
@@ -1302,7 +1305,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                 return (
                   <div 
                     key={`additional_${index}`} 
-                    className="moderation-property-detail__document-card"
+                    className={`moderation-property-detail__document-card${isPresentation ? ' moderation-property-detail__document-card--presentation' : ''}`}
                     onClick={() => {
                       setSelectedDocument({ 
                         type: documentType, 
@@ -1317,7 +1320,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                     <div className="moderation-property-detail__document-info">
                       <h3 className="moderation-property-detail__document-name">{documentName}</h3>
                       <span className="moderation-property-detail__document-type">
-                        {documentType === 'pdf' ? t('admin_pdfDocument') : t('admin_image')}
+                        {isPresentation ? fileName : documentType === 'pdf' ? t('admin_pdfDocument') : t('admin_image')}
                       </span>
                     </div>
                   </div>

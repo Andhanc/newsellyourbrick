@@ -374,8 +374,8 @@ export default function OwnerProfileTestPage() {
   }, [goTo, isEmbedded])
 
   const currentSubscriptionPlanId = useMemo(
-    () => resolveProfileSubscriptionPlanId(profile?.subscription) || 'standard',
-    [profile?.subscription]
+    () => profile?.subscriptionPlanId || resolveProfileSubscriptionPlanId(profile?.subscription) || 'standard',
+    [profile?.subscriptionPlanId, profile?.subscription]
   )
 
   const nextSubscriptionPlanId = useMemo(
@@ -385,7 +385,7 @@ export default function OwnerProfileTestPage() {
 
   const nextSubscriptionPlanLabel = useMemo(
     () => (nextSubscriptionPlanId ? getOwnerSubscriptionPlanLabel(nextSubscriptionPlanId) : ''),
-    [nextSubscriptionPlanId]
+    [nextSubscriptionPlanId, i18n.language]
   )
 
   const handleSubscriptionUpgrade = useCallback(() => {

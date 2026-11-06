@@ -1,7 +1,6 @@
 import { formatPhoneForDisplayByCountry } from './profilePhoneFormat'
 import {
   getOwnerProfileFieldLabel,
-  getOwnerSubscriptionPlanLabel,
   getOwnerTestIntlLocale,
   ownerTestT,
 } from './ownerTestI18n'
@@ -19,7 +18,7 @@ const EMPTY_PROFILE = {
   address: '',
   passportNumber: '',
   identificationNumber: '',
-  subscription: getOwnerSubscriptionPlanLabel('standard'),
+  subscriptionPlanId: 'standard',
   subscriptionPeriodEnd: null,
   depositStatus: 'Paid',
   depositStatusKey: 'paid',
@@ -37,15 +36,13 @@ const STRIPE_OWNER_SUBSCRIPTION_PLAN_IDS = {
 
 const ACTIVE_SUBSCRIPTION_STATUSES = new Set(['active', 'trialing', 'past_due', 'paused'])
 
-function resolveOwnerSubscriptionLabel(dbUser, fallback) {
+function resolveOwnerSubscriptionPlanId(dbUser, fallback = 'standard') {
   const sub = dbUser?.stripe_subscription_state
   const status = String(sub?.status || '').toLowerCase()
   const planKey = String(sub?.plan_key || '').toLowerCase()
   const planId = STRIPE_OWNER_SUBSCRIPTION_PLAN_IDS[planKey]
-  if (ACTIVE_SUBSCRIPTION_STATUSES.has(status) && planId) {
-    return getOwnerSubscriptionPlanLabel(planId)
-  }
-  return fallback
+  if (ACTIVE_SUBSCRIPTION_STATUSES.has(status) && planId) return planId
+  return fallback || 'standard'
 }
 
 function resolveOwnerSubscriptionPeriodEnd(dbUser) {
@@ -139,7 +136,7 @@ export function mergeOwnerTestProfileWithDb(base, dbUser) {
     address: dbUser.address || base.address,
     passportNumber: dbUser.passport_number || base.passportNumber,
     identificationNumber: dbUser.identification_number || base.identificationNumber,
-    subscription: resolveOwnerSubscriptionLabel(dbUser, base.subscription),
+    subscriptionPlanId: resolveOwnerSubscriptionPlanId(dbUser, base.subscriptionPlanId),
     subscriptionPeriodEnd: resolveOwnerSubscriptionPeriodEnd(dbUser) || base.subscriptionPeriodEnd || null,
     memberSince: formatMemberSince(dbUser.created_at, ownerTestT.language) || base.memberSince,
   }

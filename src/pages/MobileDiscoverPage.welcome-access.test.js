@@ -8,7 +8,7 @@ const css = readFileSync(new URL('./MobileDiscoverPage.css', import.meta.url), '
 test('launch uses a brand heading without header icons and keeps search and compass below', () => {
   assert.match(page, /md-site-nav\$\{isStageNavExpanded \? ' is-expanded' : ' is-hidden'\}[\s\S]*<Header \/>/)
   assert.match(page, /stage\.scrollTop > 0/)
-  assert.match(page, /md-launch__brand[\s\S]*SellYouBrick/)
+  assert.match(page, /BRAND_NAME = 'SellYourBrick'[\s\S]*<BrandWordmark className="md-launch__brand" \/>/)
   assert.match(page, /md-launch__wave[\s\S]*md-stage__search[\s\S]*md-stage__compass/)
   assert.match(page, /className="md-welcome__copy"[\s\S]*discoverPage_welcomeTitle[\s\S]*className="md-welcome__media"/)
 })

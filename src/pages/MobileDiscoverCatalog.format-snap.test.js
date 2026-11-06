@@ -69,7 +69,10 @@ test('reaching the auction card is plain native scroll', () => {
   assert.match(catalog, /formatLock/)
   assert.match(pageCss, /\.md-stage\[data-format-lock='on'\] \.md-format-card \{[\s\S]*?touch-action: pan-x;/)
   assert.match(legacyCss, /\.md-stage\[data-format-lock='on'\] \.md-format-card \{[\s\S]*?touch-action: pan-x;/)
-  assert.match(catalog, /entryReleaseY/)
+  // Leaving the auction card upwards is native scroll, not a long animated jump.
+  assert.doesNotMatch(catalog, /entryReleaseY/)
+  assert.match(catalog, /const leavesUpward = \(dy\)/)
+  assert.match(catalog, /inFlipZone\(\) && !atEntryPark\(\)/)
 })
 
 test('nothing else may drive stage scroll to a mid-park offset', () => {

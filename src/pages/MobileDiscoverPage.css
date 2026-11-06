@@ -1152,7 +1152,8 @@ body .md-site-nav.is-compact .new-header.new-header .new-header__container.new-h
 /* ——— Welcome: white top → parabolic curve → house photo ——— */
 
 .md-welcome-flow {
-  --md-format-peek: calc(env(safe-area-inset-top, 0px) + 128px);
+  /* Sheets stay ~620px tall on tall phones; short phones keep the 128px minimum peek. */
+  --md-format-peek: max(calc(env(safe-area-inset-top, 0px) + 128px), calc(100dvh - 620px));
   --md-welcome-height: min(82vh, 640px);
   /* Bleed under first sheet’s rounded top so corners show the photo, not page bg */
   --md-sheet-radius: 28px;
@@ -4225,7 +4226,7 @@ body .md-site-nav.is-compact .new-header.new-header .new-header__container.new-h
   }
 }
 
-/* Reference composition, rendered in the SellYouBrick Tiffany palette. */
+/* Reference composition, rendered in the SellYourBrick Tiffany palette. */
 .md-stage__launch {
   display: flex;
   flex-direction: column;

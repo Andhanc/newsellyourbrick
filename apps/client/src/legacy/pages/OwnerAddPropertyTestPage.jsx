@@ -90,6 +90,8 @@ import './AddProperty.css'
 import './OwnerAddPropertyTestPage.css'
 import './OwnerAddPropertyJourney.css'
 import './OwnerAddPropertyTestPage.mobile.css'
+import PropertyPresentationUpload from '../components/PropertyPresentationUpload'
+import { isPropertyPresentation } from '../utils/propertyPresentation'
 
 const OwnerAddPropertyBasicsStep = lazyWithRetry(() => import('./OwnerAddPropertyBasicsStep'))
 const OwnerAddPropertyStrategyStep = lazyWithRetry(() => import('./OwnerAddPropertyStrategyStep'))
@@ -1559,6 +1561,7 @@ export default function OwnerAddPropertyTestPage() {
 
   const renderJourneyMediaStep = () => {
     const typeProfile = getTypeProfile(form.propertyType)
+    const presentation = additionalDocuments.find(isPropertyPresentation)
 
     return (
       <>
@@ -1570,6 +1573,14 @@ export default function OwnerAddPropertyTestPage() {
           onAddVideo={addVideo}
           onRemoveVideo={removeVideo}
           onAddPhotoLink={addPhotoLink}
+        />
+        <PropertyPresentationUpload
+          document={presentation}
+          onChange={(doc) => {
+            if (presentation) removeAdditionalDocument(presentation.id)
+            addAdditionalDocument(doc)
+          }}
+          onRemove={() => removeAdditionalDocument(presentation.id)}
         />
         <section className="oap-journey-amenities" aria-labelledby="oap-journey-amenities-title">
           <h2 id="oap-journey-amenities-title" className="oap-journey-amenities__title">

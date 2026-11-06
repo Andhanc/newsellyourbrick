@@ -1,4 +1,3 @@
-import PropertyPresentationUpload from '../components/PropertyPresentationUpload'
 import { isPropertyPresentation } from '../utils/propertyPresentation'
 import { useState, useRef, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -93,7 +92,6 @@ function DocumentsContent({
   onRemoveAdditional,
 }) {
   const { t } = useTranslation()
-  const presentation = additionalDocuments.find(isPropertyPresentation)
   const supportingDocuments = additionalDocuments.filter((doc) => !isPropertyPresentation(doc))
 
   const standardRequiredDocs = useMemo(
@@ -540,14 +538,6 @@ function DocumentsContent({
         </div>
       )}
 
-      <PropertyPresentationUpload
-        document={presentation}
-        onChange={(doc) => {
-          if (presentation) onRemoveAdditional(presentation.id)
-          onAddAdditional(doc)
-        }}
-        onRemove={() => onRemoveAdditional(presentation.id)}
-      />
       {additionalSection}
       {securityBanner}
     </>

@@ -83,7 +83,7 @@ function thinBorder() {
 }
 
 /**
- * PNG with SellYouBrick logo (tiffany + navy).
+ * PNG with SellYourBrick logo (tiffany + navy).
  * @param {((key: string) => string) | undefined} t
  */
 export function buildSellYourBrickLogoPng(t) {
@@ -107,7 +107,7 @@ export function buildSellYourBrickLogoPng(t) {
     ctx.fillStyle = '#ffffff'
     ctx.font = 'bold 28px system-ui, "Segoe UI", sans-serif'
     ctx.textBaseline = 'middle'
-    ctx.fillText('SellYouBrick', 28, canvas.height / 2 - 8)
+    ctx.fillText('SellYourBrick', 28, canvas.height / 2 - 8)
     ctx.fillStyle = 'rgba(255,255,255,0.88)'
     ctx.font = '13px system-ui, "Segoe UI", sans-serif'
     ctx.fillText(label(t, OWNER_EXCEL_LABELS.logoSubtitle), 28, canvas.height / 2 + 16)
@@ -191,7 +191,7 @@ export async function exportOwnerAnalyticsExcel({
   const dash = label(t, L.emDash)
   const ExcelJS = (await import('exceljs')).default
   const wb = new ExcelJS.Workbook()
-  wb.creator = 'SellYouBrick'
+  wb.creator = 'SellYourBrick'
   const ws = wb.addWorksheet(label(t, L.sheetName), {
     views: [{ showGridLines: true }],
   })

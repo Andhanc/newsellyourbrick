@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { getUserData, saveUserData } from '../services/authService'
 import { fetchUserById, invalidateUserByIdCache } from '../utils/usersApi'
 import {
@@ -8,12 +9,12 @@ import {
   mergeOwnerTestProfileWithDb,
   OWNER_TEST_API_BASE_URL,
 } from '../utils/ownerTestProfile'
+import { getOwnerSubscriptionPlanLabel, ownerTestT } from '../utils/ownerTestI18n'
 
 const OwnerTestProfileContext = createContext(null)
 
-import { ownerTestT } from '../utils/ownerTestI18n'
-
 export function OwnerTestProfileProvider({ children }) {
+  const { t, i18n } = useTranslation()
   const [profile, setProfile] = useState(() => mapOwnerTestProfileFromLocal(getUserData()))
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -102,18 +103,28 @@ export function OwnerTestProfileProvider({ children }) {
     }
   }, [profile])
 
+  const localizedProfile = useMemo(() => {
+    if (!profile) return profile
+    const planId = profile.subscriptionPlanId || 'standard'
+    return {
+      ...profile,
+      subscriptionPlanId: planId,
+      subscription: getOwnerSubscriptionPlanLabel(planId),
+    }
+  }, [profile, i18n.language])
+
   const value = useMemo(
     () => ({
-      profile,
+      profile: localizedProfile,
       loading,
       saving,
       fullName: getOwnerTestProfileFullName(profile),
-      roleLabel: ownerTestT('ownerTest_roleSeller'),
+      roleLabel: t('ownerTest_roleSeller'),
       updateProfile,
       saveProfile,
       reloadProfile: loadProfile,
     }),
-    [profile, loading, saving, updateProfile, saveProfile, loadProfile]
+    [localizedProfile, profile, loading, saving, updateProfile, saveProfile, loadProfile, t]
   )
 
   return (

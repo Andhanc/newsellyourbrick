@@ -506,6 +506,15 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+.moderation-property-detail__document-card--presentation {
+  background: linear-gradient(130deg, #eefbf8, #fff 85%);
+  border-color: #8cd7ca;
+}
+
+.moderation-property-detail__document-card--presentation .moderation-property-detail__document-type {
+  overflow-wrap: anywhere;
+}
+
 .moderation-property-detail__document-icon {
   width: 56px;
   height: 56px;

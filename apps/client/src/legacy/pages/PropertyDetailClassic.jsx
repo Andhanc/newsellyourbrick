@@ -1289,7 +1289,8 @@ function PropertyDetailClassic({
     hadCircularTimerAuction
 
   const isShareListing = shareListingConfig != null
-  const isAuctionLayout = isAuctionProperty || isShareListing || isDebtProperty
+  // На телефоне «Купить сейчас» использует тот же экран, что аукцион и доли. Старый шаблон остаётся только как десктопный fallback, который v4 скрывает.
+  const isAuctionLayout = isAuctionProperty || isShareListing || !isDesktopProperty
 
   const openDebtPropertyDocuments = useCallback(() => {
     if (!processedDocuments.length) {
@@ -5388,7 +5389,7 @@ function PropertyDetailClassic({
 
     return (
       <div className={tabsClass} role="tablist">
-        {isShareListing
+        {isShareListing || !isAuctionProperty
           ? [aboutTab, buyNowTab, galleryTab].filter(Boolean)
           : [aboutTab, buyNowTab, galleryTab, actionTab].filter(Boolean)}
       </div>
@@ -8135,6 +8136,32 @@ function PropertyDetailClassic({
               disabled={auctionEndedForSidebar || isReservedActive}
             >
               {t('placeBid')}
+            </button>
+          )}
+        </div>
+      ) : !isShareListing && !isAuctionProperty && Number(displayProperty.price) > 0 ? (
+        <div
+          className={`property-detail-mobile-bottom-bar${
+            isMobileBidBarNearFooter ? ' property-detail-mobile-bottom-bar--footer-near' : ''
+          }`}
+        >
+          <div className="property-detail-mobile-bottom-bar__price">
+            <span className="property-detail-mobile-bottom-bar__label">{t('propertyDetailPrice')}</span>
+            <span className="property-detail-mobile-bottom-bar__value">{fmtPrice(displayProperty.price)}</span>
+          </div>
+          {isOwnListing ? (
+            <p className="property-detail-mobile-bottom-bar__own-note" role="status">
+              {t('propertyDetail_ownListingCannotBuy')}
+            </p>
+          ) : (
+            <button
+              type="button"
+              className="property-detail-mobile-bottom-bar__cta"
+              onClick={handleBookNow}
+              disabled={isReservedActive}
+              title={isReservedActive ? t('purchaseSuccess_goToObject') : undefined}
+            >
+              {isReservedActive ? t('purchaseSuccess_goToObject') : t('buyNowSectionTitle')}
             </button>
           )}
         </div>

@@ -29,7 +29,7 @@ test('launch shows larger cards in a swipeable five-card rail, with a code wave 
   assert.match(css, /\.md-launch__slider\s*\{[^}]*overflow-x: auto;[^}]*scroll-snap-type: x mandatory/s)
   assert.match(css, /\.md-launch__item\s*\{[^}]*flex: 0 0 calc\(\(100% - 16px\) \/ 2\.75\)/s)
   assert.match(css, /\.md-launch__photos img\s*\{[^}]*border-radius: 50%/s)
-  assert.match(jsx, /SellYouBrick[\s\S]*md-launch__headline[\s\S]*md-launch__slider[\s\S]*md-launch__wave[\s\S]*md-stage__sheet[\s\S]*role="search"/)
+  assert.match(jsx, /<BrandWordmark className="md-launch__brand" \/>[\s\S]*md-launch__headline[\s\S]*md-launch__slider[\s\S]*md-launch__wave[\s\S]*md-stage__sheet[\s\S]*role="search"/)
   assert.doesNotMatch(jsx, /SEARCH_BACKDROP/)
   assert.match(jsx, /md-welcome__copy[\s\S]*md-welcome__media[\s\S]*md-rewards__tiles[\s\S]*<MobileDiscoverCatalog/)
 })

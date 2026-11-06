@@ -31,11 +31,6 @@ const FLICK_GESTURE = 18
 /** Duration of the pager's own scroll animation. */
 const PAGER_MS = 230
 /*
- * Reaching the first card (auction) is plain native scroll — paging starts only
- * once it is parked. Leaving upwards releases back onto the welcome block.
- */
-const EXIT_RELEASE = 0.92
-/*
  * Telling a trackpad's inertia tail from a fresh flick: the tail only decays,
  * so a quiet gap, a rising delta or a spent-out delta all end it.
  */
@@ -575,8 +570,12 @@ export default function MobileDiscoverCatalog() {
       )
     }
 
-    const entryReleaseY = () =>
-      Math.max(0, cardTop(0) - stage.clientHeight * EXIT_RELEASE)
+    /** Parked on the first card: an upward move leaves the stack with plain native scroll. */
+    const atEntryPark = () => {
+      measure()
+      return parks.length > 0 && stage.scrollTop <= parks[0] + 12
+    }
+    const leavesUpward = (dy) => dy < 0 && atEntryPark()
 
     const reduceMotion = () =>
       typeof window !== 'undefined' &&
@@ -717,6 +716,7 @@ export default function MobileDiscoverCatalog() {
 
       // Above the stack the auction sheet rises with plain native scroll.
       if (!inFlipZone()) return false
+      if (leavesUpward(dy)) return false
 
       const current = nearestFlipIndex()
       if (dy > 0) {
@@ -727,17 +727,14 @@ export default function MobileDiscoverCatalog() {
         }
         return true
       }
-      if (current <= 0) {
-        jumpToY(entryReleaseY())
-        return true
-      }
+      if (current <= 0) return false
       jumpToFlip(current - 1)
       return true
     }
 
     /** True when the pager — not native scroll — must own this vertical move. */
     const pagerOwnsMove = (dy) => {
-      if (inFlipZone()) return true
+      if (inFlipZone()) return !leavesUpward(dy)
       if (inFreeTail()) return dy < 0 && stage.scrollTop <= freeTailTop() + 32
       if (inDebtsContinue()) return dy < 0 && stage.scrollTop <= lastCardTop() + 64
       return false
@@ -832,7 +829,7 @@ export default function MobileDiscoverCatalog() {
       }
 
       // Above the stack: the auction sheet rises with plain native scroll.
-      if (!inFlipZone()) {
+      if (!inFlipZone() || leavesUpward(dy)) {
         wheelAcc.current = 0
         return
       }
@@ -865,11 +862,7 @@ export default function MobileDiscoverCatalog() {
         return
       }
 
-      if (current <= 0) {
-        jumpToY(entryReleaseY())
-        return
-      }
-      jumpToFlip(current - 1)
+      if (current > 0) jumpToFlip(current - 1)
     }
 
     let startX = 0
@@ -958,7 +951,9 @@ export default function MobileDiscoverCatalog() {
      * above it the welcome block scrolls without any pager binding.
      */
     const syncLock = () => {
-      const lock = inFlipZone() ? 'on' : 'off'
+      // The first card stays unlocked so an upward drag can leave the stack natively;
+      // a downward drag there is still taken over by the touchmove handler.
+      const lock = inFlipZone() && !atEntryPark() ? 'on' : 'off'
       if (stage.dataset.formatLock !== lock) stage.dataset.formatLock = lock
     }
 

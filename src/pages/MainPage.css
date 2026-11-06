@@ -8749,7 +8749,7 @@ a.auction-showcase-card__link {
   }
 }
 
-/* ========== Landing: Цифры SellYouBrick — 70vh, анимация берюза → белый треугольник при скролле ========== */
+/* ========== Landing: Цифры SellYourBrick — 70vh, анимация берюза → белый треугольник при скролле ========== */
 .landing-stats {
   --stats-progress: var(--stats-scroll-progress, 0);
   position: relative;

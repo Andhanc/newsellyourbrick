@@ -39,6 +39,16 @@ const InvestmentCompassPromoModal = lazy(() => import('../components/InvestmentC
 const HERO_VIDEO = publicAsset('media/auth-summer-villa.mp4')
 const HERO_POSTER = publicAsset('media/auth-summer-villa-poster.jpg')
 const WELCOME_HOUSE = publicAsset('images/mobile-discover/welcome-summer.png')
+const BRAND_NAME = 'SellYourBrick'
+const BRAND_PARTS = ['Sell', 'Your', 'Brick']
+
+function BrandWordmark({ className }) {
+  return (
+    <span className={className} role="img" aria-label={BRAND_NAME}>
+      {BRAND_PARTS[0]}<span className="md-brand__you">{BRAND_PARTS[1]}</span>{BRAND_PARTS[2]}
+    </span>
+  )
+}
 
 function getLaunchCards(t) {
   const photo = (name) => publicAsset(`images/test-drive/property-${name}.png`)
@@ -618,7 +628,7 @@ export default function MobileDiscoverPage() {
           </div>
 
           <div className="md-stage__launch">
-            <span className="md-launch__brand" role="img" aria-label="SellYouBrick">Sell<span className="md-brand__you">You</span>Brick</span>
+            <BrandWordmark className="md-launch__brand" />
             <h2 className="md-launch__headline">
               <span>{t('discoverPage_launchTitleLine1')}</span>
               <span>{t('discoverPage_launchTitleLine2')}</span>
@@ -774,7 +784,7 @@ export default function MobileDiscoverPage() {
 
               <div className="md-welcome__carousel">
                 <div className="md-rewards">
-                  <span className="md-rewards__brand" role="img" aria-label="SellYouBrick">Sell<span className="md-brand__you">You</span>Brick</span>
+                  <BrandWordmark className="md-rewards__brand" />
                   <button ref={lotteryTriggerRef} type="button" className="md-rewards__lottery" aria-haspopup="dialog" aria-controls="md-lottery-coming-soon" onClick={() => setLotteryComingSoonOpen(true)}>
                     <img className="md-rewards__lottery-ticket" src={publicAsset('images/mobile-discover/lottery-tiffany-ticket.webp')} alt="" aria-hidden="true" width="160" height="160" loading="lazy" decoding="async" />
                     <span className="md-rewards__lottery-copy">{t('discoverPage_lotteryText')}</span>

@@ -80,6 +80,27 @@ export default function OwnerAddPropertyPricingStep({
     />
   )
 
+  const priceRuleHint = (fieldKey, autoSource) => {
+    if (fieldKey === 'minimumSalePrice' && showBuyNow) {
+      if (autoSource === PRICING_SOURCE_CALCULATOR) return t('oap_pricingAutoFromCalculator')
+      if (autoSource) return t('oap_pricingAutoFromBuyNow')
+      if (parseMoneyDigits(price)) return t('oap_pricingManualMinCap')
+      return null
+    }
+    if (fieldKey === 'auctionStartingPrice' && showBuyNow) {
+      if (autoSource === PRICING_SOURCE_CALCULATOR) return t('oap_pricingAutoFromCalculator')
+      if (autoSource === PRICING_SOURCE_MINIMUM_SALE) return t('oap_pricingAutoFromMinimumSale')
+      if (autoSource) return t('oap_pricingAutoStartFromBuyNow')
+      if (parseMoneyDigits(price)) return t('oap_pricingManualStartCap')
+      return null
+    }
+    if (fieldKey === 'auctionStartingPrice') {
+      if (autoSource) return t('oap_pricingAutoFromMinimumSale')
+      if (parseMoneyDigits(minimumSalePrice)) return t('oap_pricingManualStartFromMin')
+    }
+    return null
+  }
+
   const renderPriceField = ({
     fieldKey,
     label,
@@ -91,14 +112,7 @@ export default function OwnerAddPropertyPricingStep({
     hint,
     autoSource,
   }) => {
-    const autoHint =
-      autoSource === PRICING_SOURCE_BUY_NOW
-        ? t('oap_pricingAutoFromBuyNow')
-        : autoSource === PRICING_SOURCE_MINIMUM_SALE
-          ? t('oap_pricingAutoFromMinimumSale')
-          : autoSource === PRICING_SOURCE_CALCULATOR
-            ? t('oap_pricingAutoFromCalculator')
-            : null
+    const autoHint = priceRuleHint(fieldKey, autoSource)
 
     return (
     <label className="oap-pricing-step__field oap-pricing-step__field--compact" key={fieldKey}>

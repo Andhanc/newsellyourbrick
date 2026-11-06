@@ -43,12 +43,24 @@ test('presentation metadata and PDF contents survive a draft save, reload and pu
   }
 })
 
+test('seller uploads the presentation on the photo step and moderation labels it', async () => {
+  const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8')
+  const wizard = await read('pages/OwnerAddPropertyTestPage.jsx')
+  const mediaStep = wizard.slice(wizard.indexOf('const renderJourneyMediaStep'), wizard.indexOf('const renderStepStrategy'))
+  assert.match(mediaStep, /<OapAddPropertyMobileMedia[\s\S]*<PropertyPresentationUpload[\s\S]*<OwnerAddPropertyAmenitiesStep/)
+  assert.doesNotMatch(await read('pages/OwnerAddPropertyDocumentsStep.jsx'), /<PropertyPresentationUpload/)
+  const moderation = await read('components/admin/ModerationPropertyDetail.jsx')
+  assert.match(moderation, /isPresentation \? t\('propertyPresentationTitle'\) : fileName/)
+  assert.match(moderation, /moderation-property-detail__document-card--presentation/)
+})
+
 test('presentation feature stays identical in web and legacy implementations', async () => {
   for (const path of [
     'components/PropertyPresentationUpload.jsx', 'components/PropertyPresentationUpload.css',
     'components/PropertyPreviewModal.jsx', 'utils/propertyPresentation.js',
     'utils/oapPublishProperty.js', 'utils/oapAddPropertyDraft.js',
     'pages/OwnerAddPropertyDocumentsStep.jsx', 'pages/AddProperty.jsx', 'pages/PropertyDetailClassic.jsx',
+    'pages/OwnerAddPropertyTestPage.jsx', 'components/admin/ModerationPropertyDetail.jsx',
   ]) {
     const web = await readFile(new URL(`../${path}`, import.meta.url), 'utf8')
     const legacy = await readFile(new URL(`../../apps/client/src/legacy/${path}`, import.meta.url), 'utf8')

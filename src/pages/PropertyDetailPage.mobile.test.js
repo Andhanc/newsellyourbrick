@@ -64,6 +64,11 @@ test('mobile documents and location use one combined access gate', () => {
     classicSource,
     /\(onBack \|\| showDocuments\) && !isShareListing && processedDocuments\.length > 0/,
   )
+  assert.match(
+    classicSource,
+    /const isAuctionLayout = isAuctionProperty \|\| isShareListing \|\| !isDesktopProperty/,
+  )
+  assert.match(classicSource, /isShareListing \|\| !isAuctionProperty/)
 })
 
 test('mobile auction puts the timer first and moves badges below the address', () => {

@@ -185,17 +185,17 @@ export default function OwnerSubscriptionsTestPage() {
 
   const activePlanId = useMemo(() => {
     if (successPlanId) return successPlanId
-    const resolved = resolveProfileSubscriptionPlanId(profile?.subscription)
+    const resolved = profile?.subscriptionPlanId || resolveProfileSubscriptionPlanId(profile?.subscription)
     if (!resolved || resolved === 'basic') return null
     return resolved
-  }, [profile?.subscription, successPlanId])
+  }, [profile?.subscriptionPlanId, profile?.subscription, successPlanId])
 
   const pricingActivePlanId = useMemo(() => {
     if (successPlanId) return successPlanId
-    const resolved = resolveProfileSubscriptionPlanId(profile?.subscription)
+    const resolved = profile?.subscriptionPlanId || resolveProfileSubscriptionPlanId(profile?.subscription)
     if (!resolved || resolved === 'basic') return null
     return resolved
-  }, [profile?.subscription, successPlanId])
+  }, [profile?.subscriptionPlanId, profile?.subscription, successPlanId])
 
   const clearCheckoutParams = useCallback(() => {
     setSearchParams((prev) => {
