@@ -763,24 +763,50 @@ function looksCyrillic(text) {
  * @param {string} [sourceLang]
  */
 export function isUntranslatedTarget(sourceTexts, translated, targetLang, sourceLang = 'ru') {
-  if (!targetLang || targetLang === sourceLang) return false;
-  const srcTitle = trimText(sourceTexts?.title);
-  const srcDesc = trimText(sourceTexts?.description);
-  const dstTitle = trimText(translated?.title);
-  const dstDesc = trimText(translated?.description);
-  // Exact copy of source title/description into another language = failed translation
-  // (covers English listings wrongly stored as fr/de/… before detectSourceLang fix).
-  if (srcTitle && dstTitle && srcTitle === dstTitle) return true;
-  if (srcDesc && dstDesc && srcDesc === dstDesc && srcDesc.length >= 24) return true;
-  // Частичный AI-перевод с остатками кириллицы (напр. «spaльни») — тоже брак.
-  if (targetLang !== 'ru') {
-    if (srcTitle && looksCyrillic(srcTitle) && dstTitle && looksCyrillic(dstTitle)) return true;
-    if (srcDesc && looksCyrillic(srcDesc) && dstDesc && looksCyrillic(dstDesc)) {
-      const cyrRatio = (dstDesc.match(/[а-яё]/gi) || []).length / Math.max(dstDesc.length, 1);
-      if (cyrRatio >= 0.08) return true;
+  return translationFieldIssues(sourceTexts, translated, targetLang, sourceLang).length > 0;
+}
+
+function translationFieldIssues(sourceTexts, translated, targetLang, sourceLang) {
+  if (!targetLang) return ['missing language'];
+  const issues = [];
+  for (const [field, source] of Object.entries(extractListingTexts(sourceTexts))) {
+    const value = translated?.[field];
+    if (typeof value !== 'string' || !value.trim()) {
+      issues.push(`${field}: missing translation`);
+      continue;
+    }
+    if (targetLang === sourceLang) continue;
+    const text = value.trim();
+    if (isMyMemoryQuotaOrError(text)) issues.push(`${field}: provider error`);
+    if (targetLang !== 'ru' && /\p{Script=Cyrillic}/u.test(text)) {
+      issues.push(`${field}: Cyrillic text in ${targetLang}`);
+    }
+    // Locations and machine codes may legitimately be identical across languages.
+    if (text === source && /\p{L}/u.test(source) &&
+      (field === 'title' || field === 'description')) {
+      issues.push(`${field}: copy of source`);
     }
   }
-  return false;
+  return issues;
+}
+
+export function validatePropertyTranslations(sourceTexts, translations, sourceLang = detectSourceLang(sourceTexts)) {
+  return SITE_LANG_CODES.flatMap(lang => {
+    if (!translations?.[lang] || typeof translations[lang] !== 'object' || Array.isArray(translations[lang])) {
+      return [`${lang}: missing language`];
+    }
+    return translationFieldIssues(sourceTexts, translations[lang], lang, sourceLang)
+      .map(issue => `${lang}.${issue}`);
+  });
+}
+
+function assertCompleteTranslations(sourceTexts, translations, sourceLang) {
+  const issues = validatePropertyTranslations(sourceTexts, translations, sourceLang);
+  if (issues.length) {
+    const error = new Error(`Incomplete property translations: ${issues.join('; ')}`);
+    error.code = 'INCOMPLETE_PROPERTY_TRANSLATIONS';
+    throw error;
+  }
 }
 
 function countUntranslatedTargets(texts, translations, sourceLang = 'ru') {
@@ -864,17 +890,14 @@ export function normalizeAiTranslations(parsed, texts, sourceLang) {
   const payload = parsed.translations && typeof parsed.translations === 'object'
     ? parsed.translations
     : parsed;
-  const result = emptyResultFromSource(texts);
-  result[sourceLang] = { ...texts };
+  const result = { [sourceLang]: { ...texts } };
   const targets = targetLangCodesFor(sourceLang);
-  const sourceKeys = Object.keys(texts);
-
   for (const code of targets) {
     const row = payload[code];
     if (!row || typeof row !== 'object') continue;
-    const merged = { ...texts };
-    for (const key of sourceKeys) {
-      const val = trimText(row[key]);
+    const merged = {};
+    for (const key of Object.keys(texts)) {
+      const val = typeof row[key] === 'string' ? row[key].trim() : '';
       if (val) merged[key] = val;
     }
     result[code] = merged;
@@ -1048,19 +1071,7 @@ export async function translatePropertyToAllLanguages(property) {
     }
   }
 
-  const stillBad = countUntranslatedTargets(texts, merged, sourceLang);
-  const totalTargets = targets.length;
-  if (stillBad === totalTargets) {
-    console.warn(
-      `[translate] APIs failed, using phrasebook for property_id=${property?.id || '?'}`
-    );
-    return phrasebookResult;
-  }
-  if (stillBad > 0) {
-    console.warn(
-      `[translate] partial success for property_id=${property?.id || '?'}: ${totalTargets - stillBad}/${totalTargets} languages ok`
-    );
-  }
+  assertCompleteTranslations(texts, merged, sourceLang);
   return merged;
 }
 
@@ -1068,50 +1079,49 @@ function cleanStoredText(value) {
   return String(value || '').replace(/\u0000/g, '');
 }
 
-export async function persistPropertyTranslations(prisma, { propertyId, propertyTable, translations }) {
+export async function persistPropertyTranslations(prisma, { propertyId, propertyTable, translations, sourceTexts }) {
+  if (!sourceTexts) throw new Error('sourceTexts required to validate property translations');
+  assertCompleteTranslations(sourceTexts, translations, detectSourceLang(sourceTexts));
   const pid = Number(propertyId);
   const table = normalizeTranslationPropertyTable(propertyTable);
   const aliases = translationPropertyTableAliases(table);
-  const createdAt = new Date().toISOString();
   const rows = [];
-
-  for (const [langCode, translated] of Object.entries(translations || {})) {
-    const split = splitTranslationForStore(translated);
-    // Пишем и в каноническую таблицу, и в legacy-алиас (apartments/houses),
-    // чтобы старые списки с source_table=apartments тоже находили перевод.
+  for (const langCode of SITE_LANG_CODES) {
+    const split = splitTranslationForStore(translations[langCode]);
     for (const property_table of aliases) {
       rows.push({
         property_id: pid,
         property_table,
-        lang_code: String(langCode),
+        lang_code: langCode,
         title: cleanStoredText(split.title),
         description: cleanStoredText(split.description),
         additional_amenities: cleanStoredText(split.additional_amenities),
         location: cleanStoredText(split.location),
         extra_json: Object.keys(split.extra).length ? JSON.stringify(split.extra) : null,
-        created_at: createdAt,
+        created_at: new Date().toISOString(),
       });
     }
   }
-
-  const writeRow = async (tx, row) => {
-    try {
-      await tx.property_translations.create({ data: row });
-    } catch (err) {
-      if (!/extra_json|location/i.test(String(err?.message || ''))) throw err;
-      const { extra_json: _extra, location: _location, ...core } = row;
-      await tx.property_translations.create({ data: core });
-    }
-  };
-
-  await prisma.$transaction(async (tx) => {
+  // Validation precedes deletion. A failed write rolls back the entire replacement,
+  // including both canonical and legacy aliases.
+  const write = withoutExtra => prisma.$transaction(async tx => {
     await tx.property_translations.deleteMany({
       where: { property_id: pid, property_table: { in: aliases } },
     });
     for (const row of rows) {
-      await writeRow(tx, row);
+      const { extra_json: _ignored, ...core } = row;
+      await tx.property_translations.create({ data: withoutExtra ? core : row });
     }
-  });
+  }, { timeout: 15000 });
+  try {
+    await write(false);
+  } catch (error) {
+    if (!/extra_json/i.test(String(error?.message || ''))) throw error;
+    // Do not report success if the schema would discard required translations.
+    if (rows.some(row => row.extra_json)) throw error;
+    // Old schemas lack extra_json. Retry in a fresh transaction after rollback.
+    await write(true);
+  }
 }
 
 export function resolveTranslationTable(property) {
@@ -1134,6 +1144,7 @@ export async function translateAndPersistProperty(prisma, property) {
   await persistPropertyTranslations(prisma, {
     propertyId: Number(property.id),
     propertyTable: table,
+    sourceTexts: extractListingTexts(property),
     translations,
   });
   console.log(

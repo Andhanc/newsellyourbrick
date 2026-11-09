@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { privateClubListingForViewer } from './privateClubTeaser.js';
 import { registerAuthSessionRoutes } from './authSessionRoutes.js';
 import express from 'express';
 import compression from 'compression';
@@ -405,7 +406,7 @@ const auctionSSEClients = new Set();
 
 function broadcastAuctionNewObjects(properties) {
   if (!properties || properties.length === 0) return;
-  const payload = JSON.stringify({ type: 'new_auction_objects', properties });
+  const payload = JSON.stringify({ type: 'new_auction_objects', properties: properties.map((p) => privateClubListingForViewer(p)) });
   if (VERBOSE_HTTP) {
     console.log(
       `[SSE] 📤 Рассылка новых объектов аукциона подписчикам: ${auctionSSEClients.size} клиент(ов), объектов: ${properties.length}`
@@ -11104,7 +11105,8 @@ app.get('/api/properties/auctions', async (req, res) => {
       Number.isFinite(viewerId) &&
       viewerId >= 1 &&
       (await userQueries.hasPrivateClubVipAccess(viewerId));
-    const hidePrivateClubOnly = !includePrivateClubListings;
+    // VIP lots remain discoverable through redacted catalogue teasers.
+    const hidePrivateClubOnly = false;
 
     // Используем функцию из propertyQueries, которая работает с новыми таблицами
     let properties = await propertyQueries.getAuctions(type || null, {
@@ -11398,7 +11400,11 @@ app.get('/api/properties/auctions', async (req, res) => {
       console.warn('GET /api/properties/auctions - тексты поиска:', e.message);
     }
 
-    res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=120');
+    formattedProperties = formattedProperties.map((p) => privateClubListingForViewer(p, {
+      hasVip: includePrivateClubListings,
+      viewerId: Number.isFinite(viewerId) && viewerId >= 1 ? viewerId : null,
+    }));
+    res.setHeader('Cache-Control', 'private, no-store');
     res.json({
       success: true,
       data: formattedProperties
@@ -11453,7 +11459,8 @@ app.get('/api/properties/test-timers', async (req, res) => {
     ];
     
     // Преобразуем данные в формат для фронтенда
-    const formattedProperties = properties.map(prop => {
+    // VIP timer lots are supplied by /auctions with the viewer's access level.
+    const formattedProperties = properties.filter((p) => ![1, true, '1'].includes(p.private_club_only)).map(prop => {
       // Парсим JSON поля
       let photos = [];
       let videos = [];
@@ -14998,7 +15005,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         }
       }
 
-      // «Только закрытый клуб» — лот в аукционе видят только VIP (и владелец в кабинете).
+      // «Только закрытый клуб»: гости видят тизер, VIP и владелец — полный лот.
       try {
         const prismaPc = getPrisma();
         const pcVal = privateClubOnly ? 1 : 0;

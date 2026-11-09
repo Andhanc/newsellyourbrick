@@ -1,7 +1,7 @@
 /**
  * Переводит объявления и dual-write в properties_* + legacy apartments/houses.
  * Usage:
- *   DATABASE_URL=... node scripts/fix-property-translations.mjs [id ...]
+ *   DATABASE_URL=... node scripts/fix-property-translations.mjs [--check] [id ...]
  * Без id — все опубликованные квартиры/дома.
  */
 import 'dotenv/config';
@@ -17,10 +17,12 @@ import {
   detectSourceLang,
   targetLangCodesFor,
   SITE_LANG_CODES,
-  isUntranslatedTarget,
+  validatePropertyTranslations,
+  parseExtraJson,
 } from '../server/services/aiPropertyTranslate.js';
 
-const ids = process.argv.slice(2).map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
+const checkOnly = process.argv.includes('--check');
+const ids = process.argv.slice(2).filter(x => x !== '--check').map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0);
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
@@ -50,20 +52,24 @@ async function listTargets() {
     }
     return out;
   }
-  const [apts, houses] = await Promise.all([
-    prisma.properties_apartments.findMany({
-      where: { OR: [{ status: 'approved' }, { moderation_status: 'approved' }, { is_approved: true }] },
-      take: 200,
-    }).catch(() => prisma.properties_apartments.findMany({ take: 200 })),
-    prisma.properties_houses.findMany({ take: 200 }).catch(() => []),
-  ]);
-  return [
-    ...apts.map((row) => ({ ...row, source_table: 'properties_apartments', property_type: 'apartment' })),
-    ...houses.map((row) => ({ ...row, source_table: 'properties_houses', property_type: 'house' })),
-  ];
+  const out = [];
+  for (const [table, propertyType] of [['properties_apartments', 'apartment'], ['properties_houses', 'house']]) {
+    let cursor = 0;
+    for (;;) {
+      const rows = await prisma[table].findMany({
+        where: { moderation_status: 'approved', id: { gt: cursor } },
+        orderBy: { id: 'asc' },
+        take: 200,
+      });
+      out.push(...rows.map(row => ({ ...row, source_table: table, property_type: propertyType })));
+      if (rows.length < 200) break;
+      cursor = rows.at(-1).id;
+    }
+  }
+  return out;
 }
 
-/** Если AI/MyMemory недоступны — сразу phrasebook + persist. */
+/** Phrasebook can be saved only if it passes the same completeness validation. */
 async function forcePhrasebookPersist(property) {
   const texts = extractListingTexts(property);
   const sourceLang = detectSourceLang(texts);
@@ -86,12 +92,13 @@ async function forcePhrasebookPersist(property) {
     propertyId: Number(property.id),
     propertyTable: property.source_table,
     translations,
+    sourceTexts: texts,
   });
   return translations;
 }
 
-/** True if stored target rows are still copies of the source title. */
-async function hasStaleTranslations(property) {
+/** Audit every language and field using the same rules as the write path. */
+async function translationIssues(property) {
   const texts = extractListingTexts(property);
   const sourceLang = detectSourceLang(texts);
   const rows = await prisma.property_translations.findMany({
@@ -99,16 +106,16 @@ async function hasStaleTranslations(property) {
       property_id: Number(property.id),
       property_table: { in: [property.source_table, property.source_table === 'properties_apartments' ? 'apartments' : 'houses'] },
     },
-    select: { lang_code: true, title: true, description: true },
+    select: { property_table: true, lang_code: true, title: true, description: true, additional_amenities: true, location: true, extra_json: true },
   });
-  if (!rows.length) return true;
-  const byLang = Object.fromEntries(rows.map((r) => [r.lang_code, r]));
-  for (const code of targetLangCodesFor(sourceLang)) {
-    const row = byLang[code];
-    if (!row) return true;
-    if (isUntranslatedTarget(texts, row, code, sourceLang)) return true;
+  const byLang = {};
+  // Prefer the canonical row when both aliases exist, just like the read path.
+  for (const row of rows) {
+    if (!byLang[row.lang_code] || row.property_table === property.source_table) {
+      byLang[row.lang_code] = { ...row, ...parseExtraJson(row.extra_json) };
+    }
   }
-  return false;
+  return validatePropertyTranslations(texts, byLang, sourceLang);
 }
 
 async function dualWriteExistingAliases() {
@@ -155,7 +162,7 @@ async function dualWriteExistingAliases() {
 
 async function main() {
   const mode = process.env.TRANSLATE_MODE || 'auto'; // auto | phrasebook | aliases-only
-  if (mode === 'aliases-only') {
+  if (!checkOnly && mode === 'aliases-only') {
     const created = await dualWriteExistingAliases();
     console.log(`aliases created: ${created}`);
     return;
@@ -164,10 +171,24 @@ async function main() {
   const targets = await listTargets();
   console.log(`targets: ${targets.map((t) => `${t.source_table}:${t.id}`).join(', ') || '(none)'}`);
 
+  if (checkOnly) {
+    let failed = 0;
+    for (const property of targets) {
+      const issues = await translationIssues(property);
+      if (!issues.length) continue;
+      failed += 1;
+      console.error(`${property.source_table}:${property.id}: ${issues.join('; ')}`);
+    }
+    console.log(`Translation audit: ${targets.length} listings, ${failed} incomplete; no writes or translation requests.`);
+    if (failed) process.exitCode = 1;
+    return;
+  }
+
+  let failed = 0;
   const forceAll = process.env.TRANSLATE_FORCE === '1' || ids.length > 0;
   for (const property of targets) {
     try {
-      if (!forceAll && !(await hasStaleTranslations(property))) {
+      if (!forceAll && !(await translationIssues(property)).length) {
         console.log(`skip fresh ${property.id}`);
         continue;
       }
@@ -185,10 +206,12 @@ async function main() {
         }
       }
     } catch (err) {
+      failed += 1;
       console.error(`fail ${property.id}:`, err.message);
     }
   }
 
+  if (failed) process.exitCode = 1;
   const created = await dualWriteExistingAliases();
   console.log(`aliases ensured, new rows: ${created}`);
 }

@@ -34,6 +34,31 @@ test('checks interpolation variable names, including formatted and unescaped val
   assert.deepEqual(placeholders('{{ price, currency }} {{- count}}'), ['count', 'price'])
 })
 
+test('rejects Russian leftovers anywhere in non-Russian catalogs, including descriptions', () => {
+  const data = catalogs({ description: 'A spacious home', title: '{{имя}}' })
+  data.ru.description = 'Просторный дом'
+  assert.deepEqual(validateCatalogs(data), [])
+  data.fr.description = 'Une maison avec бассейн'
+  assert.match(validateCatalogs(data)[0].message, /Cyrillic text in fr translation: description/)
+})
+
+test('requires all seven languages in inline locale maps', () => {
+  const source = "const description = { ru: 'Описание', en: 'Description', de: 'Beschreibung' }"
+  assert.deepEqual(inspectSource(source, 'View.jsx', {}).map(error => error.value), ['es', 'fr', 'pl', 'sv'])
+  assert.deepEqual(inspectSource("const x = { en: 'code', value: 'metadata' }", 'View.jsx', {}), [])
+  assert.deepEqual(inspectSource(`const x = {${LANGUAGES.map(lang => `${lang}: 'text'`).join(',')}}`, 'View.jsx', {}), [])
+})
+
+test('catches descriptions in lead, desc and note props and configuration', () => {
+  const source = `const x = { desc: 'Описание', note: 'Read this' }; const View = () => <Card lead="Description" />`
+  assert.deepEqual(inspectSource(source, 'View.jsx', {}).map(error => error.value), ['Описание', 'Read this', 'Description'])
+})
+
+test('catches descriptions assigned to variables before they reach JSX', () => {
+  const source = "const description = 'Описание'; const heroDescription = ok ? 'Welcome' : 'Try again'; const title = t('known'); const View = () => <p>{description}</p>"
+  assert.deepEqual(inspectSource(source, 'View.jsx', { known: 'Title' }).map(error => error.value), ['Описание', 'Welcome', 'Try again'])
+})
+
 test('detects duplicate keys, including escaped names and nested objects', () => {
   assert.deepEqual(duplicateJsonKeys('{"a":"one","a":"two","nested":{"x":"one","\\u0078":"two"}}'), ['a', 'x'])
   assert.deepEqual(duplicateJsonKeys('{"a":{"title":"one"},"b":{"title":"two"}}'), [])

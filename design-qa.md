@@ -920,3 +920,19 @@ Real-project evidence: `artifacts/related-property-deck/tiffany-pill-final.jpg`,
 Validation: 25 focused property-detail, state and parity tests passed; npm run build passed; git diff --check passed.
 
 final result: passed
+
+
+## Catalogue map banner — 2026-11-10
+
+- Source visual: `/var/folders/c8/gpqh9xf946vd864n2qjcts640000gp/T/codex-clipboard-5c02061f-a2f0-4bb7-a198-1de52e280280.png` (736 × 414). Existing block reference: `codex-clipboard-d28fb1da-432b-4448-a19c-bf55b7720986.png` (432 × 219).
+- Latest user requirements override source typography: only “Объекты на карте”, white title, white CTA, rounded block, no darkening or overlay styles.
+- Implementation: `http://localhost:5173/search-results`, Russian, mobile catalogue.
+- Browser screenshot: `artifacts/catalog-map-summer-mobile.png`, 432 × 850 viewport, CSS pixels and screenshot pixels at 1:1 density. Banner bounds: x=12, y=194.34, width=408, height=185.45 CSS pixels.
+- Combined source and rendered banner comparison: `artifacts/catalog-map-reference-comparison.png`. Source remains at 736 × 414; rendered banner is shown at its actual 408 × 186 crop. Different proportions are intentional: this is an adaptation to the existing catalogue slot, not a pixel clone of the advertisement.
+- Full-view review checked the banner between the catalogue heading and search controls. Focused review checked paper map, yellow ring/pedestal, clean turquoise background, title, white button and 24px corners. Also visually inspected the 320 × 740 viewport: title and CTA remain separate and visible.
+- Interaction: clicking “Открыть объекты на карте” navigates to `/map`; returned to catalogue afterwards. The map itself logs a missing `VITE_YANDEX_MAPS_API_KEY` in this local environment; map rendering is outside this banner change.
+- Iterations: removed the earlier gradient/glow/shimmer and extra eyebrow/title combination; applied the user's white CTA and title plus rounded corners; post-change browser captures confirm those changes. No remaining actionable visual mismatches within the requested scope. White text on the bright background follows the explicit user direction; no contrast overlay was added.
+- Validation: 14 discovery tests passed, 28 i18n tests passed, i18n guard passed, web/legacy code and image parity passed, production build passed, diff whitespace check passed.
+- Image produced with built-in Imagegen. Asset: `public/images/search-results/map-promo-summer.webp`; identical mirror in `apps/client/public/images/search-results/`. Generation prompt: `output/imagegen/catalog-map-summer.prompt.txt`.
+
+final result: passed

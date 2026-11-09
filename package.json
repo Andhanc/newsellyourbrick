@@ -16,6 +16,7 @@
     "test": "node scripts/run-tests.mjs",
     "test:i18n": "node --test scripts/check-i18n.test.mjs scripts/review-i18n.test.mjs",
     "check:i18n": "node scripts/check-i18n.mjs",
+    "check:property-translations": "node scripts/fix-property-translations.mjs --check",
     "review:i18n": "node scripts/review-i18n.mjs",
     "verify:images": "node scripts/verify-public-images.mjs",
     "optimize:oap-images": "node scripts/optimize-oap-sidebar-images.mjs",

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiSearch, FiSliders } from 'react-icons/fi'
-import { ArrowUpRight, MapPin, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { ArrowUpRight, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
@@ -374,22 +374,16 @@ const SearchResults = () => {
                   >
                     <img
                       className="search-results__map-promo-image"
-                      src={publicAsset('images/search-results/map-promo.webp')}
+                      src={publicAsset('images/search-results/map-promo-summer.webp')}
                       alt=""
                       aria-hidden="true"
                     />
-                    <span className="search-results__map-promo-content">
-                      <span className="search-results__map-promo-eyebrow">
-                        <MapPin size={12} aria-hidden="true" />
-                        {t('searchResults_mapPromoEyebrow')}
-                      </span>
-                      <span className="search-results__map-promo-title">
-                        {t('searchResults_mapPromoTitle')}
-                      </span>
-                      <span className="search-results__map-promo-cta">
-                        {t('searchResults_mapPromoCta')}
-                        <ArrowUpRight size={16} aria-hidden="true" />
-                      </span>
+                    <span className="search-results__map-promo-title">
+                      {t('searchResults_mapPromoEyebrow')}
+                    </span>
+                    <span className="search-results__map-promo-cta">
+                      {t('searchResults_mapPromoCta')}
+                      <ArrowUpRight size={14} aria-hidden="true" />
                     </span>
                   </button>
                   <div className="search-results__mobile-search">

@@ -3198,7 +3198,7 @@
   "oap_locationOptional": "optional",
   "oap_locationStreetLabel": "Street",
   "oap_locationCityPlaceholder": "Start typing a city name",
-  "oap_locationHousePlaceholder": "E.g. 12 or 12к1",
+  "oap_locationHousePlaceholder": "Np. 12 lub 12A",
   "oap_locationMapDragHint": "Drag the marker — address and coordinates update automatically.",
   "oap_locationMapSelectHint": "Pick city and street from suggestions — a marker appears on the map.",
   "oap_locationStreetNoCity": "Select a city first",
@@ -10812,5 +10812,10 @@
   "compareNeedsLikes_metaCount": "2 obiekty",
   "compareNeedsLikes_metaHint": "do porównania",
   "compareNeedsLikes_cta": "Polub kolejny obiekt",
-  "compareNeedsLikes_close": "Zamknij"
+  "compareNeedsLikes_close": "Zamknij",
+  "vipTeaser_open": "Odkryj z VIP",
+  "vipTeaser_drawerTitle": "Ta nieruchomość wymaga subskrypcji VIP",
+  "vipTeaser_drawerDescription": "Odkryj prywatne oferty: zdjęcia, warunki aukcji i możliwość licytowania są dostępne w Klubie VIP.",
+  "vipTeaser_continue": "Przejdź do Klubu VIP",
+  "vipTeaser_note": "Szczegóły nieruchomości są dostępne wyłącznie dla członków z aktywną subskrypcją VIP."
 }

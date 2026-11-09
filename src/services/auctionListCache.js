@@ -196,7 +196,7 @@ function sortAuctionListPrivateClubFirst(list) {
 async function enrichAuctionListWithMaxBids(apiBaseUrl, list) {
   if (!Array.isArray(list) || list.length === 0) return list
   const auctionItems = list.filter((item) => {
-    if (!item) return false
+    if (!item || item.vip_locked) return false
     return (
       item.isAuction === true ||
       item.is_auction === true ||

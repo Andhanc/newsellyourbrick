@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { MdBed } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
+import VipLockedAuctionCard from './VipLockedAuctionCard'
 import CircularTimer from './CircularTimer'
 import ImageWithSkeleton from './ImageWithSkeleton'
 import { getPropertyCardImage, PROPERTY_CARD_IMAGE_FALLBACK } from '../utils/propertyImage'
@@ -182,6 +183,10 @@ export default function AuctionPropertyCard({
 }) {
   const { t } = useTranslation()
   const state = useAuctionCardState(property)
+
+  if (state.isPrivateClub && (!viewerHasVip || property.vip_locked)) {
+    return <VipLockedAuctionCard className={className} />
+  }
 
   const propertyTitle = property.title || property.name || ''
   const propertyImage = getPropertyCardImage(property, PROPERTY_CARD_IMAGE_FALLBACK)

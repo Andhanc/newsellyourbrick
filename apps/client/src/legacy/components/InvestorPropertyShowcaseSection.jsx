@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
 import { createShowcaseScroller } from '../utils/showcaseScroller'
 import { FiArrowRight, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import AuctionPropertyCard from './AuctionPropertyCard'
@@ -52,6 +53,7 @@ export default function InvestorPropertyShowcaseSection({
   showPropertyAuthRequiredToast,
 }) {
   const { t } = useTranslation()
+  const { cabinetVipActive } = useViewerVipAccess()
   const scrollerRef = useRef(null)
   const paginationRef = useRef(null)
   const [{ activePage, pageCount, canScrollPrev, canScrollNext }, setPagination] = useState({
@@ -149,6 +151,7 @@ export default function InvestorPropertyShowcaseSection({
       <ShowcaseSlot key={property.id}>
         <AuctionPropertyCard
           property={property}
+          viewerHasVip={cabinetVipActive}
           isFavorite={isPropertyLiked(property)}
           onFavoriteToggle={handleFavoriteToggle}
           onOpen={openListing}

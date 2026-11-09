@@ -3030,7 +3030,7 @@
   "oap_listingModeSharesDesc": "Reaches buyers with smaller budgets",
   "oap_locationCadastralPlaceholder": "E.g. 77:01:0004012:3456",
   "oap_locationCityPlaceholder": "Start typing a city name",
-  "oap_locationHousePlaceholder": "E.g. 12 or 12к1",
+  "oap_locationHousePlaceholder": "T.ex. 12 eller 12A",
   "oap_locationMapDragHint": "Drag the marker — address and coordinates update automatically.",
   "oap_locationMapSelectHint": "Pick city and street from suggestions — a marker appears on the map.",
   "oap_locationStreetNoCity": "Select a city first",
@@ -10812,5 +10812,10 @@
   "compareNeedsLikes_metaCount": "2 objekt",
   "compareNeedsLikes_metaHint": "för att jämföra",
   "compareNeedsLikes_cta": "Gilla ett till objekt",
-  "compareNeedsLikes_close": "Stäng"
+  "compareNeedsLikes_close": "Stäng",
+  "vipTeaser_open": "Lås upp med VIP",
+  "vipTeaser_drawerTitle": "Den här fastigheten kräver en VIP-prenumeration",
+  "vipTeaser_drawerDescription": "Upptäck privata objekt: bilder, auktionsvillkor och möjligheten att lägga bud finns i VIP-klubben.",
+  "vipTeaser_continue": "Gå till VIP-klubben",
+  "vipTeaser_note": "Fastighetsuppgifterna är endast tillgängliga för medlemmar med en aktiv VIP-prenumeration."
 }

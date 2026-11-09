@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -141,7 +141,6 @@ export default function MobileDiscoverPage() {
   const activeScreenRef = useRef(initialDiscoverScreen())
   const stageScrollRef = useRef(null)
   const launchSliderRef = useRef(null)
-  const launchScrollLeftRef = useRef(null)
   const lotteryDialogRef = useRef(null)
   const lotteryTriggerRef = useRef(null)
   const catalogSentinelRef = useRef(null)
@@ -169,19 +168,8 @@ export default function MobileDiscoverPage() {
     const count = rail.querySelectorAll('.md-launch__item').length
     const maxScroll = Math.max(0, rail.scrollWidth - rail.clientWidth)
     const left = count <= 1 || maxScroll <= 0 ? 0 : (index / (count - 1)) * maxScroll
-    launchScrollLeftRef.current = left
-    rail.style.scrollSnapType = 'none'
-    rail.scrollLeft = left
-    setActiveLaunchCard(index)
+    rail.scrollTo({ left, behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
   }, [])
-
-  useLayoutEffect(() => {
-    const rail = launchSliderRef.current
-    const left = launchScrollLeftRef.current
-    if (!rail || left == null) return
-    rail.style.scrollSnapType = 'none'
-    if (Math.abs(rail.scrollLeft - left) > 1) rail.scrollLeft = left
-  }, [activeLaunchCard])
 
   useEffect(() => {
     if (!lotteryComingSoonOpen) return undefined
@@ -636,10 +624,6 @@ export default function MobileDiscoverPage() {
             <div
               ref={launchSliderRef}
               className="md-launch__slider"
-              onPointerDown={(event) => {
-                launchScrollLeftRef.current = null
-                if (event.currentTarget.style.scrollSnapType) event.currentTarget.style.scrollSnapType = ''
-              }}
               onScroll={(event) => {
                 const rail = event.currentTarget
                 const maxScroll = rail.scrollWidth - rail.clientWidth

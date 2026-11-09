@@ -15,6 +15,9 @@ import {
   detectSourceLang,
   targetLangCodesFor,
   SITE_LANG_CODES,
+  validatePropertyTranslations,
+  persistPropertyTranslations,
+  translatePropertyToAllLanguages,
 } from './aiPropertyTranslate.js'
 import {
   applyPropertyTranslationRow,
@@ -206,4 +209,139 @@ test('flags partial cyrillic leftovers in target titles', () => {
     isUntranslatedTarget(source, { title: 'квартира E1, 2 spaльни', description: 'Tenerife' }, 'en'),
     true,
   )
+})
+
+const listingSource = { title: 'Дом у моря', description: 'Просторный дом с видом на море и садом' }
+const completeTranslations = () => Object.fromEntries(SITE_LANG_CODES.map(lang => [lang, lang === 'ru'
+  ? { ...listingSource }
+  : { title: `${lang} seaside home`, description: `${lang} spacious home overlooking the sea with a garden` }]))
+
+test('validates every language and every supplied field, including a missing description', () => {
+  const translations = completeTranslations()
+  assert.deepEqual(validatePropertyTranslations(listingSource, translations), [])
+  delete translations.pl
+  delete translations.fr.description
+  translations.de.description = ' '
+  const issues = validatePropertyTranslations(listingSource, translations)
+  assert.ok(issues.includes('pl: missing language'))
+  assert.ok(issues.includes('fr.description: missing translation'))
+  assert.ok(issues.includes('de.description: missing translation'))
+  assert.equal(isUntranslatedTarget(listingSource, {}, 'en'), true)
+})
+
+test('rejects even one Russian word in a long description and in extra fields', () => {
+  const source = { ...listingSource, heating: 'Центральное' }
+  const row = { title: 'Seaside home', description: `${'A home with a garden. '.repeat(30)} бассейн`, heating: 'Central' }
+  assert.equal(isUntranslatedTarget(source, row, 'en'), true)
+  row.description = 'A home with a garden'
+  row.heating = 'Central отопление'
+  assert.equal(isUntranslatedTarget(source, row, 'en'), true)
+  row.heating = 'Central'
+  assert.equal(isUntranslatedTarget(source, row, 'en'), false)
+})
+
+test('short copied descriptions and provider quota messages are also failures', () => {
+  assert.equal(isUntranslatedTarget({ description: 'Bright home' }, { description: 'Bright home' }, 'fr', 'en'), true)
+  assert.equal(isUntranslatedTarget(listingSource, { title: 'Seaside home', description: 'MYMEMORY WARNING: quota' }, 'en'), true)
+})
+
+test('incomplete translations cannot delete or overwrite existing rows', async () => {
+  const translations = completeTranslations()
+  delete translations.sv.description
+  const prisma = { $transaction() { assert.fail('must validate before any write') } }
+  await assert.rejects(persistPropertyTranslations(prisma, {
+    propertyId: 1, propertyTable: 'apartments', sourceTexts: listingSource, translations,
+  }), { code: 'INCOMPLETE_PROPERTY_TRANSLATIONS' })
+})
+
+function translationDatabase({ failWrite = false, withoutExtra = false } = {}) {
+  let stored = [{ old: true }]
+  let transactions = 0
+  return {
+    get rows() { return stored },
+    get transactions() { return transactions },
+    async $transaction(run) {
+      transactions += 1
+      let draft = structuredClone(stored)
+      await run({ property_translations: {
+        async deleteMany() { draft = [] },
+        async create({ data }) {
+          if (withoutExtra && 'extra_json' in data) throw new Error('column extra_json does not exist')
+          if (failWrite && draft.length === 3) throw new Error('database unavailable')
+          draft.push(data)
+        },
+      } })
+      stored = draft
+    },
+  }
+}
+
+test('replaces all seven languages and both table aliases in one transaction', async () => {
+  const prisma = translationDatabase()
+  await persistPropertyTranslations(prisma, {
+    propertyId: 1, propertyTable: 'apartments', sourceTexts: listingSource, translations: completeTranslations(),
+  })
+  assert.equal(prisma.transactions, 1)
+  assert.equal(prisma.rows.length, 14)
+  for (const lang of SITE_LANG_CODES) {
+    assert.deepEqual(prisma.rows.filter(row => row.lang_code === lang).map(row => row.property_table), ['properties_apartments', 'apartments'])
+  }
+})
+
+test('failed replacement rolls back and keeps the previous translations', async () => {
+  const prisma = translationDatabase({ failWrite: true })
+  await assert.rejects(persistPropertyTranslations(prisma, {
+    propertyId: 1, propertyTable: 'apartments', sourceTexts: listingSource, translations: completeTranslations(),
+  }), /database unavailable/)
+  assert.deepEqual(prisma.rows, [{ old: true }])
+})
+
+test('retries an old schema without extra_json in a fresh transaction', async () => {
+  const prisma = translationDatabase({ withoutExtra: true })
+  await persistPropertyTranslations(prisma, {
+    propertyId: 1, propertyTable: 'apartments', sourceTexts: listingSource, translations: completeTranslations(),
+  })
+  assert.equal(prisma.transactions, 2)
+  assert.equal(prisma.rows.length, 14)
+  assert.ok(prisma.rows.every(row => !('extra_json' in row)))
+})
+
+test('an old schema cannot silently discard required extra field translations', async () => {
+  const prisma = translationDatabase({ withoutExtra: true })
+  const sourceTexts = { ...listingSource, heating: 'Центральное' }
+  const translations = completeTranslations()
+  for (const lang of SITE_LANG_CODES) translations[lang].heating = lang === 'ru' ? 'Центральное' : 'Central'
+  await assert.rejects(persistPropertyTranslations(prisma, {
+    propertyId: 1, propertyTable: 'apartments', sourceTexts, translations,
+  }), /extra_json/)
+  assert.equal(prisma.transactions, 1)
+  assert.deepEqual(prisma.rows, [{ old: true }])
+})
+
+test('a complete AI response needs no fallback requests', async t => {
+  let requests = 0
+  t.mock.method(globalThis, 'fetch', async () => {
+    requests += 1
+    return { ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify(completeTranslations()) } }] }) }
+  })
+  // Use the anonymous provider; no real credentials or network calls in tests.
+  const previous = process.env.AI_PROVIDER
+  process.env.AI_PROVIDER = 'pollinations'
+  t.after(() => { if (previous === undefined) delete process.env.AI_PROVIDER; else process.env.AI_PROVIDER = previous })
+  assert.deepEqual(await translatePropertyToAllLanguages(listingSource), completeTranslations())
+  assert.equal(requests, 1)
+})
+
+test('partial AI and failed fallbacks are an error, never a successful source copy', async t => {
+  const previous = process.env.AI_PROVIDER
+  process.env.AI_PROVIDER = 'pollinations'
+  t.after(() => { if (previous === undefined) delete process.env.AI_PROVIDER; else process.env.AI_PROVIDER = previous })
+  let requests = 0
+  t.mock.method(globalThis, 'fetch', async () => {
+    requests += 1
+    if (requests === 1) return { ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify({ en: { title: 'Seaside home' } }) } }] }) }
+    return { ok: false, status: 429 }
+  })
+  await assert.rejects(translatePropertyToAllLanguages(listingSource), { code: 'INCOMPLETE_PROPERTY_TRANSLATIONS' })
+  assert.ok(requests > 1, 'missing AI description must trigger fallback')
 })

@@ -3031,7 +3031,7 @@
   "oap_listingModeSharesDesc": "Reaches buyers with smaller budgets",
   "oap_locationCadastralPlaceholder": "E.g. 77:01:0004012:3456",
   "oap_locationCityPlaceholder": "Start typing a city name",
-  "oap_locationHousePlaceholder": "E.g. 12 or 12к1",
+  "oap_locationHousePlaceholder": "Z. B. 12 oder 12A",
   "oap_locationMapDragHint": "Drag the marker — address and coordinates update automatically.",
   "oap_locationMapSelectHint": "Pick city and street from suggestions — a marker appears on the map.",
   "oap_locationStreetNoCity": "Select a city first",
@@ -10812,5 +10812,10 @@
   "compareNeedsLikes_metaCount": "2 Objekte",
   "compareNeedsLikes_metaHint": "zum Vergleichen",
   "compareNeedsLikes_cta": "Weiteres Objekt liken",
-  "compareNeedsLikes_close": "Schließen"
+  "compareNeedsLikes_close": "Schließen",
+  "vipTeaser_open": "Mit VIP freischalten",
+  "vipTeaser_drawerTitle": "Diese Immobilie erfordert ein VIP-Abonnement",
+  "vipTeaser_drawerDescription": "Entdecken Sie private Angebote: Fotos, Auktionsbedingungen und die Möglichkeit mitzubieten stehen im VIP-Club bereit.",
+  "vipTeaser_continue": "Zum VIP-Club",
+  "vipTeaser_note": "Die Immobiliendetails sind nur für Mitglieder mit aktivem VIP-Abonnement sichtbar."
 }

@@ -1299,21 +1299,13 @@ body .md-site-nav.is-compact .new-header.new-header .new-header__container.new-h
 .md-format-card {
   position: sticky;
   top: 0;
-  height: 100dvh;
-  max-height: 100dvh;
+  height: 100svh;
+  max-height: 100svh;
   box-sizing: border-box;
   /* Peek band above the sheet — previous card/photo shows here */
   padding-top: var(--md-format-peek);
   overflow: hidden;
   background: transparent;
-}
-
-/*
- * Only while the stack is parked: paging is JS-owned there, so the browser must
- * not drag a card to a mid-park offset. Reaching the first card stays native.
- */
-.md-stage[data-format-lock='on'] .md-format-card {
-  touch-action: pan-x;
 }
 
 .md-format-card__body {
@@ -1386,7 +1378,7 @@ body .md-site-nav.is-compact .new-header.new-header .new-header__container.new-h
   top: 0;
   z-index: 1;
   box-sizing: border-box;
-  min-height: 100dvh;
+  min-height: 100svh;
   height: auto;
   max-height: none;
   padding-top: var(--md-format-peek);

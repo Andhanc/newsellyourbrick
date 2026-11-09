@@ -19,7 +19,7 @@ const OPTIONAL_EMPTY = new Set([
   'buyerTest_onboardingStep1TitleAfter', 'buyerTest_onboardingStep2TitleAfter',
   'buyerTest_onboardingStep3TitleAfter', 'buyerTest_onboardingStep4TitleAfter',
 ])
-const UI_FIELDS = /^(title|subtitle|heading|label|description|text|message|body|caption|tooltip|placeholder|helperText|buttonText|aria-label|aria-description|accessibilityLabel|accessibilityHint|alt|closeLabel|confirmLabel|cancelLabel)$/
+const UI_FIELDS = /^(title|subtitle|heading|label|description|desc|lead|note|text|message|body|caption|tooltip|placeholder|helperText|buttonText|aria-label|aria-description|accessibilityLabel|accessibilityHint|alt|closeLabel|confirmLabel|cancelLabel)$/
 const KEY_FIELDS = /^(i18nKey|translationKey|labelKey|titleKey|descriptionKey|textKey|tooltipKey|placeholderKey|messageKey|bodyKey|noteKey|subtitleKey|headingKey)$/
 
 function walk(node, visit) {
@@ -57,6 +57,9 @@ export function validateCatalogs(catalogs, prefix = LOCALES, optionalEmpty = OPT
       if (!Object.hasOwn(flat[lang], key)) errors.push({ file, message: `Missing translation: ${key}` })
       else if (typeof value !== 'string') errors.push({ file, message: `Translation must be a string: ${key}` })
       else if (!value.trim() && !optionalEmpty.has(key)) errors.push({ file, message: `Empty translation: ${key}` })
+      else if (lang !== 'ru' && /\p{Script=Cyrillic}/u.test(value.replace(/\{\{.*?\}\}/g, ''))) {
+        errors.push({ file, message: `Cyrillic text in ${lang} translation: ${key}` })
+      }
       else if (typeof flat.en[key] === 'string' && JSON.stringify(placeholders(value)) !== JSON.stringify(placeholders(flat.en[key]))) {
         errors.push({ file, message: `Interpolation mismatch: ${key}; expected ${placeholders(flat.en[key]).join(', ') || 'none'}` })
       }
@@ -139,6 +142,12 @@ export function inspectSource(source, file, catalog, nativeCatalog = {}) {
     }
   }
   walk(ast, node => {
+    // Inline locale maps bypass the JSON catalogs, including descriptions.
+    if (node.type === 'ObjectExpression' && node.properties.length >= 2 &&
+      node.properties.every(property => property.type === 'ObjectProperty' && !property.computed && LANGUAGES.includes(name(property.key)))) {
+      const present = new Set(node.properties.map(property => name(property.key)))
+      for (const lang of LANGUAGES) if (!present.has(lang)) add(node, 'Incomplete inline locale map', lang)
+    }
     if (isTranslationCall(node)) {
       checkKeys(node.arguments[0], name(node.callee) === 'nativeT' ? nativeCatalog : catalog)
     }
@@ -153,6 +162,10 @@ export function inspectSource(source, file, catalog, nativeCatalog = {}) {
     if (node.type === 'ObjectProperty' && !node.computed) {
       if (UI_FIELDS.test(name(node.key))) checkText(node.value)
       if (KEY_FIELDS.test(name(node.key))) checkKeys(node.value)
+    }
+    if (node.type === 'VariableDeclarator' && node.id.type === 'Identifier' &&
+      (UI_FIELDS.test(node.id.name) || /(?:Description|Desc|Title|Subtitle|Label|Caption|Tooltip|Placeholder|Note|Lead)$/.test(node.id.name))) {
+      checkText(node.init)
     }
     if (node.type === 'CallExpression' && ['showNotification', 'alert', 'confirm', 'toast'].includes(name(node.callee))) {
       checkText(node.arguments[0])

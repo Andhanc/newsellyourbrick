@@ -77,15 +77,10 @@ function Home() {
   const location = useLocation()
   const isAuctionRoute = checkAuctionRoute(location.pathname)
   const { cabinetVipActive, numericUserId } = useViewerVipAccess()
-  const cabinetVipRef = useRef(false)
   const viewerUserIdRef = useRef(null)
   const [showFaq, setShowFaq] = useState(false)
   const faqSentinelRef = useRef(null)
   const floatWidgetsHiddenByFooter = useSiteFooterNear()
-
-  useEffect(() => {
-    cabinetVipRef.current = cabinetVipActive
-  }, [cabinetVipActive])
 
   useEffect(() => {
     viewerUserIdRef.current =
@@ -111,7 +106,7 @@ function Home() {
   // Сразу запрашиваем данные при монтировании и при смене языка UI
   useEffect(() => {
     loadProperties(hasCachedList())
-  }, [loadProperties, listLang])
+  }, [loadProperties, listLang, cabinetVipActive])
 
   // Подписка на новые объекты аукциона по SSE — без polling, только push от сервера при одобрении админом
   useEffect(() => {
@@ -169,18 +164,15 @@ function Home() {
             return
           }
           if (data.type !== 'new_auction_objects' || !Array.isArray(data.properties) || data.properties.length === 0) return
+          if (data.properties.some((p) => p.private_club_only === 1 || p.private_club_only === true || p.private_club_only === '1')) {
+            fetchAuctionList(viewerUserIdRef.current, { catalogs: 'auction' }).then(setAuctionProperties).catch(() => {})
+            return
+          }
           const newFormatted = data.properties.map(p => formatPropertyForList(p, true))
           setAuctionProperties((prev) => {
             const prevIds = new Set(prev.map((x) => Number(x.id)))
             const toAdd = newFormatted.filter((p) => {
               if (p.id == null || prevIds.has(Number(p.id))) return false
-              const pc = p.private_club_only === 1 || p.private_club_only === true || p.private_club_only === '1'
-              const ownerId = Number(p.user_id)
-              const isOwnLot =
-                Number.isFinite(ownerId) &&
-                Number.isFinite(viewerUserIdRef.current) &&
-                ownerId === viewerUserIdRef.current
-              if (pc && !cabinetVipRef.current && !isOwnLot) return false
               return true
             })
             if (toAdd.length === 0) return prev
