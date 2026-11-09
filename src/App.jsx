@@ -42,6 +42,10 @@ import GlobalAiChatHost from './components/GlobalAiChatHost'
 const MobileDiscoverPage = lazyWithRetry(() => import('./pages/MobileDiscoverPage'))
 const MobileShowcasePage = lazyWithRetry(() => import('./pages/MobileShowcasePage'))
 const Home = lazyWithRetry(() => import('./pages/Home'))
+// Start this route alongside locale/config loading, instead of after the root gate.
+if (typeof window !== 'undefined' && /^\/auction(?:\/(?:bidding|pre-auction|ended))?\/?$/.test(window.location.pathname)) {
+  void import('./pages/Home').catch(() => {})
+}
 const DebtsPage = lazyWithRetry(() => import('./pages/Debts'))
 const SearchResults = lazyWithRetry(() => import('./pages/SearchResults'))
 const PropertyDetailPage = lazyWithRetry(() => import('./pages/PropertyDetailPage'))
