@@ -255,7 +255,7 @@ export default function BuyNow() {
 
             {loading ? (
               <div className={`buy-now-catalog__grid${isMobile ? ' properties-grid properties-grid--auction-cards auction-mobile-stack--desktop-cards discover-auction-cards discover-auction-cards--buy-now hr-showcases hr-showcases--debts-listing' : ''}`} role="status" aria-busy="true" aria-label={t('buyNowPageLoading')}>
-                {Array.from({ length: 6 }, (_, index) => <AuctionPropertyCardSkeleton key={index} />)}
+                {Array.from({ length: 6 }, (_, index) => <AuctionPropertyCardSkeleton key={index} actions={1} />)}
               </div>
             ) : loadError ? (
               <BuyerEmptyState

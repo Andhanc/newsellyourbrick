@@ -92,7 +92,7 @@ export default function InvestorPropertyShowcaseSection({
     }
     return Array.from({ length: skeletonCount }, (_, index) => (
       <ShowcaseSlot key={`sk-auction-${index}`}>
-        <AuctionPropertyCardSkeleton />
+        <AuctionPropertyCardSkeleton actions={1} />
       </ShowcaseSlot>
     ))
   }
