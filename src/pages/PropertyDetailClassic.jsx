@@ -1,4 +1,5 @@
 import { isPropertyPresentation } from '../utils/propertyPresentation'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import { getSharePortfolioFacts } from '../utils/sharePortfolioFacts'
 import { useState, useRef, useEffect, useMemo, useCallback, Fragment, lazy, Suspense } from 'react'
 import { createPortal } from 'react-dom'
@@ -7401,7 +7402,9 @@ function PropertyDetailClassic({
                       })}
                     >
                       <img
-                        src={currentMedia.url}
+                        {...buildResponsiveImageProps(currentMedia.url, { widths: [480, 960, 1440], sizes: '(max-width: 768px) 100vw, 1100px', quality: 82, fit: 'inside' })}
+                        loading="eager"
+                        fetchPriority="high"
                         alt={displayProperty.name}
                         className="property-detail-gallery__main-image"
                       />
@@ -7449,12 +7452,12 @@ function PropertyDetailClassic({
                       >
                         {media.type === 'video' ? (
                           media.thumbnail ? (
-                            <img src={media.thumbnail} alt="" />
+                            <img {...buildResponsiveImageProps(media.thumbnail, { widths: [96, 192, 288], sizes: '96px' })} alt="" />
                           ) : (
                             <span className="property-detail-gallery__thumb-strip-video">▶</span>
                           )
                         ) : (
-                          <img src={media.url} alt="" />
+                          <img {...buildResponsiveImageProps(media.url, { widths: [96, 192, 288], sizes: '96px' })} alt="" />
                         )}
                         {moreCount > 0 && (
                           <span className="property-detail-gallery__thumb-strip-more">
@@ -7541,7 +7544,7 @@ function PropertyDetailClassic({
                         {media.type === 'video' ? (
                           <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                             {media.thumbnail ? (
-                              <img src={media.thumbnail} alt={t('propertyDetail_videoN', { n: index + 1 })} />
+                              <img {...buildResponsiveImageProps(media.thumbnail, { widths: [96, 192, 288], sizes: '96px' })} alt={t('propertyDetail_videoN', { n: index + 1 })} />
                             ) : (
                               <div style={{ 
                                 width: '100%', 
@@ -7558,7 +7561,7 @@ function PropertyDetailClassic({
                             )}
                           </div>
                         ) : (
-                          <img src={media.url} alt={`${displayProperty.name} ${index + 1}`} />
+                          <img {...buildResponsiveImageProps(media.url, { widths: [96, 192, 288], sizes: '96px' })} alt={`${displayProperty.name} ${index + 1}`} />
                         )}
                       </button>
                     ))}
