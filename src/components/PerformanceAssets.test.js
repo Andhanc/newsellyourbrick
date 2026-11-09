@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile, stat } from 'node:fs/promises'
 import sharp from 'sharp'
+import { runInNewContext } from 'node:vm'
 
 test('homepage thumbnails keep the mobile photo slots without downloading full-size PNGs', async () => {
   for (const name of ['marbella', 'nice', 'paphos', 'sorrento', 'barcelona', 'santorini']) {
@@ -23,5 +24,25 @@ test('auction hero has lightweight responsive variants with the original composi
     assert.equal(metadata.width, width)
     assert.equal(metadata.height, Math.round(width * 2 / 3))
     assert.ok((await stat(path)).size < 120000)
+  }
+})
+
+test('HTML preloads the responsive auction cover only on matching catalogue routes', async () => {
+  const html = await readFile(new URL('../../index.html', import.meta.url), 'utf8')
+  const script = html.match(/<script id="auction-hero-preload">([\s\S]*?)<\/script>/)[1]
+  for (const pathname of ['/auction', '/auction/', '/auction/bidding', '/auction/pre-auction', '/auction/ended', '/', '/profile', '/auction/buy-now', '/auction/property/example']) {
+    const links = []
+    runInNewContext(script.replaceAll('%BASE_URL%', '/'), {
+      location: { pathname },
+      document: { createElement: () => ({}), head: { appendChild: link => links.push(link) } },
+    })
+    const expected = ['/auction', '/auction/', '/auction/bidding', '/auction/pre-auction', '/auction/ended'].includes(pathname)
+    assert.equal(links.length, expected ? 1 : 0, pathname)
+    if (expected) {
+      assert.equal(links[0].href, '/images/sellyourbrick/about/mission-villa-960.webp')
+      assert.equal(links[0].imageSizes, '100vw')
+      assert.equal(links[0].fetchPriority, 'high')
+      assert.equal(links[0].imageSrcset.split(', ').length, 3)
+    }
   }
 })
