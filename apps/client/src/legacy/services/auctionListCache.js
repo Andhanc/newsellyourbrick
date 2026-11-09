@@ -7,8 +7,8 @@
 import { getApiBaseUrlSync } from '../utils/apiConfig'
 import { fetchDedupe } from '../utils/fetchDedupe'
 import { getStoredNumericUserId } from '../services/authService'
-import { compositeBidAmountKey, propertyBidsApiQuery, resolvePropertySourceTable } from '../utils/propertySourceTable'
-import { fetchAuctionMaxBidsBatch, getMaxBidForProperty } from '../utils/fetchAuctionMaxBids'
+import { compositeBidAmountKey, resolvePropertySourceTable } from '../utils/propertySourceTable'
+import { fetchAuctionMaxBidsWithFallback, getMaxBidForProperty, hasResolvedListingBid } from '../utils/fetchAuctionMaxBids'
 import { auctionListingDedupeKey } from '../utils/propertyDetailUrl'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import { sortListingsByAuctionTimer } from '../utils/sortListingsByAuctionTimer'
@@ -162,29 +162,6 @@ export function hasCachedList() {
   return (cachedListByLang.get(resolveUiLang()) || []).length > 0
 }
 
-async function fetchMaxBidForProperty(apiBaseUrl, propertyId, sourceTable) {
-  const id = Number(propertyId)
-  if (!Number.isFinite(id)) return null
-  const table = resolvePropertySourceTable({ source_table: sourceTable })
-  try {
-    const response = await fetch(
-      `${apiBaseUrl}/bids/property/${id}?${propertyBidsApiQuery(id, table)}`,
-    )
-    if (!response.ok) return null
-    const payload = await response.json()
-    const bids = payload?.success && Array.isArray(payload?.data) ? payload.data : []
-    if (bids.length === 0) return null
-    const max = Math.max(
-      ...bids
-        .map((b) => asFiniteNumberOrNull(b?.bid_amount))
-        .filter((v) => v != null)
-    )
-    return Number.isFinite(max) ? max : null
-  } catch {
-    return null
-  }
-}
-
 /** Параллельные вызовы fetchAuctionList с одинаковым viewer_user_id сливаем в один промис. */
 const fetchAuctionListInFlightByKey = new Map()
 
@@ -196,7 +173,7 @@ function sortAuctionListPrivateClubFirst(list) {
 async function enrichAuctionListWithMaxBids(apiBaseUrl, list) {
   if (!Array.isArray(list) || list.length === 0) return list
   const auctionItems = list.filter((item) => {
-    if (!item || item.vip_locked) return false
+    if (!item || item.vip_locked || hasResolvedListingBid(item)) return false
     return (
       item.isAuction === true ||
       item.is_auction === true ||
@@ -206,29 +183,7 @@ async function enrichAuctionListWithMaxBids(apiBaseUrl, list) {
   })
   if (auctionItems.length === 0) return list
 
-  let bidByKey = await fetchAuctionMaxBidsBatch(apiBaseUrl, auctionItems)
-
-  if (bidByKey.size === 0) {
-    const bidEntries = await Promise.all(
-      auctionItems.map(async (item) => {
-        const maxBid = await fetchMaxBidForProperty(
-          apiBaseUrl,
-          item.id,
-          item.source_table ?? item.sourceTable,
-        )
-        return {
-          key: compositeBidAmountKey(item.id, resolvePropertySourceTable(item)),
-          maxBid,
-        }
-      }),
-    )
-    bidByKey = new Map()
-    bidEntries.forEach((entry) => {
-      if (!entry.key || entry.maxBid == null) return
-      const prev = bidByKey.get(entry.key)
-      bidByKey.set(entry.key, prev == null ? entry.maxBid : Math.max(prev, entry.maxBid))
-    })
-  }
+  const bidByKey = await fetchAuctionMaxBidsWithFallback(apiBaseUrl, auctionItems)
 
   if (bidByKey.size === 0) return list
 

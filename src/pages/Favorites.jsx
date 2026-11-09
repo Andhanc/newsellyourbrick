@@ -1,3 +1,4 @@
+import AuctionPropertyCardSkeleton from '../components/AuctionPropertyCardSkeleton'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -53,20 +54,7 @@ const RECOMMENDED_PROPERTY_KEYS = [
   },
 ]
 
-function FavoritesCardSkeleton() {
-  return (
-    <div className="auction-card auction-card--skeleton" aria-hidden>
-      <div className="auction-card__media auction-card-skeleton__media" />
-      <div className="auction-card__body auction-card-skeleton__body">
-        <div className="auction-card-skeleton__line auction-card-skeleton__line--short" />
-        <div className="auction-card-skeleton__line auction-card-skeleton__line--title" />
-        <div className="auction-card-skeleton__line auction-card-skeleton__line--specs" />
-        <div className="auction-card-skeleton__price-panel" />
-        <div className="auction-card-skeleton__btn" />
-      </div>
-    </div>
-  )
-}
+
 
 function FavoritesGrid({
   items,
@@ -212,7 +200,7 @@ const Favorites = () => {
               aria-busy="true"
             >
               {Array.from({ length: FAVORITES_CARD_SKELETON_COUNT }, (_, index) => (
-                <FavoritesCardSkeleton key={`favorites-skeleton-${index}`} />
+                <AuctionPropertyCardSkeleton key={`favorites-skeleton-${index}`} />
               ))}
             </div>
           </div>

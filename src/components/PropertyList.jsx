@@ -876,7 +876,7 @@ const PropertyList = ({
                 }`}
               >
                 <div id="properties-grid" className="properties-grid properties-grid--mobile-auction">
-                  <Suspense fallback={<AuctionMobileListingSkeleton />}>
+                  <Suspense fallback={<AuctionMobileListingSkeleton viewMode={readAuctionMobileViewMode()} />}>
                     <AuctionMobileLayoutLazy
                     properties={displayedProperties}
                     formatPrice={formatPrice}

@@ -4992,3 +4992,12 @@ body .md-site-nav.is-compact .new-header.new-header .new-header__container.new-h
   outline: 2px solid #0b8a99;
   outline-offset: 3px;
 }
+
+/* Top-listing placeholders occupy the same photo and text slots as the loaded cards. */
+.md-top-listings__placeholder { display: block; width: 72%; height: 11px; border-radius: 5px; background: #e6f0ef; }
+.md-top-listings__placeholder--title { width: 91%; height: 30px; }
+.md-top-listings__placeholder--price { width: 55%; height: 19px; margin-top: auto; }
+.md-top-listings__card--skeleton .md-top-listings__media { position: relative; overflow: hidden; }
+.md-top-listings__card--skeleton .md-top-listings__media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 20%, #ffffff9c 50%, transparent 80%); transform: translateX(-100%); animation: md-top-listing-placeholder 1.5s ease-in-out infinite; }
+@keyframes md-top-listing-placeholder { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .md-top-listings__card--skeleton .md-top-listings__media::after { animation: none; } }

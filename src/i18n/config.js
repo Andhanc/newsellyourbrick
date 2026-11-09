@@ -69,13 +69,15 @@ function initI18nOnce() {
     // Load the active locale before init so first paint never flashes raw keys
     // (e.g. SoftLaunch «Пока недоступно» mounts immediately).
     // Always preload English too — fallbackLng only works if the fallback bundle is present.
-    const initialMod = await (LOCALE_LOADERS[initialLng] || LOCALE_LOADERS.en)()
+    const [initialMod, enMod] = await Promise.all([
+      (LOCALE_LOADERS[initialLng] || LOCALE_LOADERS.en)(),
+      initialLng !== 'en' ? LOCALE_LOADERS.en() : Promise.resolve(null),
+    ])
     const initialData = initialMod.default ?? initialMod
     const resources = {
       [initialLng]: { translation: initialData },
     }
     if (initialLng !== 'en') {
-      const enMod = await LOCALE_LOADERS.en()
       resources.en = { translation: enMod.default ?? enMod }
     }
 

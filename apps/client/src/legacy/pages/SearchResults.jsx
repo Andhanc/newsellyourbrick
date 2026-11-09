@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { FiSearch, FiSliders } from 'react-icons/fi'
 import { ArrowUpRight, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import Header from '../components/Header'
+import AuctionPropertyCardSkeleton from '../components/AuctionPropertyCardSkeleton'
 import Footer from '../components/Footer'
 import AuctionCategoryCtaCards from '../components/AuctionCategoryCtaCards'
 import FavoritePropertyCard from '../components/FavoritePropertyCard'
@@ -301,9 +302,10 @@ const SearchResults = () => {
       <div className="search-results-page">
         <Header />
         <div className="search-results search-results--loading">
-          <div className="search-results__loading">
-            <div className="search-results__spinner"></div>
-            <p>{t('searchResults_loading')}</p>
+          <div className="discover-auction-cards hr-showcases hr-showcases--auction-listing">
+            <div className="properties-grid property-listing-grid search-results__grid properties-grid--auction-cards auction-mobile-stack--desktop-cards" role="status" aria-busy="true" aria-label={t('searchResults_loading')}>
+              {Array.from({ length: 6 }, (_, index) => <AuctionPropertyCardSkeleton key={index} />)}
+            </div>
           </div>
         </div>
         <Footer />

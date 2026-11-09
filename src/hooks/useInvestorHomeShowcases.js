@@ -6,7 +6,7 @@ import { fetchDedupe } from '../utils/fetchDedupe'
 import { normalizePropertyMediaFields } from '../utils/propertyImage'
 import { isAuctionListingEnded } from '../utils/auctionReminderBounds'
 import { auctionListingDedupeKey } from '../utils/propertyDetailUrl'
-import { fetchAuctionMaxBidsBatch, getMaxBidForProperty } from '../utils/fetchAuctionMaxBids'
+import { fetchAuctionMaxBidsBatch, getMaxBidForProperty, hasResolvedListingBid } from '../utils/fetchAuctionMaxBids'
 import { resolvePropertySourceTable } from '../utils/propertySourceTable'
 import { hasBuyNowOption } from '../utils/hasBuyNowOption'
 import { isPrivateClubAuctionLot } from '../utils/isPrivateClubAuctionLot'
@@ -173,7 +173,7 @@ export function useInvestorHomeShowcases({ includeBuyNowAuctions = false } = {})
       )
       const auctionItems = merged.filter(
         (item) =>
-          item && !item.vip_locked &&
+          item && !item.vip_locked && !hasResolvedListingBid(item) &&
           (item.isAuction === true || item.is_auction === 1 || item.is_auction === true),
       )
       const bidByKey = await fetchAuctionMaxBidsBatch(apiBase, auctionItems)

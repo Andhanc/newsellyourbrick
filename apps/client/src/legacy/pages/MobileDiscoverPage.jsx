@@ -51,8 +51,8 @@ function BrandWordmark({ className }) {
 }
 
 function getLaunchCards(t) {
-  const photo = (name) => publicAsset(`images/test-drive/property-${name}.png`)
-  const icon = (name) => publicAsset(`images/home-sale-formats/icons/${name}-3d.png`)
+  const photo = (name) => publicAsset(`images/test-drive/property-${name}-thumb.webp`)
+  const icon = (name) => publicAsset(`images/home-sale-formats/icons/${name}-3d-thumb.webp`)
   return [
     {
       id: 'auction', iconSrc: icon('auction'), title: t('auction'), to: '/auction?filter=auction',
@@ -77,7 +77,7 @@ function getLaunchCards(t) {
     {
       id: 'development', iconSrc: publicAsset('images/mobile-discover/development-3d.webp'), title: t('develop.title'), to: '/development',
       caption: t('discoverPage_shortcutDevelop'),
-      photos: [publicAsset('images/development/costa-adeje-cover.png'), photo('santorini'), photo('marbella')],
+      photos: [publicAsset('images/development/costa-adeje-cover-thumb.webp'), photo('santorini'), photo('marbella')],
     },
   ]
 }

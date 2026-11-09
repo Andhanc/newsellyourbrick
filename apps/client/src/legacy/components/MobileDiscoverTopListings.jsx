@@ -11,6 +11,7 @@ import { buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
 import { getCoInvestmentDetailPath } from '../utils/sectionRoutes'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { applyPropertyImageFallback } from '../utils/propertyImage'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import { formatPropertyPrice } from '../utils/currency'
 import { getSharePricePerShare, isShareSoldOut } from '../utils/shareCardMetrics'
 import { showNotification } from '../utils/toastHelper'
@@ -45,7 +46,16 @@ export default function MobileDiscoverTopListings({ isSignedIn = false }) {
       </h2>
       <div className="md-top-listings__rail" role="list" aria-label={t('discoverPage_topListings')}>
         {loading ? Array.from({ length: 3 }, (_, index) => (
-          <div key={index} className="md-top-listings__skeleton" role="listitem" aria-label={t('loading')} />
+          <div key={index} className="md-top-listings__slot" role="listitem" aria-label={t('loading')}>
+            <div className="md-top-listings__card md-top-listings__card--skeleton" aria-hidden="true">
+              <div className="md-top-listings__media" />
+              <div className="md-top-listings__body">
+                <span className="md-top-listings__placeholder md-top-listings__placeholder--title" />
+                <span className="md-top-listings__placeholder" />
+                <span className="md-top-listings__placeholder md-top-listings__placeholder--price" />
+              </div>
+            </div>
+          </div>
         )) : listings.map(({ kind, property, key }) => {
           const favoriteCategory = hasDbBackedProperty(property) ? undefined : 'property'
           const liked = isFavorite(property, favoriteCategory)
@@ -59,7 +69,7 @@ export default function MobileDiscoverTopListings({ isSignedIn = false }) {
             <div className="md-top-listings__slot" role="listitem" key={key}>
               <Link className="md-top-listings__card" to={destination.pathname} state={destination.state} onClick={guardOpen}>
                 <div className="md-top-listings__media">
-                  <img src={property.image} alt="" loading="lazy" decoding="async" onError={applyPropertyImageFallback} />
+                  <img {...buildResponsiveImageProps(property.image, { widths: [240, 480, 720], sizes: '(max-width: 390px) 62vw, 242px', quality: 74 })} alt="" onError={applyPropertyImageFallback} />
                   <span className="md-top-listings__type">{t(FORMAT_KEYS[kind])}</span>
                 </div>
                 <div className="md-top-listings__body">

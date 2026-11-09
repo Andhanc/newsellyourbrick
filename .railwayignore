@@ -1,0 +1,22 @@
+# The web service builds src/ and public/. Keep local sessions, generated QA data,
+# native-client mirrors and installed dependencies out of the deployment archive.
+.git/
+node_modules/
+.env*
+dist/
+build/
+coverage/
+artifacts/
+qa-artifacts/
+tmp/
+output/
+apps/client/
+.wwebjs_auth/
+.wwebjs_cache/
+server/.wwebjs_auth/
+server/.wwebjs_cache/
+server/private-development/
+server/uploads/
+uploads/
+*.log
+*.timestamp-*.mjs

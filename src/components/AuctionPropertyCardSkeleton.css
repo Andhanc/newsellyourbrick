@@ -1,0 +1,36 @@
+.auction-card--skeleton { pointer-events: none; }
+.auction-card-skeleton__media,
+.auction-card-skeleton__favorite,
+.auction-card-skeleton__line,
+.auction-card-skeleton__spec-icon,
+.auction-card-skeleton__btn {
+  background: #e9f0f0;
+  border: 0;
+  position: relative;
+  overflow: hidden;
+}
+.auction-card-skeleton__media::after,
+.auction-card-skeleton__line::after,
+.auction-card-skeleton__btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, #ffffff9c 50%, transparent 80%);
+  transform: translateX(-100%);
+  animation: auction-card-placeholder 1.5s ease-in-out infinite;
+}
+.auction-card-skeleton__favorite { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; border-radius: 50%; background: #f7faf9c4; }
+.auction-card-skeleton__line { display: block; flex-shrink: 0; width: 100%; height: 12px; border-radius: 5px; }
+.auction-card-skeleton__line--title { width: 88%; height: 17px; }
+.auction-card-skeleton__line--short { width: 68%; height: 11px; }
+.auction-card-skeleton__spec-icon { display: block; width: 14px; height: 14px; border-radius: 4px; }
+.auction-card-skeleton__line--spec { width: 75%; height: 10px; }
+.auction-card-skeleton__line--label { width: 45%; height: 7px; }
+.auction-card-skeleton__line--price { width: 56%; height: 19px; }
+.auction-card--skeleton .auction-card-skeleton__btn { display: block; min-height: 36px; box-shadow: none; }
+@keyframes auction-card-placeholder { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) {
+  .auction-card-skeleton__media::after,
+  .auction-card-skeleton__line::after,
+  .auction-card-skeleton__btn::after { animation: none; }
+}
