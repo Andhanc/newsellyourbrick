@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next'
 import { HiOutlineArrowsExpand } from 'react-icons/hi'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { fetchDedupe } from '../utils/fetchDedupe'
+import { normalizeListingLanguage } from '../utils/listingLanguage'
 import { SATELLITE_MAP_MAX_ZOOM } from '../utils/mapStyles'
 import {
   createYandexMap,
@@ -629,13 +630,16 @@ const MapPage = () => {
   }, [isMobile, applyNestedSheetScroll, collapseResultsSheet, expandResultsSheet, isResultsListAtTop])
 
   // ─── Загрузка объектов ───────────────────────────────────────────────────
+  const mapLoadSeqRef = useRef(0)
   const loadProperties = useCallback(async () => {
+    const seq = ++mapLoadSeqRef.current
     try {
       setLoading(true)
       const apiBase = await getApiBaseUrl()
+      const lang = normalizeListingLanguage(i18n.resolvedLanguage || i18n.language)
       const [approvedRes, auctionsRes] = await Promise.all([
-        fetchDedupe(`${apiBase}/properties/approved`),
-        fetchDedupe(`${apiBase}/properties/auctions`)
+        fetchDedupe(`${apiBase}/properties/approved?lang=${encodeURIComponent(lang)}`),
+        fetchDedupe(`${apiBase}/properties/auctions?lang=${encodeURIComponent(lang)}`)
       ])
       let approved = [], auctions = []
       if (approvedRes.ok) {
@@ -649,14 +653,15 @@ const MapPage = () => {
       const byId = new Map()
       approved.forEach((p, i) => { const n = normalizeApiProperty(p, i); if (n.id != null) byId.set(n.id, n) })
       auctions.forEach((p, i) => { const n = normalizeApiProperty({ ...p, is_auction: true }, approved.length + i); if (n.id != null) byId.set(n.id, n) })
+      if (seq !== mapLoadSeqRef.current) return
       setPropertiesList(Array.from(byId.values()))
     } catch (e) {
       console.error('Ошибка загрузки объектов для карты:', e)
-      setPropertiesList([])
+      if (seq === mapLoadSeqRef.current) setPropertiesList([])
     } finally {
-      setLoading(false)
+      if (seq === mapLoadSeqRef.current) setLoading(false)
     }
-  }, [])
+  }, [i18n.language, i18n.resolvedLanguage])
 
   useEffect(() => { loadProperties() }, [loadProperties])
 

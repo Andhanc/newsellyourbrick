@@ -31,6 +31,7 @@ import { resolvePropertySourceTable as resolveSourceTableForDetail } from '../ut
 import { usePageSeoOverride } from '../context/PageSeoContext'
 import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { buildPropertyPageSeo } from '../utils/pageSeoBuilders'
+import { normalizeListingLanguage } from '../utils/listingLanguage'
 import './PropertyDetailPage.css'
 
 const LoginModal = lazyWithRetry(() => import('../components/LoginModal'))
@@ -215,7 +216,7 @@ const PropertyDetailPage = () => {
       if (apiPropertyKey) {
         try {
           setIsLoading(true)
-          const lang = (i18n.language || 'ru').split('-')[0]
+          const lang = normalizeListingLanguage(i18n.resolvedLanguage || i18n.language)
           const params = new URLSearchParams({ lang })
           if (disambigPropertyType) params.set('property_type', disambigPropertyType)
           const viewerId = getStoredNumericUserId()
@@ -512,7 +513,7 @@ const PropertyDetailPage = () => {
       isActive = false
       abortController.abort()
     }
-  }, [routeId, apiPropertyKey, propertyFromState, i18n.language, disambigPropertyType, navigate, t, location.pathname, location.search, location.state, buyerDetailPreview])
+  }, [routeId, apiPropertyKey, propertyFromState, i18n.language, i18n.resolvedLanguage, disambigPropertyType, navigate, t, location.pathname, location.search, location.state, buyerDetailPreview])
 
   if (notFound) {
     return (

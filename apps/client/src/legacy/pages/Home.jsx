@@ -27,6 +27,7 @@ import { fetchUserDeposit } from '../utils/depositApi'
 import { canShowBuyerDeposit } from '../utils/depositVisibility'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import { sortListingsByAuctionTimer } from '../utils/sortListingsByAuctionTimer'
+import { normalizeListingLanguage } from '../utils/listingLanguage'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { isAuctionRoute as checkAuctionRoute } from '../utils/auctionFilterUrl'
 import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
@@ -67,7 +68,10 @@ function formatPropertyForList(prop, isAuction) {
 
 function Home() {
   const { i18n } = useTranslation()
-  const listLang = String(i18n.resolvedLanguage || i18n.language || 'ru').split(/[-_]/)[0]
+  const listLang = normalizeListingLanguage(i18n.resolvedLanguage || i18n.language)
+  const listLangRef = useRef(listLang)
+  listLangRef.current = listLang
+  const auctionLoadSeqRef = useRef(0)
   const [auctionProperties, setAuctionProperties] = useState(() => getCachedList())
   const [loading, setLoading] = useState(() => !hasCachedList())
   const [userDeposit, setUserDeposit] = useState(0)
@@ -94,17 +98,19 @@ function Home() {
 
   // Загрузка объявлений: при наличии кэша — только фоновое обновление (без "Загрузка объявлений...")
   const loadProperties = useCallback(async (backgroundRefresh = false) => {
+    const seq = ++auctionLoadSeqRef.current
     if (!backgroundRefresh) setLoading(true)
     try {
       const viewerId = numericUserId ?? getStoredNumericUserId()
-      const list = await fetchAuctionList(viewerId ?? undefined, { catalogs: 'auction' })
+      const list = await fetchAuctionList(viewerId ?? undefined, { catalogs: 'auction', lang: listLang })
+      if (seq !== auctionLoadSeqRef.current) return
       setAuctionProperties(list)
     } catch (error) {
       console.error('❌ Ошибка загрузки объявлений:', error)
     } finally {
-      setLoading(false)
+      if (seq === auctionLoadSeqRef.current) setLoading(false)
     }
-  }, [numericUserId])
+  }, [numericUserId, listLang])
 
   const homeListRef = useRef(null)
 
@@ -160,7 +166,10 @@ function Home() {
                 return formatPropertyForList(merged, isAuction)
               })
               if (!found && !cleared) {
-                fetchAuctionList(undefined, { catalogs: 'auction' }).then(setAuctionProperties).catch(() => {})
+                const langAtFetch = listLangRef.current
+                fetchAuctionList(undefined, { catalogs: 'auction', lang: langAtFetch }).then((list) => {
+                  if (listLangRef.current === langAtFetch) setAuctionProperties(list)
+                }).catch(() => {})
               } else {
                 setCachedList(mapped)
               }

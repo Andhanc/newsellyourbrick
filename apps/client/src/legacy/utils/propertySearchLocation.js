@@ -1,7 +1,11 @@
-import { getLocalizedCountryName } from './localizeCountryName.js'
+import { CATALOG_COUNTRY_ISO, getLocalizedCountryName, resolveCountryIso } from './localizeCountryName.js'
+
+const ISO_TO_CATALOG_KEY = Object.fromEntries(
+  Object.entries(CATALOG_COUNTRY_ISO).map(([key, iso]) => [iso, key]),
+)
 
 const COUNTRY_ALIASES = {
-  spain: ['spain', 'españa', 'espana', 'испания'],
+  spain: ['spain', 'españa', 'espana', 'испания', 'spanien', 'espagne', 'hiszpania'],
   belarus: ['belarus', 'беларусь', 'белоруссия', 'by'],
   uae: [
     'uae',
@@ -12,16 +16,16 @@ const COUNTRY_ALIASES = {
     'объединенные арабские эмираты',
     'united arab emirate',
   ],
-  russia: ['russia', 'россия', 'rf', 'рф', 'rossiya'],
+  russia: ['russia', 'россия', 'rf', 'рф', 'rossiya', 'russland', 'russie', 'rosja', 'ryssland'],
   portugal: ['portugal', 'португалия'],
-  france: ['france', 'франция'],
-  germany: ['germany', 'германия', 'deutschland'],
-  italy: ['italy', 'италия', 'italia'],
+  france: ['france', 'франция', 'frankreich', 'francia', 'francja', 'frankrike'],
+  germany: ['germany', 'германия', 'deutschland', 'alemania', 'allemagne', 'niemcy', 'tyskland'],
+  italy: ['italy', 'италия', 'italia', 'italien', 'italie', 'wlochy'],
   turkey: ['turkey', 'турция', 'türkiye', 'turkiye'],
   thailand: ['thailand', 'таиланд'],
-  uk: ['uk', 'united kingdom', 'великобритания', 'england', 'англия'],
-  usa: ['usa', 'united states', 'сша', 'america'],
-  poland: ['poland', 'польша'],
+  uk: ['uk', 'united kingdom', 'великобритания', 'england', 'англия', 'grossbritannien', 'royaume-uni', 'reino unido', 'wielka brytania', 'storbritannien'],
+  usa: ['usa', 'united states', 'сша', 'america', 'vereinigte staaten', 'etats-unis', 'estados unidos', 'stany zjednoczone'],
+  poland: ['poland', 'польша', 'polen', 'pologne', 'polska'],
   georgia: ['georgia', 'грузия'],
   armenia: ['armenia', 'армения'],
   kazakhstan: ['kazakhstan', 'казахстан'],
@@ -147,11 +151,13 @@ export function matchCountryKey(raw = '') {
   if (!n || /^\d+$/.test(n) || n.length < 2) return ''
 
   for (const [key, aliases] of Object.entries(COUNTRY_ALIASES)) {
-    if (aliases.some((a) => aliasMatchesNormalized(a, n))) {
+    if (aliases.some((a) => aliasMatchesNormalized(normalizeLocationText(a), n))) {
       return key
     }
   }
-  return ''
+
+  const iso = resolveCountryIso(trimmed) || resolveCountryIso(n)
+  return (iso && ISO_TO_CATALOG_KEY[iso]) || ''
 }
 
 /** Единый ключ региона для фильтра и списка (Барселона / Barcelona → barcelona) */

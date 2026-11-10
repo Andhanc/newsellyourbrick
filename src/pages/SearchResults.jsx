@@ -32,6 +32,7 @@ import '../components/ui/AuctionMobileLayout.css'
 import { getPropertyDetailPath, auctionListingDedupeKey, buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
 import { fetchSearchCatalogProperties } from '../utils/propertySearchCatalog'
+import { normalizeListingLanguage } from '../utils/listingLanguage'
 import { buildLocationOptionsFromProperties } from '../utils/propertySearchLocation'
 import { groupPropertiesByCatalogSection } from '../utils/catalogSearchSections'
 import {
@@ -83,7 +84,8 @@ function SearchResultsGrid({ properties, onOpen, onOpenShare, linkGeo }) {
 }
 
 const SearchResults = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const listLang = normalizeListingLanguage(i18n.resolvedLanguage || i18n.language)
   const searchTitle = t('searchResults_title')
   const accentStart = searchTitle.lastIndexOf(' ')
   const navigate = useNavigate()
@@ -133,7 +135,7 @@ const SearchResults = () => {
       try {
         setLoading(true)
         const API_BASE_URL = await getApiBaseUrl()
-        const catalog = await fetchSearchCatalogProperties(API_BASE_URL)
+        const catalog = await fetchSearchCatalogProperties(API_BASE_URL, listLang)
         if (cancelled) return
         const formatted = catalog
           .map((prop) => formatPropertyForListingCard(prop))
@@ -162,7 +164,7 @@ const SearchResults = () => {
     return () => {
       cancelled = true
     }
-  }, [heroSearchPrefilter, routeCountry, routeCity])
+  }, [heroSearchPrefilter, routeCountry, routeCity, listLang])
 
   const filterBounds = useMemo(
     () => getCatalogFilterBounds(catalogProperties),

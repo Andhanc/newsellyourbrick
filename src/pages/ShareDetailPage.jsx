@@ -19,6 +19,7 @@ import { getCoInvestmentDetailPath, CO_INVESTMENT_PATH } from '../utils/sectionR
 import { PURCHASE_SUCCESS_CONFIRMED_EVENT } from '../constants/cabinetEvents'
 import { getPropertySlugFromRecord, isNumericPropertyRouteParam } from '../utils/propertySlug'
 import { getShareBuyNowAvailability } from '../utils/shareBuyNow'
+import { normalizeListingLanguage } from '../utils/listingLanguage'
 import { usePageSeoOverride } from '../context/PageSeoContext'
 import NotFoundPage from '../components/NotFoundPage'
 import { buildPropertyPageSeo } from '../utils/pageSeoBuilders'
@@ -215,27 +216,32 @@ const ShareDetailPage = () => {
     if (userLoaded || isAuthenticated()) syncUserId()
   }, [user, userLoaded])
 
+  const shareLoadSeqRef = useRef(0)
   const loadPropertyFromApi = useCallback(() => {
     if (!id || !isShareDbRouteId(id)) return Promise.resolve()
+    const seq = ++shareLoadSeqRef.current
     const prefetched = location.state?.sharePrefetch
     if (prefetched && String(prefetched.id) === String(shareRoutePropertyId(id))) {
       // Optimistic paint from catalog, then refresh with lang so titles match UI language.
-      setShareObject(prefetched)
+      // A language switch must not put the previous language back on screen.
+      setShareObject((current) => {
+        if (current && String(current.id) === String(prefetched.id)) return current
+        return prefetched
+      })
     }
     setLoadingShare(true)
     const legacyMatch = id.match(/^(apartment|commercial|house|villa)-(\d+)$/i)
     const apiKey = legacyMatch ? legacyMatch[2] : id
     const params = new URLSearchParams()
     if (legacyMatch) params.set('property_type', legacyMatch[1].toLowerCase())
-    const lang = String(i18n.resolvedLanguage || i18n.language || 'ru')
-      .toLowerCase()
-      .split(/[-_]/)[0]
+    const lang = normalizeListingLanguage(i18n.resolvedLanguage || i18n.language)
     if (lang) params.set('lang', lang)
     const qs = params.toString()
     const url = `${API_BASE}/properties/${encodeURIComponent(apiKey)}${qs ? `?${qs}` : ''}`
     return fetch(url)
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Not found'))))
       .then((json) => {
+        if (seq !== shareLoadSeqRef.current) return
         const p = json.data || json
         const { image, images } = normalizePropertyMediaFields(p)
         const cardImage = getPropertyCardImage(p, null) || image
@@ -278,8 +284,12 @@ const ShareDetailPage = () => {
           })
         }
       })
-      .catch(() => setShareObject(null))
-      .finally(() => setLoadingShare(false))
+      .catch(() => {
+        if (seq === shareLoadSeqRef.current) setShareObject(null)
+      })
+      .finally(() => {
+        if (seq === shareLoadSeqRef.current) setLoadingShare(false)
+      })
   }, [id, navigate, location.state, i18n.language, i18n.resolvedLanguage])
 
   // React re-runs layout effects when a Suspense boundary reveals this subtree again

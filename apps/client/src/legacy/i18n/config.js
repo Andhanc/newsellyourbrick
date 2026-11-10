@@ -125,11 +125,23 @@ function initI18nOnce() {
       void loadLanguageBundle(lng)
     })
 
-    // Prefer loading the target bundle before language flips when callers use changeLanguage
+    // Prefer loading the target bundle before language flips when callers use changeLanguage.
+    // Only the latest request may apply: a slower previous language must not overwrite
+    // the language the user selected last (UI in German while storage is already Spanish).
     const originalChangeLanguage = i18n.changeLanguage.bind(i18n)
+    let languageChangeSeq = 0
     i18n.changeLanguage = async (lng, ...rest) => {
       const code = normalizeAppLanguage(lng)
+      const seq = ++languageChangeSeq
+      if (typeof window !== 'undefined') {
+        try {
+          window.localStorage.setItem('i18nextLng', code)
+        } catch {
+          /* private mode */
+        }
+      }
       await loadLanguageBundle(code)
+      if (seq !== languageChangeSeq) return
       return originalChangeLanguage(code, ...rest)
     }
 

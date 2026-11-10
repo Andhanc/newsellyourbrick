@@ -26,6 +26,7 @@ import { getPropertyListingKind } from '../utils/propertyListingKind'
 import { isShareBuyNowEnabled, isShareListing } from '../utils/shareBuyNow'
 import { publicAsset } from '../utils/publicAsset'
 import { propertyMatchesTextSearch } from '../utils/propertyTextSearch'
+import { normalizeListingLanguage } from '../utils/listingLanguage'
 import '../components/ui/AuctionMobileLayout.css'
 import '../styles/discoverAuctionCards.css'
 import '../styles/hrShowcaseDebtsCards.css'
@@ -54,7 +55,7 @@ function isConfiguredBuyNowListing(property) {
 
 export default function BuyNow() {
   const { t, i18n } = useTranslation()
-  const listLang = String(i18n.resolvedLanguage || i18n.language || 'ru').split(/[-_]/)[0]
+  const listLang = normalizeListingLanguage(i18n.resolvedLanguage || i18n.language)
   const navigate = useNavigate()
   const location = useLocation()
   const isMobile = useIsMobile()
@@ -75,7 +76,7 @@ export default function BuyNow() {
     setLoading(!hasCachedList())
     setLoadError('')
 
-    fetchAuctionList(undefined, { includeTestTimers: false, catalogs: 'buyNow' })
+    fetchAuctionList(undefined, { includeTestTimers: false, catalogs: 'buyNow', lang: listLang })
       .then((list) => {
         if (!cancelled) setProperties(Array.isArray(list) ? list : [])
       })

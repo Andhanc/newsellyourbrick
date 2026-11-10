@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { fetchDedupe } from '../utils/fetchDedupe'
@@ -9,6 +9,7 @@ import { fetchAuctionMaxBidsBatch, getMaxBidForProperty } from '../utils/fetchAu
 import { resolvePropertySourceTable } from '../utils/propertySourceTable'
 import { hasBuyNowOption } from '../utils/hasBuyNowOption'
 import { mapSharesFromApiResponse } from '../utils/sharesListing'
+import { normalizeListingLanguage } from '../utils/listingLanguage'
 
 const LISTING_IMAGE_FALLBACK =
   '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
@@ -104,14 +105,16 @@ export function useInvestorHomeShowcases({ includeBuyNowAuctions = false } = {})
   const { i18n } = useTranslation()
   const [homeProperties, setHomeProperties] = useState([])
   const [loading, setLoading] = useState(true)
+  const requestSeqRef = useRef(0)
 
   const loadProperties = useCallback(async (options = {}) => {
+    const seq = ++requestSeqRef.current
     const showSkeleton = options.showSkeleton !== false
     if (showSkeleton) setLoading(true)
 
     try {
       const apiBase = await getApiBaseUrl()
-      const lang = (i18n.language || 'ru').split('-')[0]
+      const lang = normalizeListingLanguage(i18n.resolvedLanguage || i18n.language)
       const viewerRaw = localStorage.getItem('userId')
       const viewerQ =
         viewerRaw && /^\d+$/.test(String(viewerRaw).trim())
@@ -121,8 +124,8 @@ export function useInvestorHomeShowcases({ includeBuyNowAuctions = false } = {})
       const [approvedRes, auctionsRes, debtsRes, sharesRes] = await Promise.all([
         fetchDedupe(`${apiBase}/properties/approved?lang=${lang}`),
         fetchDedupe(`${apiBase}/properties/auctions?lang=${lang}${viewerQ}`),
-        fetchDedupe(`${apiBase}/properties/debts`),
-        fetchDedupe(`${apiBase}/properties/shares`),
+        fetchDedupe(`${apiBase}/properties/debts?lang=${encodeURIComponent(lang)}`),
+        fetchDedupe(`${apiBase}/properties/shares?lang=${encodeURIComponent(lang)}`),
       ])
 
       const readList = async (res) => {
@@ -184,14 +187,15 @@ export function useInvestorHomeShowcases({ includeBuyNowAuctions = false } = {})
         })
       }
 
+      if (seq !== requestSeqRef.current) return
       setHomeProperties(merged)
     } catch (error) {
       console.error('Investor home showcases load error:', error)
-      setHomeProperties([])
+      if (seq === requestSeqRef.current) setHomeProperties([])
     } finally {
-      if (showSkeleton) setLoading(false)
+      if (showSkeleton && seq === requestSeqRef.current) setLoading(false)
     }
-  }, [i18n.language])
+  }, [i18n.language, i18n.resolvedLanguage])
 
   useEffect(() => {
     void loadProperties()

@@ -6,6 +6,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { publicAsset } from '../utils/publicAsset'
 import { propertyMatchesTextSearch } from '../utils/propertyTextSearch'
+import { normalizeListingLanguage } from '../utils/listingLanguage'
 import { CO_INVESTMENT_PATH } from '../utils/sectionRoutes'
 import './MainPage.css'
 import {
@@ -1488,12 +1489,14 @@ function MainPage() {
   const filteredNearby = useMemo(() => filterBySearch(nearbyProperties), [searchQuery])
 
   // Three parallel GETs: approved + auctions + debts → homeProperties (no duplicate type requests)
+  const homeListingsSeqRef = useRef(0)
   const loadHomeProperties = useCallback(async (options = {}) => {
+    const seq = ++homeListingsSeqRef.current
     const showSkeleton = options.showSkeleton !== false
     if (showSkeleton) setHomePropertiesLoading(true)
     try {
       const apiBase = await getApiBaseUrl()
-      const lang = (i18n.language || 'ru').split('-')[0]
+      const lang = normalizeListingLanguage(i18n.resolvedLanguage || i18n.language)
       const viewerRaw = localStorage.getItem('userId')
       const viewerQ =
         viewerRaw && /^\d+$/.test(String(viewerRaw).trim())
@@ -1502,7 +1505,7 @@ function MainPage() {
       const [approvedRes, auctionsRes, debtsRes] = await Promise.all([
         fetch(`${apiBase}/properties/approved?lang=${lang}`),
         fetch(`${apiBase}/properties/auctions?lang=${lang}${viewerQ}`),
-        fetch(`${apiBase}/properties/debts`)
+        fetch(`${apiBase}/properties/debts?lang=${encodeURIComponent(lang)}`)
       ])
       let approved = []
       let auctions = []
@@ -1589,13 +1592,14 @@ function MainPage() {
         })
       }
 
+      if (seq !== homeListingsSeqRef.current) return
       setHomeProperties(merged)
     } catch (error) {
       console.error('❌ Ошибка загрузки объектов для главной страницы:', error)
     } finally {
-      if (showSkeleton) setHomePropertiesLoading(false)
+      if (showSkeleton && seq === homeListingsSeqRef.current) setHomePropertiesLoading(false)
     }
-  }, [i18n.language])
+  }, [i18n.language, i18n.resolvedLanguage])
 
   // On footer language change, reload listings with translations
   useEffect(() => {

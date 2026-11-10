@@ -1,20 +1,29 @@
 import { fetchDedupe } from './fetchDedupe'
+import { normalizeListingLanguage } from './listingLanguage'
 
 /** Единый uid для дедупа (как на сервере в search-options). */
 export function getPropertyCatalogUid(prop) {
   return `${prop.property_type || prop.type || 'property'}:${prop.id}`
 }
 
+function withListingLang(path, lang) {
+  const code = normalizeListingLanguage(lang)
+  const joiner = path.includes('?') ? '&' : '?'
+  return `${path}${joiner}lang=${encodeURIComponent(code)}`
+}
+
 /**
- * Тот же набор объявлений, что и для search-options (без lang — иначе ломается разбор адреса).
+ * Тот же набор объявлений, что и для search-options.
+ * lang обязателен: карточки должны совпадать с переводом на странице долей.
+ * Страна в переведённом адресе разбирается через matchCountryKey.
  */
-export async function fetchSearchCatalogProperties(apiBaseUrl) {
+export async function fetchSearchCatalogProperties(apiBaseUrl, lang) {
   const base = String(apiBaseUrl || '').replace(/\/$/, '')
   const [approvedResponse, auctionResponse, debtsResponse, sharesResponse] = await Promise.all([
-    fetchDedupe(`${base}/properties/approved`),
-    fetchDedupe(`${base}/properties/auctions`),
-    fetchDedupe(`${base}/properties/debts`),
-    fetchDedupe(`${base}/properties/shares?limit=10000`),
+    fetchDedupe(withListingLang(`${base}/properties/approved`, lang)),
+    fetchDedupe(withListingLang(`${base}/properties/auctions`, lang)),
+    fetchDedupe(withListingLang(`${base}/properties/debts`, lang)),
+    fetchDedupe(withListingLang(`${base}/properties/shares?limit=10000`, lang)),
   ])
 
   const allProperties = []

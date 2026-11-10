@@ -22,6 +22,7 @@ import {
   readStoredUserRole,
 } from '@/utils/cabinetRoutes'
 import { publicAsset } from '@/utils/publicAsset'
+import { normalizeListingLanguage } from '@/utils/listingLanguage'
 import { requestOpenLoginModal } from '@/utils/requestOpenLoginModal'
 import SybLandingSearchBar from '@/components/SybLandingSearchBar'
 import SybLandingPromoBlocks from '@/components/SybLandingPromoBlocks'
@@ -128,7 +129,8 @@ function PaperclipIcon({ clipId }) {
 }
 
 export default function SellYourBrickLandingPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const listLang = normalizeListingLanguage(i18n.resolvedLanguage || i18n.language)
   const navigate = useNavigate()
   const { user, isLoaded: userLoaded } = useUser()
   const [auctionProperties, setAuctionProperties] = useState(() => getCachedList())
@@ -197,7 +199,7 @@ export default function SellYourBrickLandingPage() {
       if (!hasCachedList()) setLoading(true)
       try {
         const viewerId = getStoredNumericUserId()
-        const list = await fetchAuctionList(viewerId ?? undefined)
+        const list = await fetchAuctionList(viewerId ?? undefined, { lang: listLang })
         if (!cancelled) setAuctionProperties(list)
       } catch (error) {
         console.error('SellYourBrick landing auction load:', error)
@@ -209,7 +211,7 @@ export default function SellYourBrickLandingPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [listLang])
 
   const handleOpenProperty = useCallback(
     (property) => {

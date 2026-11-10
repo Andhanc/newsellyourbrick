@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useMemo, useRef, lazy, Suspense } fro
 import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { normalizeListingLanguage } from '../utils/listingLanguage'
 import { ShieldQuestionMark, ShieldAlert, ShieldCheck, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { FiSearch } from 'react-icons/fi'
 import DebtsDesktopFilters from '../components/DebtsDesktopFilters'
@@ -62,7 +63,7 @@ const DEBTS_HERO_BG = publicAsset('images/sellyourbrick/about/about-category-deb
 const DEBTS_EMPTY_IMAGE = publicAsset('images/debts-empty-illustration.png')
 
 const Debts = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const [searchQuery, setSearchQuery] = useState('')
@@ -306,9 +307,12 @@ const Debts = () => {
     }
   }, [dbUserId])
 
+  const debtsLoadSeqRef = useRef(0)
   const loadDebts = useCallback(async () => {
+    const seq = ++debtsLoadSeqRef.current
     try {
-      const res = await fetchDedupe(`${API_BASE}/properties/debts`)
+      const lang = normalizeListingLanguage(i18n.resolvedLanguage || i18n.language)
+      const res = await fetchDedupe(`${API_BASE}/properties/debts?lang=${encodeURIComponent(lang)}`)
       const json = await (res.ok ? res.json() : { success: false, data: [] })
       if (json.success && Array.isArray(json.data)) {
         const isDebtRecord = (p) => {
@@ -364,16 +368,17 @@ const Debts = () => {
             has_debt: p.has_debt ?? 1,
           }
         })
+        if (seq !== debtsLoadSeqRef.current) return
         setApiDebts(mapped)
-      } else {
+      } else if (seq === debtsLoadSeqRef.current) {
         setApiDebts([])
       }
     } catch (_) {
-      setApiDebts([])
+      if (seq === debtsLoadSeqRef.current) setApiDebts([])
     } finally {
-      setLoadingDebts(false)
+      if (seq === debtsLoadSeqRef.current) setLoadingDebts(false)
     }
-  }, [])
+  }, [i18n.language, i18n.resolvedLanguage])
 
   useEffect(() => {
     void loadDebts()

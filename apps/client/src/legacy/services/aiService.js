@@ -1,5 +1,6 @@
 import i18n from '../i18n/config'
 import { getApiBaseUrlSync } from '../utils/apiConfig'
+import { normalizeListingLanguage } from '../utils/listingLanguage'
 import {
   buildOfflineAssistantReply,
   buildSiteMapPromptBlock,
@@ -156,11 +157,12 @@ function slimPropertiesForAssistant(properties) {
   }))
 }
 
-async function mergeSharesIntoCatalog(properties) {
+async function mergeSharesIntoCatalog(properties, lang) {
   const list = Array.isArray(properties) ? [...properties] : []
   if (list.some(isShareListing)) return list
+  const code = normalizeListingLanguage(lang)
   try {
-    const response = await fetch(`${getApiBaseUrlSync()}/properties/shares?limit=100`)
+    const response = await fetch(`${getApiBaseUrlSync()}/properties/shares?limit=100&lang=${encodeURIComponent(code)}`)
     if (!response.ok) return list
     const payload = await response.json()
     const shares = Array.isArray(payload?.data) ? payload.data : []
@@ -434,7 +436,10 @@ export async function askPropertyAssistant(
   availableProperties,
   options = {},
 ) {
-  const props = await mergeSharesIntoCatalog(Array.isArray(availableProperties) ? availableProperties : [])
+  const props = await mergeSharesIntoCatalog(
+    Array.isArray(availableProperties) ? availableProperties : [],
+    options.selectedLanguage,
+  )
   const prefs = userPreferences && typeof userPreferences === 'object' ? userPreferences : {}
   const lastUserMessage =
     [...(conversationHistory || [])].reverse().find((m) => m?.sender === 'user')?.text || ''

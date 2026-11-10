@@ -10,6 +10,7 @@ import {
 } from '../services/assistantUserContext'
 import { getManagerContactButtons } from '../services/liveChatApi'
 import { fetchAuctionList, getCachedList } from '../services/auctionListCache'
+import { normalizeListingLanguage } from '../utils/listingLanguage'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { refreshAssistantMessageCopy } from '../utils/siteAssistantHelpers'
@@ -115,6 +116,7 @@ export function useSiteAiChatDock({
       const list = await fetchAuctionList(dbUserId ?? undefined, {
         catalogs: 'all',
         includeTestTimers: false,
+        lang: normalizeListingLanguage(i18n.resolvedLanguage || i18n.language),
       })
       if (Array.isArray(list) && list.length) {
         setCatalogProperties(list)
@@ -124,7 +126,7 @@ export function useSiteAiChatDock({
       /* keep empty catalog */
     }
     return catalogPropertiesRef.current
-  }, [recommendationProperties, dbUserId])
+  }, [recommendationProperties, dbUserId, i18n.language, i18n.resolvedLanguage])
 
   const propertiesForAi = useMemo(() => {
     if (Array.isArray(recommendationProperties) && recommendationProperties.length > 0) {

@@ -5,6 +5,7 @@
  */
 
 import { getApiBaseUrlSync } from '../utils/apiConfig'
+import { normalizeListingLanguage } from '../utils/listingLanguage'
 import { fetchDedupe } from '../utils/fetchDedupe'
 import { getStoredNumericUserId } from '../services/authService'
 import { compositeBidAmountKey, propertyBidsApiQuery, resolvePropertySourceTable } from '../utils/propertySourceTable'
@@ -256,7 +257,7 @@ export async function fetchAuctionList(explicitViewerUserId, options = {}) {
   const catalogMode =
     options.catalogs === 'auction' || options.catalogs === 'buyNow' ? options.catalogs : 'all'
   const includeTestTimers = options.includeTestTimers !== false
-  const lang = resolveUiLang()
+  const lang = options.lang ? normalizeListingLanguage(options.lang) : resolveUiLang()
   const viewerKey =
     resolved != null &&
     String(resolved).trim() !== '' &&

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { properties } from '../data/properties'
 import { MOCK_SECTIONS, readLocalFavoriteFlags } from '../data/favoriteMockLists'
@@ -9,34 +9,32 @@ import { fetchDedupe } from '../utils/fetchDedupe'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import { normalizePropertyMediaFields } from '../utils/propertyImage'
 import { isClosedForWishlist } from '../utils/resolveBuyerListingState'
+import { normalizeListingLanguage } from '../utils/listingLanguage'
 
 export function useFavoriteAuctionItems() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const listLang = normalizeListingLanguage(i18n.resolvedLanguage || i18n.language)
   const { favoriteRows, favoritesLoading } = usePropertyFavorites()
   const [catalogByKey, setCatalogByKey] = useState(() => new Map())
   const [catalogVersion, setCatalogVersion] = useState(0)
   const [mockTick, setMockTick] = useState(0)
   /** First catalog request from API — skeleton cards on Favorites */
   const [catalogLoading, setCatalogLoading] = useState(true)
+  const catalogSeqRef = useRef(0)
 
   const loadCatalog = useCallback(async () => {
+    const seq = ++catalogSeqRef.current
     const flags = readLocalFavoriteFlags()
     const hasMockFavorites = Object.values(flags).some(Boolean)
     if (!favoriteRows.length && !hasMockFavorites) {
+      if (seq !== catalogSeqRef.current) return
       setCatalogByKey(new Map())
       setCatalogLoading(false)
       return
     }
     try {
       const apiBase = await getApiBaseUrl()
-      const lang = (() => {
-        try {
-          if (typeof window === 'undefined') return 'ru'
-          return (window.localStorage?.getItem('i18nextLng') || 'ru').split('-')[0] || 'ru'
-        } catch {
-          return 'ru'
-        }
-      })()
+      const lang = listLang
       const uidRaw = typeof window !== 'undefined' ? localStorage.getItem('userId') : null
       const viewerQ =
         uidRaw && /^\d+$/.test(String(uidRaw).trim())
@@ -45,8 +43,8 @@ export function useFavoriteAuctionItems() {
       const [approvedRes, auctionsRes, debtsRes, sharesRes] = await Promise.all([
         fetchDedupe(`${apiBase}/properties/approved?lang=${lang}`),
         fetchDedupe(`${apiBase}/properties/auctions?lang=${lang}${viewerQ}`),
-        fetchDedupe(`${apiBase}/properties/debts`),
-        fetchDedupe(`${apiBase}/properties/shares?lang=${lang}`),
+        fetchDedupe(`${apiBase}/properties/debts?lang=${encodeURIComponent(lang)}`),
+        fetchDedupe(`${apiBase}/properties/shares?lang=${encodeURIComponent(lang)}`),
       ])
       let approved = []
       let auctions = []
@@ -64,6 +62,11 @@ export function useFavoriteAuctionItems() {
         const json = await debtsRes.json()
         if (json?.success && Array.isArray(json.data)) debts = json.data
       }
+      if (sharesRes.ok) {
+        const json = await sharesRes.json()
+        if (json?.success && Array.isArray(json.data)) shares = json.data
+      }
+      if (seq !== catalogSeqRef.current) return
       const normalizeProperty = (prop, options = {}) => {
         const { forceAuction = null } = options
         const isAuction =
@@ -117,9 +120,9 @@ export function useFavoriteAuctionItems() {
     } catch (e) {
       console.warn('useFavoriteAuctionItems loadCatalog:', e)
     } finally {
-      setCatalogLoading(false)
+      if (seq === catalogSeqRef.current) setCatalogLoading(false)
     }
-  }, [favoriteRows])
+  }, [favoriteRows, listLang])
 
   useEffect(() => {
     if (favoritesLoading) return
