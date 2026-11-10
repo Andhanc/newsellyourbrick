@@ -4,9 +4,13 @@ import './AuctionPropertyCardSkeleton.css'
 /** Uses the auction card's media, metadata, pricing and action layout. */
 export default function AuctionPropertyCardSkeleton({ actions = 2 }) {
   return (
-    <article className={`auction-card auction-card--skeleton auction-card--actions-${actions}`} aria-hidden="true">
+    <article className={`auction-card auction-card--skeleton auction-card--timer-pricing auction-card--actions-${actions}`} aria-hidden="true">
       <div className="auction-card__media auction-card-placeholder__media">
         <span className="auction-card-placeholder__favorite" />
+        <div className="auction-card-placeholder__price-bar">
+          <span className="auction-card-placeholder__line" />
+          <span className="auction-card-placeholder__line" />
+        </div>
       </div>
       <div className="auction-card__body">
         <div className="auction-card__meta">

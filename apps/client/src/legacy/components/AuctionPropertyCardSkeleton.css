@@ -20,6 +20,9 @@
   animation: auction-card-placeholder 1.5s ease-in-out infinite;
 }
 .auction-card-placeholder__favorite { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; border-radius: 50%; background: #f7faf9c4; }
+.auction-card-placeholder__price-bar { position: absolute; z-index: 1; bottom: 8px; left: 8px; right: 8px; display: flex; align-items: center; justify-content: space-between; gap: 20px; height: 36px; padding: 8px; border-radius: 9px; background: #ffffffc4; }
+.auction-card-placeholder__price-bar .auction-card-placeholder__line { width: 50%; height: 10px; }
+.auction-card-placeholder__price-bar .auction-card-placeholder__line:last-child { width: 25%; height: 14px; }
 .auction-card-placeholder__line { display: block; flex-shrink: 0; width: 100%; height: 12px; border-radius: 5px; }
 .auction-card-placeholder__line--title { width: 88%; height: 17px; }
 .auction-card-placeholder__line--short { width: 68%; height: 11px; }
