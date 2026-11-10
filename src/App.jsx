@@ -42,6 +42,10 @@ import GlobalAiChatHost from './components/GlobalAiChatHost'
 const MobileDiscoverPage = lazyWithRetry(() => import('./pages/MobileDiscoverPage'))
 const MobileShowcasePage = lazyWithRetry(() => import('./pages/MobileShowcasePage'))
 const Home = lazyWithRetry(() => import('./pages/Home'))
+// Start this route alongside locale/config loading, instead of after the root gate.
+if (typeof window !== 'undefined' && /^\/auction(?:\/(?:bidding|pre-auction|ended))?\/?$/.test(window.location.pathname)) {
+  void import('./pages/Home').catch(() => {})
+}
 const DebtsPage = lazyWithRetry(() => import('./pages/Debts'))
 const SearchResults = lazyWithRetry(() => import('./pages/SearchResults'))
 const PropertyDetailPage = lazyWithRetry(() => import('./pages/PropertyDetailPage'))
@@ -52,8 +56,8 @@ import SiteAdsErrorBoundary from './components/siteAds/SiteAdsErrorBoundary'
 import DepositRedirect from './components/DepositRedirect'
 import CabinetDataRedirect from './components/CabinetDataRedirect'
 import { LegacySharesDetailRedirect, LegacySharesIndexRedirect } from './components/LegacySharesRedirect'
-import DevelopmentPages from './features/development/DevelopmentPages'
-import DealRoom from './features/development/DealRoom'
+const DevelopmentPages = lazyWithRetry(() => import('./features/development/DevelopmentPages'))
+const DealRoom = lazyWithRetry(() => import('./features/development/DealRoom'))
 import { CO_INVESTMENT_PATH } from './utils/sectionRoutes'
 const NotFoundPage = lazyWithRetry(() => import('./components/NotFoundPage'))
 import DesktopUnavailableGate from './components/DesktopUnavailableGate'
@@ -670,10 +674,10 @@ function App() {
             <DesktopUnavailableGate>
             <SoftLaunchGate>
             <Routes>
-              <Route path="/development" element={<DevelopmentPages />} />
-              <Route path="/development/mine" element={<DevelopmentPages mine />} />
-              <Route path="/development/:slug" element={<DevelopmentPages />} />
-              <Route path="/deal-room/:table/:id" element={<DealRoom />} />
+              <Route path="/development" element={<LazyPage><DevelopmentPages /></LazyPage>} />
+              <Route path="/development/mine" element={<LazyPage><DevelopmentPages mine /></LazyPage>} />
+              <Route path="/development/:slug" element={<LazyPage><DevelopmentPages /></LazyPage>} />
+              <Route path="/deal-room/:table/:id" element={<LazyPage><DealRoom /></LazyPage>} />
               <Route path="/" element={<LazyPage><MobileDiscoverPage /></LazyPage>} />
               <Route path="/mobile-showcase" element={<LazyPage><MobileShowcasePage /></LazyPage>} />
               <Route path="/auction" element={<LazyPage><Home /></LazyPage>} />

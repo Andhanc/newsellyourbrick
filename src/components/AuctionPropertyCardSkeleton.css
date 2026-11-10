@@ -1,0 +1,39 @@
+.auction-card--skeleton { pointer-events: none; }
+.auction-card-placeholder__media,
+.auction-card-placeholder__favorite,
+.auction-card-placeholder__line,
+.auction-card-placeholder__spec-icon,
+.auction-card-placeholder__btn {
+  background: #e9f0f0;
+  border: 0;
+  position: relative;
+  overflow: hidden;
+}
+.auction-card-placeholder__media::after,
+.auction-card-placeholder__line::after,
+.auction-card-placeholder__btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 20%, #ffffff9c 50%, transparent 80%);
+  transform: translateX(-100%);
+  animation: auction-card-placeholder 1.5s ease-in-out infinite;
+}
+.auction-card-placeholder__favorite { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; border-radius: 50%; background: #f7faf9c4; }
+.auction-card-placeholder__price-bar { position: absolute; z-index: 1; bottom: 8px; left: 8px; right: 8px; display: flex; align-items: center; justify-content: space-between; gap: 20px; height: 36px; padding: 8px; border-radius: 9px; background: #ffffffc4; }
+.auction-card-placeholder__price-bar .auction-card-placeholder__line { width: 50%; height: 10px; }
+.auction-card-placeholder__price-bar .auction-card-placeholder__line:last-child { width: 25%; height: 14px; }
+.auction-card-placeholder__line { display: block; flex-shrink: 0; width: 100%; height: 12px; border-radius: 5px; }
+.auction-card-placeholder__line--title { width: 88%; height: 17px; }
+.auction-card-placeholder__line--short { width: 68%; height: 11px; }
+.auction-card-placeholder__spec-icon { display: block; width: 14px; height: 14px; border-radius: 4px; }
+.auction-card-placeholder__line--spec { width: 75%; height: 10px; }
+.auction-card-placeholder__line--label { width: 45%; height: 7px; }
+.auction-card-placeholder__line--price { width: 56%; height: 19px; }
+.auction-card--skeleton .auction-card-placeholder__btn { display: block; min-height: 36px; box-shadow: none; }
+@keyframes auction-card-placeholder { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) {
+  .auction-card-placeholder__media::after,
+  .auction-card-placeholder__line::after,
+  .auction-card-placeholder__btn::after { animation: none; }
+}

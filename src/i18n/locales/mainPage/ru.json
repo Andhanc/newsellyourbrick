@@ -10812,5 +10812,10 @@
   "compareNeedsLikes_metaCount": "2 объекта",
   "compareNeedsLikes_metaHint": "чтобы сравнить",
   "compareNeedsLikes_cta": "Лайкнуть ещё",
-  "compareNeedsLikes_close": "Закрыть"
+  "compareNeedsLikes_close": "Закрыть",
+  "vipTeaser_open": "Открыть с VIP",
+  "vipTeaser_drawerTitle": "Этот объект доступен только с VIP-подпиской",
+  "vipTeaser_drawerDescription": "Откройте закрытые лоты: фотографии, условия аукциона и возможность участвовать в торгах — в VIP-клубе.",
+  "vipTeaser_continue": "Перейти в VIP-клуб",
+  "vipTeaser_note": "Детали объекта скрыты и доступны участникам с активной VIP-подпиской."
 }

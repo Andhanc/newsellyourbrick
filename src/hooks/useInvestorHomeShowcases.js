@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useViewerVipAccess } from './useViewerVipAccess'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { fetchDedupe } from '../utils/fetchDedupe'
 import { normalizePropertyMediaFields } from '../utils/propertyImage'
 import { isAuctionListingEnded } from '../utils/auctionReminderBounds'
 import { auctionListingDedupeKey } from '../utils/propertyDetailUrl'
-import { fetchAuctionMaxBidsBatch, getMaxBidForProperty } from '../utils/fetchAuctionMaxBids'
+import { fetchAuctionMaxBidsBatch, getMaxBidForProperty, hasResolvedListingBid } from '../utils/fetchAuctionMaxBids'
 import { resolvePropertySourceTable } from '../utils/propertySourceTable'
 import { hasBuyNowOption } from '../utils/hasBuyNowOption'
+import { isPrivateClubAuctionLot } from '../utils/isPrivateClubAuctionLot'
 import { mapSharesFromApiResponse } from '../utils/sharesListing'
 
 const LISTING_IMAGE_FALLBACK =
@@ -102,6 +104,7 @@ function normalizeProperty(prop, options = {}) {
 
 export function useInvestorHomeShowcases({ includeBuyNowAuctions = false } = {}) {
   const { i18n } = useTranslation()
+  const { numericUserId, cabinetVipActive } = useViewerVipAccess()
   const [homeProperties, setHomeProperties] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -112,7 +115,7 @@ export function useInvestorHomeShowcases({ includeBuyNowAuctions = false } = {})
     try {
       const apiBase = await getApiBaseUrl()
       const lang = (i18n.language || 'ru').split('-')[0]
-      const viewerRaw = localStorage.getItem('userId')
+      const viewerRaw = numericUserId
       const viewerQ =
         viewerRaw && /^\d+$/.test(String(viewerRaw).trim())
           ? `&viewer_user_id=${encodeURIComponent(String(viewerRaw).trim())}`
@@ -165,10 +168,12 @@ export function useInvestorHomeShowcases({ includeBuyNowAuctions = false } = {})
         })
       })
 
-      let merged = Array.from(byKey.values())
+      let merged = Array.from(byKey.values()).filter(
+        (property) => !isPrivateClubAuctionLot(property) && !property.vip_locked,
+      )
       const auctionItems = merged.filter(
         (item) =>
-          item &&
+          item && !item.vip_locked && !hasResolvedListingBid(item) &&
           (item.isAuction === true || item.is_auction === 1 || item.is_auction === true),
       )
       const bidByKey = await fetchAuctionMaxBidsBatch(apiBase, auctionItems)
@@ -191,7 +196,7 @@ export function useInvestorHomeShowcases({ includeBuyNowAuctions = false } = {})
     } finally {
       if (showSkeleton) setLoading(false)
     }
-  }, [i18n.language])
+  }, [i18n.language, numericUserId, cabinetVipActive])
 
   useEffect(() => {
     void loadProperties()

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { ArrowDown, Filter, Search, SlidersHorizontal, Zap } from 'lucide-react'
 import Header from '../components/Header'
 import AuctionPropertyCard from '../components/AuctionPropertyCard'
+import AuctionPropertyCardSkeleton from '../components/AuctionPropertyCardSkeleton'
 import DebtsPropertyCard from '../components/DebtsPropertyCard'
 import SharesPropertyCard from '../components/SharesPropertyCard'
 import ListingPagePagination from '../components/ListingPagePagination'
@@ -253,9 +254,8 @@ export default function BuyNow() {
         </div>
 
             {loading ? (
-              <div className="buy-now-catalog__loading" role="status" aria-live="polite">
-                <span />
-                {t('buyNowPageLoading')}
+              <div className={`buy-now-catalog__grid${isMobile ? ' properties-grid properties-grid--auction-cards auction-mobile-stack--desktop-cards discover-auction-cards discover-auction-cards--buy-now hr-showcases hr-showcases--debts-listing' : ''}`} role="status" aria-busy="true" aria-label={t('buyNowPageLoading')}>
+                {Array.from({ length: 6 }, (_, index) => <AuctionPropertyCardSkeleton key={index} actions={1} />)}
               </div>
             ) : loadError ? (
               <BuyerEmptyState

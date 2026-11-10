@@ -32,6 +32,7 @@ import { AUCTION_MOBILE_VIEW_STORAGE_KEY } from '../../constants/auctionMobileVi
 import { buildResponsiveImageProps } from '../../utils/responsiveImage'
 import ImageWithSkeleton from '../ImageWithSkeleton'
 import AuctionPropertyCard from '../AuctionPropertyCard'
+import VipLockedAuctionCard from '../VipLockedAuctionCard'
 import BuyerStatusRibbon from '../buyer-mobile/BuyerStatusRibbon'
 import { resolveBuyerListingState } from '../../utils/resolveBuyerListingState'
 import '../PropertyList.css'
@@ -688,6 +689,10 @@ function AuctionMobileItem({
         {t('propertyCardBuyNowWinner', { id: buyNowWinnerId })}
       </p>
     ) : null
+
+  if (isPrivateClubAuctionLot(property) && (!viewerHasVip || property.vip_locked)) {
+    return <VipLockedAuctionCard compact />
+  }
 
   return (
     <div className="auction-mobile-item-wrap">

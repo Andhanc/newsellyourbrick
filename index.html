@@ -3,6 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- Discover the auction's LCP image before the lazy route and locale chunks. -->
+    <script id="auction-hero-preload">
+      (function () {
+        if (!/^\/auction(?:\/(?:bidding|pre-auction|ended))?\/?$/.test(location.pathname)) return
+        var base = '%BASE_URL%images/sellyourbrick/about/mission-villa-'
+        var preload = document.createElement('link')
+        preload.rel = 'preload'
+        preload.as = 'image'
+        preload.type = 'image/webp'
+        preload.href = base + '960.webp'
+        preload.imageSrcset = [480, 960, 1536].map(function (width) { return base + width + '.webp ' + width + 'w' }).join(', ')
+        preload.imageSizes = '100vw'
+        preload.media = '(max-width: 768px)'
+        preload.fetchPriority = 'high'
+        document.head.appendChild(preload)
+      })()
+    </script>
     <!-- Chrome/Android: нижняя/статус-панель берёт цвет отсюда, а не с акцентов страницы -->
     <meta name="theme-color" content="#ffffff" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />

@@ -1,5 +1,7 @@
+import AuctionPropertyCardSkeleton from './AuctionPropertyCardSkeleton'
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useViewerVipAccess } from '../hooks/useViewerVipAccess'
 import { createShowcaseScroller } from '../utils/showcaseScroller'
 import { FiArrowRight, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import AuctionPropertyCard from './AuctionPropertyCard'
@@ -21,20 +23,7 @@ function ShowcaseSlot({ children }) {
   return <div className="home-showcase__slot">{children}</div>
 }
 
-function AuctionCardSkeleton() {
-  return (
-    <div className="auction-card auction-card--skeleton" aria-hidden>
-      <div className="auction-card__media auction-card-skeleton__media" />
-      <div className="auction-card__body auction-card-skeleton__body">
-        <div className="auction-card-skeleton__line auction-card-skeleton__line--short" />
-        <div className="auction-card-skeleton__line auction-card-skeleton__line--title" />
-        <div className="auction-card-skeleton__line auction-card-skeleton__line--specs" />
-        <div className="auction-card-skeleton__price-panel" />
-        <div className="auction-card-skeleton__btn" />
-      </div>
-    </div>
-  )
-}
+
 
 export default function InvestorPropertyShowcaseSection({
   sectionId,
@@ -52,6 +41,7 @@ export default function InvestorPropertyShowcaseSection({
   showPropertyAuthRequiredToast,
 }) {
   const { t } = useTranslation()
+  const { cabinetVipActive } = useViewerVipAccess()
   const scrollerRef = useRef(null)
   const paginationRef = useRef(null)
   const [{ activePage, pageCount, canScrollPrev, canScrollNext }, setPagination] = useState({
@@ -102,7 +92,7 @@ export default function InvestorPropertyShowcaseSection({
     }
     return Array.from({ length: skeletonCount }, (_, index) => (
       <ShowcaseSlot key={`sk-auction-${index}`}>
-        <AuctionCardSkeleton />
+        <AuctionPropertyCardSkeleton actions={1} />
       </ShowcaseSlot>
     ))
   }
@@ -149,6 +139,7 @@ export default function InvestorPropertyShowcaseSection({
       <ShowcaseSlot key={property.id}>
         <AuctionPropertyCard
           property={property}
+          viewerHasVip={cabinetVipActive}
           isFavorite={isPropertyLiked(property)}
           onFavoriteToggle={handleFavoriteToggle}
           onOpen={openListing}

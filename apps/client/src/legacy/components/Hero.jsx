@@ -4,6 +4,7 @@ import { ArrowDown } from 'lucide-react'
 import heroFeatureCoinMoneta from '../assets/moneta.jpg'
 import { scrollMainElementIntoView } from '../utils/mainScroll'
 import { publicAsset } from '../utils/publicAsset'
+import SectionInfoDrawer from './SectionInfoDrawer'
 import './Hero.css'
 
 function measureCopyHeight(element) {
@@ -38,7 +39,10 @@ function measureCopyHeight(element) {
 
 const MOBILE_BREAKPOINT_PX = 768
 
-const AUCTION_HERO_BG = publicAsset('images/sellyourbrick/about/mission-villa.jpg')
+const AUCTION_HERO_BG = publicAsset('images/sellyourbrick/about/mission-villa-960.webp')
+const AUCTION_HERO_SRCSET = [480, 960, 1536]
+  .map((width) => `${publicAsset(`images/sellyourbrick/about/mission-villa-${width}.webp`)} ${width}w`)
+  .join(', ')
 
 const Hero = ({ staticMobileCards = false, auctionScene = false }) => {
   const { t } = useTranslation()
@@ -148,7 +152,7 @@ const Hero = ({ staticMobileCards = false, auctionScene = false }) => {
     >
       {auctionScene ? (
         <>
-          <img className="hero--auction-scene__bg" src={AUCTION_HERO_BG} alt="" aria-hidden />
+          <img className="hero--auction-scene__bg" src={AUCTION_HERO_BG} srcSet={AUCTION_HERO_SRCSET} sizes="100vw" width="1536" height="1024" fetchPriority="high" decoding="async" alt="" aria-hidden />
           <div className="hero--auction-scene__overlay" aria-hidden />
           <div className="hero-auction-mobile__brand" aria-label="SellYourBrick">
             <span className="hero-auction-mobile__brand-text">
@@ -166,7 +170,10 @@ const Hero = ({ staticMobileCards = false, auctionScene = false }) => {
           <div className="hero-auction-mobile">
             <div className="hero-auction-mobile__copy">
               <span className="hero-auction-mobile__eyebrow">{t('auctionListingSaleAll')}</span>
-              <h1 className="hero-auction-mobile__title">{t('auctionSectionTitle')}</h1>
+              <div className="section-info-heading-row">
+                <h1 className="hero-auction-mobile__title">{t('auction')}</h1>
+                <SectionInfoDrawer section="auction" placement="heading" />
+              </div>
               <p className="hero-auction-mobile__lead">{t('auctionSectionSubtitle')}</p>
               <button
                 type="button"

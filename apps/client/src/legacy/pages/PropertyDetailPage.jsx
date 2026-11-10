@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next'
 import { Building2 } from 'lucide-react'
 import { showNotification } from '../utils/toastHelper'
 import { properties } from '../data/properties'
-import PropertyDetailClassic from './PropertyDetailClassic'
 import { isAuthenticated, getUserData, getStoredNumericUserId } from '../services/authService'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import {
@@ -34,6 +33,9 @@ import { buildPropertyPageSeo } from '../utils/pageSeoBuilders'
 import './PropertyDetailPage.css'
 
 const LoginModal = lazyWithRetry(() => import('../components/LoginModal'))
+const PropertyDetailClassic = lazyWithRetry(() => import('./PropertyDetailClassic'))
+// Fetch the page data while its larger presentation chunk is downloading.
+void import('./PropertyDetailClassic').catch(() => {})
 const Header = lazyWithRetry(() => import('../components/Header'))
 const BuyerEmptyState = lazyWithRetry(() => import('../components/buyer-mobile/BuyerEmptyState'))
 const NotFoundPage = lazyWithRetry(() => import('../components/NotFoundPage'))
@@ -594,12 +596,14 @@ const PropertyDetailPage = () => {
   // Всегда используем PropertyDetailClassic, передавая флаг аукциона
   return (
     <>
-      <PropertyDetailClassic
-        property={{ ...property, isAuction: finalIsAuction }}
-        showDocuments={isOwnerDashboard}
-        onRequireLogin={() => setIsLoginModalOpen(true)}
-        requireAuthOnLoad={false}
-      />
+      <Suspense fallback={<PropertyDetailClassicSkeleton />}>
+        <PropertyDetailClassic
+          property={{ ...property, isAuction: finalIsAuction }}
+          showDocuments={isOwnerDashboard}
+          onRequireLogin={() => setIsLoginModalOpen(true)}
+          requireAuthOnLoad={false}
+        />
+      </Suspense>
       {isLoginModalOpen ? (
         <Suspense fallback={null}>
           <LoginModal
